@@ -1,0 +1,34 @@
+{
+    "name": "next-admin-test",
+    "version": "10.1.0",
+    "private": true,
+    "scripts": {
+        "dev": "next dev -p 4000",
+        "build": "next build",
+        "start": "next start",
+        "format": "prettier --write \"{app,demo,layout,types}/**/*.{js,ts,tsx,d.ts}\"",
+        "lint": "next lint",
+        "check-types": "tsc --noEmit"
+    },
+    "dependencies": {
+        "@types/node": "20.3.1",
+        "@types/react": "18.2.12",
+        "@types/react-dom": "18.2.5",
+        "chart.js": "4.2.1",
+        "next": "13.4.8",
+        "primeflex": "^3.3.1",
+        "primeicons": "^6.0.1",
+        "primereact": "10.2.1",
+        "react": "18.2.0",
+        "react-dom": "18.2.0",
+        "typescript": "5.1.3"
+    },
+    "devDependencies": {
+        "eslint": "8.43.0",
+        "eslint-config-next": "13.4.6",
+        "prettier": "^2.8.8",
+        "sass": "^1.63.4",
+        "turbo": "^2.4.4"
+    },
+    "packageManager": "yarn@1.22.19"
+}
