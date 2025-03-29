@@ -19,8 +19,11 @@ const LoginPage = () => {
     const router = useRouter();
     const containerClassName = classNames('surface-ground flex align-items-center justify-content-center min-h-screen min-w-screen overflow-hidden', { 'p-input-filled': layoutConfig.inputStyle === 'filled' });
 
-    const signIn = () => {
-        login({ email: email, password: password });
+    const signIn = async () => {
+        const res = await login({ email: email, password: password });
+        if (res) {
+            router.push('/');
+        }
     };
     return (
         <div className={containerClassName}>

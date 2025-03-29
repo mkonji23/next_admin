@@ -52,6 +52,11 @@ export interface MenuContextProps {
     setActiveMenu: Dispatch<SetStateAction<string>>;
 }
 
+export interface LoadingContextProps {
+    loading: boolean;
+    setLoading: Dispatch<SetStateAction<boolean>>;
+}
+
 /* AppConfig Types */
 export interface AppConfigProps {
     simple?: boolean;

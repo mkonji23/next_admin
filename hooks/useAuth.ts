@@ -1,5 +1,5 @@
 import useAuthStore from '@/store/useAuthStore';
-import axiosInstance from '@/util/axiosInstance';
+import { useHttp } from '@/util/axiosInstance';
 
 interface UserInput {
     email: string;
@@ -12,13 +12,16 @@ interface UserResponse {
     token: string;
 }
 const useAuth = () => {
+    const { post } = useHttp();
     const { setInfo } = useAuthStore();
     const login = async (param: UserInput) => {
         try {
-            const res = await axiosInstance.post<UserResponse>('/db/sign-in', param);
+            const res = await post<UserResponse>('/db/sign-in', param);
             setInfo(res.data);
+            return true;
         } catch (error) {
             console.log('error', error);
+            return false;
         }
     };
 
