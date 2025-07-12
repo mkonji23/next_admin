@@ -4,7 +4,7 @@ import axios, { AxiosInstance, AxiosResponse } from 'axios';
 
 export const useHttp = (): AxiosInstance => {
     const axiosInstance = axios.create({
-        baseURL: process.env.NEXT_PUBLIC_TYPE === 'dev' ? '/api' : process.env.NEXT_PUBLIC_BACKEND_URL,
+        baseURL: process.env.NEXT_PUBLIC_TYPE !== 'dev' ? process.env.NEXT_PUBLIC_BACKEND_URL : '/api' ,
         withCredentials: true, // 도메인 다른경우 필요한 옵션
         timeout: 5000,
         headers: {
