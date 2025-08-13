@@ -8,6 +8,7 @@ import '../styles/layout/layout.scss';
 import '../styles/demo/Demos.scss';
 import { LoadingProvider } from '@/layout/context/loadingcontext';
 import { GlobalLoading } from '@/layout/GlobalLoading';
+import { ToastProvider } from '@/hooks/useToast';
 
 interface RootLayoutProps {
     children: React.ReactNode;
@@ -22,10 +23,12 @@ export default function RootLayout({ children }: RootLayoutProps) {
             <body>
                 <PrimeReactProvider>
                     <LayoutProvider>
-                        <LoadingProvider>
-                            <GlobalLoading />
-                            {children}
-                        </LoadingProvider>
+                        <ToastProvider>
+                            <LoadingProvider>
+                                <GlobalLoading />
+                                {children}
+                            </LoadingProvider>
+                        </ToastProvider>
                     </LayoutProvider>
                 </PrimeReactProvider>
             </body>

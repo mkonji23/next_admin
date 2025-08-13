@@ -1,16 +1,15 @@
-import React from 'react';
+import { supabaseAdmin } from '@/lib/supabaseClient';
+import BucketList from './components/BucketList';
 
-const EmptyPage = () => {
-    return (
-        <div className="grid">
-            <div className="col-12">
-                <div className="card">
-                    <h5>Empty Page</h5>
-                    <p>Use this page to start from scratch and place your custom content.</p>
-                </div>
-            </div>
-        </div>
-    );
+const testPage = async () => {
+    const fetchData = async () => {
+        const { data } = await supabaseAdmin.storage.listBuckets();
+        return data;
+    };
+
+    const data = await fetchData();
+
+    return <BucketList initialData={data ?? []} />;
 };
 
-export default EmptyPage;
+export default testPage;

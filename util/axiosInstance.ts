@@ -1,20 +1,30 @@
 import { useLoading } from '@/layout/context/loadingcontext';
 import Cookies from 'js-cookie';
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
+import { useToast } from '@/hooks/useToast';
 
 export const useHttp = (): AxiosInstance => {
+    const { showToast } = useToast();
     const axiosInstance = axios.create({
-        baseURL: process.env.NEXT_PUBLIC_TYPE === 'dev' ? '/api' : process.env.NEXT_PUBLIC_BACKEND_URL,
+        baseURL: process.env.NEXT_PUBLIC_TYPE === 'dev' ? '/v1/api' : process.env.NEXT_PUBLIC_BACKEND_URL,
         withCredentials: true, // 도메인 다른경우 필요한 옵션
         timeout: 5000,
         headers: {
             'Content-Type': 'application/json'
         }
     });
+
     const { setLoading } = useLoading();
     // 요청 인터셉터 (Request Interceptor)
     axiosInstance.interceptors.request.use(
         (config) => {
+            console.log('config.url', config.url);
+            console.log('config.config', config);
+            // App route 호출
+            if (config.url?.startsWith('/app')) {
+                config.baseURL = '/api1';
+                config.url = config.url.replace('/app', '');
+            }
             setLoading(true);
             const token = Cookies.get('token');
             if (token) {
@@ -43,7 +53,12 @@ export const useHttp = (): AxiosInstance => {
                     window.location.href = '/login'; // 로그인 페이지로 이동
                 } else if (status === 403) {
                     console.error('권한 없음: 접근할 수 없습니다.');
-                } else if (status >= 500) {
+                } else {
+                    showToast({
+                        severity: 'error',
+                        summary: 'Error',
+                        detail: error?.response?.data?.message || error.response?.statusText
+                    });
                     console.error(error.response.data.message);
                 }
             }

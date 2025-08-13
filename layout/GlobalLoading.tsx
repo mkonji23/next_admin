@@ -4,9 +4,11 @@ import { useLoading } from './context/loadingcontext';
 export const GlobalLoading = () => {
     const { loading } = useLoading();
 
+    if (!loading) return null;
+
     return (
-        <div className="w-full">
-            <ProgressBar mode={loading ? 'indeterminate' : 'determinate'} style={{ height: '6px' }}></ProgressBar>
+        <div className="global-loading-overlay">
+            <ProgressBar mode="indeterminate" style={{ height: '6px', width: '100%' }} />
         </div>
     );
 };

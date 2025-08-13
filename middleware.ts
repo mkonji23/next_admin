@@ -3,9 +3,6 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-    console.log('미들어웨어', request.nextUrl.pathname);
-    console.log('token정보', request.cookies.get('token')?.value);
-
     const response = NextResponse.next();
     // 요청에 따른 조건부 로직 처리
     if (!request.cookies.get('token')) {
