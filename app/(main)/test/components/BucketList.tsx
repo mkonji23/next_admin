@@ -15,15 +15,15 @@ const BucketList = ({ initialData }: ClientComponentProps) => {
     const { showToast } = useToast();
     const columns = getColumns(initialData);
     const header = <Button icon="pi pi-refresh" rounded raised />;
-    const fetchData = () => {
+    const fetchData = async () => {
         console.log('응?');
         showToast({
-            severity: 'error',
+            severity: 'success',
             summary: 'Error',
             detail: '으아아아아'
         });
-        // const res = await get('/app/listBuckets');
-        // console.log(res);
+        const res = await get('/app/listBuckets');
+        console.log(res);
     };
     return (
         <div className="card">

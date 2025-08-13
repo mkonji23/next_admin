@@ -16,7 +16,7 @@ const useAuth = () => {
     const { setInfo } = useAuthStore();
     const login = async (param: UserInput) => {
         try {
-            const res = await post<UserResponse>('/v1/db/sign-in', param);
+            const res = await post<UserResponse>('/db/sign-in', param);
             setInfo(res.data);
             return true;
         } catch (error) {

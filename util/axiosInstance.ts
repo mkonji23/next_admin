@@ -18,11 +18,9 @@ export const useHttp = (): AxiosInstance => {
     // 요청 인터셉터 (Request Interceptor)
     axiosInstance.interceptors.request.use(
         (config) => {
-            console.log('config.url', config.url);
-            console.log('config.config', config);
             // App route 호출
             if (config.url?.startsWith('/app')) {
-                config.baseURL = '/api1';
+                config.baseURL = '/api';
                 config.url = config.url.replace('/app', '');
             }
             setLoading(true);
