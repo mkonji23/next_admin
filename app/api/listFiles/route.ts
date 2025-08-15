@@ -7,5 +7,6 @@ export async function GET(request: Request) {
     const bucket = searchParams.get('bucket') || '';
     const path = searchParams.get('path') || '';
     const { data } = await supabaseAdmin.storage.from(bucket).list(path);
+    console.log('res', data);
     return NextResponse.json(data ?? []);
 }
