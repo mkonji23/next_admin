@@ -9,6 +9,12 @@ import { useToast } from '@/hooks/useToast';
 import { Children, useEffect, useState } from 'react';
 import { TreeTable } from 'primereact/treetable';
 import { FileUpload } from 'primereact/fileupload';
+import dayjs from 'dayjs';
+import 'dayjs/locale/ko'; // 한국어 로케일 import
+
+// 글로벌 설정
+dayjs.locale('ko');
+
 type ClientComponentProps = {
     initialData: Bucket[];
 };
@@ -194,7 +200,22 @@ const BucketList = ({ initialData }: ClientComponentProps) => {
                     onSelectionChange={(e) => setSelectedBucket(e.value)}
                 >
                     {columns?.map((item) => (
-                        <Column key={item.field} field={item.field} header={item.field} />
+                        <Column
+                            key={item.field}
+                            field={item.field}
+                            header={item.field}
+                            body={(rowData) => {
+                                const value = rowData[item.field];
+                                if (
+                                    item.field === 'updated_at' ||
+                                    item.field === 'created_at' ||
+                                    item.field === 'last_accessed_at'
+                                ) {
+                                    return value ? dayjs(value).format('YYYY-MM-DD HH:mm:ss') : '';
+                                }
+                                return typeof value === 'object' ? JSON.stringify(value) : value;
+                            }}
+                        />
                     ))}
                 </DataTable>
             </div>
@@ -207,6 +228,13 @@ const BucketList = ({ initialData }: ClientComponentProps) => {
                             header={item?.field}
                             body={(rowData) => {
                                 const value = rowData.data[item.field];
+                                if (
+                                    item.field === 'updated_at' ||
+                                    item.field === 'created_at' ||
+                                    item.field === 'last_accessed_at'
+                                ) {
+                                    return value ? dayjs(value).format('YYYY-MM-DD HH:mm:ss') : '';
+                                }
                                 return typeof value === 'object' ? JSON.stringify(value) : value;
                             }}
                             expander={item?.field === 'name'}
