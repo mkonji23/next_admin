@@ -31,6 +31,7 @@ const BucketList = ({ initialData }: ClientComponentProps) => {
     const [bucketLists, setBucketLists] = useState<Bucket[]>(initialData);
     const [selectedBucket, setSelectedBucket] = useState<any>({});
     const [trees, setTrees] = useState<TreeNode[]>();
+    const { showToast } = useToast();
 
     const { get, post } = useHttp();
     // 컬럼 세팅
@@ -128,6 +129,24 @@ const BucketList = ({ initialData }: ClientComponentProps) => {
         a.remove();
         window.URL.revokeObjectURL(url);
     };
+
+    const handleUploadFile = async (event: any) => {
+        console.log('event.files', event.files);
+        const params = {
+            bucket: selectedBucket?.id,
+            path: event.files[0]?.name,
+            file: event.files[0]
+        };
+        try {
+            const res = await post('/app/upload', params);
+            if (res.data) {
+                console.log(res.data);
+                showToast({ severity: 'success', detail: '업로드가 완료되었습니다.' });
+            }
+        } catch (error: any) {
+            showToast({ detail: error.message, severity: 'error' });
+        }
+    };
     useEffect(() => {
         selectedBucket && handleFetchFiles();
     }, [selectedBucket]);
@@ -181,15 +200,7 @@ const BucketList = ({ initialData }: ClientComponentProps) => {
                 </DataTable>
             </div>
             <div className="card">
-                <TreeTable
-                    selectionMode="single"
-                    selectionKeys={selectedFolderKeys}
-                    onSelectionChange={(e) => setSelectedFolderKeys(e.value)}
-                    onRowClick={(e) => setSelectedFolder(e.node.data)}
-                    value={trees}
-                    header={header2}
-                    tableStyle={{ minWidth: '50rem' }}
-                >
+                <TreeTable selectionMode="single" value={trees} header={header2} tableStyle={{ minWidth: '50rem' }}>
                     {treeColumns?.map((item) => (
                         <Column
                             key={item?.field}
@@ -229,7 +240,15 @@ const BucketList = ({ initialData }: ClientComponentProps) => {
             <div className="col-12">
                 <div className="card">
                     <h5>업로드</h5>
-                    <FileUpload name="demo[]" url="/api/upload" multiple accept="image/*" maxFileSize={1000000} />
+                    <FileUpload
+                        name="demo[]"
+                        customUpload
+                        uploadLabel="업로드"
+                        uploadHandler={handleUploadFile}
+                        multiple
+                        accept="image/*"
+                        maxFileSize={1000000}
+                    />
                 </div>
             </div>
         </>
