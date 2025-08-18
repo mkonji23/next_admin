@@ -8,6 +8,7 @@ import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
 import { Children, useEffect, useState } from 'react';
 import { TreeTable } from 'primereact/treetable';
+import { FileUpload } from 'primereact/fileupload';
 type ClientComponentProps = {
     initialData: Bucket[];
 };
@@ -28,9 +29,11 @@ interface IBucketReq {
 }
 const BucketList = ({ initialData }: ClientComponentProps) => {
     const [selectedBucket, setSelectedBucket] = useState<any>({});
+    const [selectedFolder, setSelectedFolder] = useState<any>({});
+    const [selectedFolderKeys, setSelectedFolderKeys] = useState<any>('');
     const [trees, setTrees] = useState<any>([]);
-
-    const { get } = useHttp();
+    // api 호출
+    const { get, post } = useHttp();
     // 컬럼 세팅
     const columns = getColumns(initialData);
     const treeColumns = getColumns(trees?.[0]?.data);
@@ -76,6 +79,14 @@ const BucketList = ({ initialData }: ClientComponentProps) => {
         setTrees(tree);
     };
 
+    const handleSearch = async () => {
+        const res = await post('/app/uploadFile', {
+            bucket: selectedBucket?.id,
+            folder: selectedFolder?.id ? '' : selectedFolder?.name
+        });
+        console.log('res', res);
+    };
+
     useEffect(() => {
         selectedBucket && handleRefresh();
     }, [selectedBucket]);
@@ -90,10 +101,22 @@ const BucketList = ({ initialData }: ClientComponentProps) => {
     // file 헤더
     const header2 = (
         <div className="flex flex-wrap align-items-center justify-content-between gap-2">
-            <span className="text-xl text-900 font-bold">Files</span>
-            <Button icon="pi pi-refresh" rounded raised onClick={handleRefresh} />
+            <span className="text-xl text-900 font-bold">{selectedBucket?.name || ''}</span>
+            <div className="flex flex-wrap gap-2">
+                <Button icon="pi pi-refresh" rounded raised onClick={handleRefresh} />
+                <Button type="button" icon="pi pi-upload" severity="success" rounded></Button>
+                <Button type="button" icon="pi pi-search" severity="success" rounded onClick={handleSearch} />
+            </div>
         </div>
     );
+
+    const actionTemplate = () => {
+        return (
+            <div className="flex flex-wrap gap-2">
+                <Button type="button" icon="pi pi-pencil" severity="success" rounded></Button>
+            </div>
+        );
+    };
 
     return (
         <>
@@ -112,7 +135,15 @@ const BucketList = ({ initialData }: ClientComponentProps) => {
                 </DataTable>
             </div>
             <div className="card">
-                <TreeTable value={trees} header={header2} tableStyle={{ minWidth: '50rem' }}>
+                <TreeTable
+                    selectionMode="single"
+                    selectionKeys={selectedFolderKeys}
+                    onSelectionChange={(e) => setSelectedFolderKeys(e.value)}
+                    onRowClick={(e) => setSelectedFolder(e.node.data)}
+                    value={trees}
+                    header={header2}
+                    tableStyle={{ minWidth: '50rem' }}
+                >
                     {treeColumns?.map((item) => (
                         <Column
                             key={item?.field}
@@ -125,6 +156,7 @@ const BucketList = ({ initialData }: ClientComponentProps) => {
                             expander={item?.field === 'name'}
                         />
                     ))}
+                    <Column body={actionTemplate} headerClassName="w-10rem" />
                 </TreeTable>
                 {/* <DataTable value={files} selectionMode={'single'} header={header2} tableStyle={{ minWidth: '50rem' }}>
                     {getColumns(files)?.map((item) => (
@@ -139,6 +171,12 @@ const BucketList = ({ initialData }: ClientComponentProps) => {
                         />
                     ))}
                 </DataTable> */}
+            </div>
+            <div className="col-12">
+                <div className="card">
+                    <h5>업로드</h5>
+                    <FileUpload name="demo[]" url="/api/upload" multiple accept="image/*" maxFileSize={1000000} />
+                </div>
             </div>
         </>
     );
