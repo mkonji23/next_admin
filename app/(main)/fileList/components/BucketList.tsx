@@ -33,7 +33,7 @@ const BucketList = ({ initialData }: ClientComponentProps) => {
     const [trees, setTrees] = useState<TreeNode[]>();
     const { showToast } = useToast();
 
-    const { get, post } = useHttp();
+    const { get, post, postForm } = useHttp();
     // 컬럼 세팅
     const columns = getColumns(initialData);
     const treeColumns = getColumns(trees?.[0]?.data);
@@ -131,14 +131,13 @@ const BucketList = ({ initialData }: ClientComponentProps) => {
     };
 
     const handleUploadFile = async (event: any) => {
-        console.log('event.files', event.files);
-        const params = {
-            bucket: selectedBucket?.id,
-            path: event.files[0]?.name,
-            file: event.files[0]
-        };
+        const formData = new FormData();
+        formData.append('file', event.files[0]); // file: File 객체
+        formData.append('bucket', selectedBucket?.id);
+        formData.append('path', event.files[0]?.name);
+
         try {
-            const res = await post('/app/upload', params);
+            const res = await postForm('/app/upload', formData);
             if (res.data) {
                 console.log(res.data);
                 showToast({ severity: 'success', detail: '업로드가 완료되었습니다.' });
@@ -245,7 +244,6 @@ const BucketList = ({ initialData }: ClientComponentProps) => {
                         customUpload
                         uploadLabel="업로드"
                         uploadHandler={handleUploadFile}
-                        multiple
                         accept="image/*"
                         maxFileSize={1000000}
                     />
