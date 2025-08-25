@@ -56,6 +56,15 @@ const BucketList = ({ initialData }: ClientComponentProps) => {
         return res?.data;
     };
 
+    // 버킷,파일 데이터 호출
+    const fetchGetFileLink = async (params: any) => {
+        const res = await get('/app/createUrl', {
+            params
+        });
+
+        return res?.data;
+    };
+
     // 트리구조
     const buildTree = async (files: FileData[], parentKey: string = '0'): Promise<TreeNode[]> => {
         const tree = [];
@@ -104,11 +113,19 @@ const BucketList = ({ initialData }: ClientComponentProps) => {
         return traverse(treeData, '/');
     };
 
+    // 파일 조회
     const handleFetchFiles = async () => {
         const data = await fetchFiles(selectedBucket);
         const tree = await buildTree(data, '0');
-        console.log('tree', tree);
         setTrees(tree);
+    };
+
+    const handleGetFileLink = async (fileId: string) => {
+        const params = {
+            bucket: selectedBucket?.id,
+            path: getFilePath(trees, fileId)
+        };
+        const data = await fetchGetFileLink(params);
     };
 
     const handleFetchBuckets = async () => {
@@ -183,7 +200,14 @@ const BucketList = ({ initialData }: ClientComponentProps) => {
                     onClick={() => {
                         handleDownloadFile(fileId);
                     }}
-                ></Button>
+                />
+                <Button
+                    icon="pi pi-linkedin"
+                    rounded
+                    raised
+                    severity="success"
+                    onClick={() => handleGetFileLink(fileId)}
+                />
             </div>
         );
     };
