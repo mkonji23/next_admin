@@ -13,7 +13,7 @@ interface UserResponse {
 }
 const useAuth = () => {
     const { post } = useHttp();
-    const { setInfo } = useAuthStore();
+    const { setInfo, clearInfo } = useAuthStore();
     const login = async (param: UserInput) => {
         try {
             const res = await post<UserResponse>('/db/sign-in', param);
@@ -25,7 +25,11 @@ const useAuth = () => {
         }
     };
 
-    return { login };
+    const logout = () => {
+        clearInfo();
+    };
+
+    return { login, logout };
 };
 
 export default useAuth;
