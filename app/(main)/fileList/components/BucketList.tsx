@@ -114,7 +114,6 @@ const BucketList = ({ initialData }: ClientComponentProps) => {
             path: getFilePath(trees, fileId)
         };
         const res = await post('/app/download', params, { responseType: 'blob' });
-        console.log('res.data', res.data);
         // 브라우저 다운로드
         const url = window.URL.createObjectURL(res.data);
         const a = document.createElement('a');
