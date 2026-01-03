@@ -17,6 +17,7 @@
         "@types/react-dom": "18.2.5",
         "axios": "^1.8.4",
         "chart.js": "4.2.1",
+        "dayjs": "^1.11.13",
         "js-cookie": "^3.0.5",
         "next": "14",
         "primeflex": "^3.3.1",

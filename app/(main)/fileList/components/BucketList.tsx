@@ -8,6 +8,13 @@ import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
 import { Children, useEffect, useState } from 'react';
 import { TreeTable } from 'primereact/treetable';
+import { FileUpload } from 'primereact/fileupload';
+import dayjs from 'dayjs';
+import 'dayjs/locale/ko'; // 한국어 로케일 import
+
+// 글로벌 설정
+dayjs.locale('ko');
+
 type ClientComponentProps = {
     initialData: Bucket[];
 };
@@ -30,8 +37,9 @@ const BucketList = ({ initialData }: ClientComponentProps) => {
     const [bucketLists, setBucketLists] = useState<Bucket[]>(initialData);
     const [selectedBucket, setSelectedBucket] = useState<any>({});
     const [trees, setTrees] = useState<TreeNode[]>();
+    const { showToast } = useToast();
 
-    const { get, post } = useHttp();
+    const { get, post, postForm } = useHttp();
     // 컬럼 세팅
     const columns = getColumns(initialData);
     const treeColumns = getColumns(trees?.[0]?.data);
@@ -43,6 +51,15 @@ const BucketList = ({ initialData }: ClientComponentProps) => {
                 bucket: params?.['id'],
                 path: params?.['path']
             } as IBucketReq
+        });
+
+        return res?.data;
+    };
+
+    // 버킷,파일 데이터 호출
+    const fetchGetFileLink = async (params: any) => {
+        const res = await get('/app/createUrl', {
+            params
         });
 
         return res?.data;
@@ -96,11 +113,19 @@ const BucketList = ({ initialData }: ClientComponentProps) => {
         return traverse(treeData, '/');
     };
 
+    // 파일 조회
     const handleFetchFiles = async () => {
         const data = await fetchFiles(selectedBucket);
         const tree = await buildTree(data, '0');
-        console.log('tree', tree);
         setTrees(tree);
+    };
+
+    const handleGetFileLink = async (fileId: string) => {
+        const params = {
+            bucket: selectedBucket?.id,
+            path: getFilePath(trees, fileId)
+        };
+        const data = await fetchGetFileLink(params);
     };
 
     const handleFetchBuckets = async () => {
@@ -125,6 +150,23 @@ const BucketList = ({ initialData }: ClientComponentProps) => {
         a.click();
         a.remove();
         window.URL.revokeObjectURL(url);
+    };
+
+    const handleUploadFile = async (event: any) => {
+        const formData = new FormData();
+        formData.append('file', event.files[0]); // file: File 객체
+        formData.append('bucket', selectedBucket?.id);
+        formData.append('path', event.files[0]?.name);
+
+        try {
+            const res = await postForm('/app/upload', formData);
+            if (res.data) {
+                console.log(res.data);
+                showToast({ severity: 'success', detail: '업로드가 완료되었습니다.' });
+            }
+        } catch (error: any) {
+            showToast({ detail: error.message, severity: 'error' });
+        }
     };
     useEffect(() => {
         selectedBucket && handleFetchFiles();
@@ -157,7 +199,14 @@ const BucketList = ({ initialData }: ClientComponentProps) => {
                     onClick={() => {
                         handleDownloadFile(fileId);
                     }}
-                ></Button>
+                />
+                <Button
+                    icon="pi pi-linkedin"
+                    rounded
+                    raised
+                    severity="success"
+                    onClick={() => handleGetFileLink(fileId)}
+                />
             </div>
         );
     };
@@ -174,12 +223,27 @@ const BucketList = ({ initialData }: ClientComponentProps) => {
                     onSelectionChange={(e) => setSelectedBucket(e.value)}
                 >
                     {columns?.map((item) => (
-                        <Column key={item.field} field={item.field} header={item.field} />
+                        <Column
+                            key={item.field}
+                            field={item.field}
+                            header={item.field}
+                            body={(rowData) => {
+                                const value = rowData[item.field];
+                                if (
+                                    item.field === 'updated_at' ||
+                                    item.field === 'created_at' ||
+                                    item.field === 'last_accessed_at'
+                                ) {
+                                    return value ? dayjs(value).format('YYYY-MM-DD HH:mm:ss') : '';
+                                }
+                                return typeof value === 'object' ? JSON.stringify(value) : value;
+                            }}
+                        />
                     ))}
                 </DataTable>
             </div>
             <div className="card">
-                <TreeTable value={trees} header={header2} tableStyle={{ minWidth: '50rem' }}>
+                <TreeTable selectionMode="single" value={trees} header={header2} tableStyle={{ minWidth: '50rem' }}>
                     {treeColumns?.map((item) => (
                         <Column
                             key={item?.field}
@@ -187,6 +251,13 @@ const BucketList = ({ initialData }: ClientComponentProps) => {
                             header={item?.field}
                             body={(rowData) => {
                                 const value = rowData.data[item.field];
+                                if (
+                                    item.field === 'updated_at' ||
+                                    item.field === 'created_at' ||
+                                    item.field === 'last_accessed_at'
+                                ) {
+                                    return value ? dayjs(value).format('YYYY-MM-DD HH:mm:ss') : '';
+                                }
                                 return typeof value === 'object' ? JSON.stringify(value) : value;
                             }}
                             expander={item?.field === 'name'}
@@ -215,6 +286,19 @@ const BucketList = ({ initialData }: ClientComponentProps) => {
                         />
                     ))}
                 </DataTable> */}
+            </div>
+            <div className="col-12">
+                <div className="card">
+                    <h5>업로드</h5>
+                    <FileUpload
+                        name="demo[]"
+                        customUpload
+                        uploadLabel="업로드"
+                        uploadHandler={handleUploadFile}
+                        accept="image/*"
+                        maxFileSize={1000000}
+                    />
+                </div>
             </div>
         </>
     );
