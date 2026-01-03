@@ -123,6 +123,9 @@ const AttendancePage = () => {
     }, [users, date]);
 
     const handleMoveToday = (): void => {
+        if (typeof window === 'undefined') {
+            return; // Do not run on server
+        }
         const now = new Date();
         // Only scroll if the table is showing the current month and year
         if (now.getFullYear() === date.getFullYear() && now.getMonth() === date.getMonth()) {
