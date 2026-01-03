@@ -6,27 +6,51 @@ import { Column } from 'primereact/column';
 import { ColumnGroup } from 'primereact/columngroup';
 import { Row } from 'primereact/row';
 import { Calendar } from 'primereact/calendar';
-import { Dropdown } from 'primereact/dropdown';
+import { Dropdown, DropdownChangeEvent } from 'primereact/dropdown';
 import { Tag } from 'primereact/tag';
 import { Button } from 'primereact/button';
 
+// 1. Define Interfaces/Types
+interface ClassOption {
+    label: string;
+    value: string;
+}
+
+interface AttendanceStatusOption {
+    label: string;
+    value: string;
+}
+
+interface HomeworkProgressOption {
+    label: string;
+    value: number;
+}
+
+interface User {
+    id: number;
+    name: string;
+    [key: string]: string | number; // For dynamic day_X_attendance and day_X_homework properties
+}
+
 const AttendancePage = () => {
-    const [date, setDate] = useState(new Date());
-    const [users, setUsers] = useState([]);
-    const [selectedClass, setSelectedClass] = useState(null);
-    const dt = useRef();
-    const scrolled = useRef(false);
+    // 2. Apply Types to State
+    const [date, setDate] = useState<Date>(new Date());
+    const [users, setUsers] = useState<User[]>([]);
+    const [selectedClass, setSelectedClass] = useState<string | null>(null);
+    // 3. Apply Types to useRef
+    const dt = useRef<DataTable<any>>(null);
+    const scrolled = useRef<boolean>(false);
 
-    const holidays = ['2026-01-01', '2026-02-16', '2026-02-17', '2026-02-18'];
-    const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+    const holidays: string[] = ['2026-01-01', '2026-02-16', '2026-02-17', '2026-02-18'];
+    const dayNames: string[] = ['일', '월', '화', '수', '목', '금', '토'];
 
-    const classes = [
+    const classes: ClassOption[] = [
         { label: '고급 수학', value: 'adv_math' },
         { label: '초급 물리', value: 'beg_physics' },
         { label: '화학 실험', value: 'chem_lab' }
     ];
 
-    const attendanceStatuses = [
+    const attendanceStatuses: AttendanceStatusOption[] = [
         { label: '없음', value: 'none' },
         { label: '수업출석', value: 'class_present' },
         { label: '수업결석', value: 'class_absent' },
@@ -36,7 +60,7 @@ const AttendancePage = () => {
         { label: '클리닉결석', value: 'clinic_absent' }
     ];
 
-    const homeworkProgressOptions = [
+    const homeworkProgressOptions: HomeworkProgressOption[] = [
         { label: '0%', value: 0 },
         { label: '25%', value: 25 },
         { label: '50%', value: 50 },
@@ -44,7 +68,9 @@ const AttendancePage = () => {
         { label: '100%', value: 100 }
     ];
 
-    const getAttendanceSeverity = (status) => {
+    const getAttendanceSeverity = (
+        status: string
+    ): 'success' | 'danger' | 'info' | 'warning' | 'primary' | 'secondary' => {
         switch (status) {
             case 'class_present':
                 return 'success';
@@ -64,7 +90,7 @@ const AttendancePage = () => {
     };
 
     useEffect(() => {
-        const mockUsers = [
+        const mockUsers: User[] = [
             { id: 1, name: '김민준' },
             { id: 2, name: '이서연' },
             { id: 3, name: '박도윤' },
@@ -76,8 +102,8 @@ const AttendancePage = () => {
         const month = date.getMonth();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-        const attendanceData = mockUsers.map((user) => {
-            const userData = { id: user.id, name: user.name };
+        const attendanceData: User[] = mockUsers.map((user) => {
+            const userData: User = { id: user.id, name: user.name };
             for (let i = 1; i <= daysInMonth; i++) {
                 const randomStatus = attendanceStatuses[Math.floor(Math.random() * attendanceStatuses.length)].value;
                 const randomProgress =
@@ -96,25 +122,27 @@ const AttendancePage = () => {
         handleMoveToday();
     }, [users, date]);
 
-    const handleMoveToday = () => {
+    const handleMoveToday = (): void => {
         const now = new Date();
         // Only scroll if the table is showing the current month and year
         if (now.getFullYear() === date.getFullYear() && now.getMonth() === date.getMonth()) {
-            const wrapper = dt?.current.getElement().querySelector('.p-datatable-wrapper');
+            const wrapper = dt.current?.getElement().querySelector('.p-datatable-wrapper');
             if (wrapper) {
                 const today = now.getDate();
                 const attendanceColWidth = 150;
                 const homeworkColWidth = 120;
                 const dayWidth = attendanceColWidth + homeworkColWidth;
                 // Scroll to the column before today, so today is visible
-                const scrollPos = (today - 1) * dayWidth;
+                const scrollPos = (today - 2) * dayWidth;
+
                 wrapper.scrollLeft = scrollPos > 0 ? scrollPos : 0;
+                scrolled.current = true;
             }
         }
     };
 
-    const onEditorValueChange = (e, rowData, field) => {
-        const newUsers = users.map((user) => {
+    const onEditorValueChange = (e: DropdownChangeEvent, rowData: User, field: string): void => {
+        const newUsers: User[] = users.map((user) => {
             if (user.id === rowData.id) {
                 return { ...user, [field]: e.value };
             }
@@ -123,16 +151,18 @@ const AttendancePage = () => {
         setUsers(newUsers);
     };
 
-    const attendanceEditor = (rowData, field) => {
+    const attendanceEditor = (rowData: User, field: string): JSX.Element => {
         return (
             <Dropdown
                 value={rowData[field]}
                 options={attendanceStatuses}
-                onChange={(e) => onEditorValueChange(e, rowData, field)}
-                itemTemplate={(option) => <Tag value={option.label} severity={getAttendanceSeverity(option.value)} />}
-                valueTemplate={(option) => {
+                onChange={(e: DropdownChangeEvent) => onEditorValueChange(e, rowData, field)}
+                itemTemplate={(option: AttendanceStatusOption) => (
+                    <Tag value={option.label} severity={getAttendanceSeverity(option.value) as any} />
+                )}
+                valueTemplate={(option: AttendanceStatusOption) => {
                     if (option) {
-                        return <Tag value={option.label} severity={getAttendanceSeverity(option.value)} />;
+                        return <Tag value={option.label} severity={getAttendanceSeverity(option.value) as any} />;
                     }
                     return <span>선택</span>;
                 }}
@@ -142,21 +172,21 @@ const AttendancePage = () => {
         );
     };
 
-    const homeworkEditor = (rowData, field) => {
+    const homeworkEditor = (rowData: User, field: string): JSX.Element => {
         return (
             <Dropdown
                 value={rowData[field]}
                 options={homeworkProgressOptions}
-                onChange={(e) => onEditorValueChange(e, rowData, field)}
+                onChange={(e: DropdownChangeEvent) => onEditorValueChange(e, rowData, field)}
                 style={{ width: '100%' }}
                 appendTo="self"
             />
         );
     };
 
-    const addStudent = () => {
+    const addStudent = (): void => {
         const newId = users.length > 0 ? Math.max(...users.map((u) => u.id)) + 1 : 1;
-        const newStudent = { id: newId, name: `학생 ${newId}` };
+        const newStudent: User = { id: newId, name: `학생 ${newId}` };
         const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
         for (let i = 1; i <= daysInMonth; i++) {
             newStudent[`day_${i}_attendance`] = 'none';
@@ -165,7 +195,7 @@ const AttendancePage = () => {
         setUsers([...users, newStudent]);
     };
 
-    const removeStudent = () => {
+    const removeStudent = (): void => {
         if (users.length > 0) {
             setUsers(users.slice(0, -1));
         }
@@ -179,35 +209,35 @@ const AttendancePage = () => {
     );
 
     const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-    const dayHeaders = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const monthStr = String(month + 1).padStart(2, '0');
+    const dayHeaders: number[] = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+    const year: number = date.getFullYear();
+    const month: number = date.getMonth();
+    const monthStr: string = String(month + 1).padStart(2, '0');
 
     const headerGroup = (
         <ColumnGroup>
             <Row>
                 <Column header="학생" rowSpan={2} frozen />
-                {dayHeaders.map((day) => {
-                    const dayStr = String(day).padStart(2, '0');
-                    const currentDate = new Date(year, month, day);
-                    const dayOfWeek = currentDate.getDay();
-                    const dateStr = `${year}-${monthStr}-${dayStr}`;
+                {dayHeaders.map((day: number) => {
+                    const dayStr: string = String(day).padStart(2, '0');
+                    const currentDate: Date = new Date(year, month, day);
+                    const dayOfWeek: number = currentDate.getDay();
+                    const dateStr: string = `${year}-${monthStr}-${dayStr}`;
 
-                    const style = { textAlign: 'center' };
+                    const style: React.CSSProperties = { textAlign: 'center' };
                     if (dayOfWeek === 0 || holidays.includes(dateStr)) {
                         style.color = 'red';
                     } else if (dayOfWeek === 6) {
                         style.color = 'blue';
                     }
 
-                    const headerText = `${monthStr}-${dayStr} (${dayNames[dayOfWeek]})`;
+                    const headerText: string = `${monthStr}-${dayStr} (${dayNames[dayOfWeek]})`;
 
                     return <Column key={`day_${day}`} header={headerText} colSpan={2} headerStyle={style} />;
                 })}
             </Row>
             <Row>
-                {dayHeaders.flatMap((day) => [
+                {dayHeaders.flatMap((day: number) => [
                     <Column key={`sub_att_${day}`} header="출석" />,
                     <Column key={`sub_hw_${day}`} header="숙제" />
                 ])}
@@ -215,17 +245,17 @@ const AttendancePage = () => {
         </ColumnGroup>
     );
 
-    const dynamicColumns = dayHeaders.flatMap((day) => [
+    const dynamicColumns: JSX.Element[] = dayHeaders.flatMap((day: number) => [
         <Column
             key={`day_${day}_attendance`}
             field={`day_${day}_attendance`}
-            body={(rowData) => attendanceEditor(rowData, `day_${day}_attendance`)}
+            body={(rowData: User) => attendanceEditor(rowData, `day_${day}_attendance`)}
             style={{ minWidth: '150px' }}
         />,
         <Column
             key={`day_${day}_homework`}
             field={`day_${day}_homework`}
-            body={(rowData) => homeworkEditor(rowData, `day_${day}_homework`)}
+            body={(rowData: User) => homeworkEditor(rowData, `day_${day}_homework`)}
             style={{ minWidth: '120px' }}
         />
     ]);
@@ -248,7 +278,7 @@ const AttendancePage = () => {
                                     id="class-selector"
                                     value={selectedClass}
                                     options={classes}
-                                    onChange={(e) => setSelectedClass(e.value)}
+                                    onChange={(e: DropdownChangeEvent) => setSelectedClass(e.value as string)}
                                     placeholder="클래스 선택"
                                 />
                             </div>
@@ -257,7 +287,7 @@ const AttendancePage = () => {
                                 <Calendar
                                     id="monthpicker"
                                     value={date}
-                                    onChange={(e) => setDate(e.value)}
+                                    onChange={(e) => setDate(e.value as Date)}
                                     view="month"
                                     dateFormat="yy/mm"
                                 />
@@ -278,7 +308,7 @@ const AttendancePage = () => {
                                 />
                             </div>
                         </div>
-                        <Button onClick={handleMoveToday}>오늘날짜로 이동</Button>
+
                         <DataTable
                             ref={dt}
                             value={users}
