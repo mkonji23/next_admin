@@ -119,6 +119,7 @@ const AttendancePage = () => {
     }, [date, selectedClass]);
 
     useEffect(() => {
+        // 빌드용
         handleMoveToday();
     }, [users, date]);
 
