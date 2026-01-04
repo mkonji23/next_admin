@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import Layout from '../../layout/layout';
+import { Suspense } from 'react';
 
 interface AppLayoutProps {
     children: React.ReactNode;
@@ -24,5 +25,9 @@ export const metadata: Metadata = {
 };
 
 export default function AppLayout({ children }: AppLayoutProps) {
-    return <Layout>{children}</Layout>;
+    return (
+        <Suspense>
+            <Layout>{children}</Layout>
+        </Suspense>
+    );
 }
