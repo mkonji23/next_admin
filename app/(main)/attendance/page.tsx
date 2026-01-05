@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { ColumnGroup } from 'primereact/columngroup';
@@ -31,6 +31,65 @@ interface User {
     name: string;
     [key: string]: string | number; // For dynamic day_X_attendance and day_X_homework properties
 }
+
+const getAttendanceSeverity = (status: string): 'success' | 'danger' | 'info' | 'warning' | 'primary' | 'secondary' => {
+    switch (status) {
+        case 'class_present':
+            return 'success';
+        case 'class_absent':
+            return 'danger';
+        case 'makeup_present':
+            return 'info';
+        case 'makeup_absent':
+            return 'warning';
+        case 'clinic_present':
+            return 'primary';
+        case 'clinic_absent':
+            return 'danger';
+        default:
+            return 'secondary';
+    }
+};
+
+// Optimized and Memoized Cell Components
+interface AttendanceCellProps {
+    value: string;
+    options: AttendanceStatusOption[];
+    onChange: (value: string) => void;
+}
+
+const AttendanceCell: React.FC<AttendanceCellProps> = ({ value, options, onChange }) => {
+    return (
+        <Dropdown
+            value={value}
+            options={options}
+            onChange={(e: DropdownChangeEvent) => onChange(e.value)}
+            itemTemplate={(option: AttendanceStatusOption) => <Tag value={option.label} severity={getAttendanceSeverity(option.value) as any} />}
+            valueTemplate={(option: AttendanceStatusOption) => {
+                if (option) {
+                    return <Tag value={option.label} severity={getAttendanceSeverity(option.value) as any} />;
+                }
+                return <span>선택</span>;
+            }}
+            style={{ width: '100%' }}
+            appendTo="self"
+        />
+    );
+};
+
+const MemoizedAttendanceCell = React.memo(AttendanceCell);
+
+interface HomeworkCellProps {
+    value: number;
+    options: HomeworkProgressOption[];
+    onChange: (value: number) => void;
+}
+
+const HomeworkCell: React.FC<HomeworkCellProps> = ({ value, options, onChange }) => {
+    return <Dropdown value={value} options={options} onChange={(e: DropdownChangeEvent) => onChange(e.value)} style={{ width: '100%' }} appendTo="self" />;
+};
+
+const MemoizedHomeworkCell = React.memo(HomeworkCell);
 
 const AttendancePage = () => {
     // 2. Apply Types to State
@@ -68,27 +127,6 @@ const AttendancePage = () => {
         { label: '100%', value: 100 }
     ];
 
-    const getAttendanceSeverity = (
-        status: string
-    ): 'success' | 'danger' | 'info' | 'warning' | 'primary' | 'secondary' => {
-        switch (status) {
-            case 'class_present':
-                return 'success';
-            case 'class_absent':
-                return 'danger';
-            case 'makeup_present':
-                return 'info';
-            case 'makeup_absent':
-                return 'warning';
-            case 'clinic_present':
-                return 'primary';
-            case 'clinic_absent':
-                return 'danger';
-            default:
-                return 'secondary';
-        }
-    };
-
     useEffect(() => {
         const mockUsers: User[] = [
             { id: 1, name: '김민준' },
@@ -106,8 +144,7 @@ const AttendancePage = () => {
             const userData: User = { id: user.id, name: user.name };
             for (let i = 1; i <= daysInMonth; i++) {
                 const randomStatus = attendanceStatuses[Math.floor(Math.random() * attendanceStatuses.length)].value;
-                const randomProgress =
-                    homeworkProgressOptions[Math.floor(Math.random() * homeworkProgressOptions.length)].value;
+                const randomProgress = homeworkProgressOptions[Math.floor(Math.random() * homeworkProgressOptions.length)].value;
                 userData[`day_${i}_attendance`] = randomStatus;
                 userData[`day_${i}_homework`] = randomProgress;
             }
@@ -145,48 +182,9 @@ const AttendancePage = () => {
         }
     };
 
-    const onEditorValueChange = (e: DropdownChangeEvent, rowData: User, field: string): void => {
-        const newUsers: User[] = users.map((user) => {
-            if (user.id === rowData.id) {
-                return { ...user, [field]: e.value };
-            }
-            return user;
-        });
-        setUsers(newUsers);
-    };
-
-    const attendanceEditor = (rowData: User, field: string): JSX.Element => {
-        return (
-            <Dropdown
-                value={rowData[field]}
-                options={attendanceStatuses}
-                onChange={(e: DropdownChangeEvent) => onEditorValueChange(e, rowData, field)}
-                itemTemplate={(option: AttendanceStatusOption) => (
-                    <Tag value={option.label} severity={getAttendanceSeverity(option.value) as any} />
-                )}
-                valueTemplate={(option: AttendanceStatusOption) => {
-                    if (option) {
-                        return <Tag value={option.label} severity={getAttendanceSeverity(option.value) as any} />;
-                    }
-                    return <span>선택</span>;
-                }}
-                style={{ width: '100%' }}
-                appendTo="self"
-            />
-        );
-    };
-
-    const homeworkEditor = (rowData: User, field: string): JSX.Element => {
-        return (
-            <Dropdown
-                value={rowData[field]}
-                options={homeworkProgressOptions}
-                onChange={(e: DropdownChangeEvent) => onEditorValueChange(e, rowData, field)}
-                style={{ width: '100%' }}
-                appendTo="self"
-            />
-        );
-    };
+    const handleUserUpdate = useCallback((userId: number, field: string, value: any) => {
+        setUsers((currentUsers) => currentUsers.map((user) => (user.id === userId ? { ...user, [field]: value } : user)));
+    }, []);
 
     const addStudent = (): void => {
         const newId = users.length > 0 ? Math.max(...users.map((u) => u.id)) + 1 : 1;
@@ -241,28 +239,29 @@ const AttendancePage = () => {
                 })}
             </Row>
             <Row>
-                {dayHeaders.flatMap((day: number) => [
-                    <Column key={`sub_att_${day}`} header="출석" />,
-                    <Column key={`sub_hw_${day}`} header="숙제" />
-                ])}
+                {dayHeaders.flatMap((day: number) => [<Column key={`sub_att_${day}`} header="출석" />, <Column key={`sub_hw_${day}`} header="숙제" />])}
             </Row>
         </ColumnGroup>
     );
 
-    const dynamicColumns: JSX.Element[] = dayHeaders.flatMap((day: number) => [
-        <Column
-            key={`day_${day}_attendance`}
-            field={`day_${day}_attendance`}
-            body={(rowData: User) => attendanceEditor(rowData, `day_${day}_attendance`)}
-            style={{ minWidth: '150px' }}
-        />,
-        <Column
-            key={`day_${day}_homework`}
-            field={`day_${day}_homework`}
-            body={(rowData: User) => homeworkEditor(rowData, `day_${day}_homework`)}
-            style={{ minWidth: '120px' }}
-        />
-    ]);
+    const dynamicColumns: JSX.Element[] = dayHeaders.flatMap((day: number) => {
+        const attendanceField = `day_${day}_attendance`;
+        const homeworkField = `day_${day}_homework`;
+        return [
+            <Column
+                key={attendanceField}
+                field={attendanceField}
+                body={(rowData: User) => <MemoizedAttendanceCell value={rowData[attendanceField] as string} options={attendanceStatuses} onChange={(value) => handleUserUpdate(rowData.id, attendanceField, value)} />}
+                style={{ minWidth: '150px' }}
+            />,
+            <Column
+                key={homeworkField}
+                field={homeworkField}
+                body={(rowData: User) => <MemoizedHomeworkCell value={rowData[homeworkField] as number} options={homeworkProgressOptions} onChange={(value) => handleUserUpdate(rowData.id, homeworkField, value)} />}
+                style={{ minWidth: '120px' }}
+            />
+        ];
+    });
 
     return (
         <>
@@ -278,55 +277,20 @@ const AttendancePage = () => {
                         <div className="grid formgrid p-fluid mb-3">
                             <div className="field col-12 md:col-3">
                                 <label htmlFor="class-selector">수업클래스 선택</label>
-                                <Dropdown
-                                    id="class-selector"
-                                    value={selectedClass}
-                                    options={classes}
-                                    onChange={(e: DropdownChangeEvent) => setSelectedClass(e.value as string)}
-                                    placeholder="클래스 선택"
-                                />
+                                <Dropdown id="class-selector" value={selectedClass} options={classes} onChange={(e: DropdownChangeEvent) => setSelectedClass(e.value as string)} placeholder="클래스 선택" />
                             </div>
                             <div className="field col-12 md:col-3">
                                 <label htmlFor="monthpicker">월 선택</label>
-                                <Calendar
-                                    id="monthpicker"
-                                    value={date}
-                                    onChange={(e) => setDate(e.value as Date)}
-                                    view="month"
-                                    dateFormat="yy/mm"
-                                />
+                                <Calendar id="monthpicker" value={date} onChange={(e) => setDate(e.value as Date)} view="month" dateFormat="yy/mm" />
                             </div>
                             <div className="field col-12 md:col-6 flex align-items-end">
-                                <Button
-                                    icon="pi pi-plus"
-                                    className="p-button-success mr-2"
-                                    onClick={addStudent}
-                                    tooltip="학생 추가"
-                                />
-                                <Button
-                                    icon="pi pi-minus"
-                                    className="p-button-danger"
-                                    onClick={removeStudent}
-                                    tooltip="마지막 학생 삭제"
-                                    disabled={users.length === 0}
-                                />
+                                <Button icon="pi pi-plus" className="p-button-success mr-2" onClick={addStudent} tooltip="학생 추가" />
+                                <Button icon="pi pi-minus" className="p-button-danger" onClick={removeStudent} tooltip="마지막 학생 삭제" disabled={users.length === 0} />
                             </div>
                         </div>
 
-                        <DataTable
-                            ref={dt}
-                            value={users}
-                            headerColumnGroup={headerGroup}
-                            scrollable
-                            style={{ marginTop: '20px' }}
-                        >
-                            <Column
-                                key="name"
-                                field="name"
-                                header={nameColumnHeader}
-                                frozen
-                                style={{ minWidth: '150px', zIndex: 1 }}
-                            />
+                        <DataTable ref={dt} value={users} headerColumnGroup={headerGroup} scrollable style={{ marginTop: '20px' }}>
+                            <Column key="name" field="name" header={nameColumnHeader} frozen style={{ minWidth: '150px', zIndex: 1 }} />
                             {dynamicColumns}
                         </DataTable>
                     </div>
