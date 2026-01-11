@@ -2,6 +2,7 @@ import { useLoading } from '@/layout/context/loadingcontext';
 import Cookies from 'js-cookie';
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { useToast } from '@/hooks/useToast';
+import { useRouter } from 'next/navigation';
 
 export const useHttp = (): AxiosInstance => {
     const { showToast } = useToast();
@@ -48,9 +49,20 @@ export const useHttp = (): AxiosInstance => {
                 const { status } = error.response;
                 if (status === 401) {
                     console.error('인증 실패: 다시 로그인하세요.');
-                    window.location.href = '/login'; // 로그인 페이지로 이동
+                    window.location.href = '/auth/login'; // 로그인 페이지로 이동
                 } else if (status === 403) {
-                    console.error('권한 없음: 접근할 수 없습니다.');
+                    showToast({
+                        severity: 'error',
+                        summary: 'Error',
+                        detail: '권한 없음: 접근할 수 없습니다.'
+                    });
+                } else if (status === 404) {
+                    showToast({
+                        severity: 'error',
+                        summary: 'Error',
+                        detail: '페이지를 찾을수 없습니다.'
+                    });
+                    window.history.back();
                 } else {
                     showToast({
                         severity: 'error',

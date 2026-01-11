@@ -22,7 +22,8 @@ const AppMenu = () => {
                     label: '사용자 등록',
                     icon: 'pi pi-fw pi-user-plus',
                     to: '/signup'
-                }
+                },
+                { label: '사용자 목록', icon: 'pi pi-fw pi-users', to: '/userList' }
             ]
         },
         {

@@ -2,7 +2,7 @@ import useAuthStore from '@/store/useAuthStore';
 import { useHttp } from '@/util/axiosInstance';
 
 interface UserInput {
-    email: string;
+    userId: string;
     password: string;
 }
 
@@ -16,7 +16,7 @@ const useAuth = () => {
     const { setInfo, clearInfo } = useAuthStore();
     const login = async (param: UserInput) => {
         try {
-            const res = await post<UserResponse>('/db/sign-in', param);
+            const res = await post<UserResponse>('/choiMath/user/signin', param);
             setInfo(res.data);
             return true;
         } catch (error) {
