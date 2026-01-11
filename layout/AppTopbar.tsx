@@ -29,7 +29,7 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
                     height={'35px'}
                     alt="logo"
                 />
-                <span>HaJung_MATH</span>
+                <span>SUMulSUMul++</span>
             </Link>
 
             <button

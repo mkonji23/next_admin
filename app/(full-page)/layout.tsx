@@ -7,8 +7,8 @@ interface SimpleLayoutProps {
 }
 
 export const metadata: Metadata = {
-    title: 'ChoiChoi Math',
-    description: 'The ultimate collection of design-agnostic, flexible and accessible React UI Components.'
+    title: 'SUMulSUMul++',
+    description: '수학출석부다'
 };
 
 export default function SimpleLayout({ children }: SimpleLayoutProps) {
