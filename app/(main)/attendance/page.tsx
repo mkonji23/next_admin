@@ -225,6 +225,52 @@ const AttendancePage = () => {
         }
     };
 
+    // Helper function to format attendance data for saving
+    const formatAttendanceData = () => {
+        if (!selectedClass || !date) {
+            console.warn('Cannot format data: class or date not selected.');
+            return null;
+        }
+
+        const yearMonth = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}`;
+        const className = classes.find(cls => cls.value === selectedClass)?.label || 'Unknown Class';
+
+        const formattedStudents = users.map(user => {
+            const attendance: { [key: string]: { status: string; homework: number } } = {};
+            for (const key in user) {
+                if (key.startsWith('day_') && key.endsWith('_attendance')) {
+                    const day = key.split('_')[1];
+                    const homeworkKey = `day_${day}_homework`;
+                    attendance[day] = {
+                        status: user[key] as string,
+                        homework: user[homeworkKey] as number
+                    };
+                }
+            }
+            return {
+                userId: user.id,
+                name: user.name,
+                attendance: attendance
+            };
+        });
+
+        return {
+            classId: selectedClass,
+            className: className,
+            yearMonth: yearMonth,
+            students: formattedStudents
+        };
+    };
+
+    // 출석부 저장
+    const handleSave = () => {
+        const dataToSave = formatAttendanceData();
+        if (dataToSave) {
+            console.log('저장될 출석부 데이터:', dataToSave);
+            // 여기에 실제 저장 로직 (API 호출 등)을 추가할 수 있습니다.
+        }
+    };
+
     if (!date) {
         return <div>Loading...</div>;
     }
@@ -276,7 +322,10 @@ const AttendancePage = () => {
     const header = (
         <div className="flex flex-wrap align-items-center justify-content-between gap-2">
             <span className="text-xl text-900 font-bold">출석부</span>
-            <Button icon="pi pi-refresh" rounded raised label="오늘날짜로" onClick={handleMoveToday} />
+            <div className="flex gap-2">
+                <Button icon="pi pi-save" rounded raised label="출석부 저장" onClick={handleSave} className="p-button-success" />
+                <Button icon="pi pi-refresh" rounded raised label="오늘날짜로" onClick={handleMoveToday} />
+            </div>
         </div>
     );
 
