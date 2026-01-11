@@ -64,7 +64,9 @@ const AttendanceCell: React.FC<AttendanceCellProps> = ({ value, options, onChang
             value={value}
             options={options}
             onChange={(e: DropdownChangeEvent) => onChange(e.value)}
-            itemTemplate={(option: AttendanceStatusOption) => <Tag value={option.label} severity={getAttendanceSeverity(option.value) as any} />}
+            itemTemplate={(option: AttendanceStatusOption) => (
+                <Tag value={option.label} severity={getAttendanceSeverity(option.value) as any} />
+            )}
             valueTemplate={(option: AttendanceStatusOption) => {
                 if (option) {
                     return <Tag value={option.label} severity={getAttendanceSeverity(option.value) as any} />;
@@ -86,19 +88,31 @@ interface HomeworkCellProps {
 }
 
 const HomeworkCell: React.FC<HomeworkCellProps> = ({ value, options, onChange }) => {
-    return <Dropdown value={value} options={options} onChange={(e: DropdownChangeEvent) => onChange(e.value)} style={{ width: '100%' }} appendTo="self" />;
+    return (
+        <Dropdown
+            value={value}
+            options={options}
+            onChange={(e: DropdownChangeEvent) => onChange(e.value)}
+            style={{ width: '100%' }}
+            appendTo="self"
+        />
+    );
 };
 
 const MemoizedHomeworkCell = React.memo(HomeworkCell);
 
 const AttendancePage = () => {
     // 2. Apply Types to State
-    const [date, setDate] = useState<Date>(new Date());
+    const [date, setDate] = useState<Date | null>(null);
     const [users, setUsers] = useState<User[]>([]);
     const [selectedClass, setSelectedClass] = useState<string | null>(null);
     // 3. Apply Types to useRef
     const dt = useRef<DataTable<any>>(null);
     const scrolled = useRef<boolean>(false);
+
+    useEffect(() => {
+        setDate(new Date());
+    }, []);
 
     const holidays: string[] = ['2026-01-01', '2026-02-16', '2026-02-17', '2026-02-18'];
     const dayNames: string[] = ['일', '월', '화', '수', '목', '금', '토'];
@@ -128,6 +142,7 @@ const AttendancePage = () => {
     ];
 
     useEffect(() => {
+        if (!date) return;
         const mockUsers: User[] = [
             { id: 1, name: '김민준' },
             { id: 2, name: '이서연' },
@@ -144,7 +159,8 @@ const AttendancePage = () => {
             const userData: User = { id: user.id, name: user.name };
             for (let i = 1; i <= daysInMonth; i++) {
                 const randomStatus = attendanceStatuses[Math.floor(Math.random() * attendanceStatuses.length)].value;
-                const randomProgress = homeworkProgressOptions[Math.floor(Math.random() * homeworkProgressOptions.length)].value;
+                const randomProgress =
+                    homeworkProgressOptions[Math.floor(Math.random() * homeworkProgressOptions.length)].value;
                 userData[`day_${i}_attendance`] = randomStatus;
                 userData[`day_${i}_homework`] = randomProgress;
             }
@@ -156,12 +172,15 @@ const AttendancePage = () => {
     }, [date, selectedClass]);
 
     useEffect(() => {
+        if (!date) return;
         // 빌드용
-        handleMoveToday();
-    }, [users, date]);
+        setTimeout(() => {
+            handleMoveToday();
+        }, 500);
+    }, [date]);
 
     const handleMoveToday = (): void => {
-        if (typeof window === 'undefined') {
+        if (typeof window === 'undefined' || !date) {
             return; // Do not run on server
         }
         const now = new Date();
@@ -170,11 +189,11 @@ const AttendancePage = () => {
             const wrapper = dt.current?.getElement().querySelector('.p-datatable-wrapper');
             if (wrapper) {
                 const today = now.getDate();
-                const attendanceColWidth = 150;
-                const homeworkColWidth = 120;
+                const attendanceColWidth = 152.26;
+                const homeworkColWidth = 128;
                 const dayWidth = attendanceColWidth + homeworkColWidth;
                 // Scroll to the column before today, so today is visible
-                const scrollPos = (today - 2) * dayWidth;
+                const scrollPos = (today - 1) * dayWidth - 10;
 
                 wrapper.scrollLeft = scrollPos > 0 ? scrollPos : 0;
                 scrolled.current = true;
@@ -183,10 +202,13 @@ const AttendancePage = () => {
     };
 
     const handleUserUpdate = useCallback((userId: number, field: string, value: any) => {
-        setUsers((currentUsers) => currentUsers.map((user) => (user.id === userId ? { ...user, [field]: value } : user)));
+        setUsers((currentUsers) =>
+            currentUsers.map((user) => (user.id === userId ? { ...user, [field]: value } : user))
+        );
     }, []);
 
     const addStudent = (): void => {
+        if (!date) return;
         const newId = users.length > 0 ? Math.max(...users.map((u) => u.id)) + 1 : 1;
         const newStudent: User = { id: newId, name: `학생 ${newId}` };
         const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
@@ -202,6 +224,10 @@ const AttendancePage = () => {
             setUsers(users.slice(0, -1));
         }
     };
+
+    if (!date) {
+        return <div>Loading...</div>;
+    }
 
     const nameColumnHeader = (
         <div className="flex justify-content-between align-items-center">
@@ -239,9 +265,19 @@ const AttendancePage = () => {
                 })}
             </Row>
             <Row>
-                {dayHeaders.flatMap((day: number) => [<Column key={`sub_att_${day}`} header="출석" />, <Column key={`sub_hw_${day}`} header="숙제" />])}
+                {dayHeaders.flatMap((day: number) => [
+                    <Column key={`sub_att_${day}`} header="출석" />,
+                    <Column key={`sub_hw_${day}`} header="숙제" />
+                ])}
             </Row>
         </ColumnGroup>
+    );
+
+    const header = (
+        <div className="flex flex-wrap align-items-center justify-content-between gap-2">
+            <span className="text-xl text-900 font-bold">출석부</span>
+            <Button icon="pi pi-refresh" rounded raised label="오늘날짜로" onClick={handleMoveToday} />
+        </div>
     );
 
     const dynamicColumns: JSX.Element[] = dayHeaders.flatMap((day: number) => {
@@ -251,13 +287,25 @@ const AttendancePage = () => {
             <Column
                 key={attendanceField}
                 field={attendanceField}
-                body={(rowData: User) => <MemoizedAttendanceCell value={rowData[attendanceField] as string} options={attendanceStatuses} onChange={(value) => handleUserUpdate(rowData.id, attendanceField, value)} />}
+                body={(rowData: User) => (
+                    <MemoizedAttendanceCell
+                        value={rowData[attendanceField] as string}
+                        options={attendanceStatuses}
+                        onChange={(value) => handleUserUpdate(rowData.id, attendanceField, value)}
+                    />
+                )}
                 style={{ minWidth: '150px' }}
             />,
             <Column
                 key={homeworkField}
                 field={homeworkField}
-                body={(rowData: User) => <MemoizedHomeworkCell value={rowData[homeworkField] as number} options={homeworkProgressOptions} onChange={(value) => handleUserUpdate(rowData.id, homeworkField, value)} />}
+                body={(rowData: User) => (
+                    <MemoizedHomeworkCell
+                        value={rowData[homeworkField] as number}
+                        options={homeworkProgressOptions}
+                        onChange={(value) => handleUserUpdate(rowData.id, homeworkField, value)}
+                    />
+                )}
                 style={{ minWidth: '120px' }}
             />
         ];
@@ -277,20 +325,56 @@ const AttendancePage = () => {
                         <div className="grid formgrid p-fluid mb-3">
                             <div className="field col-12 md:col-3">
                                 <label htmlFor="class-selector">수업클래스 선택</label>
-                                <Dropdown id="class-selector" value={selectedClass} options={classes} onChange={(e: DropdownChangeEvent) => setSelectedClass(e.value as string)} placeholder="클래스 선택" />
+                                <Dropdown
+                                    id="class-selector"
+                                    value={selectedClass}
+                                    options={classes}
+                                    onChange={(e: DropdownChangeEvent) => setSelectedClass(e.value as string)}
+                                    placeholder="클래스 선택"
+                                />
                             </div>
                             <div className="field col-12 md:col-3">
                                 <label htmlFor="monthpicker">월 선택</label>
-                                <Calendar id="monthpicker" value={date} onChange={(e) => setDate(e.value as Date)} view="month" dateFormat="yy/mm" />
+                                <Calendar
+                                    id="monthpicker"
+                                    value={date}
+                                    onChange={(e) => setDate(e.value as Date)}
+                                    view="month"
+                                    dateFormat="yy/mm"
+                                />
                             </div>
                             <div className="field col-12 md:col-6 flex align-items-end">
-                                <Button icon="pi pi-plus" className="p-button-success mr-2" onClick={addStudent} tooltip="학생 추가" />
-                                <Button icon="pi pi-minus" className="p-button-danger" onClick={removeStudent} tooltip="마지막 학생 삭제" disabled={users.length === 0} />
+                                <Button
+                                    icon="pi pi-plus"
+                                    className="p-button-success mr-2"
+                                    onClick={addStudent}
+                                    tooltip="학생 추가"
+                                />
+                                <Button
+                                    icon="pi pi-minus"
+                                    className="p-button-danger"
+                                    onClick={removeStudent}
+                                    tooltip="마지막 학생 삭제"
+                                    disabled={users.length === 0}
+                                />
                             </div>
                         </div>
 
-                        <DataTable ref={dt} value={users} headerColumnGroup={headerGroup} scrollable style={{ marginTop: '20px' }}>
-                            <Column key="name" field="name" header={nameColumnHeader} frozen style={{ minWidth: '150px', zIndex: 1 }} />
+                        <DataTable
+                            ref={dt}
+                            value={users}
+                            headerColumnGroup={headerGroup}
+                            header={header}
+                            scrollable
+                            style={{ marginTop: '20px' }}
+                        >
+                            <Column
+                                key="name"
+                                field="name"
+                                header={nameColumnHeader}
+                                frozen
+                                style={{ minWidth: '150px', zIndex: 1 }}
+                            />
                             {dynamicColumns}
                         </DataTable>
                     </div>

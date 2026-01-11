@@ -31,6 +31,10 @@ const TableDemo = () => {
     const [globalFilterValue1, setGlobalFilterValue1] = useState('');
     const [expandedRows, setExpandedRows] = useState<any[] | DataTableExpandedRows>([]);
     const [allExpanded, setAllExpanded] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     const representatives = [
         { name: 'Amy Elsner', image: 'amyelsner.png' },
@@ -201,6 +205,9 @@ const TableDemo = () => {
     };
 
     const dateBodyTemplate = (rowData: Demo.Customer) => {
+        if (!isMounted) {
+            return null;
+        }
         return formatDate(rowData.date);
     };
 

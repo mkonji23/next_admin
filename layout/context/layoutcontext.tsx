@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, createContext } from 'react';
+import React, { useState, createContext, useEffect } from 'react';
 import { LayoutState, ChildContainerProps, LayoutConfig, LayoutContextProps } from '@/types';
 export const LayoutContext = createContext({} as LayoutContextProps);
 
@@ -22,12 +22,23 @@ export const LayoutProvider = ({ children }: ChildContainerProps) => {
         menuHoverActive: false
     });
 
+    const [isDesktop, setIsDesktop] = useState(true);
+
+    useEffect(() => {
+        const checkDesktop = () => {
+            setIsDesktop(window.innerWidth > 991);
+        };
+        checkDesktop();
+        window.addEventListener('resize', checkDesktop);
+        return () => window.removeEventListener('resize', checkDesktop);
+    }, []);
+
     const onMenuToggle = () => {
         if (isOverlay()) {
             setLayoutState((prevLayoutState) => ({ ...prevLayoutState, overlayMenuActive: !prevLayoutState.overlayMenuActive }));
         }
 
-        if (isDesktop()) {
+        if (isDesktop) {
             setLayoutState((prevLayoutState) => ({ ...prevLayoutState, staticMenuDesktopInactive: !prevLayoutState.staticMenuDesktopInactive }));
         } else {
             setLayoutState((prevLayoutState) => ({ ...prevLayoutState, staticMenuMobileActive: !prevLayoutState.staticMenuMobileActive }));
@@ -40,10 +51,6 @@ export const LayoutProvider = ({ children }: ChildContainerProps) => {
 
     const isOverlay = () => {
         return layoutConfig.menuMode === 'overlay';
-    };
-
-    const isDesktop = () => {
-        return window.innerWidth > 991;
     };
 
     const value: LayoutContextProps = {
