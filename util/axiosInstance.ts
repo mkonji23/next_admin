@@ -62,7 +62,6 @@ export const useHttp = (): AxiosInstance => {
                         summary: 'Error',
                         detail: '페이지를 찾을수 없습니다.'
                     });
-                    window.history.back();
                 } else {
                     showToast({
                         severity: 'error',
