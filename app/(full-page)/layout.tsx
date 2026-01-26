@@ -7,7 +7,7 @@ interface SimpleLayoutProps {
 }
 
 export const metadata: Metadata = {
-    title: 'SUMulSUMul++',
+    title: '출석부',
     description: '수학출석부다'
 };
 

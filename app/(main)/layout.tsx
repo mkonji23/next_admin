@@ -7,7 +7,7 @@ interface AppLayoutProps {
 }
 
 export const metadata: Metadata = {
-    title: 'SUMulSUMul++',
+    title: '출석부',
     description: 'The ultimate collection of design-agnostic, flexible and accessible React UI Components.',
     robots: { index: false, follow: false },
     viewport: { initialScale: 1, width: 'device-width' },

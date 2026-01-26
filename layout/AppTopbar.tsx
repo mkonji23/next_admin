@@ -29,7 +29,7 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
                     height={'35px'}
                     alt="logo"
                 />
-                <span>SUMulSUMul++</span>
+                <span>출석부</span>
             </Link>
 
             <button
