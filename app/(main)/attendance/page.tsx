@@ -9,6 +9,7 @@ import { Calendar } from 'primereact/calendar';
 import { Dropdown, DropdownChangeEvent } from 'primereact/dropdown';
 import { Tag } from 'primereact/tag';
 import { Button } from 'primereact/button';
+import { InputText } from 'primereact/inputtext';
 
 // 1. Define Interfaces/Types
 interface ClassOption {
@@ -106,6 +107,7 @@ const AttendancePage = () => {
     const [date, setDate] = useState<Date | null>(null);
     const [users, setUsers] = useState<User[]>([]);
     const [selectedClass, setSelectedClass] = useState<string | null>(null);
+    const [globalFilter, setGlobalFilter] = useState<string>('');
     // 3. Apply Types to useRef
     const dt = useRef<DataTable<any>>(null);
     const scrolled = useRef<boolean>(false);
@@ -233,9 +235,9 @@ const AttendancePage = () => {
         }
 
         const yearMonth = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}`;
-        const className = classes.find(cls => cls.value === selectedClass)?.label || 'Unknown Class';
+        const className = classes.find((cls) => cls.value === selectedClass)?.label || 'Unknown Class';
 
-        const formattedStudents = users.map(user => {
+        const formattedStudents = users.map((user) => {
             const attendance: { [key: string]: { status: string; homework: number } } = {};
             for (const key in user) {
                 if (key.startsWith('day_') && key.endsWith('_attendance')) {
@@ -322,8 +324,23 @@ const AttendancePage = () => {
     const header = (
         <div className="flex flex-wrap align-items-center justify-content-between gap-2">
             <span className="text-xl text-900 font-bold">출석부</span>
-            <div className="flex gap-2">
-                <Button icon="pi pi-save" rounded raised label="출석부 저장" onClick={handleSave} className="p-button-success" />
+            <div className="flex align-items-center gap-2">
+                <span className="p-input-icon-left">
+                    <i className="pi pi-search" />
+                    <InputText
+                        value={globalFilter}
+                        onChange={(e) => setGlobalFilter(e.target.value)}
+                        placeholder="학생 검색"
+                    />
+                </span>
+                <Button
+                    icon="pi pi-save"
+                    rounded
+                    raised
+                    label="출석부 저장"
+                    onClick={handleSave}
+                    className="p-button-success"
+                />
                 <Button icon="pi pi-refresh" rounded raised label="오늘날짜로" onClick={handleMoveToday} />
             </div>
         </div>
@@ -416,6 +433,7 @@ const AttendancePage = () => {
                             header={header}
                             scrollable
                             style={{ marginTop: '20px' }}
+                            globalFilter={globalFilter}
                         >
                             <Column
                                 key="name"
@@ -423,6 +441,7 @@ const AttendancePage = () => {
                                 header={nameColumnHeader}
                                 frozen
                                 style={{ minWidth: '150px', zIndex: 1 }}
+                                sortable
                             />
                             {dynamicColumns}
                         </DataTable>

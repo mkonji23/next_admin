@@ -7,9 +7,11 @@ import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
 import { User } from '@/components/modals/UserModal';
 import { useCustomModal } from '@/hooks/useCustomModal';
+import { useConfirm } from '@/hooks/useConfirm';
 
 const UserListPage = () => {
     const { openModal } = useCustomModal();
+    const { showConfirm } = useConfirm();
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(false);
     const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
@@ -53,7 +55,29 @@ const UserListPage = () => {
                 mode: 'new'
             }
         });
+    };
 
+    const handleResetPassword = async (userId: string, userName: string) => {
+        const isConfirmed = await showConfirm({
+            header: '비밀번호 초기화',
+            message: `'${userName}' 사용자의 비밀번호를 초기화하시겠습니까?`
+        });
+
+        if (isConfirmed) {
+            try {
+                await http.post('/choiMath/user/initPassword', { userId });
+                showToast({
+                    severity: 'success',
+                    summary: '성공',
+                    detail: '비밀번호가 성공적으로 초기화되었습니다.\r\n 초기 비밀번호는 "chocho1234"입니다.'
+                });
+            } catch (error: any) {
+                console.error('Error resetting password:', error);
+                const errorMessage =
+                    error.response?.data?.message || error.message || '비밀번호 초기화에 실패했습니다.';
+                showToast({ severity: 'error', summary: '실패', detail: errorMessage });
+            }
+        }
     };
 
     const handleDeleteUsers = async () => {
@@ -63,9 +87,18 @@ const UserListPage = () => {
         }
 
         try {
-            const userIds = selectedUsers.map(user => user.userId);
+            const res = await showConfirm({
+                header: '사용자 삭제',
+                message: `${selectedUsers.length}명의 사용자를 삭제하시겠습니까?`
+            });
+            if (!res) return;
+            const userIds = selectedUsers.map((user) => user.userId);
             await http.post('/choiMath/user/deleteUsers', { data: { userIds } });
-            showToast({ severity: 'success', summary: '삭제 성공', detail: `${selectedUsers.length}명의 사용자가 삭제되었습니다.` });
+            showToast({
+                severity: 'success',
+                summary: '삭제 성공',
+                detail: `${selectedUsers.length}명의 사용자가 삭제되었습니다.`
+            });
             setSelectedUsers([]);
             fetchUsers();
         } catch (error: any) {
@@ -77,18 +110,28 @@ const UserListPage = () => {
 
     const actionBodyTemplate = (rowData: User) => {
         return (
-            <Button
-                icon="pi pi-pencil"
-                rounded
-                outlined
-                severity="warning"
-                onClick={() => openEditDialog(rowData)}
-                tooltip="수정"
-                tooltipOptions={{ position: 'top' }}
-            />
+            <div className="flex gap-2">
+                <Button
+                    icon="pi pi-pencil"
+                    rounded
+                    outlined
+                    severity="warning"
+                    onClick={() => openEditDialog(rowData)}
+                    tooltip="수정"
+                    tooltipOptions={{ position: 'top' }}
+                />
+                <Button
+                    icon="pi pi-key"
+                    rounded
+                    outlined
+                    severity="secondary"
+                    onClick={() => handleResetPassword(rowData.userId, rowData.userName)}
+                    tooltip="비밀번호 초기화"
+                    tooltipOptions={{ position: 'top' }}
+                />
+            </div>
         );
     };
-
 
     const header = (
         <div className="flex flex-wrap align-items-center justify-content-between gap-2">
@@ -139,11 +182,11 @@ const UserListPage = () => {
                 selectionMode="checkbox"
             >
                 <Column selectionMode="multiple" headerStyle={{ width: '3rem' }}></Column>
-                <Column field="userId" header="ID"></Column>
-                <Column field="userName" header="이름"></Column>
-                <Column field="email" header="이메일"></Column>
-                <Column field="auth" header="권한"></Column>
-                <Column body={actionBodyTemplate} header="작업" headerStyle={{ minWidth: '4rem' }}></Column>
+                <Column field="userId" header="ID" sortable></Column>
+                <Column field="userName" header="이름" sortable></Column>
+                <Column field="email" header="이메일" sortable></Column>
+                <Column field="auth" header="권한" sortable></Column>
+                <Column body={actionBodyTemplate} header="작업" headerStyle={{ minWidth: '4rem' }} sortable></Column>
             </DataTable>
         </div>
     );
