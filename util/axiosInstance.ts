@@ -9,7 +9,7 @@ export const useHttp = (): AxiosInstance => {
     const axiosInstance = axios.create({
         baseURL: process.env.NEXT_PUBLIC_TYPE === 'dev' ? '/v1/api' : process.env.NEXT_PUBLIC_BACKEND_URL,
         withCredentials: true, // 도메인 다른경우 필요한 옵션
-        timeout: 5000,
+        timeout: 10000,
         headers: {
             'Content-Type': 'application/json'
         }
@@ -66,7 +66,7 @@ export const useHttp = (): AxiosInstance => {
                     showToast({
                         severity: 'error',
                         summary: 'Error',
-                        detail:  error.response.data?.error || error.response?.statusText || error.response.data?.message
+                        detail: error.response.data?.error || error.response?.statusText || error.response.data?.message
                     });
                 }
             }
