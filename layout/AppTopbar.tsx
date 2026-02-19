@@ -93,7 +93,7 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
                 )}
             </div>
 
-            <button
+            {/* <button
                 ref={chatButtonRef}
                 type="button"
                 className="p-link layout-topbar-button layout-topbar-chat-button"
@@ -104,7 +104,8 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
                         <Badge value={unreadCount > 99 ? '99+' : unreadCount.toString()} severity="danger" />
                     )}
                 </i>
-            </button>
+            </button> */}
+
 
             <ChatPanel
                 visible={chatVisible}
