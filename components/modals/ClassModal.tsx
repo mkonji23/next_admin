@@ -2,13 +2,15 @@
 import { Dialog } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
-import { MultiSelect } from 'primereact/multiselect';
+import { Calendar } from 'primereact/calendar';
+import { Checkbox } from 'primereact/checkbox';
 import { Button } from 'primereact/button';
+import { Chip } from 'primereact/chip';
 import { useState, useEffect } from 'react';
 import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
 import { Class, Student } from '@/types/class';
-import { User } from './UserModal';
+import { useCustomModal } from '@/hooks/useCustomModal';
 
 interface ClassModalProps {
     visible: boolean;
@@ -25,48 +27,85 @@ const ClassModal = ({ visible, pData, onClose }: ClassModalProps) => {
 
     const http = useHttp();
     const { showToast } = useToast();
+    const { openModal } = useCustomModal();
 
     const [classData, setClassData] = useState<Class>({
         classId: '',
         className: '',
         teacher: '',
         students: [],
-        description: ''
+        description: '',
+        startDate: '',
+        endDate: '',
+        isClosed: false
     });
+    const [startDateValue, setStartDateValue] = useState<Date | null>(null);
+    const [endDateValue, setEndDateValue] = useState<Date | null>(null);
     const [submitted, setSubmitted] = useState(false);
-    const [availableStudents, setAvailableStudents] = useState<Student[]>([]);
+
+    // YYYYMMDD 형식을 Date 객체로 변환
+    const parseDate = (dateString?: string): Date | null => {
+        if (!dateString || dateString.length !== 8) return null;
+        const year = parseInt(dateString.substring(0, 4));
+        const month = parseInt(dateString.substring(4, 6)) - 1;
+        const day = parseInt(dateString.substring(6, 8));
+        return new Date(year, month, day);
+    };
+
+    // Date 객체를 YYYYMMDD 형식으로 변환
+    const formatDate = (date: Date | null): string => {
+        if (!date) return '';
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}${month}${day}`;
+    };
 
     useEffect(() => {
         if (visible) {
             if (mode === 'edit' && initialClass) {
                 setClassData({ ...initialClass });
-                console.log('initialClass', initialClass);
+                setStartDateValue(parseDate(initialClass.startDate));
+                setEndDateValue(parseDate(initialClass.endDate));
             } else {
                 setClassData({
                     classId: '',
                     className: '',
                     teacher: '',
                     students: [],
-                    description: ''
+                    description: '',
+                    startDate: '',
+                    endDate: '',
+                    isClosed: false
                 });
+                setStartDateValue(null);
+                setEndDateValue(null);
             }
             setSubmitted(false);
-            fetchAvailableStudents();
         }
-    }, []);
+    }, [visible, mode, initialClass]);
 
-    const fetchAvailableStudents = async () => {
+    const handleOpenStudentSelect = async () => {
         try {
-            const response = await http.get('/choiMath/user/getUserList', { params: { auth: 'student' } }); // Assuming all users can be students
-            const students = response.data.map((user: User) => ({
-                userId: user.userId,
-                userName: user.userName
-            }));
-            setAvailableStudents(students);
+            const result = await openModal({
+                id: 'studentSelect',
+                pData: {
+                    selectedStudents: classData.students
+                }
+            });
+            if (result) {
+                setClassData({ ...classData, students: result });
+            }
         } catch (error) {
-            console.error('Error fetching available students:', error);
-            showToast({ severity: 'error', summary: '조회 실패', detail: '학생 목록을 불러오는데 실패했습니다.' });
+            console.error('Error opening student select modal:', error);
         }
+    };
+
+    const handleRemoveStudent = (userId: string) => {
+        setClassData({
+            ...classData,
+            students: classData.students.filter((s) => (s.userId || s.studentId) !== userId)
+        });
     };
 
     const isEditMode = mode === 'edit';
@@ -83,24 +122,33 @@ const ClassModal = ({ visible, pData, onClose }: ClassModalProps) => {
         }
 
         try {
+            const formattedStartDate = formatDate(startDateValue);
+            const formattedEndDate = formatDate(endDateValue);
+            
             if (mode === 'new') {
                 const payload = {
                     className: classData.className,
                     teacher: classData.teacher,
-                    students: classData.students, // Send only userIds
-                    description: classData.description
+                    students: classData.students,
+                    description: classData.description,
+                    startDate: formattedStartDate,
+                    endDate: formattedEndDate,
+                    isClosed: classData.isClosed || false
                 };
-                await http.post('/choiMath/class', payload); // Assuming POST for new class
+                await http.post('/choiMath/class', payload);
                 showToast({ severity: 'success', summary: '등록 성공', detail: '클래스 등록에 성공했습니다.' });
             } else {
                 const payload = {
                     classId: classData.classId,
                     className: classData.className,
                     teacher: classData.teacher,
-                    students: classData.students, // Send only userIds
-                    description: classData.description
+                    students: classData.students,
+                    description: classData.description,
+                    startDate: formattedStartDate,
+                    endDate: formattedEndDate,
+                    isClosed: classData.isClosed || false
                 };
-                await http.post('/choiMath/class/update', payload); // Changed to POST for update
+                await http.post('/choiMath/class/update', payload);
                 showToast({ severity: 'success', summary: '수정 성공', detail: '클래스 정보가 수정되었습니다.' });
             }
             onClose(classData);
@@ -122,10 +170,6 @@ const ClassModal = ({ visible, pData, onClose }: ClassModalProps) => {
         </div>
     );
 
-    const handleClassData = (e: any) => {
-        const { value } = e.target;
-        setClassData({ ...classData, students: value });
-    };
 
     return (
         <Dialog
@@ -165,16 +209,29 @@ const ClassModal = ({ visible, pData, onClose }: ClassModalProps) => {
             </div>
             <div className="field">
                 <label htmlFor="students">학생</label>
-                <MultiSelect
-                    id="students"
-                    value={classData.students}
-                    options={availableStudents}
-                    optionLabel="userName"
-                    placeholder="학생을 선택하세요"
-                    onChange={(e) => handleClassData(e)}
-                    filter
-                    display="chip"
-                />
+                <div className="flex flex-column gap-2">
+                    <Button
+                        label="학생 선택"
+                        icon="pi pi-users"
+                        onClick={handleOpenStudentSelect}
+                        className="p-button-outlined"
+                    />
+                    {classData.students.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                            {classData.students.map((student) => (
+                                <Chip
+                                    key={student.userId || student.studentId}
+                                    label={student.userName || student.name || '이름 없음'}
+                                    removable
+                                    onRemove={() => handleRemoveStudent(student.userId || student.studentId || '')}
+                                />
+                            ))}
+                        </div>
+                    )}
+                    {classData.students.length === 0 && (
+                        <small className="text-500">선택된 학생이 없습니다.</small>
+                    )}
+                </div>
             </div>
             <div className="field">
                 <label htmlFor="description">
@@ -190,6 +247,46 @@ const ClassModal = ({ visible, pData, onClose }: ClassModalProps) => {
                     className={submitted && !classData.description ? 'p-invalid' : ''}
                 />
                 {submitted && !classData.description && <small className="p-invalid">설명을 입력해주세요.</small>}
+            </div>
+            <div className="field">
+                <label htmlFor="startDate">개강일시</label>
+                <Calendar
+                    id="startDate"
+                    value={startDateValue}
+                    onChange={(e) => {
+                        setStartDateValue(e.value as Date);
+                        setClassData({ ...classData, startDate: formatDate(e.value as Date) });
+                    }}
+                    dateFormat="yy-mm-dd"
+                    showIcon
+                    showButtonBar
+                />
+            </div>
+            <div className="field">
+                <label htmlFor="endDate">종강일시</label>
+                <Calendar
+                    id="endDate"
+                    value={endDateValue}
+                    onChange={(e) => {
+                        setEndDateValue(e.value as Date);
+                        setClassData({ ...classData, endDate: formatDate(e.value as Date) });
+                    }}
+                    dateFormat="yy-mm-dd"
+                    showIcon
+                    showButtonBar
+                />
+            </div>
+            <div className="field">
+                <div className="flex align-items-center">
+                    <Checkbox
+                        inputId="isClosed"
+                        checked={classData.isClosed || false}
+                        onChange={(e) => setClassData({ ...classData, isClosed: e.checked ?? false })}
+                    />
+                    <label htmlFor="isClosed" className="ml-2">
+                        종강 여부
+                    </label>
+                </div>
             </div>
         </Dialog>
     );

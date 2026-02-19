@@ -8,27 +8,25 @@ import { useToast } from '@/hooks/useToast';
 import { User } from '@/components/modals/UserModal';
 import { useCustomModal } from '@/hooks/useCustomModal';
 import { useConfirm } from '@/hooks/useConfirm';
+import { getCommonLabel } from '@/util/common';
+import { USER_AUTH_OPTIONS } from '@/constants/user';
 
 const UserListPage = () => {
     const { openModal } = useCustomModal();
     const { showConfirm } = useConfirm();
     const [users, setUsers] = useState<User[]>([]);
-    const [loading, setLoading] = useState(false);
     const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
     const http = useHttp();
     const { showToast } = useToast();
 
     const fetchUsers = async () => {
-        setLoading(true);
         try {
             const response = await http.get('/choiMath/user/getUserList');
             setUsers(response.data);
         } catch (error) {
             console.error('Error fetching users:', error);
             showToast({ severity: 'error', summary: '조회 실패', detail: '사용자 목록을 불러오는데 실패했습니다.' });
-        } finally {
-            setLoading(false);
-        }
+        } 
     };
 
     useEffect(() => {
@@ -108,6 +106,10 @@ const UserListPage = () => {
         }
     };
 
+    const authBodyTemplate = (rowData: User) => {
+        return (getCommonLabel(USER_AUTH_OPTIONS, rowData.auth));
+    };
+
     const actionBodyTemplate = (rowData: User) => {
         return (
             <div className="flex gap-2">
@@ -172,7 +174,6 @@ const UserListPage = () => {
             <DataTable
                 value={users}
                 header={header}
-                loading={loading}
                 paginator
                 rows={10}
                 emptyMessage="사용자를 찾을 수 없습니다."
@@ -182,11 +183,11 @@ const UserListPage = () => {
                 selectionMode="checkbox"
             >
                 <Column selectionMode="multiple" headerStyle={{ width: '3rem' }}></Column>
-                <Column field="userId" header="ID" sortable></Column>
-                <Column field="userName" header="이름" sortable></Column>
-                <Column field="email" header="이메일" sortable></Column>
-                <Column field="auth" header="권한" sortable></Column>
-                <Column body={actionBodyTemplate} header="작업" headerStyle={{ minWidth: '4rem' }} sortable></Column>
+                <Column  field="userId" header="ID" sortable filter></Column>
+                <Column field="userName" header="이름" sortable filter></Column>
+                <Column field="email" header="이메일" sortable filter></Column>
+                <Column field="auth" header="권한" sortable filter body={authBodyTemplate}></Column>
+                <Column body={actionBodyTemplate} header="작업" headerStyle={{ minWidth: '4rem' }} sortable filter></Column>
             </DataTable>
         </div>
     );

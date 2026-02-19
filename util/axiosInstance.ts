@@ -66,9 +66,8 @@ export const useHttp = (): AxiosInstance => {
                     showToast({
                         severity: 'error',
                         summary: 'Error',
-                        detail: error?.response?.data?.message || error.response?.statusText
+                        detail:  error.response.data?.error || error.response?.statusText || error.response.data?.message
                     });
-                    console.error(error.response.data.message);
                 }
             }
             return Promise.reject(error.response ? error.response.data.message : 'no content');

@@ -7,9 +7,12 @@ interface UserInput {
 }
 
 interface UserResponse {
+    userId?: string;
+    userName?: string;
     email: string;
     createdDate: string;
     token: string;
+    auth?: string | null;
 }
 const useAuth = () => {
     const { post } = useHttp();
@@ -18,9 +21,12 @@ const useAuth = () => {
         try {
             const res = await post<UserResponse>('/choiMath/user/signin', param);
             setInfo(res.data);
-            return true;
+            if(res?.data?.token){
+                return true;
+            }else{
+                return false;
+            }
         } catch (error) {
-            console.log('error', error);
             return false;
         }
     };

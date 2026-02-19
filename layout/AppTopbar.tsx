@@ -6,6 +6,10 @@ import React, { forwardRef, useContext, useImperativeHandle, useRef } from 'reac
 import { AppTopbarRef } from '@/types';
 import { LayoutContext } from './context/layoutcontext';
 import useAuth from '@/hooks/useAuth';
+import { useRouter } from 'next/navigation';
+import useAuthStore from '@/store/useAuthStore';
+import { getCommonLabel } from '@/util/common';
+import { USER_AUTH_OPTIONS } from '@/constants/user';
 
 const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
     const { layoutConfig, layoutState, onMenuToggle, showProfileSidebar } = useContext(LayoutContext);
@@ -13,6 +17,8 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
     const topbarmenuRef = useRef(null);
     const topbarmenubuttonRef = useRef(null);
     const { logout } = useAuth();
+    const router = useRouter();
+    const { userInfo } = useAuthStore();
 
     useImperativeHandle(ref, () => ({
         menubutton: menubuttonRef.current,
@@ -20,8 +26,23 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
         topbarmenubutton: topbarmenubuttonRef.current
     }));
 
+    const handleLogout = () => {
+        logout();
+        router.push('/auth/login');
+    };
+
     return (
         <div className="layout-topbar">
+            
+            <button
+                ref={menubuttonRef}
+                type="button"
+                className="p-link layout-menu-button layout-topbar-button"
+                onClick={onMenuToggle}
+            >
+                <i className="pi pi-bars" />
+            </button>
+            
             <Link href="/" className="layout-topbar-logo">
                 <img
                     src={`/layout/images/logo-${layoutConfig.colorScheme !== 'light' ? 'white' : 'dark'}.svg`}
@@ -31,16 +52,7 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
                 />
                 <span>출석부</span>
             </Link>
-
-            <button
-                ref={menubuttonRef}
-                type="button"
-                className="p-link layout-menu-button layout-topbar-button"
-                onClick={onMenuToggle}
-            >
-                <i className="pi pi-bars" />
-            </button>
-
+            
             <button
                 ref={topbarmenubuttonRef}
                 type="button"
@@ -49,6 +61,20 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
             >
                 <i className="pi pi-ellipsis-v" />
             </button>
+
+            <div className="layout-topbar-user-info">
+                {userInfo?.userName && (
+                    <span className="user-name">{userInfo.userName}</span>
+                )}
+                {userInfo?.userId && (
+                    <span className="user-id">({userInfo.userId})</span>
+                )}
+                {userInfo?.auth && (
+                    <span className="user-auth">
+                        {getCommonLabel(USER_AUTH_OPTIONS, userInfo.auth)}
+                    </span>
+                )}
+            </div>
 
             <div
                 ref={topbarmenuRef}
@@ -66,7 +92,7 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
                         <span>Settings</span>
                     </button>
                 </Link>
-                <button type="button" className="p-link layout-topbar-button" onClick={logout}>
+                <button type="button" className="p-link layout-topbar-button" onClick={handleLogout}>
                     <i className="pi pi-sign-out"></i>
                     <span>Quit</span>
                 </button>

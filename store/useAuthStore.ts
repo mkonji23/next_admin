@@ -1,9 +1,12 @@
 import { create } from 'zustand';
 import Cookies from 'js-cookie';
 interface User {
+    userId?: string;
+    userName?: string;
     email: string;
     createdDate: string;
     token: string;
+    auth?: string | null;
 }
 
 interface UserInfo {

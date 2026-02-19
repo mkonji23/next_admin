@@ -74,8 +74,35 @@
         }
     }
 
+    .layout-topbar-user-info {
+        margin-left: auto;
+        margin-right: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        color: var(--text-color-secondary);
+
+        .user-name {
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        .user-id {
+            color: var(--text-color-secondary);
+        }
+
+        .user-auth {
+            padding: 0.25rem 0.5rem;
+            background-color: var(--surface-100);
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            color: var(--text-color);
+        }
+    }
+
     .layout-topbar-menu {
-        margin: 0 0 0 auto;
+        margin: 0;
         padding: 0;
         list-style: none;
         display: flex;
@@ -93,6 +120,10 @@
         .layout-topbar-logo {
             width: auto;
             order: 2;
+        }
+
+        .layout-topbar-user-info {
+            display: none;
         }
 
         .layout-menu-button {

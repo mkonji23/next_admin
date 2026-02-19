@@ -7,6 +7,7 @@ import { Button } from 'primereact/button';
 import { useState, useEffect } from 'react';
 import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
+import { USER_AUTH_OPTIONS } from '@/constants/user';
 
 export interface User {
     userId: string;
@@ -29,12 +30,7 @@ interface UserModalProps {
 const UserModal = ({ visible, pData, onClose }: UserModalProps) => {
     const mode = pData?.mode || 'new';
     const initialUser = pData?.user;
-    const authOptions = pData?.authOptions || [
-        { label: '관리자', value: 'admin' },
-        { label: '학생', value: 'student' },
-        { label: '선생님', value: 'teacher' },
-        { label: '학부모님', value: 'parent' }
-    ];
+    const authOptions = pData?.authOptions || USER_AUTH_OPTIONS;
 
     const http = useHttp();
     const { showToast } = useToast();
@@ -141,7 +137,7 @@ const UserModal = ({ visible, pData, onClose }: UserModalProps) => {
             onHide={handleCancel}
         >
             <div className="field">
-                <label htmlFor="userId">사용자 ID {!isEditMode && '*'}</label>
+                <label htmlFor="userId">사용자 ID <span className="text-red-500">{!isEditMode && '*'}</span></label>
                 <InputText
                     id="userId"
                     value={user.userId}
@@ -155,7 +151,7 @@ const UserModal = ({ visible, pData, onClose }: UserModalProps) => {
                 )}
             </div>
             <div className="field">
-                <label htmlFor="userName">이름 *</label>
+                <label htmlFor="userName">이름 <span className="text-red-500">*</span></label>
                 <InputText
                     id="userName"
                     value={user.userName}
@@ -166,7 +162,7 @@ const UserModal = ({ visible, pData, onClose }: UserModalProps) => {
                 {submitted && !user.userName && <small className="p-invalid">이름을 입력해주세요.</small>}
             </div>
             <div className="field">
-                <label htmlFor="email">이메일 *</label>
+                <label htmlFor="email">이메일 <span className="text-red-500">*</span></label>
                 <InputText
                     id="email"
                     type="email"
@@ -179,7 +175,7 @@ const UserModal = ({ visible, pData, onClose }: UserModalProps) => {
             </div>
             {!isEditMode && (
                 <div className="field">
-                    <label htmlFor="password">비밀번호 *</label>
+                    <label htmlFor="password">비밀번호 <span className="text-red-500">*</span></label>
                     <Password
                         id="password"
                         value={user.password || ''}
@@ -193,7 +189,7 @@ const UserModal = ({ visible, pData, onClose }: UserModalProps) => {
                 </div>
             )}
             <div className="field">
-                <label htmlFor="auth">권한 *</label>
+                <label htmlFor="auth">권한 <span className="text-red-500">*</span></label>
                 <Dropdown
                     id="auth"
                     value={user.auth}

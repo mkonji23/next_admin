@@ -1,7 +1,9 @@
 'use client';
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import UserModal from '@/components/modals/UserModal';
-import ClassModal from '@/components/modals/ClassModal'; // Import ClassModal
+import ClassModal from '@/components/modals/ClassModal';
+import StudentModal from '@/components/modals/StudentModal';
+import StudentSelectModal from '@/components/modals/StudentSelectModal';
 import { ModalConfig, ModalContextType, ModalProviderProps, ModalState, OpenModalParams } from '@/types/modal';
 
 export type { ModalConfig } from '@/types/modal';
@@ -32,7 +34,9 @@ export const ModalProvider = ({ children }: ModalProviderProps) => {
     // 모달 컴포넌트들을 등록
     useEffect(() => {
         registerModal({ id: 'user', component: UserModal });
-        registerModal({ id: 'class', component: ClassModal }); // Register ClassModal
+        registerModal({ id: 'class', component: ClassModal });
+        registerModal({ id: 'student', component: StudentModal });
+        registerModal({ id: 'studentSelect', component: StudentSelectModal });
         
         // 여기에 다른 모달들을 추가할 수 있습니다
         // registerModal({ id: 'other', component: OtherModal });
