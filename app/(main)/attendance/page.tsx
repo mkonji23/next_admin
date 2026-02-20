@@ -47,7 +47,7 @@ interface User {
     name: string;
     grade?: string;
     school?: string;
-    [key: string]: string | number | undefined; // For dynamic day_X_attendance and day_X_homework properties
+    [key: string]: any; // For dynamic day_X_attendance and day_X_homework properties
 }
 
 // Optimized and Memoized Cell Components
@@ -342,7 +342,9 @@ const AttendancePage = () => {
         const month = String(date.getMonth() + 1).padStart(2, '0');
 
         const formattedStudents = users.map((user) => {
-            const attendance: { [key: string]: { status: string; homework: number; note?: string; date: string } } = {};
+            const attendance: {
+                [key: string]: { status: string; homework: number; note?: string; date: string; statusTime: Date };
+            } = {};
             for (const key in user) {
                 if (key.startsWith('day_') && key.endsWith('_attendance')) {
                     const day = key.split('_')[1];
@@ -355,6 +357,7 @@ const AttendancePage = () => {
                         status: user[key] as string,
                         homework: user[homeworkKey] as number,
                         note: (user[noteKey] as string) || '',
+                        statusTime: (user[`statusTime`] as any) || dayjs().toDate(),
                         date: dateStr
                     };
                 }
@@ -383,7 +386,7 @@ const AttendancePage = () => {
         const today = dayjs().format('DD');
         const dayAttendance = `day_${today}_attendance`;
         const userList = users.map((item) => {
-            return { ...item, [dayAttendance]: status };
+            return { ...item, [dayAttendance]: status, ['statusTime']: dayjs().toDate() };
         });
         setUsers(userList);
     };
