@@ -22,6 +22,7 @@ import {
     getAttendanceSeverity,
     getHomeworkSeverity
 } from '@/constants/attendance';
+import dayjs from 'dayjs';
 
 // 1. Define Interfaces/Types
 interface ClassOption {
@@ -87,24 +88,18 @@ interface HomeworkCellProps {
 }
 
 const HomeworkCell: React.FC<HomeworkCellProps> = ({ value, options, onChange }) => {
-    const selectedOption = options.find(opt => opt.value === value);
+    const selectedOption = options.find((opt) => opt.value === value);
     return (
         <Dropdown
             value={value}
             options={options}
             onChange={(e: DropdownChangeEvent) => onChange(e.value)}
             itemTemplate={(option: HomeworkProgressOption) => (
-                <Tag 
-                    value={option.label} 
-                    severity={getHomeworkSeverity(option.value) as any} 
-                />
+                <Tag value={option.label} severity={getHomeworkSeverity(option.value) as any} />
             )}
             valueTemplate={(option: HomeworkProgressOption | null) => {
                 if (option) {
-                    return <Tag 
-                        value={option.label} 
-                        severity={getHomeworkSeverity(option.value) as any} 
-                    />;
+                    return <Tag value={option.label} severity={getHomeworkSeverity(option.value) as any} />;
                 }
                 return <span>선택</span>;
             }}
@@ -381,6 +376,18 @@ const AttendancePage = () => {
         };
     };
 
+    // 전체 출석체크
+    const handleAllPresent = () => {
+        if (!users) return;
+        const status = 'class_present';
+        const today = dayjs().format('DD');
+        const dayAttendance = `day_${today}_attendance`;
+        const userList = users.map((item) => {
+            return { ...item, [dayAttendance]: status };
+        });
+        setUsers(userList);
+    };
+
     // 출석부 저장
     const handleSave = async () => {
         if (!selectedClass || !date) {
@@ -479,6 +486,14 @@ const AttendancePage = () => {
                     <i className="pi pi-search" />
                     <InputText value={globalFilterValue} onChange={onGlobalFilterChange} placeholder="학생 검색" />
                 </span>
+                <Button
+                    icon="pi"
+                    rounded
+                    raised
+                    label="오늘 전체 출석"
+                    onClick={handleAllPresent}
+                    className="p-button-success"
+                />
                 <Button
                     icon="pi pi-save"
                     rounded
