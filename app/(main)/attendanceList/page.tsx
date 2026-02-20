@@ -158,7 +158,7 @@ const AttendanceListPage = () => {
                 <div className="col-12 md:col-6 lg:col-3">
                     <Card>
                         <div className="flex flex-column align-items-center">
-                            <span className="text-500 text-sm mb-2">평균 과제 달성율</span>
+                            <span className="text-500 text-sm mb-2">평균 과제 달성률</span>
                             <span className="text-2xl font-bold text-purple-500">
                                 {summary.averageHomeworkRate.toFixed(1)}%
                             </span>
@@ -265,7 +265,7 @@ const AttendanceListPage = () => {
                                 />
                                 <Column
                                     field="statistics.homeworkRate"
-                                    header="과제 달성율"
+                                    header="과제 달성률"
                                     sortable
                                     body={homeworkRateBodyTemplate}
                                 />
@@ -317,7 +317,7 @@ const AttendanceListPage = () => {
                                         />
                                         <Column
                                             field="statistics.homeworkRate"
-                                            header="과제 달성율"
+                                            header="과제 달성률"
                                             sortable
                                             body={homeworkRateBodyTemplate}
                                         />
@@ -363,7 +363,7 @@ const AttendanceListPage = () => {
                                 />
                                 <Column
                                     field="statistics.homeworkRate"
-                                    header="과제 달성율"
+                                    header="과제 달성률"
                                     sortable
                                     body={homeworkRateBodyTemplate}
                                 />
