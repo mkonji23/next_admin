@@ -52,7 +52,7 @@ const LoginPage = () => {
                                 value={email}
                                 id="email1"
                                 type="text"
-                                placeholder="Email address"
+                                placeholder="아이디"
                                 className="w-full md:w-30rem mb-5"
                                 style={{ padding: '1rem' }}
                                 onChange={(e) => setEmail(e.target.value)}
@@ -65,7 +65,7 @@ const LoginPage = () => {
                                 inputId="password1"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                placeholder="Password"
+                                placeholder="비밀번호"
                                 toggleMask
                                 className="w-full mb-5"
                                 inputClassName="w-full p-3 md:w-30rem"
