@@ -26,7 +26,7 @@ const StudentListPage = () => {
         } catch (error) {
             console.error('Error fetching students:', error);
             showToast({ severity: 'error', summary: '조회 실패', detail: '학생 목록을 불러오는데 실패했습니다.' });
-        } 
+        }
     }, [http, showToast]);
 
     useEffect(() => {
@@ -75,8 +75,7 @@ const StudentListPage = () => {
                 fetchStudents();
             } catch (error: any) {
                 console.error('Error deleting student:', error);
-                const errorMessage =
-                    error.response?.data?.message || error.message || '학생 삭제에 실패했습니다.';
+                const errorMessage = error.response?.data?.message || error.message || '학생 삭제에 실패했습니다.';
                 showToast({ severity: 'error', summary: '삭제 실패', detail: errorMessage });
             }
         }
@@ -206,8 +205,7 @@ const StudentListPage = () => {
                 fetchStudents();
             } catch (error: any) {
                 console.error('Error enrolling student:', error);
-                const errorMessage =
-                    error.response?.data?.message || error.message || '입원 처리에 실패했습니다.';
+                const errorMessage = error.response?.data?.message || error.message || '입원 처리에 실패했습니다.';
                 showToast({ severity: 'error', summary: '입원 처리 실패', detail: errorMessage });
             }
         }
@@ -233,8 +231,7 @@ const StudentListPage = () => {
                 fetchStudents();
             } catch (error: any) {
                 console.error('Error withdrawing student:', error);
-                const errorMessage =
-                    error.response?.data?.message || error.message || '퇴원 처리에 실패했습니다.';
+                const errorMessage = error.response?.data?.message || error.message || '퇴원 처리에 실패했습니다.';
                 showToast({ severity: 'error', summary: '퇴원 처리 실패', detail: errorMessage });
             }
         }
@@ -251,7 +248,7 @@ const StudentListPage = () => {
 
     const formatDateTime = (dateValue?: string | Date) => {
         if (!dateValue) return '-';
-        
+
         let date: Date;
         if (typeof dateValue === 'string') {
             date = new Date(dateValue);
@@ -266,7 +263,7 @@ const StudentListPage = () => {
         const day = String(date.getDate()).padStart(2, '0');
         const hours = String(date.getHours()).padStart(2, '0');
         const minutes = String(date.getMinutes()).padStart(2, '0');
-        
+
         return `${year}-${month}-${day} ${hours}:${minutes}`;
     };
 
@@ -279,11 +276,7 @@ const StudentListPage = () => {
     };
 
     const isWithdrawnBodyTemplate = (rowData: Student) => {
-        return rowData.isWithdrawn ? (
-            <Tag severity="danger" value="퇴원" />
-        ) : (
-            <Tag severity="success" value="재학" />
-        );
+        return rowData.isWithdrawn ? <Tag severity="danger" value="퇴원" /> : <Tag severity="success" value="재학" />;
     };
 
     const actionBodyTemplate = (rowData: Student) => {
@@ -385,7 +378,7 @@ const StudentListPage = () => {
 
     const header = (
         <div className="flex flex-wrap align-items-center justify-content-between gap-2">
-            <span className="text-xl text-900 font-bold">학생 목록</span>
+            <span className="text-xl text-900 font-bold">학생 목록 (총 {students.length}명)</span>
             <div className="flex gap-2">
                 <Button
                     icon="pi pi-plus"
@@ -436,7 +429,7 @@ const StudentListPage = () => {
 
     return (
         <div className="card">
-            <h1>학생 목록</h1>
+            <h1>학생 목록 </h1>
             <DataTable
                 value={students}
                 header={header}

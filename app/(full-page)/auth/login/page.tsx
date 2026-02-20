@@ -46,7 +46,7 @@ const LoginPage = () => {
                     <div className="w-full surface-card py-8 px-5 sm:px-8" style={{ borderRadius: '53px' }}>
                         <div>
                             <label htmlFor="email1" className="block text-900 text-xl font-medium mb-2">
-                                Email
+                                ID
                             </label>
                             <InputText
                                 value={email}
@@ -72,20 +72,11 @@ const LoginPage = () => {
                             ></Password>
 
                             <div className="flex align-items-center justify-content-between mb-5 gap-5">
-                                <div className="flex align-items-center">
-                                    <Checkbox
-                                        inputId="rememberme1"
-                                        checked={checked}
-                                        onChange={(e) => setChecked(e.checked ?? false)}
-                                        className="mr-2"
-                                    ></Checkbox>
-                                    <label htmlFor="rememberme1">Remember me</label>
-                                </div>
                                 <a
                                     className="font-medium no-underline ml-2 text-right cursor-pointer"
                                     style={{ color: 'var(--primary-color)' }}
                                 >
-                                    Forgot password?
+                                    비밀번호 찾기
                                 </a>
                             </div>
                             <Button label="Sign In" className="w-full p-3 text-xl" onClick={signIn}></Button>

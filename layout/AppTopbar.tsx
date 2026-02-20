@@ -12,6 +12,7 @@ import { getCommonLabel } from '@/util/common';
 import { USER_AUTH_OPTIONS } from '@/constants/user';
 import ChatPanel from '@/components/chat/ChatPanel';
 import { Badge } from 'primereact/badge';
+import { Button } from 'primereact/button';
 
 const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
     const { layoutConfig, layoutState, onMenuToggle, showProfileSidebar } = useContext(LayoutContext);
@@ -24,10 +25,12 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
     const { userInfo, initializeFromStorage } = useAuthStore();
     const [chatVisible, setChatVisible] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
+    const [mounted, setMounted] = useState(false);
     
     useEffect(() => {
         // 컴포넌트 마운트 시 localStorage에서 userInfo 복원
         initializeFromStorage();
+        setMounted(true);
     }, [initializeFromStorage]);
     
     useImperativeHandle(ref, () => ({
@@ -79,19 +82,21 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
                 <i className="pi pi-ellipsis-v" />
             </button>
 
-            <div className="layout-topbar-user-info">
-                {userInfo?.userName && (
-                    <span className="user-name">{userInfo.userName}</span>
-                )}
-                {userInfo?.userId && (
-                    <span className="user-id">({userInfo.userId})</span>
-                )}
-                {userInfo?.auth && (
-                    <span className="user-auth">
-                        {getCommonLabel(USER_AUTH_OPTIONS, userInfo.auth)}
-                    </span>
-                )}
-            </div>
+            {mounted && (
+                <div className="layout-topbar-user-info">
+                    {userInfo?.userName && (
+                        <span className="user-name">{userInfo.userName}</span>
+                    )}
+                    {userInfo?.userId && (
+                        <span className="user-id">({userInfo.userId})</span>
+                    )}
+                    {userInfo?.auth && (
+                        <span className="user-auth">
+                            {getCommonLabel(USER_AUTH_OPTIONS, userInfo.auth)}
+                        </span>
+                    )}
+                </div>
+            )}
 
             {/* <button
                 ref={chatButtonRef}
@@ -119,20 +124,33 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
                     'layout-topbar-menu-mobile-active': layoutState.profileSidebarVisible
                 })}
             >
-                <button type="button" className="p-link layout-topbar-button">
+                <Button
+                    className="p-link layout-topbar-button"
+                    tooltip="프로필"
+                    tooltipOptions={{ position: 'bottom' }}
+                    onClick={() => router.push('/profile')}
+                >
                     <i className="pi pi-user"></i>
                     <span>Profile</span>
-                </button>
-                <Link href="/documentation">
-                    <button type="button" className="p-link layout-topbar-button">
-                        <i className="pi pi-cog"></i>
-                        <span>Settings</span>
-                    </button>
-                </Link>
-                <button type="button" className="p-link layout-topbar-button" onClick={handleLogout}>
+                </Button>
+                <Button
+                    className="p-link layout-topbar-button"
+                    tooltip="설정"
+                    tooltipOptions={{ position: 'bottom' }}
+                    onClick={() => router.push('/documentation')}
+                >
+                    <i className="pi pi-cog"></i>
+                    <span>Settings</span>
+                </Button>
+                <Button
+                    className="p-link layout-topbar-button"
+                    onClick={handleLogout}
+                    tooltip="로그아웃"
+                    tooltipOptions={{ position: 'bottom' }}
+                >
                     <i className="pi pi-sign-out"></i>
                     <span>Quit</span>
-                </button>
+                </Button>
             </div>
         </div>
     );

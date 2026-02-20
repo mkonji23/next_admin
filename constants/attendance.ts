@@ -21,11 +21,11 @@ export type AttendanceStatusValue = (typeof ATTENDANCE_STATUS_OPTIONS)[number]['
  * 숙제 진행률 옵션
  */
 export const HOMEWORK_PROGRESS_OPTIONS = [
-    { label: '0%', value: 0 },
-    { label: '25%', value: 25 },
-    { label: '50%', value: 50 },
+    { label: '100%', value: 100 },
     { label: '75%', value: 75 },
-    { label: '100%', value: 100 }
+    { label: '50%', value: 50 },
+    { label: '25%', value: 25 },
+    { label: '0%', value: 0 }
 ] as const;
 
 /**
@@ -36,17 +36,14 @@ export const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'] as co
 /**
  * 공휴일 목록 (YYYY-MM-DD 형식)
  */
-export const HOLIDAYS = [
-    '2026-01-01',
-    '2026-02-16',
-    '2026-02-17',
-    '2026-02-18'
-] as const;
+export const HOLIDAYS = ['2026-01-01', '2026-02-16', '2026-02-17', '2026-02-18'] as const;
 
 /**
  * 출석 상태에 따른 Tag 색상 반환
  */
-export const getAttendanceSeverity = (status: string): 'success' | 'danger' | 'info' | 'warning' | 'primary' | 'secondary' => {
+export const getAttendanceSeverity = (
+    status: string
+): 'success' | 'danger' | 'info' | 'warning' | 'primary' | 'secondary' => {
     switch (status) {
         case 'class_present':
             return 'success';
@@ -62,5 +59,24 @@ export const getAttendanceSeverity = (status: string): 'success' | 'danger' | 'i
             return 'danger';
         default:
             return 'secondary';
+    }
+};
+
+/**
+ * 숙제 진행률에 따른 Tag 색상 반환
+ */
+export const getHomeworkSeverity = (
+    progress: number
+): 'success' | 'danger' | 'info' | 'warning' | 'primary' | 'secondary' => {
+    if (progress >= 100) {
+        return 'success';
+    } else if (progress >= 75) {
+        return 'info';
+    } else if (progress >= 50) {
+        return 'warning';
+    } else if (progress >= 25) {
+        return 'warning';
+    } else {
+        return 'danger';
     }
 };

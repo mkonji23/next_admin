@@ -10,6 +10,7 @@ import { Dropdown, DropdownChangeEvent } from 'primereact/dropdown';
 import { Tag } from 'primereact/tag';
 import { Button } from 'primereact/button';
 import { InputText } from 'primereact/inputtext';
+import { FilterMatchMode } from 'primereact/api';
 import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
 import { Class } from '@/types/class';
@@ -18,7 +19,8 @@ import {
     HOMEWORK_PROGRESS_OPTIONS,
     DAY_NAMES,
     HOLIDAYS,
-    getAttendanceSeverity
+    getAttendanceSeverity,
+    getHomeworkSeverity
 } from '@/constants/attendance';
 
 // 1. Define Interfaces/Types
@@ -42,9 +44,10 @@ interface User {
     id: number;
     studentId?: string;
     name: string;
+    grade?: string;
+    school?: string;
     [key: string]: string | number | undefined; // For dynamic day_X_attendance and day_X_homework properties
 }
-
 
 // Optimized and Memoized Cell Components
 interface AttendanceCellProps {
@@ -84,11 +87,27 @@ interface HomeworkCellProps {
 }
 
 const HomeworkCell: React.FC<HomeworkCellProps> = ({ value, options, onChange }) => {
+    const selectedOption = options.find(opt => opt.value === value);
     return (
         <Dropdown
             value={value}
             options={options}
             onChange={(e: DropdownChangeEvent) => onChange(e.value)}
+            itemTemplate={(option: HomeworkProgressOption) => (
+                <Tag 
+                    value={option.label} 
+                    severity={getHomeworkSeverity(option.value) as any} 
+                />
+            )}
+            valueTemplate={(option: HomeworkProgressOption | null) => {
+                if (option) {
+                    return <Tag 
+                        value={option.label} 
+                        severity={getHomeworkSeverity(option.value) as any} 
+                    />;
+                }
+                return <span>선택</span>;
+            }}
             style={{ width: '100%' }}
             appendTo={typeof window !== 'undefined' ? document.body : 'self'}
             panelStyle={{ zIndex: 9999 }}
@@ -98,14 +117,34 @@ const HomeworkCell: React.FC<HomeworkCellProps> = ({ value, options, onChange })
 
 const MemoizedHomeworkCell = React.memo(HomeworkCell);
 
+interface NoteCellProps {
+    value: string;
+    onChange: (value: string) => void;
+}
+
+const NoteCell: React.FC<NoteCellProps> = ({ value, onChange }) => {
+    return (
+        <InputText
+            value={value || ''}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange(e.target?.value || '')}
+            placeholder="메모 입력"
+            style={{ width: '100%' }}
+        />
+    );
+};
+
+const MemoizedNoteCell = React.memo(NoteCell);
+
 const AttendancePage = () => {
-    // 2. Apply Types to State
     const [date, setDate] = useState<Date | null>(null);
     const [users, setUsers] = useState<User[]>([]);
     const [selectedClass, setSelectedClass] = useState<string | null>(null);
     const [selectedClassData, setSelectedClassData] = useState<Class | null>(null);
     const [classes, setClasses] = useState<ClassOption[]>([]);
-    const [globalFilter, setGlobalFilter] = useState<string>('');
+    const [filters, setFilters] = useState({
+        global: { value: null, matchMode: FilterMatchMode.CONTAINS }
+    });
+    const [globalFilterValue, setGlobalFilterValue] = useState('');
     const http = useHttp();
     const { showToast } = useToast();
     // 3. Apply Types to useRef
@@ -152,7 +191,7 @@ const AttendancePage = () => {
             try {
                 const year = date.getFullYear().toString();
                 const month = String(date.getMonth() + 1).padStart(2, '0');
-                
+
                 // 출석부 데이터 조회
                 const response = await http.get('/choiMath/attendance/getAttendance', {
                     params: {
@@ -163,7 +202,7 @@ const AttendancePage = () => {
                 });
 
                 const attendanceList = response.data || [];
-                
+
                 if (attendanceList.length === 0) {
                     // 출석부가 없으면 신규 생성
                     await http.post('/choiMath/attendance/insertAttendance', {
@@ -171,13 +210,13 @@ const AttendancePage = () => {
                         year: year,
                         month: month
                     });
-                    
-                    showToast({ 
-                        severity: 'success', 
-                        summary: '출석부 생성 완료', 
-                        detail: '출석부 신규생성완료!' 
+
+                    showToast({
+                        severity: 'success',
+                        summary: '출석부 생성 완료',
+                        detail: '출석부 신규생성완료!'
                     });
-                    
+
                     // 다시 조회
                     const retryResponse = await http.get('/choiMath/attendance/getAttendance', {
                         params: {
@@ -186,20 +225,27 @@ const AttendancePage = () => {
                             month: month
                         }
                     });
-                    
+
                     const retryAttendanceList = retryResponse.data || [];
-                    if (retryAttendanceList.length > 0) {
+                    if (retryAttendanceList.length > 0 && retryAttendanceList[0]) {
                         processAttendanceData(retryAttendanceList[0]);
+                    } else {
+                        setUsers([]);
                     }
                 } else {
                     // 출석부 데이터가 있으면 처리
-                    processAttendanceData(attendanceList[0]);
+                    if (attendanceList[0]) {
+                        processAttendanceData(attendanceList[0]);
+                    } else {
+                        setUsers([]);
+                    }
                 }
-                
+
                 scrolled.current = false;
             } catch (error: any) {
                 console.error('Error loading attendance:', error);
-                const errorMessage = error.response?.data?.message || error.message || '출석부를 불러오는데 실패했습니다.';
+                const errorMessage =
+                    error.response?.data?.message || error.message || '출석부를 불러오는데 실패했습니다.';
                 showToast({ severity: 'error', summary: '조회 실패', detail: errorMessage });
                 setUsers([]);
                 setSelectedClassData(null);
@@ -207,32 +253,41 @@ const AttendancePage = () => {
         };
 
         const processAttendanceData = (attendanceData: any) => {
+            if (!attendanceData) {
+                setUsers([]);
+                return;
+            }
+
             const year = date.getFullYear();
             const month = date.getMonth();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
-            
+
             // 출석부의 학생 데이터를 User 형태로 변환
             const attendanceUsers: User[] = (attendanceData.students || []).map((student: any, index: number) => {
                 const userData: User = {
                     id: index + 1,
                     studentId: student.studentId,
-                    name: student.name || '이름 없음'
+                    name: student.name || '이름 없음',
+                    grade: student.grade || '',
+                    school: student.school || ''
                 };
-                
-                // 각 날짜에 대한 출석/숙제 데이터 설정
+
+                // 각 날짜에 대한 출석/숙제/비고 데이터 설정
                 for (let i = 1; i <= daysInMonth; i++) {
                     const dayKey = i.toString();
                     if (student.attendance && student.attendance[dayKey]) {
-                        userData[`day_${i}_attendance`] = student.attendance[dayKey].status || 'none';
-                        userData[`day_${i}_homework`] = student.attendance[dayKey].homework || 0;
+                        userData[`day_${i}_attendance`] = student.attendance[dayKey]?.status || 'none';
+                        userData[`day_${i}_homework`] = student.attendance[dayKey]?.homework || 0;
+                        userData[`day_${i}_note`] = student.attendance[dayKey]?.note || '';
                     } else {
                         userData[`day_${i}_attendance`] = 'none';
                         userData[`day_${i}_homework`] = 0;
+                        userData[`day_${i}_note`] = '';
                     }
                 }
                 return userData;
             });
-            
+
             setUsers(attendanceUsers);
         };
 
@@ -260,7 +315,8 @@ const AttendancePage = () => {
                 const today = now.getDate();
                 const attendanceColWidth = 152.26;
                 const homeworkColWidth = 128;
-                const dayWidth = attendanceColWidth + homeworkColWidth;
+                const noteColWidth = 150;
+                const dayWidth = attendanceColWidth + homeworkColWidth + noteColWidth;
                 // Scroll to the column before today, so today is visible
                 const scrollPos = (today - 1) * dayWidth - 200;
 
@@ -291,20 +347,28 @@ const AttendancePage = () => {
         const month = String(date.getMonth() + 1).padStart(2, '0');
 
         const formattedStudents = users.map((user) => {
-            const attendance: { [key: string]: { status: string; homework: number } } = {};
+            const attendance: { [key: string]: { status: string; homework: number; note?: string; date: string } } = {};
             for (const key in user) {
                 if (key.startsWith('day_') && key.endsWith('_attendance')) {
                     const day = key.split('_')[1];
                     const homeworkKey = `day_${day}_homework`;
+                    const noteKey = `day_${day}_note`;
+                    // 날짜를 yyyymmdd 형태로 생성
+                    const dayStr = String(day).padStart(2, '0');
+                    const dateStr = `${year}${month}${dayStr}`;
                     attendance[day] = {
                         status: user[key] as string,
-                        homework: user[homeworkKey] as number
+                        homework: user[homeworkKey] as number,
+                        note: (user[noteKey] as string) || '',
+                        date: dateStr
                     };
                 }
             }
             return {
                 studentId: user.studentId || '',
                 name: user.name,
+                grade: user.grade || '',
+                school: user.school || '',
                 attendance: attendance
             };
         });
@@ -332,10 +396,10 @@ const AttendancePage = () => {
 
         try {
             await http.post('/choiMath/attendance/saveAttendance', dataToSave);
-            showToast({ 
-                severity: 'success', 
-                summary: '저장 성공', 
-                detail: '출석부가 저장되었습니다.' 
+            showToast({
+                severity: 'success',
+                summary: '저장 성공',
+                detail: '출석부가 저장되었습니다.'
             });
         } catch (error: any) {
             console.error('Error saving attendance:', error);
@@ -351,7 +415,7 @@ const AttendancePage = () => {
     const nameColumnHeader = (
         <div className="flex justify-content-between align-items-center">
             <span>이름</span>
-            <span>총 {users.length}명</span>
+            <span>총 {Array.isArray(users) ? users.length : 0}명</span>
         </div>
     );
 
@@ -379,22 +443,33 @@ const AttendancePage = () => {
                     }
 
                     const headerText: string = `${monthStr}-${dayStr} (${dayNames[dayOfWeek]})`;
-                    const borderStyle: React.CSSProperties = { 
-                        ...style, 
-                        borderRight: day < daysInMonth ? '2px solid #007ad9' : 'none' 
+                    const borderStyle: React.CSSProperties = {
+                        ...style,
+                        borderRight: day < daysInMonth ? '2px solid #007ad9' : 'none'
                     };
 
-                    return <Column key={`day_${day}`} header={headerText} colSpan={2} headerStyle={borderStyle} />;
+                    return <Column key={`day_${day}`} header={headerText} colSpan={3} headerStyle={borderStyle} />;
                 })}
             </Row>
             <Row>
                 {dayHeaders.flatMap((day: number) => [
                     <Column key={`sub_att_${day}`} header="출석" headerStyle={{ borderRight: '1px solid #dee2e6' }} />,
-                    <Column key={`sub_hw_${day}`} header="숙제" headerStyle={{ borderRight: day < daysInMonth ? '2px solid #007ad9' : 'none' }} />
+                    <Column key={`sub_hw_${day}`} header="숙제" headerStyle={{ borderRight: '1px solid #dee2e6' }} />,
+                    <Column
+                        key={`sub_note_${day}`}
+                        header="비고"
+                        headerStyle={{ borderRight: day < daysInMonth ? '2px solid #007ad9' : 'none' }}
+                    />
                 ])}
             </Row>
         </ColumnGroup>
     );
+
+    const onGlobalFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target?.value || '';
+        setFilters((prev) => ({ ...prev, global: { value: value as any, matchMode: FilterMatchMode.CONTAINS } }));
+        setGlobalFilterValue(value);
+    };
 
     const header = (
         <div className="flex flex-wrap align-items-center justify-content-between gap-2">
@@ -402,11 +477,7 @@ const AttendancePage = () => {
             <div className="flex align-items-center gap-2">
                 <span className="p-input-icon-left">
                     <i className="pi pi-search" />
-                    <InputText
-                        value={globalFilter}
-                        onChange={(e) => setGlobalFilter(e.target.value)}
-                        placeholder="학생 검색"
-                    />
+                    <InputText value={globalFilterValue} onChange={onGlobalFilterChange} placeholder="학생 검색" />
                 </span>
                 <Button
                     icon="pi pi-save"
@@ -424,6 +495,7 @@ const AttendancePage = () => {
     const dynamicColumns: JSX.Element[] = dayHeaders.flatMap((day: number) => {
         const attendanceField = `day_${day}_attendance`;
         const homeworkField = `day_${day}_homework`;
+        const noteField = `day_${day}_note`;
         return [
             <Column
                 key={attendanceField}
@@ -447,7 +519,18 @@ const AttendancePage = () => {
                         onChange={(value) => handleUserUpdate(rowData.id, homeworkField, value)}
                     />
                 )}
-                style={{ minWidth: '120px', borderRight: day < daysInMonth ? '2px solid #007ad9' : 'none' }}
+                style={{ minWidth: '120px', borderRight: '1px solid #dee2e6' }}
+            />,
+            <Column
+                key={noteField}
+                field={noteField}
+                body={(rowData: User) => (
+                    <MemoizedNoteCell
+                        value={rowData[noteField] as string}
+                        onChange={(value) => handleUserUpdate(rowData.id, noteField, value)}
+                    />
+                )}
+                style={{ minWidth: '150px', borderRight: day < daysInMonth ? '2px solid #007ad9' : 'none' }}
             />
         ];
     });
@@ -500,12 +583,13 @@ const AttendancePage = () => {
 
                         <DataTable
                             ref={dt}
-                            value={users}
+                            value={Array.isArray(users) ? users : []}
                             headerColumnGroup={headerGroup}
                             header={header}
                             scrollable
                             style={{ marginTop: '20px' }}
-                            globalFilter={globalFilter}
+                            filters={filters}
+                            globalFilterFields={['name']}
                         >
                             <Column
                                 key="name"
