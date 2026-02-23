@@ -194,6 +194,16 @@ const StudentAttendanceStatisticsPage = () => {
                         </div>
                     </Card>
                 </div>
+                {summary.totalLate !== undefined && (
+                    <div className="col-12 md:col-6 lg:col-3">
+                        <Card style={{ border: '1px solid #dee2e6' }}>
+                            <div className="flex flex-column align-items-center">
+                                <span className="text-500 text-sm mb-2">총 지각</span>
+                                <span className="text-2xl font-bold text-orange-500">{summary.totalLate}회</span>
+                            </div>
+                        </Card>
+                    </div>
+                )}
                 <div className="col-12 md:col-6 lg:col-3">
                     <Card style={{ border: '1px solid #dee2e6' }}>
                         <div className="flex flex-column align-items-center">
@@ -204,6 +214,30 @@ const StudentAttendanceStatisticsPage = () => {
                         </div>
                     </Card>
                 </div>
+                {summary.averageAbsentRate !== undefined && (
+                    <div className="col-12 md:col-6 lg:col-3">
+                        <Card style={{ border: '1px solid #dee2e6' }}>
+                            <div className="flex flex-column align-items-center">
+                                <span className="text-500 text-sm mb-2">평균 결석률</span>
+                                <span className="text-2xl font-bold text-red-500">
+                                    {summary.averageAbsentRate.toFixed(1)}%
+                                </span>
+                            </div>
+                        </Card>
+                    </div>
+                )}
+                {summary.averageLateRate !== undefined && (
+                    <div className="col-12 md:col-6 lg:col-3">
+                        <Card style={{ border: '1px solid #dee2e6' }}>
+                            <div className="flex flex-column align-items-center">
+                                <span className="text-500 text-sm mb-2">평균 지각률</span>
+                                <span className="text-2xl font-bold text-orange-500">
+                                    {summary.averageLateRate.toFixed(1)}%
+                                </span>
+                            </div>
+                        </Card>
+                    </div>
+                )}
                 <div className="col-12 md:col-6 lg:col-3">
                     <Card style={{ border: '1px solid #dee2e6' }}>
                         <div className="flex flex-column align-items-center">
@@ -236,6 +270,22 @@ const StudentAttendanceStatisticsPage = () => {
 
     const absentBodyTemplate = (rowData: StudentClassStatistics) => {
         return <span className="text-red-500 font-semibold">{rowData.statistics?.absent || 0}회</span>;
+    };
+
+    const lateBodyTemplate = (rowData: StudentClassStatistics) => {
+        return <span className="text-orange-500 font-semibold">{rowData.statistics?.late || 0}회</span>;
+    };
+
+    const absentRateBodyTemplate = (rowData: StudentClassStatistics) => {
+        const rate = rowData.statistics?.absentRate || 0;
+        const severity = rate <= 5 ? 'success' : rate <= 10 ? 'warning' : 'danger';
+        return <Tag value={`${rate.toFixed(1)}%`} severity={severity} />;
+    };
+
+    const lateRateBodyTemplate = (rowData: StudentClassStatistics) => {
+        const rate = rowData.statistics?.lateRate || 0;
+        const severity = rate <= 5 ? 'success' : rate <= 10 ? 'warning' : 'danger';
+        return <Tag value={`${rate.toFixed(1)}%`} severity={severity} />;
     };
 
     return (
@@ -338,12 +388,31 @@ const StudentAttendanceStatisticsPage = () => {
                                 />
                                 <Column field="statistics.present" header="출석" sortable body={presentBodyTemplate} />
                                 <Column field="statistics.absent" header="결석" sortable body={absentBodyTemplate} />
+                                {statistics.classes[0]?.statistics?.late !== undefined && (
+                                    <Column field="statistics.late" header="지각" sortable body={lateBodyTemplate} />
+                                )}
                                 <Column
                                     field="statistics.attendanceRate"
                                     header="출석률"
                                     sortable
                                     body={attendanceRateBodyTemplate}
                                 />
+                                {statistics.classes[0]?.statistics?.absentRate !== undefined && (
+                                    <Column
+                                        field="statistics.absentRate"
+                                        header="결석률"
+                                        sortable
+                                        body={absentRateBodyTemplate}
+                                    />
+                                )}
+                                {statistics.classes[0]?.statistics?.lateRate !== undefined && (
+                                    <Column
+                                        field="statistics.lateRate"
+                                        header="지각률"
+                                        sortable
+                                        body={lateRateBodyTemplate}
+                                    />
+                                )}
                                 <Column
                                     field="statistics.homeworkRate"
                                     header="과제 달성률"

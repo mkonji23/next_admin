@@ -4,7 +4,10 @@ export interface StatisticsSummary {
     totalDays: number;
     totalPresent: number;
     totalAbsent: number;
+    totalLate?: number;
     averageAttendanceRate: number;
+    averageAbsentRate?: number;
+    averageLateRate?: number;
     averageHomeworkRate: number;
 }
 
@@ -16,8 +19,11 @@ export interface StudentStatistics {
     statistics: {
         present: number;
         absent: number;
+        late?: number;
         totalDays: number;
         attendanceRate: number;
+        absentRate?: number;
+        lateRate?: number;
         homeworkRate: number;
         homeworkCount: number;
     };
@@ -33,7 +39,10 @@ export interface ClassStatistics {
         totalDays: number;
         present: number;
         absent: number;
+        late?: number;
         attendanceRate: number;
+        absentRate?: number;
+        lateRate?: number;
         homeworkRate: number;
     };
     students: StudentStatistics[];
@@ -51,8 +60,11 @@ export interface StudentDetailStatistics {
     statistics: {
         present: number;
         absent: number;
+        late?: number;
         totalDays: number;
         attendanceRate: number;
+        absentRate?: number;
+        lateRate?: number;
         homeworkRate: number;
         homeworkCount: number;
     };
@@ -73,7 +85,10 @@ export interface StudentStatisticsSummary {
     totalDays: number;
     totalPresent: number;
     totalAbsent: number;
+    totalLate?: number;
     averageAttendanceRate: number;
+    averageAbsentRate?: number;
+    averageLateRate?: number;
     averageHomeworkRate: number;
 }
 
@@ -86,7 +101,10 @@ export interface StudentClassStatistics {
         totalDays: number;
         present: number;
         absent: number;
+        late?: number;
         attendanceRate: number;
+        absentRate?: number;
+        lateRate?: number;
         homeworkRate: number;
         homeworkCount: number;
     };

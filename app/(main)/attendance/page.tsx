@@ -1,44 +1,24 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { DataTable } from 'primereact/datatable';
-import { Column } from 'primereact/column';
-import { ColumnGroup } from 'primereact/columngroup';
-import { Row } from 'primereact/row';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Calendar } from 'primereact/calendar';
 import { Dropdown, DropdownChangeEvent } from 'primereact/dropdown';
-import { Tag } from 'primereact/tag';
 import { Button } from 'primereact/button';
 import { InputText } from 'primereact/inputtext';
-import { FilterMatchMode } from 'primereact/api';
+import { OverlayPanel } from 'primereact/overlaypanel';
 import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
 import { Class } from '@/types/class';
-import {
-    ATTENDANCE_STATUS_OPTIONS,
-    HOMEWORK_PROGRESS_OPTIONS,
-    DAY_NAMES,
-    HOLIDAYS,
-    getAttendanceSeverity,
-    getHomeworkSeverity
-} from '@/constants/attendance';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import dayjs from 'dayjs';
+import AttendanceRow from './components/AttendanceRow';
+import AttendanceTableHeader from './components/AttendanceTableHeader';
 
 // 1. Define Interfaces/Types
 interface ClassOption {
     label: string;
     value: string;
     classId: string;
-}
-
-interface AttendanceStatusOption {
-    label: string;
-    value: string;
-}
-
-interface HomeworkProgressOption {
-    label: string;
-    value: number;
 }
 
 interface User {
@@ -50,85 +30,7 @@ interface User {
     [key: string]: any; // For dynamic day_X_attendance and day_X_homework properties
 }
 
-// Optimized and Memoized Cell Components
-interface AttendanceCellProps {
-    value: string;
-    options: AttendanceStatusOption[];
-    onChange: (value: string) => void;
-}
-
-const AttendanceCell: React.FC<AttendanceCellProps> = ({ value, options, onChange }) => {
-    return (
-        <Dropdown
-            value={value}
-            options={options}
-            onChange={(e: DropdownChangeEvent) => onChange(e.value)}
-            itemTemplate={(option: AttendanceStatusOption) => (
-                <Tag value={option.label} severity={getAttendanceSeverity(option.value) as any} />
-            )}
-            valueTemplate={(option: AttendanceStatusOption) => {
-                if (option) {
-                    return <Tag value={option.label} severity={getAttendanceSeverity(option.value) as any} />;
-                }
-                return <span>선택</span>;
-            }}
-            style={{ width: '100%' }}
-            appendTo={typeof window !== 'undefined' ? document.body : 'self'}
-            panelStyle={{ zIndex: 9999 }}
-        />
-    );
-};
-
-const MemoizedAttendanceCell = React.memo(AttendanceCell);
-
-interface HomeworkCellProps {
-    value: number;
-    options: HomeworkProgressOption[];
-    onChange: (value: number) => void;
-}
-
-const HomeworkCell: React.FC<HomeworkCellProps> = ({ value, options, onChange }) => {
-    const selectedOption = options.find((opt) => opt.value === value);
-    return (
-        <Dropdown
-            value={value}
-            options={options}
-            onChange={(e: DropdownChangeEvent) => onChange(e.value)}
-            itemTemplate={(option: HomeworkProgressOption) => (
-                <Tag value={option.label} severity={getHomeworkSeverity(option.value) as any} />
-            )}
-            valueTemplate={(option: HomeworkProgressOption | null) => {
-                if (option) {
-                    return <Tag value={option.label} severity={getHomeworkSeverity(option.value) as any} />;
-                }
-                return <span>선택</span>;
-            }}
-            style={{ width: '100%' }}
-            appendTo={typeof window !== 'undefined' ? document.body : 'self'}
-            panelStyle={{ zIndex: 9999 }}
-        />
-    );
-};
-
-const MemoizedHomeworkCell = React.memo(HomeworkCell);
-
-interface NoteCellProps {
-    value: string;
-    onChange: (value: string) => void;
-}
-
-const NoteCell: React.FC<NoteCellProps> = ({ value, onChange }) => {
-    return (
-        <InputText
-            value={value || ''}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange(e.target?.value || '')}
-            placeholder="메모 입력"
-            style={{ width: '100%' }}
-        />
-    );
-};
-
-const MemoizedNoteCell = React.memo(NoteCell);
+const VIRTUAL_SCROLL_THRESHOLD = 50; // 가상 스크롤링 활성화 임계값
 
 const AttendancePage = () => {
     const [date, setDate] = useState<Date | null>(null);
@@ -136,15 +38,14 @@ const AttendancePage = () => {
     const [selectedClass, setSelectedClass] = useState<string | null>(null);
     const [selectedClassData, setSelectedClassData] = useState<Class | null>(null);
     const [classes, setClasses] = useState<ClassOption[]>([]);
-    const [filters, setFilters] = useState({
-        global: { value: null, matchMode: FilterMatchMode.CONTAINS }
-    });
     const [globalFilterValue, setGlobalFilterValue] = useState('');
+    const [selectedScrollDate, setSelectedScrollDate] = useState<Date | null>(null);
     const http = useHttp();
     const { showToast } = useToast();
-    // 3. Apply Types to useRef
-    const dt = useRef<DataTable<any>>(null);
+    const tableWrapperRef = useRef<HTMLDivElement>(null);
+    const tableBodyRef = useRef<HTMLDivElement>(null);
     const scrolled = useRef<boolean>(false);
+    const datePickerOverlayRef = useRef<OverlayPanel>(null);
 
     useEffect(() => {
         setDate(new Date());
@@ -162,14 +63,13 @@ const AttendancePage = () => {
             setClasses(classOptions);
         } catch (error) {
             console.error('Error fetching classes:', error);
-            showToast({ severity: 'error', summary: '조회 실패', detail: '클래스 목록을 불러오는데 실패했습니다.' });
+            showToast({
+                severity: 'error',
+                summary: '조회 실패',
+                detail: '클래스 목록을 불러오는데 실패했습니다.'
+            });
         }
     };
-
-    const holidays: string[] = [...HOLIDAYS];
-    const dayNames: string[] = [...DAY_NAMES];
-    const attendanceStatuses: AttendanceStatusOption[] = [...ATTENDANCE_STATUS_OPTIONS];
-    const homeworkProgressOptions: HomeworkProgressOption[] = [...HOMEWORK_PROGRESS_OPTIONS];
 
     // 클래스와 월 선택 시 출석부 데이터 로드
     useEffect(() => {
@@ -236,6 +136,7 @@ const AttendancePage = () => {
                     }
                 }
 
+                // 스크롤 플래그 리셋 (새 데이터 로드 시 다시 스크롤 가능하도록)
                 scrolled.current = false;
             } catch (error: any) {
                 console.error('Error loading attendance:', error);
@@ -267,17 +168,20 @@ const AttendancePage = () => {
                     school: student.school || ''
                 };
 
-                // 각 날짜에 대한 출석/숙제/비고 데이터 설정
+                // 각 날짜에 대한 출석/숙제/비고/지각시간 데이터 설정
                 for (let i = 1; i <= daysInMonth; i++) {
                     const dayKey = i.toString();
                     if (student.attendance && student.attendance[dayKey]) {
                         userData[`day_${i}_attendance`] = student.attendance[dayKey]?.status || 'none';
                         userData[`day_${i}_homework`] = student.attendance[dayKey]?.homework || 0;
                         userData[`day_${i}_note`] = student.attendance[dayKey]?.note || '';
+                        const lateTimeValue = student.attendance[dayKey]?.lateTime;
+                        userData[`day_${i}_lateTime`] = typeof lateTimeValue === 'number' ? lateTimeValue : null;
                     } else {
                         userData[`day_${i}_attendance`] = 'none';
                         userData[`day_${i}_homework`] = 0;
                         userData[`day_${i}_note`] = '';
+                        userData[`day_${i}_lateTime`] = null;
                     }
                 }
                 return userData;
@@ -290,36 +194,94 @@ const AttendancePage = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [date, selectedClass]);
 
-    useEffect(() => {
-        if (!date) return;
-        // 빌드용
-        setTimeout(() => {
-            handleMoveToday();
-        }, 500);
-    }, [date]);
+    // 특정 날짜로 스크롤하는 함수
+    const scrollToDate = useCallback(
+        (targetDate: Date, smooth: boolean = false, showSuccessToast: boolean = false): void => {
+            if (typeof window === 'undefined' || !date || !tableWrapperRef.current) {
+                return;
+            }
 
-    const handleMoveToday = (): void => {
-        if (typeof window === 'undefined' || !date) {
-            return; // Do not run on server
+            // 선택한 날짜가 현재 표시된 월과 같은지 확인
+            if (targetDate.getFullYear() === date.getFullYear() && targetDate.getMonth() === date.getMonth()) {
+                const day = targetDate.getDate();
+                const attendanceColWidth = 150;
+                const homeworkColWidth = 120;
+                const noteColWidth = 150;
+                const dayWidth = attendanceColWidth + homeworkColWidth + noteColWidth;
+                const scrollPos = (day - 1) * dayWidth;
+
+                requestAnimationFrame(() => {
+                    if (!tableWrapperRef.current) return;
+
+                    const wrapper = tableWrapperRef.current;
+                    const maxScroll = wrapper.scrollWidth - wrapper.clientWidth;
+
+                    if (maxScroll <= 0) {
+                        showToast({
+                            severity: 'warn',
+                            summary: '스크롤 불가',
+                            detail: '테이블이 컨테이너보다 작아 스크롤할 수 없습니다.'
+                        });
+                        return;
+                    }
+
+                    const finalScrollPos = Math.max(0, Math.min(scrollPos, maxScroll));
+
+                    if (smooth) {
+                        wrapper.scrollTo({
+                            left: finalScrollPos,
+                            behavior: 'smooth'
+                        });
+                    } else {
+                        wrapper.scrollLeft = finalScrollPos;
+                    }
+                    scrolled.current = true;
+
+                    if (showSuccessToast) {
+                        showToast({
+                            severity: 'success',
+                            summary: '날짜 이동',
+                            detail: `${targetDate.getMonth() + 1}월 ${targetDate.getDate()}일로 이동했습니다.`
+                        });
+                    }
+                });
+            } else {
+                showToast({
+                    severity: 'warn',
+                    summary: '날짜 오류',
+                    detail: '선택한 날짜는 현재 표시된 월과 다릅니다. 먼저 해당 월을 선택해주세요.'
+                });
+            }
+        },
+        [date, showToast]
+    );
+
+    const handleMoveToday = useCallback((): void => {
+        if (typeof window === 'undefined' || !date || !tableWrapperRef.current) {
+            return;
         }
         const now = new Date();
         // Only scroll if the table is showing the current month and year
         if (now.getFullYear() === date.getFullYear() && now.getMonth() === date.getMonth()) {
-            const wrapper = dt.current?.getElement().querySelector('.p-datatable-wrapper');
-            if (wrapper) {
-                const today = now.getDate();
-                const attendanceColWidth = 152.26;
-                const homeworkColWidth = 128;
-                const noteColWidth = 150;
-                const dayWidth = attendanceColWidth + homeworkColWidth + noteColWidth;
-                // Scroll to the column before today, so today is visible
-                const scrollPos = (today - 1) * dayWidth - 200;
-
-                wrapper.scrollLeft = scrollPos > 0 ? scrollPos : 0;
-                scrolled.current = true;
-            }
+            scrollToDate(now);
         }
-    };
+    }, [date, scrollToDate]);
+
+    // 테이블이 렌더링된 후 오늘 날짜로 스크롤
+    useEffect(() => {
+        if (!date || !selectedClass || users.length === 0) {
+            return;
+        }
+        // 이미 스크롤했으면 다시 스크롤하지 않음
+        if (scrolled.current) {
+            return;
+        }
+        // 테이블이 렌더링될 시간을 주기 위해 약간의 지연
+        const timer = setTimeout(() => {
+            handleMoveToday();
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [date, selectedClass, users.length, handleMoveToday]);
 
     const handleUserUpdate = useCallback((userId: number, field: string, value: any) => {
         setUsers((currentUsers) =>
@@ -330,6 +292,27 @@ const AttendancePage = () => {
     const handleClassChange = (e: DropdownChangeEvent) => {
         setSelectedClass(e.value as string);
     };
+
+    // 날짜 선택 핸들러
+    const handleDateSelect = (selectedDate: Date | null) => {
+        if (!selectedDate) return;
+
+        setSelectedScrollDate(selectedDate);
+
+        // 날짜로 스크롤 (성공 토스트 포함)
+        scrollToDate(selectedDate, true, true);
+
+        // OverlayPanel 닫기
+        if (datePickerOverlayRef.current) {
+            datePickerOverlayRef.current.hide();
+        }
+    };
+
+    // 검색 기능 최적화
+    const filteredUsers = useMemo(() => {
+        if (!globalFilterValue) return users;
+        return users.filter((user) => user.name.toLowerCase().includes(globalFilterValue.toLowerCase()));
+    }, [users, globalFilterValue]);
 
     // Helper function to format attendance data for saving
     const formatAttendanceData = () => {
@@ -343,23 +326,48 @@ const AttendancePage = () => {
 
         const formattedStudents = users.map((user) => {
             const attendance: {
-                [key: string]: { status: string; homework: number; note?: string; date: string; statusTime: Date };
+                [key: string]: {
+                    status: string;
+                    homework: number;
+                    note?: string;
+                    date: string;
+                    statusTime: Date;
+                };
             } = {};
             for (const key in user) {
                 if (key.startsWith('day_') && key.endsWith('_attendance')) {
                     const day = key.split('_')[1];
                     const homeworkKey = `day_${day}_homework`;
                     const noteKey = `day_${day}_note`;
+                    const lateTimeKey = `day_${day}_lateTime`;
                     // 날짜를 yyyymmdd 형태로 생성
                     const dayStr = String(day).padStart(2, '0');
                     const dateStr = `${year}${month}${dayStr}`;
-                    attendance[day] = {
-                        status: user[key] as string,
+                    const status = user[key] as string;
+                    const attendanceEntry: {
+                        status: string;
+                        homework: number;
+                        note?: string;
+                        lateTime?: number;
+                        date: string;
+                        statusTime: Date;
+                    } = {
+                        status: status,
                         homework: user[homeworkKey] as number,
                         note: (user[noteKey] as string) || '',
                         statusTime: (user[`statusTime`] as any) || dayjs().toDate(),
                         date: dateStr
                     };
+                    
+                    // 지각 상태일 때만 지각 시간 추가 (분 단위 숫자)
+                    if (status === 'late') {
+                        const lateTimeValue = user[lateTimeKey];
+                        if (typeof lateTimeValue === 'number') {
+                            attendanceEntry.lateTime = lateTimeValue;
+                        }
+                    }
+                    
+                    attendance[day] = attendanceEntry;
                 }
             }
             return {
@@ -394,13 +402,21 @@ const AttendancePage = () => {
     // 출석부 저장
     const handleSave = async () => {
         if (!selectedClass || !date) {
-            showToast({ severity: 'warn', summary: '저장 불가', detail: '클래스와 월을 선택해주세요.' });
+            showToast({
+                severity: 'warn',
+                summary: '저장 불가',
+                detail: '클래스와 월을 선택해주세요.'
+            });
             return;
         }
 
         const dataToSave = formatAttendanceData();
         if (!dataToSave) {
-            showToast({ severity: 'error', summary: '저장 실패', detail: '저장할 데이터가 없습니다.' });
+            showToast({
+                severity: 'error',
+                summary: '저장 실패',
+                detail: '저장할 데이터가 없습니다.'
+            });
             return;
         }
 
@@ -418,155 +434,125 @@ const AttendancePage = () => {
         }
     };
 
+    const onGlobalFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target?.value || '';
+        setGlobalFilterValue(value);
+    };
+
+    // 가상 스크롤링 활성화 여부 결정 (date가 없어도 계산 가능)
+    const shouldUseVirtualScroll = filteredUsers.length >= VIRTUAL_SCROLL_THRESHOLD;
+
+    // 가상 스크롤러 설정 (항상 호출되어야 함 - React Hooks 규칙 준수)
+    // 조건부 활성화는 렌더링 단계에서 처리
+    const virtualizer = useVirtualizer({
+        count: filteredUsers.length,
+        getScrollElement: () => tableBodyRef.current,
+        estimateSize: () => 50, // 각 행의 예상 높이
+        overscan: 5 // 화면 밖에 렌더링할 추가 행 수
+    });
+
     if (!date) {
         return <div>Loading...</div>;
     }
 
-    const nameColumnHeader = (
-        <div className="flex justify-content-between align-items-center">
-            <span>이름</span>
-            <span>총 {Array.isArray(users) ? users.length : 0}명</span>
-        </div>
-    );
-
     const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-    const dayHeaders: number[] = Array.from({ length: daysInMonth }, (_, i) => i + 1);
     const year: number = date.getFullYear();
     const month: number = date.getMonth();
-    const monthStr: string = String(month + 1).padStart(2, '0');
-
-    const headerGroup = (
-        <ColumnGroup>
-            <Row>
-                <Column header="학생" rowSpan={2} frozen />
-                {dayHeaders.map((day: number) => {
-                    const dayStr: string = String(day).padStart(2, '0');
-                    const currentDate: Date = new Date(year, month, day);
-                    const dayOfWeek: number = currentDate.getDay();
-                    const dateStr: string = `${year}-${monthStr}-${dayStr}`;
-
-                    const style: React.CSSProperties = { textAlign: 'center' };
-                    if (dayOfWeek === 0 || holidays.includes(dateStr)) {
-                        style.color = 'red';
-                    } else if (dayOfWeek === 6) {
-                        style.color = 'blue';
-                    }
-
-                    const headerText: string = `${monthStr}-${dayStr} (${dayNames[dayOfWeek]})`;
-                    const borderStyle: React.CSSProperties = {
-                        ...style,
-                        borderRight: day < daysInMonth ? '2px solid #007ad9' : 'none'
-                    };
-
-                    return <Column key={`day_${day}`} header={headerText} colSpan={3} headerStyle={borderStyle} />;
-                })}
-            </Row>
-            <Row>
-                {dayHeaders.flatMap((day: number) => [
-                    <Column key={`sub_att_${day}`} header="출석" headerStyle={{ borderRight: '1px solid #dee2e6' }} />,
-                    <Column key={`sub_hw_${day}`} header="숙제" headerStyle={{ borderRight: '1px solid #dee2e6' }} />,
-                    <Column
-                        key={`sub_note_${day}`}
-                        header="비고"
-                        headerStyle={{ borderRight: day < daysInMonth ? '2px solid #007ad9' : 'none' }}
-                    />
-                ])}
-            </Row>
-        </ColumnGroup>
-    );
-
-    const onGlobalFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target?.value || '';
-        setFilters((prev) => ({ ...prev, global: { value: value as any, matchMode: FilterMatchMode.CONTAINS } }));
-        setGlobalFilterValue(value);
-    };
-
-    const header = (
-        <div className="flex flex-wrap align-items-center justify-content-between gap-2">
-            <span className="text-xl text-900 font-bold">출석부</span>
-            <div className="flex align-items-center gap-2">
-                <span className="p-input-icon-left">
-                    <i className="pi pi-search" />
-                    <InputText value={globalFilterValue} onChange={onGlobalFilterChange} placeholder="학생 검색" />
-                </span>
-                <Button
-                    icon="pi"
-                    rounded
-                    raised
-                    label="오늘 전체 출석"
-                    onClick={handleAllPresent}
-                    className="p-button-success"
-                />
-                <Button
-                    icon="pi pi-save"
-                    rounded
-                    raised
-                    label="출석부 저장"
-                    onClick={handleSave}
-                    className="p-button-success"
-                />
-                <Button icon="pi pi-refresh" rounded raised label="오늘날짜로" onClick={handleMoveToday} />
-            </div>
-        </div>
-    );
-
-    const dynamicColumns: JSX.Element[] = dayHeaders.flatMap((day: number) => {
-        const attendanceField = `day_${day}_attendance`;
-        const homeworkField = `day_${day}_homework`;
-        const noteField = `day_${day}_note`;
-        return [
-            <Column
-                key={attendanceField}
-                field={attendanceField}
-                body={(rowData: User) => (
-                    <MemoizedAttendanceCell
-                        value={rowData[attendanceField] as string}
-                        options={attendanceStatuses}
-                        onChange={(value) => handleUserUpdate(rowData.id, attendanceField, value)}
-                    />
-                )}
-                style={{ minWidth: '150px', borderRight: '1px solid #dee2e6' }}
-            />,
-            <Column
-                key={homeworkField}
-                field={homeworkField}
-                body={(rowData: User) => (
-                    <MemoizedHomeworkCell
-                        value={rowData[homeworkField] as number}
-                        options={homeworkProgressOptions}
-                        onChange={(value) => handleUserUpdate(rowData.id, homeworkField, value)}
-                    />
-                )}
-                style={{ minWidth: '120px', borderRight: '1px solid #dee2e6' }}
-            />,
-            <Column
-                key={noteField}
-                field={noteField}
-                body={(rowData: User) => (
-                    <MemoizedNoteCell
-                        value={rowData[noteField] as string}
-                        onChange={(value) => handleUserUpdate(rowData.id, noteField, value)}
-                    />
-                )}
-                style={{ minWidth: '150px', borderRight: day < daysInMonth ? '2px solid #007ad9' : 'none' }}
-            />
-        ];
-    });
 
     return (
         <>
             <style>{`
-                .p-datatable .p-datatable-thead > tr > th .p-column-header-content {
-                    justify-content: center;
+                .attendance-table {
+                    display: grid;
+                    grid-template-columns: 150px repeat(${daysInMonth * 3}, 140px);
+                    width: max-content;
+                    min-width: 100%;
+                    border: 1px solid #dee2e6;
                 }
+                
+                .attendance-header {
+                    display: contents;
+                }
+                
+                .attendance-header-row {
+                    display: contents;
+                }
+                
+                .attendance-header-cell-name {
+                    position: sticky;
+                    left: 0;
+                    background: white;
+                    z-index: 10;
+                    padding: 8px;
+                    border: 1px solid #dee2e6;
+                    border-bottom: 2px solid #007ad9;
+                    text-align: center;
+                    font-weight: bold;
+                    grid-row: span 2;
+                }
+                
+                .attendance-header-day-group {
+                    grid-column: span 3;
+                    padding: 8px;
+                    border: 1px solid #dee2e6;
+                    border-bottom: 1px solid #dee2e6;
+                    text-align: center;
+                    font-weight: bold;
+                }
+                
+                .attendance-header-sub-cell {
+                    padding: 8px;
+                    border: 1px solid #dee2e6;
+                    text-align: center;
+                    font-weight: bold;
+                    background: #f8f9fa;
+                    border-bottom: 2px solid #007ad9;
+                }
+                
+                .attendance-body {
+                    display: contents;
+                }
+                
+                .attendance-row {
+                    display: contents;
+                }
+                
+                .attendance-cell-name {
+                    position: sticky;
+                    left: 0;
+                    background: white;
+                    z-index: 5;
+                    padding: 8px;
+                    border: 1px solid #dee2e6;
+                    border-right: 2px solid #007ad9;
+                    font-weight: 500;
+                }
+                
+                .attendance-day-group {
+                    display: contents;
+                }
+                
+                .attendance-cell {
+                    padding: 4px;
+                    border-right: 1px solid #dee2e6;
+                    border-bottom: 1px solid #dee2e6;
+                }
+                
+                .attendance-day-group .attendance-cell:last-child {
+                    border-right: 2px solid #007ad9;
+                }
+                
+                .attendance-table-wrapper {
+                    overflow-x: auto;
+                    overflow-y: ${shouldUseVirtualScroll ? 'auto' : 'visible'};
+                    max-height: ${shouldUseVirtualScroll ? '600px' : 'none'};
+                    border: 1px solid #dee2e6;
+                    width: 100%;
+                    position: relative;
+                }
+                
                 .p-dropdown-panel {
                     z-index: 9999 !important;
-                }
-                .p-datatable .p-datatable-tbody > tr > td {
-                    border-right: 1px solid #dee2e6;
-                }
-                .p-datatable .p-datatable-tbody > tr > td:last-child {
-                    border-right: none;
                 }
             `}</style>
             <div className="grid">
@@ -599,26 +585,141 @@ const AttendancePage = () => {
                             </div>
                         </div>
 
-                        <DataTable
-                            ref={dt}
-                            value={Array.isArray(users) ? users : []}
-                            headerColumnGroup={headerGroup}
-                            header={header}
-                            scrollable
-                            style={{ marginTop: '20px' }}
-                            filters={filters}
-                            globalFilterFields={['name']}
+                        {/* 헤더 */}
+                        <div className="flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                            <span className="text-xl text-900 font-bold">출석부</span>
+                            <div className="flex align-items-center gap-2">
+                                <span className="p-input-icon-left">
+                                    <i className="pi pi-search" />
+                                    <InputText
+                                        value={globalFilterValue}
+                                        onChange={onGlobalFilterChange}
+                                        placeholder="학생 검색"
+                                    />
+                                </span>
+                                <Button
+                                    icon="pi"
+                                    rounded
+                                    raised
+                                    label="오늘 전체 출석"
+                                    onClick={handleAllPresent}
+                                    className="p-button-success"
+                                />
+                                <Button
+                                    icon="pi pi-save"
+                                    rounded
+                                    raised
+                                    label="출석부 저장"
+                                    onClick={handleSave}
+                                    className="p-button-success"
+                                />
+                                <Button
+                                    icon="pi pi-refresh"
+                                    rounded
+                                    raised
+                                    label="오늘날짜로"
+                                    onClick={() => {
+                                        scrolled.current = false;
+                                        handleMoveToday();
+                                    }}
+                                />
+                                <Button
+                                    icon="pi pi-calendar"
+                                    rounded
+                                    raised
+                                    label="날짜 이동"
+                                    onClick={(e) => {
+                                        if (datePickerOverlayRef.current) {
+                                            datePickerOverlayRef.current.toggle(e);
+                                        }
+                                    }}
+                                />
+                                <OverlayPanel ref={datePickerOverlayRef} dismissable>
+                                    <div className="flex flex-column gap-3" style={{ minWidth: '300px' }}>
+                                        <label htmlFor="date-picker" className="font-bold">
+                                            이동할 날짜 선택
+                                        </label>
+                                        <Calendar
+                                            id="date-picker"
+                                            value={selectedScrollDate}
+                                            onChange={(e) => handleDateSelect(e.value as Date)}
+                                            dateFormat="yy/mm/dd"
+                                            showIcon
+                                            icon="pi pi-calendar"
+                                            placeholder="날짜 선택"
+                                        />
+                                        <div className="flex gap-2 justify-content-end">
+                                            <Button
+                                                label="취소"
+                                                severity="secondary"
+                                                size="small"
+                                                onClick={() => {
+                                                    if (datePickerOverlayRef.current) {
+                                                        datePickerOverlayRef.current.hide();
+                                                    }
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                </OverlayPanel>
+                            </div>
+                        </div>
+
+                        {/* 테이블 */}
+                        <div
+                            className="attendance-table-wrapper"
+                            ref={tableWrapperRef}
+                            role="region"
+                            aria-label="출석부 테이블"
                         >
-                            <Column
-                                key="name"
-                                field="name"
-                                header={nameColumnHeader}
-                                frozen
-                                style={{ minWidth: '150px', zIndex: 1 }}
-                                sortable
-                            />
-                            {dynamicColumns}
-                        </DataTable>
+                            <div className="attendance-table" role="table" aria-label="출석부">
+                                <AttendanceTableHeader
+                                    daysInMonth={daysInMonth}
+                                    year={year}
+                                    month={month}
+                                    totalStudents={filteredUsers.length}
+                                />
+                                <div className="attendance-body" role="rowgroup" ref={tableBodyRef}>
+                                    {shouldUseVirtualScroll ? (
+                                        <div
+                                            style={{
+                                                height: `${virtualizer.getTotalSize()}px`,
+                                                position: 'relative'
+                                            }}
+                                        >
+                                            {virtualizer.getVirtualItems().map((virtualRow) => (
+                                                <div
+                                                    key={virtualRow.key}
+                                                    style={{
+                                                        position: 'absolute',
+                                                        top: 0,
+                                                        left: 0,
+                                                        width: '100%',
+                                                        height: `${virtualRow.size}px`,
+                                                        transform: `translateY(${virtualRow.start}px)`
+                                                    }}
+                                                >
+                                                    <AttendanceRow
+                                                        user={filteredUsers[virtualRow.index]}
+                                                        daysInMonth={daysInMonth}
+                                                        onUpdate={handleUserUpdate}
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        filteredUsers.map((user) => (
+                                            <AttendanceRow
+                                                key={user.id}
+                                                user={user}
+                                                daysInMonth={daysInMonth}
+                                                onUpdate={handleUserUpdate}
+                                            />
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

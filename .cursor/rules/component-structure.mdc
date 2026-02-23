@@ -1,0 +1,137 @@
+---
+description: React 컴포넌트 구조 및 조직 패턴
+globs: **/*.tsx
+alwaysApply: false
+---
+
+# 컴포넌트 구조 패턴
+
+## 컴포넌트 파일 구조
+
+```tsx
+// ✅ GOOD
+'use client';
+
+// 1. 외부 라이브러리 import
+import React, { useState, useEffect } from 'react';
+import { Button } from 'primereact/button';
+
+// 2. 내부 유틸/훅 import
+import { useHttp } from '@/util/axiosInstance';
+import { useToast } from '@/hooks/useToast';
+
+// 3. 타입 import
+import { User } from '@/types/user';
+
+// 4. 상수 import
+import { STATUS_OPTIONS } from '@/constants/feature';
+
+// 5. 타입 정의 (컴포넌트 내부에서만 사용하는 경우)
+interface ComponentProps {
+  id: number;
+  onUpdate: (id: number) => void;
+}
+
+// 6. 컴포넌트
+export default function ComponentName({ id, onUpdate }: ComponentProps) {
+  // 상태
+  const [data, setData] = useState<User[]>([]);
+  
+  // 훅
+  const http = useHttp();
+  const { showToast } = useToast();
+  
+  // 이펙트
+  useEffect(() => {
+    fetchData();
+  }, []);
+  
+  // 핸들러
+  const handleClick = () => {
+    // 로직
+  };
+  
+  // 렌더링
+  return (
+    <div>
+      {/* JSX */}
+    </div>
+  );
+}
+```
+
+## 컴포넌트 분리 원칙
+
+- **단일 책임**: 각 컴포넌트는 하나의 책임만 가집니다
+- **재사용성**: 재사용 가능한 컴포넌트는 `components/` 디렉토리에 분리
+- **복잡도**: 200줄 이상이면 분리 고려
+
+## Props 타입 정의
+
+```tsx
+// ✅ GOOD
+interface ModalProps {
+  visible: boolean;
+  onHide: () => void;
+  onSubmit: (data: FormData) => void;
+  initialData?: User;
+}
+
+// ❌ BAD
+const Modal = ({ visible, onHide }: any) => { ... };
+```
+
+## 조건부 렌더링
+
+```tsx
+// ✅ GOOD
+{isLoading && <LoadingSpinner />}
+{error && <ErrorMessage error={error} />}
+{data && data.length > 0 && <DataList data={data} />}
+{!data && <EmptyState />}
+```
+
+## 이벤트 핸들러 네이밍
+
+```tsx
+// ✅ GOOD
+const handleSave = () => { ... };
+const handleDelete = (id: number) => { ... };
+const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => { ... };
+const handleDropdownChange = (e: DropdownChangeEvent) => { ... };
+
+// ❌ BAD
+const save = () => { ... };
+const onClick = () => { ... };
+```
+
+## 메모이제이션
+
+성능 최적화가 필요한 경우에만 사용합니다.
+
+```tsx
+// ✅ GOOD - props가 자주 변경되지 않는 경우
+const MemoizedComponent = React.memo(Component, (prevProps, nextProps) => {
+  return prevProps.id === nextProps.id;
+});
+
+// ✅ GOOD - 계산 비용이 큰 경우
+const expensiveValue = useMemo(() => {
+  return heavyCalculation(data);
+}, [data]);
+```
+
+## 접근성
+
+시맨틱 HTML과 ARIA 속성을 사용합니다.
+
+```tsx
+// ✅ GOOD
+<button
+  onClick={handleClick}
+  aria-label="저장 버튼"
+  aria-disabled={isLoading}
+>
+  저장
+</button>
+```

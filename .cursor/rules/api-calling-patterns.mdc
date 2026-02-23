@@ -1,0 +1,125 @@
+---
+description: Axios를 사용한 API 호출 패턴 및 에러 처리
+globs: **/*.{ts,tsx}
+alwaysApply: false
+---
+
+# API 호출 패턴
+
+## useHttp 훅 사용
+
+모든 API 호출은 `useHttp` 훅을 사용합니다.
+
+```tsx
+// ✅ GOOD
+import { useHttp } from '@/util/axiosInstance';
+
+const http = useHttp();
+
+const fetchData = async () => {
+  try {
+    const response = await http.get('/choiMath/endpoint');
+    setData(response.data);
+  } catch (error: any) {
+    console.error('Error:', error);
+  }
+};
+```
+
+## 에러 처리
+
+에러는 항상 적절히 처리하고 사용자에게 피드백을 제공합니다.
+
+```tsx
+// ✅ GOOD
+try {
+  const response = await http.post('/choiMath/endpoint', data);
+  showToast({
+    severity: 'success',
+    summary: '성공',
+    detail: '작업이 완료되었습니다.'
+  });
+} catch (error: any) {
+  console.error('Error:', error);
+  const errorMessage = 
+    error.response?.data?.message || 
+    error.message || 
+    '처리 중 오류가 발생했습니다.';
+  
+  showToast({
+    severity: 'error',
+    summary: '에러',
+    detail: errorMessage
+  });
+}
+```
+
+## API 엔드포인트 네이밍
+
+- 조회: `GET /choiMath/resource/`
+- 단일 조회: `GET /choiMath/resource/:id`
+- 생성: `POST /choiMath/resource/`
+- 수정: `PUT /choiMath/resource/:id` 또는 `POST /choiMath/resource/updateResource`
+- 삭제: `DELETE /choiMath/resource/:id`
+
+## 파라미터 전달
+
+```tsx
+// ✅ GOOD - Query 파라미터
+const response = await http.get('/choiMath/attendance/getAttendance', {
+  params: {
+    classId: selectedClass,
+    year: year,
+    month: month
+  }
+});
+
+// ✅ GOOD - Body 데이터
+const response = await http.post('/choiMath/attendance/saveAttendance', {
+  classId: selectedClass,
+  year: year,
+  month: month,
+  students: formattedStudents
+});
+```
+
+## 로딩 상태 관리
+
+로딩 상태는 axios 인터셉터에서 자동으로 관리되지만, 필요시 수동으로도 관리합니다.
+
+```tsx
+// ✅ GOOD
+const [isLoading, setIsLoading] = useState(false);
+
+const fetchData = async () => {
+  setIsLoading(true);
+  try {
+    const response = await http.get('/choiMath/endpoint');
+    setData(response.data);
+  } catch (error) {
+    // 에러 처리
+  } finally {
+    setIsLoading(false);
+  }
+};
+```
+
+## 데이터 포맷팅
+
+API 응답 데이터는 적절히 포맷팅합니다.
+
+```tsx
+// ✅ GOOD
+const formatAttendanceData = () => {
+  return {
+    classId: selectedClass,
+    year: year,
+    month: month,
+    students: users.map((user) => ({
+      studentId: user.studentId || '',
+      name: user.name,
+      attendance: formatAttendance(user)
+    }))
+  };
+};
+```

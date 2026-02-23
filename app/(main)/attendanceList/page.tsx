@@ -125,6 +125,16 @@ const AttendanceListPage = () => {
                         </div>
                     </Card>
                 </div>
+                {summary.totalLate !== undefined && (
+                    <div className="col-12 md:col-6 lg:col-3">
+                        <Card>
+                            <div className="flex flex-column align-items-center">
+                                <span className="text-500 text-sm mb-2">총 지각</span>
+                                <span className="text-2xl font-bold text-orange-500">{summary.totalLate}회</span>
+                            </div>
+                        </Card>
+                    </div>
+                )}
                 <div className="col-12 md:col-6 lg:col-3">
                     <Card>
                         <div className="flex flex-column align-items-center">
@@ -135,6 +145,18 @@ const AttendanceListPage = () => {
                         </div>
                     </Card>
                 </div>
+                {summary.averageLateRate !== undefined && (
+                    <div className="col-12 md:col-6 lg:col-3">
+                        <Card>
+                            <div className="flex flex-column align-items-center">
+                                <span className="text-500 text-sm mb-2">평균 지각률</span>
+                                <span className="text-2xl font-bold text-orange-500">
+                                    {summary.averageLateRate.toFixed(1)}%
+                                </span>
+                            </div>
+                        </Card>
+                    </div>
+                )}
                 {summary.totalClasses !== undefined && (
                     <div className="col-12 md:col-6 lg:col-3">
                         <Card>
@@ -187,6 +209,16 @@ const AttendanceListPage = () => {
 
     const absentBodyTemplate = (rowData: any) => {
         return <span className="text-red-500 font-semibold">{rowData.statistics?.absent || 0}회</span>;
+    };
+
+    const lateBodyTemplate = (rowData: any) => {
+        return <span className="text-orange-500 font-semibold">{rowData.statistics?.late || 0}회</span>;
+    };
+
+    const lateRateBodyTemplate = (rowData: any) => {
+        const rate = rowData.statistics?.lateRate || 0;
+        const severity = rate <= 5 ? 'success' : rate <= 10 ? 'warning' : 'danger';
+        return <Tag value={`${rate.toFixed(1)}%`} severity={severity} />;
     };
 
     return (
@@ -257,12 +289,23 @@ const AttendanceListPage = () => {
                                 />
                                 <Column field="statistics.present" header="출석" sortable body={presentBodyTemplate} />
                                 <Column field="statistics.absent" header="결석" sortable body={absentBodyTemplate} />
+                                {statistics.classes[0]?.statistics?.late !== undefined && (
+                                    <Column field="statistics.late" header="지각" sortable body={lateBodyTemplate} />
+                                )}
                                 <Column
                                     field="statistics.attendanceRate"
                                     header="출석률"
                                     sortable
                                     body={attendanceRateBodyTemplate}
                                 />
+                                {statistics.classes[0]?.statistics?.lateRate !== undefined && (
+                                    <Column
+                                        field="statistics.lateRate"
+                                        header="지각률"
+                                        sortable
+                                        body={lateRateBodyTemplate}
+                                    />
+                                )}
                                 <Column
                                     field="statistics.homeworkRate"
                                     header="과제 달성률"
@@ -303,6 +346,14 @@ const AttendanceListPage = () => {
                                             sortable
                                             body={absentBodyTemplate}
                                         />
+                                        {classItem.students[0]?.statistics?.late !== undefined && (
+                                            <Column
+                                                field="statistics.late"
+                                                header="지각"
+                                                sortable
+                                                body={lateBodyTemplate}
+                                            />
+                                        )}
                                         <Column
                                             field="statistics.totalDays"
                                             header="수업일수"
@@ -315,6 +366,14 @@ const AttendanceListPage = () => {
                                             sortable
                                             body={attendanceRateBodyTemplate}
                                         />
+                                        {classItem.students[0]?.statistics?.lateRate !== undefined && (
+                                            <Column
+                                                field="statistics.lateRate"
+                                                header="지각률"
+                                                sortable
+                                                body={lateRateBodyTemplate}
+                                            />
+                                        )}
                                         <Column
                                             field="statistics.homeworkRate"
                                             header="과제 달성률"
@@ -349,6 +408,9 @@ const AttendanceListPage = () => {
                                 <Column field="school" header="학교" sortable />
                                 <Column field="statistics.present" header="출석" sortable body={presentBodyTemplate} />
                                 <Column field="statistics.absent" header="결석" sortable body={absentBodyTemplate} />
+                                {statistics.student[0]?.statistics?.late !== undefined && (
+                                    <Column field="statistics.late" header="지각" sortable body={lateBodyTemplate} />
+                                )}
                                 <Column
                                     field="statistics.totalDays"
                                     header="수업일수"
@@ -361,6 +423,14 @@ const AttendanceListPage = () => {
                                     sortable
                                     body={attendanceRateBodyTemplate}
                                 />
+                                {statistics.student[0]?.statistics?.lateRate !== undefined && (
+                                    <Column
+                                        field="statistics.lateRate"
+                                        header="지각률"
+                                        sortable
+                                        body={lateRateBodyTemplate}
+                                    />
+                                )}
                                 <Column
                                     field="statistics.homeworkRate"
                                     header="과제 달성률"
