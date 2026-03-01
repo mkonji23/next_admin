@@ -30,7 +30,8 @@ const AppMenu = () => {
             items: [
                 { label: '사용자 목록', icon: 'pi pi-fw pi-users', to: '/userList' },
                 { label: '학생 목록', icon: 'pi pi-fw pi-user', to: '/studentList' },
-                { label: '클래스 목록', icon: 'pi pi-fw pi-book', to: '/classList' }
+                { label: '클래스 목록', icon: 'pi pi-fw pi-book', to: '/classList' },
+                { label: '토큰 발급', icon: 'pi pi-fw pi-key', to: '/settings/kakao' }
             ]
         },
 
