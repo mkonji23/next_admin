@@ -1,61 +1,21 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from 'primereact/button';
 import { Card } from 'primereact/card';
 import { Message } from 'primereact/message';
 import { Divider } from 'primereact/divider';
-import { Password } from 'primereact/password';
+import { withSecurity } from '@/components/hoc/withSecurity';
 
 const KakaoSettingsPage = () => {
-    const [isAuthorized, setIsAuthorized] = useState(false);
-    const [inputPassword, setInputPassword] = useState('');
-    const [error, setError] = useState(false);
-
     // These should ideally be in environment variables
     const KAKAO_CLIENT_ID = process.env.NEXT_PUBLIC_KAKAO_CLIENT_ID || '82c0e86b245749f7ba36a73a6a908a73';
     const KAKAO_REDIRECT_URI = process.env.NEXT_PUBLIC_KAKAO_REDIRECT_URI || 'http://localhost:4000/auth/kakao/callback';
-
-    const handlePasswordSubmit = () => {
-        if (inputPassword === 'test1234') {
-            setIsAuthorized(true);
-            setError(false);
-        } else {
-            setError(true);
-        }
-    };
 
     const handleKakaoAuth = () => {
         const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_CLIENT_ID}&redirect_uri=${KAKAO_REDIRECT_URI}&response_type=code`;
         window.location.href = kakaoAuthUrl;
     };
-
-    if (!isAuthorized) {
-        return (
-            <div className="flex align-items-center justify-content-center" style={{ minHeight: '70vh' }}>
-                <Card title="보안 인증" subTitle="해당 메뉴에 접근하려면 비밀번호가 필요합니다." className="w-full md:w-30rem shadow-2">
-                    <div className="flex flex-column gap-3">
-                        <div className="field">
-                            <label htmlFor="accessPassword" className="block font-bold mb-2">Password</label>
-                            <Password 
-                                id="accessPassword"
-                                value={inputPassword} 
-                                onChange={(e) => setInputPassword(e.target.value)} 
-                                toggleMask 
-                                feedback={false}
-                                className="w-full"
-                                inputClassName="w-full p-3"
-                                placeholder="비밀번호를 입력하세요"
-                                onKeyDown={(e) => e.key === 'Enter' && handlePasswordSubmit()}
-                            />
-                        </div>
-                        {error && <Message severity="error" text="비밀번호가 일치하지 않습니다." />}
-                        <Button label="확인" icon="pi pi-check" onClick={handlePasswordSubmit} className="w-full p-3 mt-2" />
-                    </div>
-                </Card>
-            </div>
-        );
-    }
 
     return (
         <div className="grid">
@@ -110,4 +70,4 @@ const KakaoSettingsPage = () => {
     );
 };
 
-export default KakaoSettingsPage;
+export default withSecurity(KakaoSettingsPage);

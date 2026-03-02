@@ -9,11 +9,13 @@ import { Divider } from 'primereact/divider';
 import { Button } from 'primereact/button';
 import { useToast } from '@/hooks/useToast';
 import Link from 'next/link';
+import { useHttp } from '@/util/axiosInstance';
 
 const KakaoCallbackContent = () => {
     const searchParams = useSearchParams();
     const { showToast } = useToast();
-    
+    const http = useHttp();
+
     const [loading, setLoading] = useState(false);
     const [tokenData, setTokenData] = useState<any>(null);
     const [apiError, setApiError] = useState<any>(null);
@@ -23,32 +25,18 @@ const KakaoCallbackContent = () => {
     const error = searchParams.get('error');
     const errorDescription = searchParams.get('error_description');
 
-    useEffect(() => {
-        if (code && !tokenData && !apiError && !loading) {
-            handleGetToken(code);
-        }
-    }, [code]);
-
     const handleGetToken = async (authCode: string) => {
         setLoading(true);
         setApiError(null);
         try {
-            const response = await fetch('/api/auth/kakao/token', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ code: authCode }),
+            const response = await http.post('/app/auth/kakao/token', { code: authCode });
+            const data = response.data;
+            setTokenData(data);
+            showToast({
+                severity: 'success',
+                summary: '토큰 발급 완료',
+                detail: '카카오 엑세스 토큰을 성공적으로 가져왔습니다.'
             });
-            const data = await response.json();
-            if (!response.ok) {
-                setApiError(data);
-            } else {
-                setTokenData(data);
-                showToast({
-                    severity: 'success',
-                    summary: '토큰 발급 완료',
-                    detail: '카카오 엑세스 토큰을 성공적으로 가져왔습니다.'
-                });
-            }
         } catch (err) {
             setApiError({ error: 'Failed to fetch token', error_description: '네트워크 오류가 발생했습니다.' });
         } finally {
@@ -83,18 +71,30 @@ const KakaoCallbackContent = () => {
 
     return (
         <div className="surface-ground flex flex-column align-items-center justify-content-center min-h-screen p-4">
-            <Card title="카카오 인증 및 토큰 확인" className="w-full md:w-35rem shadow-2 mb-4" style={{ borderRadius: '12px' }}>
+            <Card
+                title="카카오 인증 및 토큰 확인"
+                className="w-full md:w-35rem shadow-2 mb-4"
+                style={{ borderRadius: '12px' }}
+            >
                 <div className="p-fluid">
                     {/* 1. 인가 코드 섹션 */}
                     <div className="mb-4">
-                        <Message severity="info" text="인가 코드를 성공적으로 수신했습니다." className="w-full justify-content-start" />
+                        <Message
+                            severity="info"
+                            text="인가 코드를 성공적으로 수신했습니다."
+                            className="w-full justify-content-start"
+                        />
                     </div>
                     {renderField('인가 코드 (code)', code, true)}
                     {state && renderField('상태 값 (state)', state)}
 
                     {error && (
                         <div className="mb-4">
-                            <Message severity="error" text={`인증 에러: ${errorDescription || error}`} className="w-full justify-content-start" />
+                            <Message
+                                severity="error"
+                                text={`인증 에러: ${errorDescription || error}`}
+                                className="w-full justify-content-start"
+                            />
                         </div>
                     )}
 
@@ -102,7 +102,7 @@ const KakaoCallbackContent = () => {
 
                     {/* 2. 토큰 섹션 */}
                     <h3 className="text-900 font-bold mb-3 mt-4">발급된 토큰 정보</h3>
-                    
+
                     {loading && (
                         <div className="flex justify-content-center p-4">
                             <i className="pi pi-spin pi-spinner" style={{ fontSize: '2rem' }}></i>
@@ -112,10 +112,22 @@ const KakaoCallbackContent = () => {
 
                     {apiError && (
                         <div className="mb-4">
-                            <Message severity="error" text={`토큰 발급 실패: ${apiError.error_description || apiError.error || '알 수 없는 오류'}`} className="w-full justify-content-start" />
-                            <Button label="다시 시도" icon="pi pi-refresh" onClick={() => code && handleGetToken(code)} className="mt-2 p-button-outlined p-button-sm" />
+                            <Message
+                                severity="error"
+                                text={`토큰 발급 실패: ${
+                                    apiError.error_description || apiError.error || '알 수 없는 오류'
+                                }`}
+                                className="w-full justify-content-start"
+                            />
                         </div>
                     )}
+
+                    <Button
+                        label="토큰 발급"
+                        icon="pi pi-refresh"
+                        onClick={() => code && handleGetToken(code)}
+                        className="mt-2 p-button-outlined p-button-sm"
+                    />
 
                     {tokenData && (
                         <>
@@ -128,10 +140,10 @@ const KakaoCallbackContent = () => {
                     )}
 
                     <Divider className="mt-5" />
-                    
+
                     <div className="flex justify-content-center">
-                        <Link href="/auth/login">
-                            <Button label="로그인 페이지로 돌아가기" icon="pi pi-arrow-left" className="p-button-text" />
+                        <Link href="/">
+                            <Button label="뒤로" icon="pi pi-arrow-left" className="p-button-text" />
                         </Link>
                     </div>
                 </div>
@@ -142,11 +154,13 @@ const KakaoCallbackContent = () => {
 
 const KakaoCallbackPage = () => {
     return (
-        <Suspense fallback={
-            <div className="flex align-items-center justify-content-center min-h-screen">
-                <i className="pi pi-spin pi-spinner" style={{ fontSize: '2rem' }}></i>
-            </div>
-        }>
+        <Suspense
+            fallback={
+                <div className="flex align-items-center justify-content-center min-h-screen">
+                    <i className="pi pi-spin pi-spinner" style={{ fontSize: '2rem' }}></i>
+                </div>
+            }
+        >
             <KakaoCallbackContent />
         </Suspense>
     );

@@ -44,7 +44,12 @@ const LoginPage = () => {
                     }}
                 >
                     <div className="w-full surface-card py-8 px-5 sm:px-8" style={{ borderRadius: '53px' }}>
-                        <div>
+                        <form
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                signIn();
+                            }}
+                        >
                             <label htmlFor="email1" className="block text-900 text-xl font-medium mb-2">
                                 ID
                             </label>
@@ -79,8 +84,8 @@ const LoginPage = () => {
                                     비밀번호 찾기
                                 </a>
                             </div>
-                            <Button label="Sign In" className="w-full p-3 text-xl" onClick={signIn}></Button>
-                        </div>
+                            <Button label="Sign In" type="submit" className="w-full p-3 text-xl"></Button>
+                        </form>
                     </div>
                 </div>
             </div>
