@@ -10,7 +10,6 @@ import { Button } from 'primereact/button';
 import { useToast } from '@/hooks/useToast';
 import Link from 'next/link';
 import { useHttp } from '@/util/axiosInstance';
-import Script from 'next/script';
 
 declare global {
     interface Window {

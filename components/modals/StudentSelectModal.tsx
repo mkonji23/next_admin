@@ -71,6 +71,8 @@ const StudentSelectModal = ({ visible, pData, onClose }: StudentSelectModalProps
             student.studentId?.toLowerCase().includes(searchLower) ||
             student.school?.toLowerCase().includes(searchLower) ||
             student.grade?.toLowerCase().includes(searchLower) ||
+            student.phoneNumber?.toLowerCase().includes(searchLower) ||
+            student.parentPhoneNumber?.toLowerCase().includes(searchLower) ||
             student.description?.toLowerCase().includes(searchLower)
         );
     });
@@ -81,6 +83,8 @@ const StudentSelectModal = ({ visible, pData, onClose }: StudentSelectModalProps
             name: student.name,
             grade: student.grade,
             school: student.school,
+            phoneNumber: student.phoneNumber,
+            parentPhoneNumber: student.parentPhoneNumber,
             description: student.description,
             registDate: student.registDate,
             updatedDate: student.updatedDate,

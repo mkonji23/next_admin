@@ -24,6 +24,8 @@ export interface Student {
     name: string;
     grade: string;
     school: string;
+    phoneNumber?: string;
+    parentPhoneNumber?: string;
     description?: string;
     registDate?: string;
     updatedDate?: string | Date;
@@ -51,6 +53,8 @@ const StudentModal = ({ visible, pData, onClose }: StudentModalProps) => {
         name: '',
         grade: '',
         school: '',
+        phoneNumber: '',
+        parentPhoneNumber: '',
         description: '',
         registDate: '',
         isWithdrawn: false
@@ -93,6 +97,8 @@ const StudentModal = ({ visible, pData, onClose }: StudentModalProps) => {
                     name: '',
                     grade: '',
                     school: '',
+                    phoneNumber: '',
+                    parentPhoneNumber: '',
                     description: '',
                     registDate: formatDate(today),
                     isWithdrawn: false
@@ -121,18 +127,23 @@ const StudentModal = ({ visible, pData, onClose }: StudentModalProps) => {
 
             if (mode === 'new') {
                 // 이름을 쉼표로 분리하여 배열로 변환
-                const names = student.name.split(',').map(name => name.trim()).filter(name => name.length > 0);
-                
+                const names = student.name
+                    .split(',')
+                    .map((name) => name.trim())
+                    .filter((name) => name.length > 0);
+
                 if (names.length === 0) {
                     showToast({ severity: 'error', summary: '입력 오류', detail: '이름을 입력해주세요.' });
                     return;
                 }
 
                 // 다건 등록을 위한 배열 생성
-                const studentsData = names.map(name => ({
+                const studentsData = names.map((name) => ({
                     name: name,
                     grade: student.grade,
                     school: student.school,
+                    phoneNumber: student.phoneNumber || '',
+                    parentPhoneNumber: student.parentPhoneNumber || '',
                     description: student.description || '',
                     registDate: formattedRegistDate,
                     isWithdrawn: false
@@ -144,10 +155,10 @@ const StudentModal = ({ visible, pData, onClose }: StudentModalProps) => {
 
                 await http.post('/choiMath/student/saveStudent', payload);
                 const count = studentsData.length;
-                showToast({ 
-                    severity: 'success', 
-                    summary: '등록 성공', 
-                    detail: `${count}명의 학생이 등록되었습니다.` 
+                showToast({
+                    severity: 'success',
+                    summary: '등록 성공',
+                    detail: `${count}명의 학생이 등록되었습니다.`
                 });
             } else {
                 // 수정 모드는 단건만 처리
@@ -156,6 +167,8 @@ const StudentModal = ({ visible, pData, onClose }: StudentModalProps) => {
                     name: student.name,
                     grade: student.grade,
                     school: student.school,
+                    phoneNumber: student.phoneNumber || '',
+                    parentPhoneNumber: student.parentPhoneNumber || '',
                     description: student.description || '',
                     registDate: formattedRegistDate,
                     isWithdrawn: student.isWithdrawn || false
@@ -178,24 +191,15 @@ const StudentModal = ({ visible, pData, onClose }: StudentModalProps) => {
 
     const dialogFooter = (
         <div>
-            <Button 
-                label="취소" 
-                icon="pi pi-times" 
-                onClick={handleCancel} 
-                className="p-button-text"
-            />
-            <Button 
-                label={saveButtonLabel} 
-                icon="pi pi-check" 
-                onClick={handleSave}
-            />
+            <Button label="취소" icon="pi pi-times" onClick={handleCancel} className="p-button-text" />
+            <Button label={saveButtonLabel} icon="pi pi-check" onClick={handleSave} />
         </div>
     );
 
     return (
         <Dialog
             visible={visible}
-            style={{ width: '450px' }}
+            style={{ width: '550px' }}
             header={header}
             modal
             className="p-fluid"
@@ -212,18 +216,20 @@ const StudentModal = ({ visible, pData, onClose }: StudentModalProps) => {
                     value={student.name}
                     onChange={(e) => setStudent({ ...student, name: e.target.value })}
                     required
-                    placeholder={isEditMode ? "이름을 입력하세요" : "홍길동, 김철수, 이영희"}
+                    placeholder={isEditMode ? '이름을 입력하세요' : '홍길동, 김철수, 이영희'}
                     className={submitted && !student.name ? 'p-invalid' : ''}
                 />
                 {submitted && !student.name && <small className="p-invalid">이름을 입력해주세요.</small>}
                 {!isEditMode && student.name && (
                     <small className="text-500">
-                        {student.name.split(',').filter(name => name.trim().length > 0).length}명이 등록됩니다.
+                        {student.name.split(',').filter((name) => name.trim().length > 0).length}명이 등록됩니다.
                     </small>
                 )}
             </div>
             <div className="field">
-                <label htmlFor="grade">학년 <span className="text-red-500">*</span></label>
+                <label htmlFor="grade">
+                    학년 <span className="text-red-500">*</span>
+                </label>
                 <Dropdown
                     id="grade"
                     value={student.grade}
@@ -235,7 +241,9 @@ const StudentModal = ({ visible, pData, onClose }: StudentModalProps) => {
                 {submitted && !student.grade && <small className="p-invalid">학년을 선택해주세요.</small>}
             </div>
             <div className="field">
-                <label htmlFor="school">학교 <span className="text-red-500">*</span></label>
+                <label htmlFor="school">
+                    학교 <span className="text-red-500">*</span>
+                </label>
                 <InputText
                     id="school"
                     value={student.school}
@@ -244,6 +252,24 @@ const StudentModal = ({ visible, pData, onClose }: StudentModalProps) => {
                     className={submitted && !student.school ? 'p-invalid' : ''}
                 />
                 {submitted && !student.school && <small className="p-invalid">학교를 입력해주세요.</small>}
+            </div>
+            <div className="field">
+                <label htmlFor="phoneNumber">학생 전화번호</label>
+                <InputText
+                    id="phoneNumber"
+                    value={student.phoneNumber || ''}
+                    onChange={(e) => setStudent({ ...student, phoneNumber: e.target.value })}
+                    placeholder="010-0000-0000"
+                />
+            </div>
+            <div className="field">
+                <label htmlFor="parentPhoneNumber">학부모 전화번호</label>
+                <InputText
+                    id="parentPhoneNumber"
+                    value={student.parentPhoneNumber || ''}
+                    onChange={(e) => setStudent({ ...student, parentPhoneNumber: e.target.value })}
+                    placeholder="010-0000-0000"
+                />
             </div>
             <div className="field">
                 <label htmlFor="description">설명</label>

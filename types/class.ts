@@ -5,6 +5,8 @@ export interface Student {
     name?: string;
     grade?: string;
     school?: string;
+    phoneNumber?: string;
+    parentPhoneNumber?: string;
     description?: string;
     registDate?: string;
     updatedDate?: string | Date;

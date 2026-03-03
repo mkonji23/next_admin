@@ -7,7 +7,7 @@ const Dashboard = () => {
 
     useEffect(() => {
         // 루트 경로 접근 시 출석 현황 통계로 리다이렉트
-        router.replace('/attendanceList');
+        router.replace('/manual');
     }, [router]);
 
     return null;

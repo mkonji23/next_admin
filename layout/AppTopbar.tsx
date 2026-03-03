@@ -25,7 +25,6 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
     const router = useRouter();
     const { userInfo, initializeFromStorage } = useAuthStore();
     const [chatVisible, setChatVisible] = useState(false);
-    const [unreadCount, setUnreadCount] = useState(0);
     const [mounted, setMounted] = useState(false);
     const { shareDefault, unLink } = useKakaoShare();
 
@@ -35,10 +34,6 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
             description: '출석부 서비스입니다. 함께 사용해보세요!',
             buttonText: '방문하기'
         });
-    };
-
-    const handleUnlink = () => {
-        unLink();
     };
 
     useEffect(() => {
@@ -56,13 +51,6 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
     const handleLogout = () => {
         logout();
         router.push('/auth/login');
-    };
-
-    const handleChatToggle = () => {
-        setChatVisible(!chatVisible);
-        if (!chatVisible) {
-            setUnreadCount(0); // 채팅 열면 읽음 처리
-        }
     };
 
     return (
@@ -134,15 +122,6 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
                 >
                     <i className="pi pi-share-alt"></i>
                     <span>Share</span>
-                </Button>
-                <Button
-                    className="p-link layout-topbar-button"
-                    tooltip="카카오톡 연결해제"
-                    tooltipOptions={{ position: 'bottom' }}
-                    onClick={handleUnlink}
-                >
-                    <i className="pi pi-trash"></i>
-                    <span>unLink</span>
                 </Button>
                 <Button
                     className="p-link layout-topbar-button"

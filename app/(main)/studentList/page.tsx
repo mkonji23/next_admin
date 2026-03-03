@@ -279,6 +279,17 @@ const StudentListPage = () => {
         return rowData.isWithdrawn ? <Tag severity="danger" value="퇴원" /> : <Tag severity="success" value="재학" />;
     };
 
+    const nameBodyTemplate = (rowData: Student) => {
+        return (
+            <span
+                className="text-primary font-bold cursor-pointer hover:underline"
+                onClick={() => openEditDialog(rowData)}
+            >
+                {rowData.name}
+            </span>
+        );
+    };
+
     const actionBodyTemplate = (rowData: Student) => {
         return (
             <div className="flex gap-2">
@@ -447,12 +458,14 @@ const StudentListPage = () => {
                 <Column expander style={{ width: '3rem' }} />
                 <Column selectionMode="multiple" headerStyle={{ width: '3rem' }}></Column>
                 <Column field="studentId" header="학생 ID" sortable filter hidden></Column>
-                <Column field="name" header="이름" sortable filter></Column>
+                <Column field="name" header="이름" sortable filter body={nameBodyTemplate}></Column>
                 <Column field="grade" header="학년" sortable filter></Column>
                 <Column field="school" header="학교" sortable filter></Column>
                 <Column field="description" header="설명" sortable filter></Column>
-                <Column field="registDate" header="입원일자" sortable filter body={registDateBodyTemplate}></Column>
-                <Column field="updatedDate" header="수정일자" sortable filter body={updatedDateBodyTemplate}></Column>
+                <Column field="phoneNumber" header="Tel." sortable filter></Column>
+                <Column field="parentPhoneNumber" header="P_Tel." sortable filter></Column>
+                {/* <Column field="registDate" header="입원일자" sortable filter body={registDateBodyTemplate}></Column> */}
+                {/* <Column field="updatedDate" header="수정일자" sortable filter body={updatedDateBodyTemplate}></Column> */}
                 <Column field="isWithdrawn" header="상태" sortable filter body={isWithdrawnBodyTemplate}></Column>
                 <Column body={actionBodyTemplate} header="작업" headerStyle={{ minWidth: '12rem' }}></Column>
             </DataTable>
