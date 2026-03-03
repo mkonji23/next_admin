@@ -10,6 +10,7 @@ import { ToastProvider } from '@/hooks/useToast';
 import { ConfirmProvider } from '@/hooks/useConfirm';
 import { ModalProvider } from '@/hooks/useCustomModal';
 import KakaoScript from '@/components/KakaoScript';
+import { GlobalLoading } from '@/layout/GlobalLoading';
 
 interface RootLayoutProps {
     children: React.ReactNode;
@@ -28,6 +29,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
                         <ToastProvider>
                             <LoadingProvider>
                                 <ConfirmProvider>
+                                    <GlobalLoading />
                                     <ModalProvider>{children}</ModalProvider>
                                 </ConfirmProvider>
                             </LoadingProvider>

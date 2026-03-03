@@ -127,7 +127,6 @@ const Layout = ({ children }: ChildContainerProps) => {
     });
     return (
         <React.Fragment>
-            <GlobalLoading />
             <div className={containerClass}>
                 <AppTopbar ref={topbarRef} />
                 <div ref={sidebarRef} className="layout-sidebar">
