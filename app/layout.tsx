@@ -1,4 +1,3 @@
-'use client';
 import { LayoutProvider } from '../layout/context/layoutcontext';
 import { PrimeReactProvider } from 'primereact/api';
 import 'primereact/resources/primereact.css';
@@ -7,10 +6,10 @@ import 'primeicons/primeicons.css';
 import '../styles/layout/layout.scss';
 import '../styles/demo/Demos.scss';
 import { LoadingProvider } from '@/layout/context/loadingcontext';
-import { GlobalLoading } from '@/layout/GlobalLoading';
 import { ToastProvider } from '@/hooks/useToast';
 import { ConfirmProvider } from '@/hooks/useConfirm';
 import { ModalProvider } from '@/hooks/useCustomModal';
+import KakaoScript from '@/components/KakaoScript';
 
 interface RootLayoutProps {
     children: React.ReactNode;
@@ -23,16 +22,14 @@ export default function RootLayout({ children }: RootLayoutProps) {
                 <link id="theme-css" href={`/themes/lara-light-indigo/theme.css`} rel="stylesheet"></link>
             </head>
             <body>
+                <KakaoScript />
                 <PrimeReactProvider>
                     <LayoutProvider>
                         <ToastProvider>
-                        <LoadingProvider>
-                            <ConfirmProvider>
-                                <ModalProvider>
-                                        <GlobalLoading />
-                                        {children}
-                                </ModalProvider>
-                            </ConfirmProvider>
+                            <LoadingProvider>
+                                <ConfirmProvider>
+                                    <ModalProvider>{children}</ModalProvider>
+                                </ConfirmProvider>
                             </LoadingProvider>
                         </ToastProvider>
                     </LayoutProvider>

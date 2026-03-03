@@ -13,6 +13,7 @@ import { LayoutContext } from './context/layoutcontext';
 import { PrimeReactContext } from 'primereact/api';
 import { ChildContainerProps, LayoutState, AppTopbarRef } from '@/types';
 import { usePathname, useSearchParams } from 'next/navigation';
+import { GlobalLoading } from './GlobalLoading';
 
 const Layout = ({ children }: ChildContainerProps) => {
     const { layoutConfig, layoutState, setLayoutState } = useContext(LayoutContext);
@@ -89,7 +90,10 @@ const Layout = ({ children }: ChildContainerProps) => {
         if (document.body.classList) {
             document.body.classList.remove('blocked-scroll');
         } else {
-            document.body.className = document.body.className.replace(new RegExp('(^|\\b)' + 'blocked-scroll'.split(' ').join('|') + '(\\b|$)', 'gi'), ' ');
+            document.body.className = document.body.className.replace(
+                new RegExp('(^|\\b)' + 'blocked-scroll'.split(' ').join('|') + '(\\b|$)', 'gi'),
+                ' '
+            );
         }
     };
 
@@ -121,9 +125,9 @@ const Layout = ({ children }: ChildContainerProps) => {
         'p-input-filled': layoutConfig.inputStyle === 'filled',
         'p-ripple-disabled': !layoutConfig.ripple
     });
-
     return (
         <React.Fragment>
+            <GlobalLoading />
             <div className={containerClass}>
                 <AppTopbar ref={topbarRef} />
                 <div ref={sidebarRef} className="layout-sidebar">

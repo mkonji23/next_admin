@@ -1,3 +1,4 @@
+'use client';
 import React, { useState, createContext, useContext } from 'react';
 import { ChildContainerProps } from '@/types';
 import { LoadingContextProps } from '@/types/layout';

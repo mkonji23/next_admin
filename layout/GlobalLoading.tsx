@@ -1,3 +1,5 @@
+"use client";
+
 import { ProgressBar } from 'primereact/progressbar';
 import { useLoading } from './context/loadingcontext';
 

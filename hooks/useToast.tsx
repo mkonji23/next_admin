@@ -1,3 +1,5 @@
+"use client";
+
 import { Toast, ToastMessage } from 'primereact/toast';
 import { createContext, ReactNode, useContext, useRef } from 'react';
 import { createPortal } from 'react-dom';

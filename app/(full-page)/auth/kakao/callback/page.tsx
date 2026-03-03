@@ -10,6 +10,13 @@ import { Button } from 'primereact/button';
 import { useToast } from '@/hooks/useToast';
 import Link from 'next/link';
 import { useHttp } from '@/util/axiosInstance';
+import Script from 'next/script';
+
+declare global {
+    interface Window {
+        Kakao: any;
+    }
+}
 
 const KakaoCallbackContent = () => {
     const searchParams = useSearchParams();
@@ -19,6 +26,7 @@ const KakaoCallbackContent = () => {
     const [loading, setLoading] = useState(false);
     const [tokenData, setTokenData] = useState<any>(null);
     const [apiError, setApiError] = useState<any>(null);
+    const [kakaoStatus, setKakaoStatus] = useState<any>(null);
 
     const code = searchParams.get('code');
     const state = searchParams.get('state');
@@ -32,11 +40,30 @@ const KakaoCallbackContent = () => {
             const response = await http.post('/app/auth/kakao/token', { code: authCode });
             const data = response.data;
             setTokenData(data);
-            showToast({
-                severity: 'success',
-                summary: '토큰 발급 완료',
-                detail: '카카오 엑세스 토큰을 성공적으로 가져왔습니다.'
-            });
+
+            // Kakao SDK 연동
+            if (window.Kakao) {
+                window.Kakao.Auth.setAccessToken(data.access_token);
+                try {
+                    const statusRes = await window.Kakao.Auth.getStatusInfo();
+                    setKakaoStatus(statusRes);
+
+                    showToast({
+                        severity: 'success',
+                        summary: '토큰 발급 및 SDK 연동 완료',
+                        detail: '카카오 SDK 상태: ' + statusRes.status
+                    });
+                } catch (statusErr) {
+                    console.error('Kakao getStatusInfo error:', statusErr);
+                    window.Kakao.Auth.setAccessToken(null);
+                }
+            } else {
+                showToast({
+                    severity: 'success',
+                    summary: '토큰 발급 완료',
+                    detail: '카카오 엑세스 토큰을 성공적으로 가져왔습니다.'
+                });
+            }
         } catch (err) {
             setApiError({ error: 'Failed to fetch token', error_description: '네트워크 오류가 발생했습니다.' });
         } finally {
@@ -136,6 +163,15 @@ const KakaoCallbackContent = () => {
                             {renderField('Token Type', tokenData.token_type)}
                             {renderField('Expires In', String(tokenData.expires_in))}
                             {tokenData.scope && renderField('Scope', tokenData.scope)}
+                        </>
+                    )}
+
+                    {kakaoStatus && (
+                        <>
+                            <Divider />
+                            <h3 className="text-900 font-bold mb-3 mt-4">SDK 상태 정보 (Status Info)</h3>
+                            {renderField('Status', kakaoStatus.status)}
+                            {kakaoStatus.user && renderField('User ID', String(kakaoStatus.user.id))}
                         </>
                     )}
 

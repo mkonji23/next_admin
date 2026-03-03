@@ -1,3 +1,5 @@
+"use client";
+
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import React, { createContext, ReactNode, useContext } from 'react';
 

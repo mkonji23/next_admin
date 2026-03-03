@@ -1,3 +1,5 @@
+"use client";
+
 import { useLoading } from '@/layout/context/loadingcontext';
 import Cookies from 'js-cookie';
 import axios, { AxiosInstance, AxiosResponse } from 'axios';

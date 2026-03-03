@@ -13,6 +13,7 @@ import { USER_AUTH_OPTIONS } from '@/constants/user';
 import ChatPanel from '@/components/chat/ChatPanel';
 import { Badge } from 'primereact/badge';
 import { Button } from 'primereact/button';
+import useKakaoShare from '@/hooks/useKakaoShare';
 
 const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
     const { layoutConfig, layoutState, onMenuToggle, showProfileSidebar } = useContext(LayoutContext);
@@ -26,13 +27,26 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
     const [chatVisible, setChatVisible] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
     const [mounted, setMounted] = useState(false);
-    
+    const { shareDefault, unLink } = useKakaoShare();
+
+    const handleShare = () => {
+        shareDefault({
+            title: '나의 출석부',
+            description: '출석부 서비스입니다. 함께 사용해보세요!',
+            buttonText: '방문하기'
+        });
+    };
+
+    const handleUnlink = () => {
+        unLink();
+    };
+
     useEffect(() => {
         // 컴포넌트 마운트 시 localStorage에서 userInfo 복원
         initializeFromStorage();
         setMounted(true);
     }, [initializeFromStorage]);
-    
+
     useImperativeHandle(ref, () => ({
         menubutton: menubuttonRef.current,
         topbarmenu: topbarmenuRef.current,
@@ -53,7 +67,6 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
 
     return (
         <div className="layout-topbar">
-            
             <button
                 ref={menubuttonRef}
                 type="button"
@@ -72,7 +85,7 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
                 />
                 <span>출석부</span>
             </Link>
-            
+
             <button
                 ref={topbarmenubuttonRef}
                 type="button"
@@ -84,16 +97,10 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
 
             {mounted && (
                 <div className="layout-topbar-user-info">
-                    {userInfo?.userName && (
-                        <span className="user-name">{userInfo.userName}</span>
-                    )}
-                    {userInfo?.userId && (
-                        <span className="user-id">({userInfo.userId})</span>
-                    )}
+                    {userInfo?.userName && <span className="user-name">{userInfo.userName}</span>}
+                    {userInfo?.userId && <span className="user-id">({userInfo.userId})</span>}
                     {userInfo?.auth && (
-                        <span className="user-auth">
-                            {getCommonLabel(USER_AUTH_OPTIONS, userInfo.auth)}
-                        </span>
+                        <span className="user-auth">{getCommonLabel(USER_AUTH_OPTIONS, userInfo.auth)}</span>
                     )}
                 </div>
             )}
@@ -111,12 +118,7 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
                 </i>
             </button> */}
 
-
-            <ChatPanel
-                visible={chatVisible}
-                onHide={() => setChatVisible(false)}
-                target={chatButtonRef.current}
-            />
+            <ChatPanel visible={chatVisible} onHide={() => setChatVisible(false)} target={chatButtonRef.current} />
 
             <div
                 ref={topbarmenuRef}
@@ -124,6 +126,24 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
                     'layout-topbar-menu-mobile-active': layoutState.profileSidebarVisible
                 })}
             >
+                <Button
+                    className="p-link layout-topbar-button"
+                    tooltip="카카오톡 공유"
+                    tooltipOptions={{ position: 'bottom' }}
+                    onClick={handleShare}
+                >
+                    <i className="pi pi-share-alt"></i>
+                    <span>Share</span>
+                </Button>
+                <Button
+                    className="p-link layout-topbar-button"
+                    tooltip="카카오톡 연결해제"
+                    tooltipOptions={{ position: 'bottom' }}
+                    onClick={handleUnlink}
+                >
+                    <i className="pi pi-trash"></i>
+                    <span>unLink</span>
+                </Button>
                 <Button
                     className="p-link layout-topbar-button"
                     tooltip="프로필"
