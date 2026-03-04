@@ -42,7 +42,10 @@ const useKakaoShare = () => {
                         webUrl: linkUrl
                     }
                 }
-            ]
+            ],
+            pickerSettings: {
+                limit: 10
+            }
         });
     };
 

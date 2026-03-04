@@ -22,7 +22,8 @@ const AppMenu = () => {
             label: 'Attendance',
             items: [
                 { label: '칭찬현황', icon: 'pi pi-fw pi-heart', to: '/praise' },
-                { label: '출석부', icon: 'pi pi-fw pi-check-square', to: '/attendance' }
+                { label: '출석부', icon: 'pi pi-fw pi-check-square', to: '/attendance' },
+                { label: '학생별 주간스케줄', icon: 'pi pi-fw pi-calendar', to: '/weekSchedule' }
             ]
         },
         {
