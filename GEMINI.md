@@ -65,3 +65,7 @@
 -   **디렉토리 구조:** `app` 디렉토리는 `(full-page)`, `(main)`과 같은 라우트 그룹을 사용하는 Next.js의 앱 라우터 구조를 따릅니다. API 라우트는 `app/api` 아래에 정의됩니다. 또한 `demo`, `hooks`, `layout`, `lib`, `public`, `store`, `styles`, `types`, `util` 디렉토리가 있어 모듈화되고 잘 정리된 코드베이스임을 시사합니다.
 
 -   참조파일 api.md 사용 대용량 텍스트입력부분
+
+## manul update
+
+-   AppMenu.tsx 기준으로 업데이트 한다.

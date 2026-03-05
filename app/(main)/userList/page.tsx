@@ -26,12 +26,8 @@ const UserListPage = () => {
         } catch (error) {
             console.error('Error fetching users:', error);
             showToast({ severity: 'error', summary: '조회 실패', detail: '사용자 목록을 불러오는데 실패했습니다.' });
-        } 
+        }
     };
-
-    useEffect(() => {
-        // fetchUsers();
-    }, []);
 
     const openEditDialog = async (user: User) => {
         const result = await openModal({
@@ -53,6 +49,10 @@ const UserListPage = () => {
                 mode: 'new'
             }
         });
+
+        if (result) {
+            fetchUsers();
+        }
     };
 
     const handleResetPassword = async (userId: string, userName: string) => {
@@ -107,7 +107,7 @@ const UserListPage = () => {
     };
 
     const authBodyTemplate = (rowData: User) => {
-        return (getCommonLabel(USER_AUTH_OPTIONS, rowData.auth));
+        return getCommonLabel(USER_AUTH_OPTIONS, rowData.auth);
     };
 
     const actionBodyTemplate = (rowData: User) => {
@@ -168,6 +168,10 @@ const UserListPage = () => {
         </div>
     );
 
+    useEffect(() => {
+        fetchUsers();
+    }, []);
+
     return (
         <div className="card">
             <h1>사용자 목록</h1>
@@ -183,11 +187,17 @@ const UserListPage = () => {
                 selectionMode="checkbox"
             >
                 <Column selectionMode="multiple" headerStyle={{ width: '3rem' }}></Column>
-                <Column  field="userId" header="ID" sortable filter></Column>
+                <Column field="userId" header="ID" sortable filter></Column>
                 <Column field="userName" header="이름" sortable filter></Column>
                 <Column field="email" header="이메일" sortable filter></Column>
                 <Column field="auth" header="권한" sortable filter body={authBodyTemplate}></Column>
-                <Column body={actionBodyTemplate} header="작업" headerStyle={{ minWidth: '4rem' }} sortable filter></Column>
+                <Column
+                    body={actionBodyTemplate}
+                    header="작업"
+                    headerStyle={{ minWidth: '4rem' }}
+                    sortable
+                    filter
+                ></Column>
             </DataTable>
         </div>
     );

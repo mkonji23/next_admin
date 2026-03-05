@@ -114,7 +114,7 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
                     'layout-topbar-menu-mobile-active': layoutState.profileSidebarVisible
                 })}
             >
-                <Button
+                {/* <Button
                     className="p-link layout-topbar-button"
                     tooltip="카카오톡 공유"
                     tooltipOptions={{ position: 'bottom' }}
@@ -122,7 +122,7 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
                 >
                     <i className="pi pi-share-alt"></i>
                     <span>Share</span>
-                </Button>
+                </Button> */}
                 <Button
                     className="p-link layout-topbar-button"
                     tooltip="프로필"
@@ -132,7 +132,7 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
                     <i className="pi pi-user"></i>
                     <span>Profile</span>
                 </Button>
-                <Button
+                {/* <Button
                     className="p-link layout-topbar-button"
                     tooltip="설정"
                     tooltipOptions={{ position: 'bottom' }}
@@ -140,7 +140,7 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
                 >
                     <i className="pi pi-cog"></i>
                     <span>Settings</span>
-                </Button>
+                </Button> */}
                 <Button
                     className="p-link layout-topbar-button"
                     onClick={handleLogout}
