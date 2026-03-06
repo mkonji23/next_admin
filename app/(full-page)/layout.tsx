@@ -8,7 +8,7 @@ interface SimpleLayoutProps {
 
 export const metadata: Metadata = {
     title: '출석부',
-    description: '수학출석부다'
+    description: '수학출석부다1'
 };
 
 export default function SimpleLayout({ children }: SimpleLayoutProps) {
