@@ -6,12 +6,10 @@ import React, { useEffect, useContext } from 'react';
 import { CSSTransition } from 'react-transition-group';
 import { MenuContext } from './context/menucontext';
 import { AppMenuItemProps } from '@/types';
-import { usePathname, useSearchParams, useRouter } from 'next/navigation'; // useRouter 추가
+import { useRouter } from 'next/navigation'; // useRouter 추가
 import { useTabStore } from '@/store/useTabStore';
 
 const AppMenuitem = (props: AppMenuItemProps) => {
-    const pathname = usePathname();
-    const searchParams = useSearchParams();
     const { activeMenu, setActiveMenu } = useContext(MenuContext);
     const { addTab, activeTab, setActiveTab: setStoreActiveTab } = useTabStore();
     const item = props.item;

@@ -12,8 +12,7 @@ import AppConfig from './AppConfig';
 import { LayoutContext } from './context/layoutcontext';
 import { PrimeReactContext } from 'primereact/api';
 import { ChildContainerProps, LayoutState, AppTopbarRef } from '@/types';
-import { usePathname, useSearchParams } from 'next/navigation';
-import { GlobalLoading } from './GlobalLoading';
+import { usePathname } from 'next/navigation';
 
 const Layout = ({ children }: ChildContainerProps) => {
     const { layoutConfig, layoutState, setLayoutState } = useContext(LayoutContext);
@@ -37,11 +36,10 @@ const Layout = ({ children }: ChildContainerProps) => {
     });
 
     const pathname = usePathname();
-    const searchParams = useSearchParams();
     useEffect(() => {
         hideMenu();
         hideProfileMenu();
-    }, [pathname, searchParams]);
+    }, [pathname]);
 
     const [bindProfileMenuOutsideClickListener, unbindProfileMenuOutsideClickListener] = useEventListener({
         type: 'click',
