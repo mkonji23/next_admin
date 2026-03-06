@@ -20,6 +20,7 @@ interface ClassOption {
 }
 
 const AttendanceListPage = () => {
+    console.log('AttendanceListPage rendered'); // Added console.log
     const [date, setDate] = useState<Date | null>(new Date());
     const [selectedClass, setSelectedClass] = useState<string | null>(null);
     const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
