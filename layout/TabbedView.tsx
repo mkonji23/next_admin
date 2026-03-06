@@ -15,11 +15,10 @@ interface TabbedViewProps {
         label: string;
         path: string;
     };
-    children: React.ReactNode; // children prop은 더 이상 직접 렌더링되지 않습니다.
 }
 
-const TabbedView = ({ initialTab }: TabbedViewProps) => { // children prop 제거
-    console.log('TabbedView rendered');
+const TabbedView = ({ initialTab }: TabbedViewProps) => {
+    // children prop 제거
     const { tabs, activeTab, addTab, removeTab, setActiveTab } = useTabStore();
     const [activeIndex, setActiveIndex] = useState(0);
     const router = useRouter();
@@ -43,7 +42,7 @@ const TabbedView = ({ initialTab }: TabbedViewProps) => { // children prop 제�
     // URL 변경 (브라우저 뒤로/앞으로 가기) 감지 및 탭 활성화
     useEffect(() => {
         if (currentPathname && currentPathname !== activeTab) {
-            const tabExists = tabs.some(tab => tab.id === currentPathname);
+            const tabExists = tabs.some((tab) => tab.id === currentPathname);
             if (tabExists) {
                 setActiveTab(currentPathname);
             } else if (currentPathname === initialTab.id) {
@@ -94,7 +93,6 @@ const TabbedView = ({ initialTab }: TabbedViewProps) => { // children prop 제�
             {tabs.length > 0 && <TabMenu model={menuItems} activeIndex={activeIndex} onTabChange={onTabChange} />}
             <div className="p-4">
                 {tabs.map((tab) => {
-                    console.log(`Rendering tab content for: ${tab.id}, active: ${activeTab === tab.id}`);
                     return (
                         <div key={tab.id} style={{ display: activeTab === tab.id ? 'block' : 'none' }}>
                             <KeepAlive name={tab.id}>
@@ -109,4 +107,3 @@ const TabbedView = ({ initialTab }: TabbedViewProps) => { // children prop 제�
 };
 
 export default TabbedView;
-
