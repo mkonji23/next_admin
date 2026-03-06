@@ -358,7 +358,7 @@ const AttendancePage = () => {
                         statusTime: (user[`statusTime`] as any) || dayjs().toDate(),
                         date: dateStr
                     };
-                    
+
                     // 지각 상태일 때만 지각 시간 추가 (분 단위 숫자)
                     if (status === 'late') {
                         const lateTimeValue = user[lateTimeKey];
@@ -366,7 +366,7 @@ const AttendancePage = () => {
                             attendanceEntry.lateTime = lateTimeValue;
                         }
                     }
-                    
+
                     attendance[day] = attendanceEntry;
                 }
             }
@@ -689,7 +689,7 @@ const AttendancePage = () => {
                                         >
                                             {virtualizer.getVirtualItems().map((virtualRow) => (
                                                 <div
-                                                    key={virtualRow.key}
+                                                    key={virtualRow?.key as any}
                                                     style={{
                                                         position: 'absolute',
                                                         top: 0,
