@@ -80,18 +80,14 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete }: Detail
                                             <span className="text-900 font-bold">{selectedShare.studentName}</span>
                                         </div>
                                     )}
-                                    {selectedShare.telNo && (
-                                        <div>
-                                            <span className="text-500 mr-2">학생 연락처:</span>
-                                            <span className="text-900">{selectedShare.telNo}</span>
-                                        </div>
-                                    )}
-                                    {selectedShare.pTelNo && (
-                                        <div>
-                                            <span className="text-500 mr-2">학부모 연락처:</span>
-                                            <span className="text-900">{selectedShare.pTelNo}</span>
-                                        </div>
-                                    )}
+                                    <div>
+                                        <span className="text-500 mr-2">학생 연락처:</span>
+                                        <span className="text-900">{selectedShare?.telNo || '등록 필요'}</span>
+                                    </div>
+                                    <div>
+                                        <span className="text-500 mr-2">학부모 연락처:</span>
+                                        <span className="text-900">{selectedShare?.pTelNo || '등록 필요'}</span>
+                                    </div>
                                 </div>
                             )}
 
