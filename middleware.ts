@@ -1,8 +1,15 @@
-// middleware.js
+// middleware.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
+    const { pathname } = request.nextUrl;
+
+    // 카카오톡 공유 상세 페이지(/kakao-share/view/...)는 인증 제외
+    if (pathname.startsWith('/kakao-share/view')) {
+        return NextResponse.next();
+    }
+
     const response = NextResponse.next();
     // 요청에 따른 조건부 로직 처리
     if (!request.cookies.get('token')) {
