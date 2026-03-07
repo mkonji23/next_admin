@@ -6,6 +6,7 @@ import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
 import { Card } from 'primereact/card';
 import { useHttp } from '@/util/axiosInstance';
+import { Password } from 'primereact/password';
 
 const withPasswordProtection = <P extends object>(WrappedComponent: React.ComponentType<P>) => {
     const PasswordProtectedComponent = (props: P) => {
@@ -80,7 +81,7 @@ const withPasswordProtection = <P extends object>(WrappedComponent: React.Compon
             <div className="flex align-items-center justify-content-center min-h-screen p-3 bg-gray-100">
                 <Card
                     title="비공개 콘텐츠"
-                    subTitle="접근을 위해 비밀번호를 입력해주세요. 전화번호 ex) 01012345678"
+                    subTitle="접근을 위해 전화번호를 입력해주세요. "
                     style={{ width: '100%', maxWidth: '400px' }}
                     className="shadow-4"
                 >
@@ -90,8 +91,7 @@ const withPasswordProtection = <P extends object>(WrappedComponent: React.Compon
                                 <i className="pi pi-lock"></i>
                             </span>
                             <InputText
-                                type="password"
-                                placeholder="비밀번호 입력 (숫자)"
+                                placeholder="ex) 01012345678"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value.replace(/[^0-9]/g, ''))}
                                 onKeyDown={(e) => e.key === 'Enter' && handleVerify()}
@@ -104,7 +104,7 @@ const withPasswordProtection = <P extends object>(WrappedComponent: React.Compon
                         </div>
                         {error && <small className="p-error font-bold">{error}</small>}
                         <Button
-                            label={loading ? '확인 중...' : '인증하기'}
+                            label={loading ? '확인 중...' : '확인'}
                             icon={loading ? 'pi pi-spin pi-spinner' : 'pi pi-check'}
                             onClick={handleVerify}
                             disabled={loading}
