@@ -112,8 +112,16 @@ const ShareViewPage = () => {
                     )}
                 </Card>
 
-                <div className="text-center text-gray-400 text-xs py-4">
-                    &copy; {new Date().getFullYear()} ChoiMath. All rights reserved.
+                <div className="text-center py-4 flex flex-column align-items-center gap-2">
+                    <img 
+                        src="/layout/images/bae.jpg" 
+                        alt="Footer Logo" 
+                        style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }} 
+                        className="shadow-2"
+                    />
+                    <div className="text-gray-400 text-xs">
+                        &copy; {new Date().getFullYear()} ChoiMath. All rights reserved.
+                    </div>
                 </div>
             </div>
         </div>
