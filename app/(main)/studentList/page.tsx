@@ -21,7 +21,7 @@ const StudentListPage = () => {
     const { showToast } = useToast();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const fetchStudents = useCallback(async () => {
+    const fetchStudents = async () => {
         try {
             const response = await http.get('/choiMath/student/getStudentList');
             setStudents(response.data || []);
@@ -29,7 +29,7 @@ const StudentListPage = () => {
             console.error('Error fetching students:', error);
             showToast({ severity: 'error', summary: '조회 실패', detail: '학생 목록을 불러오는데 실패했습니다.' });
         }
-    }, [http, showToast]);
+    };
 
     useEffect(() => {
         fetchStudents();
