@@ -17,7 +17,7 @@ const ShareViewPage = () => {
     const params = useParams();
     const id = params.id as string;
     const type = params.type as string; // 'student' | 'parent'
-    
+
     const http = useHttp();
     const [shareData, setShareData] = useState<ShareItem | null>(null);
     const [loading, setLoading] = useState(true);
@@ -68,21 +68,26 @@ const ShareViewPage = () => {
                 <Card title={shareData.actualTitle} className="shadow-4 mb-4">
                     <div className="flex justify-content-between align-items-center mb-4 text-sm text-gray-500">
                         <div className="flex align-items-center gap-2">
-                            <Tag value={type === 'parent' ? '학부모용' : '학생용'} severity={type === 'parent' ? 'success' : 'info'} />
+                            <Tag
+                                value={type === 'parent' ? '학부모용' : '학생용'}
+                                severity={type === 'parent' ? 'success' : 'info'}
+                            />
                             <span>등록일: {formatDate(shareData.createdDate)}</span>
                         </div>
                         {shareData.studentName && (
-                            <span>공유 대상: <span className="text-900 font-bold">{shareData.studentName}</span></span>
+                            <span>
+                                공유 대상: <span className="text-900 font-bold">{shareData.studentName}</span>
+                            </span>
                         )}
                     </div>
-                    
+
                     <div className="mb-6">
-                        <InputTextarea 
-                            value={shareData.actualContent} 
-                            rows={10} 
-                            readOnly 
-                            autoResize 
-                            className="w-full border-none surface-50 p-3 line-height-3 text-700 font-sans" 
+                        <InputTextarea
+                            value={shareData.actualContent}
+                            rows={10}
+                            readOnly
+                            autoResize
+                            className="w-full border-none surface-50 p-3 line-height-3 text-700 font-sans"
                             style={{ resize: 'none', background: 'transparent' }}
                         />
                     </div>
@@ -113,14 +118,14 @@ const ShareViewPage = () => {
                 </Card>
 
                 <div className="text-center py-4 flex flex-column align-items-center gap-2">
-                    <img 
-                        src="/layout/images/bae.jpg" 
-                        alt="Footer Logo" 
-                        style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }} 
+                    <img
+                        src="/layout/images/bae.jpg"
+                        alt="Footer Logo"
+                        style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }}
                         className="shadow-2"
                     />
                     <div className="text-gray-400 text-xs">
-                        &copy; {new Date().getFullYear()} ChoiMath. All rights reserved.
+                        &copy; {new Date().getFullYear()} chochoMath. All rights reserved.
                     </div>
                 </div>
             </div>
