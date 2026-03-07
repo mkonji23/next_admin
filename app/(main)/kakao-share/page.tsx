@@ -14,7 +14,7 @@ const KakaoSharePage = () => {
     const [view, setView] = useState<'LIST' | 'DETAIL' | 'WRITE'>('LIST');
     const [shares, setShares] = useState<ShareItem[]>([]);
     const [selectedShare, setSelectedShare] = useState<ShareItem | null>(null);
-    
+
     const { showToast } = useToast();
     const http = useHttp();
     const { shareDefault } = useKakaoShare();
@@ -52,7 +52,7 @@ const KakaoSharePage = () => {
         multipartData.append('shareContent', formData.shareContent);
         multipartData.append('actualTitle', formData.actualTitle);
         multipartData.append('actualContent', formData.actualContent);
-        
+
         files.forEach((file) => {
             multipartData.append('files', file);
         });
@@ -75,33 +75,24 @@ const KakaoSharePage = () => {
             description: item.shareContent,
             imageUrl: item.shareImageUrls?.[0] || '',
             buttonText: '자세히 보기',
-            linkUrl: `${window.location.origin}/kakao-share/view/${item.id}`
+            linkUrl: `${process.env.NEXT_PUBLIC_KAKAO_SHARED_URI}/kakao-share/view/${item.id}`
         });
     };
 
     return (
         <div className="kakao-share-page">
             {view === 'LIST' && (
-                <ListView 
-                    shares={shares} 
-                    onRowSelect={fetchDetail} 
-                    onNewPost={() => setView('WRITE')} 
-                    onShare={handleShare} 
+                <ListView
+                    shares={shares}
+                    onRowSelect={fetchDetail}
+                    onNewPost={() => setView('WRITE')}
+                    onShare={handleShare}
                 />
             )}
             {view === 'DETAIL' && (
-                <DetailView 
-                    selectedShare={selectedShare} 
-                    onBack={() => setView('LIST')} 
-                    onShare={handleShare} 
-                />
+                <DetailView selectedShare={selectedShare} onBack={() => setView('LIST')} onShare={handleShare} />
             )}
-            {view === 'WRITE' && (
-                <WriteView 
-                    onBack={() => setView('LIST')} 
-                    onSave={handleSave} 
-                />
-            )}
+            {view === 'WRITE' && <WriteView onBack={() => setView('LIST')} onSave={handleSave} />}
         </div>
     );
 };
