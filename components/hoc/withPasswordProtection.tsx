@@ -95,7 +95,7 @@ const withPasswordProtection = <P extends object>(WrappedComponent: React.Compon
                         </div>
                         {error && <small className="p-error font-bold">{error}</small>}
                         <Button
-                            label={loading ? '확인 중...' : '인증하기'}
+                            label={loading ? '확인 중...' : '확인'}
                             icon={loading ? 'pi pi-spin pi-spinner' : 'pi pi-check'}
                             onClick={handleVerify}
                             disabled={loading}
