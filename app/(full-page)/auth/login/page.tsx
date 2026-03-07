@@ -13,7 +13,6 @@ const LoginPage = () => {
     const { login } = useAuth();
     const [password, setPassword] = useState('');
     const [email, setEmail] = useState('');
-    const [checked, setChecked] = useState(false);
     const { layoutConfig } = useContext(LayoutContext);
 
     const router = useRouter();
@@ -72,19 +71,21 @@ const LoginPage = () => {
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder="비밀번호"
                                 toggleMask
+                                feedback={false}
                                 className="w-full mb-5"
                                 inputClassName="w-full p-3 md:w-30rem"
+                                maxLength={30}
                             ></Password>
 
                             <div className="flex align-items-center justify-content-between mb-5 gap-5">
-                                <a
+                                {/* <a
                                     className="font-medium no-underline ml-2 text-right cursor-pointer"
                                     style={{ color: 'var(--primary-color)' }}
                                 >
-                                    비밀번호 찾기
-                                </a>
+                                    비밀번호 찾기 */}
+                                {/* </a> */}
+                                <Button label="Sign In" type="submit" className="w-full p-3 text-xl"></Button>
                             </div>
-                            <Button label="Sign In" type="submit" className="w-full p-3 text-xl"></Button>
                         </form>
                     </div>
                 </div>
