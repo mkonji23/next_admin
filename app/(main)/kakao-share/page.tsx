@@ -61,7 +61,7 @@ const KakaoSharePage = () => {
                     multipartData.append('shareContent', formData.shareContent);
                     multipartData.append('actualTitle', formData.actualTitle);
                     multipartData.append('actualContent', formData.actualContent);
-                    
+
                     // 학생 정보 추가
                     if (formData.studentId) multipartData.append('studentId', formData.studentId);
                     if (formData.studentName) multipartData.append('studentName', formData.studentName);
@@ -98,7 +98,7 @@ const KakaoSharePage = () => {
                 multipartData.append('shareContent', formData.shareContent);
                 multipartData.append('actualTitle', formData.actualTitle);
                 multipartData.append('actualContent', formData.actualContent);
-                
+
                 // 학생 정보 추가
                 if (formData.studentId) multipartData.append('studentId', formData.studentId);
                 if (formData.studentName) multipartData.append('studentName', formData.studentName);
@@ -135,7 +135,8 @@ const KakaoSharePage = () => {
         if (!confirmed) return;
 
         try {
-            await http.post(`/choiMath/share/delete/${id}`);
+            // 다건 삭제 API 사용 (POST /choiMath/share/delete)
+            await http.post('/choiMath/share/delete', { ids: [id] });
             showToast({ severity: 'success', summary: '삭제 완료', detail: '게시글이 삭제되었습니다.' });
             setView('LIST');
             setSelectedShare(null);
@@ -157,8 +158,9 @@ const KakaoSharePage = () => {
         if (!confirmed) return;
 
         try {
-            // 병렬로 삭제 처리 (또는 백엔드에서 배치 삭제 API가 있다면 그것을 사용)
-            await Promise.all(selectedItems.map((item) => http.delete(`/choiMath/share/delete/${item._id}`)));
+            const ids = selectedItems.map((item) => item._id);
+            // 다건 삭제 API 사용 (POST /choiMath/share/delete)
+            await http.post('/choiMath/share/delete', { ids });
             showToast({ severity: 'success', summary: '삭제 완료', detail: '선택한 게시글들이 삭제되었습니다.' });
             fetchShares();
         } catch (error) {
@@ -174,7 +176,7 @@ const KakaoSharePage = () => {
         // 도메인 주소 결정 (환경변수 우선, 없으면 현재 호스트 사용)
         const baseUri =
             process.env.NEXT_PUBLIC_KAKAO_SHARED_URI || (typeof window !== 'undefined' ? window.location.origin : '');
-        
+
         // 경로에 [type] 추가
         const shareLink = `${baseUri}/kakao-share/view/${type}/${item._id}`;
 
