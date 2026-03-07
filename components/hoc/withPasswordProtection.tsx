@@ -41,7 +41,7 @@ const withPasswordProtection = <P extends object>(WrappedComponent: React.Compon
                 const cleanPwd = password.trim().replace(/[^\d]/g, '');
 
                 // 서버 API 호출하여 비밀번호 검증
-                const res = await http.post('/choiMath/share/auth', {
+                const res = await http.post('/choiMath/share/detail-with-auth', {
                     id,
                     pwd: cleanPwd,
                     type
