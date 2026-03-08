@@ -21,7 +21,6 @@ const KakaoSharePage = () => {
     const http = useHttp();
     const { shareDefault } = useKakaoShare();
 
-    // 1. 목록 조회
     const fetchShares = async () => {
         try {
             const res = await http.get('/choiMath/share/list');
@@ -209,6 +208,7 @@ const KakaoSharePage = () => {
             {view === 'LIST' && (
                 <ListView
                     shares={shares}
+                    onSearch={fetchShares}
                     onRowSelect={fetchDetail}
                     onNewPost={handleNewPost}
                     onShare={handleShare}

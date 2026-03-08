@@ -7,6 +7,7 @@ import { Image } from 'primereact/image';
 import { Divider } from 'primereact/divider';
 import { Tag } from 'primereact/tag';
 import { ShareItem } from '../types';
+import { useToast } from '@/hooks/useToast';
 
 interface DetailViewProps {
     selectedShare: ShareItem | null;
@@ -17,8 +18,8 @@ interface DetailViewProps {
 }
 
 const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete }: DetailViewProps) => {
+    const { showToast } = useToast();
     if (!selectedShare) return null;
-
     const handleDownload = async (url: string, fileName: string) => {
         try {
             const response = await fetch(url);
@@ -35,6 +36,25 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete }: Detail
             console.error('Download error:', error);
             alert('이미지 다운로드에 실패했습니다.');
         }
+    };
+
+    const copyLink = () => {
+        const baseUri = typeof window !== 'undefined' ? window.location.origin : '';
+        const shareLink = `${baseUri}/kakao-share/view/student/${selectedShare._id}`;
+
+        navigator.clipboard
+            .writeText(shareLink)
+            .then(() => {
+                showToast({
+                    severity: 'success',
+                    summary: '복사 완료',
+                    detail: '공유 링크가 클립보드에 복사되었습니다.'
+                });
+            })
+            .catch((err) => {
+                console.error('Copy error:', err);
+                showToast({ severity: 'error', summary: '오류', detail: '링크 복사에 실패했습니다.' });
+            });
     };
 
     return (
@@ -116,6 +136,17 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete }: Detail
                                 </div>
                             </div>
                             <div className="flex gap-2">
+                                <Button
+                                    icon="pi pi-copy"
+                                    label="링크 복사"
+                                    className="p-button-primary flex-2"
+                                    tooltip="링크 복사"
+                                    tooltipOptions={{ position: 'bottom' }}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        copyLink();
+                                    }}
+                                />
                                 <Button
                                     label="학생에게 공유"
                                     icon="pi pi-user"
