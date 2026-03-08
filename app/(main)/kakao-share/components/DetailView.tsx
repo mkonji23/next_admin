@@ -153,12 +153,7 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete }: Detail
                                                 tooltip="다운로드"
                                                 onClick={() => handleDownload(url, fileName)}
                                             />
-                                            <span
-                                                className="text-xs text-500 truncate mr-2"
-                                                style={{ maxWidth: '120px' }}
-                                            >
-                                                {fileName}
-                                            </span>
+                                            <span className="text-xs text-500 truncate mr-2">{fileName}</span>
                                         </div>
                                     </div>
                                 );

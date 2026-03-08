@@ -1,17 +1,19 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useHttp } from '@/util/axiosInstance';
 import { Card } from 'primereact/card';
-import { Image } from 'primereact/image';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { Tag } from 'primereact/tag';
+import { Galleria } from 'primereact/galleria';
+import { Button } from 'primereact/button';
 import dayjs from 'dayjs';
 import withPasswordProtection from '@/components/hoc/withPasswordProtection';
 import { ShareItem } from '@/app/(main)/kakao-share/types';
-
+import { useLoading } from '@/layout/context/loadingcontext';
+import { Image } from 'primereact/image';
 // 공유용 페이지 (학생/학부모 공용)
 const ShareViewPage = () => {
     const params = useParams();
@@ -20,17 +22,31 @@ const ShareViewPage = () => {
 
     const http = useHttp();
     const [shareData, setShareData] = useState<ShareItem | null>(null);
-    const [loading, setLoading] = useState(true);
+    const { loading } = useLoading();
+    const [images, setImages] = useState<any[]>([]);
+    const [activeIndex, setActiveIndex] = useState(0);
+    const galleria = useRef<Galleria>(null);
 
     useEffect(() => {
         const fetchDetail = async () => {
             try {
                 const res = await http.get(`/choiMath/share/detail/${id}`);
-                setShareData(res.data);
+                const data = res.data;
+                setShareData(data);
+
+                if (data.shareImageUrls && data.shareImageUrls.length > 0) {
+                    const formattedImages = data.shareImageUrls.map((item: any) => {
+                        const url = typeof item === 'string' ? item : item.url;
+                        return {
+                            itemImageSrc: url,
+                            thumbnailImageSrc: url,
+                            alt: '첨부 이미지'
+                        };
+                    });
+                    setImages(formattedImages);
+                }
             } catch (error) {
                 console.error('Fetch detail error:', error);
-            } finally {
-                setLoading(false);
             }
         };
 
@@ -38,6 +54,25 @@ const ShareViewPage = () => {
             fetchDetail();
         }
     }, [id]);
+
+    const downloadImage = async (url: string, index: number) => {
+        try {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = `share-image-${index + 1}.jpg`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(blobUrl);
+        } catch (error) {
+            console.error('Download error:', error);
+            // Fallback: try opening in a new tab if blob download fails
+            window.open(url, '_blank');
+        }
+    };
 
     const formatDate = (dateStr?: string) => {
         if (!dateStr) return '';
@@ -92,21 +127,39 @@ const ShareViewPage = () => {
                         />
                     </div>
 
-                    {shareData.shareImageUrls && shareData.shareImageUrls.length > 0 && (
+                    {images && images.length > 0 && (
                         <div className="flex flex-column gap-3">
-                            <h6 className="font-bold border-bottom-1 surface-border pb-2 mb-3">첨부 이미지</h6>
+                            <h6 className="font-bold border-bottom-1 surface-border pb-2 mb-3">
+                                첨부 이미지 (클릭 시 확대)
+                            </h6>
+
                             <div className="grid">
-                                {shareData.shareImageUrls.map((item, idx) => {
-                                    const url = typeof item === 'string' ? item : item.url;
+                                {images.map((img, idx) => {
                                     return (
                                         <div key={idx} className="col-12 sm:col-6 lg:col-4 mb-3">
-                                            <div className="border-round overflow-hidden shadow-2 surface-card h-full flex align-items-center justify-content-center">
-                                                <Image
-                                                    src={url}
-                                                    alt={`share-img-${idx}`}
-                                                    width="100%"
-                                                    preview
-                                                    className="block"
+                                            <div className="relative border-round overflow-hidden shadow-2 surface-card h-full">
+                                                <div className="flex align-items-center justify-content-center cursor-pointer hover:shadow-4 transition-duration-200">
+                                                    <Image
+                                                        src={img.thumbnailImageSrc}
+                                                        alt={`share-img-${idx}`}
+                                                        width="100%"
+                                                        preview
+                                                    />
+                                                </div>
+                                                <Button
+                                                    icon="pi pi-download"
+                                                    className="p-button-rounded p-button-secondary p-button-text p-button-sm absolute top-0 left-0 m-2"
+                                                    style={{
+                                                        background: 'rgba(255,255,255,0.7)',
+                                                        color: '#333',
+                                                        width: '1.75rem',
+                                                        height: '1.75rem'
+                                                    }}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        downloadImage(img.itemImageSrc, idx);
+                                                    }}
+                                                    tooltip="다운로드"
                                                 />
                                             </div>
                                         </div>
