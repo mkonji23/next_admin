@@ -510,7 +510,14 @@ const StudentListPage = () => {
                 <Column field="name" header="이름" sortable filter body={nameBodyTemplate}></Column>
                 <Column field="grade" header="학년" sortable filter></Column>
                 <Column field="school" header="학교" sortable filter></Column>
-                <Column field="description" header="설명" sortable filter></Column>
+                <Column
+                    style={{ width: '100px' }}
+                    field="description"
+                    header="설명"
+                    sortable
+                    filter
+                    body={(rowData) => <span className="truncate-cell">{rowData.description}</span>}
+                ></Column>
                 <Column field="phoneNumber" header="Tel." sortable filter></Column>
                 <Column field="parentPhoneNumber" header="P_Tel." sortable filter></Column>
                 {/* <Column field="registDate" header="입원일자" sortable filter body={registDateBodyTemplate}></Column> */}

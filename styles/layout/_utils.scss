@@ -25,3 +25,12 @@
         top: 100px;
     }
 }
+
+
+.truncate-cell {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+   max-width: 300px;
+  display: block; /* Helps ensure text-overflow works correctly */
+}
