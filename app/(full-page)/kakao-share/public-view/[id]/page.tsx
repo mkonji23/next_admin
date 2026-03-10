@@ -1,24 +1,21 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useHttp } from '@/util/axiosInstance';
 import { Card } from 'primereact/card';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import { InputTextarea } from 'primereact/inputtextarea';
-import { Tag } from 'primereact/tag';
-import { Galleria } from 'primereact/galleria';
 import { Button } from 'primereact/button';
 import dayjs from 'dayjs';
-import withPasswordProtection from '@/components/hoc/withPasswordProtection';
 import { ShareItem } from '@/app/(main)/kakao-share/types';
 import { useLoading } from '@/layout/context/loadingcontext';
 import { Image } from 'primereact/image';
-// 공유용 페이지 (학생/학부모 공용)
-const ShareViewPage = () => {
+
+// 공개 공유용 페이지
+const PublicShareViewPage = () => {
     const params = useParams();
     const id = params.id as string;
-    const type = params.type as string; // 'student' | 'parent'
 
     const http = useHttp();
     const [shareData, setShareData] = useState<ShareItem | null>(null);
@@ -51,7 +48,7 @@ const ShareViewPage = () => {
         if (id) {
             fetchDetail();
         }
-    }, [id]);
+    }, [id, http]);
 
     const downloadImage = async (url: string, index: number) => {
         try {
@@ -67,7 +64,6 @@ const ShareViewPage = () => {
             window.URL.revokeObjectURL(blobUrl);
         } catch (error) {
             console.error('Download error:', error);
-            // Fallback: try opening in a new tab if blob download fails
             window.open(url, '_blank');
         }
     };
@@ -101,10 +97,6 @@ const ShareViewPage = () => {
                 <Card title={shareData.actualTitle} className="shadow-4 mb-4">
                     <div className="flex justify-content-between align-items-center mb-4 text-sm text-gray-500">
                         <div className="flex align-items-center gap-2">
-                            <Tag
-                                value={type === 'parent' ? '학부모용' : '학생용'}
-                                severity={type === 'parent' ? 'success' : 'info'}
-                            />
                             <span>등록일: {formatDate(shareData.createdDate)}</span>
                         </div>
                         {shareData.studentName && (
@@ -184,5 +176,4 @@ const ShareViewPage = () => {
     );
 };
 
-// 비밀번호 보호 HOC 적용
-export default withPasswordProtection(ShareViewPage);
+export default PublicShareViewPage;

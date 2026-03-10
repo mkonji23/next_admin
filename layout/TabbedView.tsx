@@ -58,7 +58,7 @@ const TabbedView = ({ initialTab }: TabbedViewProps) => {
     const onTabChange = (e: { value: MenuItem; index: number }) => {
         if (e.value && e.value.id) {
             setActiveTab(e.value.id);
-            router.replace(e.value.id);
+            router.push(e.value.id);
         }
     };
 

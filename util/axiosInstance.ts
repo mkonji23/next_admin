@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useLoading } from '@/layout/context/loadingcontext';
 import Cookies from 'js-cookie';
@@ -49,9 +49,17 @@ export const useHttp = (): AxiosInstance => {
             setLoading(false);
             if (error.response && axios.isAxiosError(error)) {
                 const { status } = error.response;
+                const exceptUrl = ['/choiMath/share/detail-with-auth'];
                 if (status === 401) {
-                    console.error('인증 실패: 다시 로그인하세요.');
-                    window.location.href = '/auth/login'; // 로그인 페이지로 이동
+                    if (exceptUrl.includes(error.config?.url || '')) {
+                        showToast({
+                            severity: 'error',
+                            summary: error.response?.data?.error || 'error',
+                            detail: error.response?.data?.message || ''
+                        });
+                    } else {
+                        window.location.href = '/auth/login'; // 로그인 페이지로 이동
+                    }
                 } else if (status === 403) {
                     showToast({
                         severity: 'error',

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Form, Field } from 'react-final-form';
 import { Button } from 'primereact/button';
 import { InputText } from 'primereact/inputtext';
@@ -19,6 +19,7 @@ interface WriteViewProps {
 }
 
 const WriteView = ({ onBack, onSave, initialData }: WriteViewProps) => {
+    const fileUploadRef = useRef<FileUpload>(null);
     const { showToast } = useToast();
     const http = useHttp();
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -76,8 +77,35 @@ const WriteView = ({ onBack, onSave, initialData }: WriteViewProps) => {
         return errors;
     };
 
-    const onFileSelect = (e: any) => {
-        setSelectedFiles(e.files);
+    const onFileSelect = (e: { files: File[] }) => {
+        const newFiles = e.files;
+        const currentFiles = selectedFiles;
+
+        const uniqueNewFiles = newFiles.filter(
+            (nf) => !currentFiles.some((cf) => cf.name === nf.name && cf.size === nf.size)
+        );
+
+        let updatedFiles = [...currentFiles, ...uniqueNewFiles];
+
+        if (updatedFiles.length > 5) {
+            showToast({
+                severity: 'warn',
+                summary: '업로드 제한',
+                detail: '파일은 최대 5개까지 업로드할 수 있습니다.'
+            });
+            updatedFiles = updatedFiles.slice(0, 5);
+            fileUploadRef.current?.setFiles(updatedFiles);
+        }
+        setSelectedFiles(updatedFiles);
+    };
+
+    const onFileRemove = (e: { file: File }) => {
+        const remainingFiles = selectedFiles.filter((f) => f.name !== e.file.name || f.size !== e.file.size);
+        setSelectedFiles(remainingFiles);
+    };
+
+    const onClear = () => {
+        setSelectedFiles([]);
     };
 
     const studentOptions = students.map((s) => ({
@@ -141,28 +169,32 @@ const WriteView = ({ onBack, onSave, initialData }: WriteViewProps) => {
                         </div>
 
                         <div className="field col-12 md:col-3">
-                            <label htmlFor="studentId" className="font-bold">학생 ID</label>
+                            <label htmlFor="studentId" className="font-bold">
+                                학생 ID
+                            </label>
                             <Field name="studentId">
-                                {({ input }) => <InputText {...input} id="studentId" readOnly className="bg-gray-100" />}
+                                {({ input }) => (
+                                    <InputText {...input} id="studentId" readOnly className="bg-gray-100" />
+                                )}
                             </Field>
                         </div>
                         <div className="field col-12 md:col-3">
-                            <label htmlFor="studentName" className="font-bold">학생 이름</label>
-                            <Field name="studentName">
-                                {({ input }) => <InputText {...input} id="studentName" />}
-                            </Field>
+                            <label htmlFor="studentName" className="font-bold">
+                                학생 이름
+                            </label>
+                            <Field name="studentName">{({ input }) => <InputText {...input} id="studentName" />}</Field>
                         </div>
                         <div className="field col-12 md:col-3">
-                            <label htmlFor="telNo" className="font-bold">학생 연락처</label>
-                            <Field name="telNo">
-                                {({ input }) => <InputText {...input} id="telNo" />}
-                            </Field>
+                            <label htmlFor="telNo" className="font-bold">
+                                학생 연락처
+                            </label>
+                            <Field name="telNo">{({ input }) => <InputText {...input} id="telNo" />}</Field>
                         </div>
                         <div className="field col-12 md:col-3">
-                            <label htmlFor="pTelNo" className="font-bold">학부모 연락처</label>
-                            <Field name="pTelNo">
-                                {({ input }) => <InputText {...input} id="pTelNo" />}
-                            </Field>
+                            <label htmlFor="pTelNo" className="font-bold">
+                                학부모 연락처
+                            </label>
+                            <Field name="pTelNo">{({ input }) => <InputText {...input} id="pTelNo" />}</Field>
                         </div>
 
                         <div className="field col-12 md:col-6">
@@ -258,11 +290,17 @@ const WriteView = ({ onBack, onSave, initialData }: WriteViewProps) => {
                                                         className="border-round shadow-1"
                                                         style={{ width: '80px', height: '80px', objectFit: 'cover' }}
                                                     />
-                                                    <Button 
+                                                    <Button
                                                         type="button"
-                                                        icon="pi pi-download" 
-                                                        className="p-button-rounded p-button-secondary p-button-sm absolute shadow-2" 
-                                                        style={{ top: '2px', right: '2px', width: '24px', height: '24px', opacity: 0.8 }}
+                                                        icon="pi pi-download"
+                                                        className="p-button-rounded p-button-secondary p-button-sm absolute shadow-2"
+                                                        style={{
+                                                            top: '2px',
+                                                            right: '2px',
+                                                            width: '24px',
+                                                            height: '24px',
+                                                            opacity: 0.8
+                                                        }}
                                                         onClick={(e) => {
                                                             e.preventDefault();
                                                             handleDownload(url, fileName);
@@ -280,13 +318,14 @@ const WriteView = ({ onBack, onSave, initialData }: WriteViewProps) => {
                                 </div>
                             )}
                             <FileUpload
+                                ref={fileUploadRef}
                                 name="files"
                                 multiple
                                 accept="image/*"
                                 maxFileSize={25000000}
                                 onSelect={onFileSelect}
-                                onClear={() => setSelectedFiles([])}
-                                onRemove={(e: any) => setSelectedFiles(selectedFiles.filter((f) => f !== e.file))}
+                                onClear={onClear}
+                                onRemove={onFileRemove}
                                 emptyTemplate={<p className="m-0 text-500">파일을 드래그하거나 선택하세요.</p>}
                                 customUpload
                                 auto={false}

@@ -5,7 +5,7 @@ export interface ShareImage {
 
 export interface ShareItem {
     _id: string;
-    id?: string;
+    publicUrl: string;
     shareTitle: string;
     shareContent: string;
     actualTitle: string;

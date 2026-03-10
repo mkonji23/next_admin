@@ -18,11 +18,10 @@ const useKakaoShare = () => {
         const {
             title,
             description,
-            imageUrl = 'https://mud-kage.kakao.com/dn/NTmhS/btqfEUdFAUf/FjKzkZsnoeE4o19klTOVI1/openlink_640x640s.jpg',
+            imageUrl = 'https://ik.imagekit.io/ebas77mtp/choiMath/logo.jpg',
             buttonText = '자세히 보기',
             linkUrl = 'http://localhost:4000'
         } = params;
-
         window.Kakao.Share.sendDefault({
             objectType: 'feed',
             content: {

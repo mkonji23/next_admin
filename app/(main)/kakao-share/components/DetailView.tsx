@@ -12,12 +12,13 @@ import { useToast } from '@/hooks/useToast';
 interface DetailViewProps {
     selectedShare: ShareItem | null;
     onBack: () => void;
-    onShare: (item: ShareItem, type: 'student' | 'parent') => void;
+    onShare: (item: ShareItem) => void;
     onEdit: (item: ShareItem) => void;
     onDelete: (id: string) => void;
+    onCopyToNew: (item: ShareItem) => void;
 }
 
-const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete }: DetailViewProps) => {
+const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete, onCopyToNew }: DetailViewProps) => {
     const { showToast } = useToast();
     if (!selectedShare) return null;
     const handleDownload = async (url: string, fileName: string) => {
@@ -38,9 +39,9 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete }: Detail
         }
     };
 
-    const copyLink = () => {
+    const copyLink = (type: string) => {
         const baseUri = typeof window !== 'undefined' ? window.location.origin : '';
-        const shareLink = `${baseUri}/kakao-share/view/student/${selectedShare._id}`;
+        const shareLink = `${baseUri}/kakao-share/view/${type}/${selectedShare._id}`;
 
         navigator.clipboard
             .writeText(shareLink)
@@ -65,6 +66,12 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete }: Detail
                     <h5>상세 정보</h5>
                 </div>
                 <div className="flex gap-2">
+                    <Button
+                        label="복사"
+                        icon="pi pi-clone"
+                        className="p-button-outlined p-button-secondary"
+                        onClick={() => onCopyToNew(selectedShare)}
+                    />
                     <Button
                         label="수정"
                         icon="pi pi-pencil"
@@ -138,26 +145,31 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete }: Detail
                             <div className="flex gap-2">
                                 <Button
                                     icon="pi pi-copy"
-                                    label="링크 복사"
-                                    className="p-button-primary flex-2"
+                                    label="링크 복사(학생용)"
+                                    className="p-button-warning flex-2"
                                     tooltip="링크 복사"
                                     tooltipOptions={{ position: 'bottom' }}
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        copyLink();
+                                        copyLink('student');
                                     }}
                                 />
                                 <Button
-                                    label="학생에게 공유"
-                                    icon="pi pi-user"
-                                    className="p-button-warning flex-1"
-                                    onClick={() => onShare(selectedShare, 'student')}
+                                    icon="pi pi-copy"
+                                    label="링크 복사(학부모용)"
+                                    className="p-button-success flex-2"
+                                    tooltip="링크 복사"
+                                    tooltipOptions={{ position: 'bottom' }}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        copyLink('parent');
+                                    }}
                                 />
                                 <Button
-                                    label="학부모에게 공유"
-                                    icon="pi pi-users"
-                                    className="p-button-success flex-1"
-                                    onClick={() => onShare(selectedShare, 'parent')}
+                                    label="카카오톡 공유"
+                                    icon="pi pi-share-alt"
+                                    className="p-button-primary flex-1"
+                                    onClick={() => onShare(selectedShare)}
                                 />
                             </div>
                         </div>

@@ -168,21 +168,19 @@ const KakaoSharePage = () => {
         }
     };
 
-    const handleShare = (item: ShareItem, type: 'student' | 'parent' = 'student') => {
+    const handleShare = (item: ShareItem) => {
         const firstImageUrl = item.shareImageUrls?.[0];
-        const imageUrl = typeof firstImageUrl === 'string' ? firstImageUrl : firstImageUrl?.url || '';
-
+        const imageUrl = typeof firstImageUrl === 'string' ? firstImageUrl : firstImageUrl?.url;
         // 도메인 주소 결정 (환경변수 우선, 없으면 현재 호스트 사용)
         const baseUri =
             process.env.NEXT_PUBLIC_KAKAO_SHARED_URI || (typeof window !== 'undefined' ? window.location.origin : '');
 
-        // 경로에 [type] 추가
-        const shareLink = `${baseUri}/kakao-share/view/${type}/${item._id}`;
+        const shareLink = `${baseUri}/kakao-share/public-view/${item?.publicUrl}`;
 
         shareDefault({
             title: item?.shareTitle,
             description: item?.shareContent,
-            imageUrl: imageUrl,
+            // imageUrl: imageUrl,
             buttonText: '자세히 보기',
             linkUrl: shareLink
         });
@@ -203,6 +201,22 @@ const KakaoSharePage = () => {
         setView('WRITE');
     };
 
+    const handleCopyToNew = (item: ShareItem) => {
+        const { _id, createdDate, updatedDate, shareImageUrls, ...rest } = item;
+
+        const newItemData: Partial<ShareItem> = {
+            ...rest,
+            actualTitle: `${item.actualTitle}`,
+            shareTitle: `${item.shareTitle}`
+            // studentId, studentName, telNo, pTelNo are kept as they are part of 'rest'
+            // If they should be reset, they need to be explicitly set to undefined here.
+            // For now, assuming they should be copied.
+        };
+
+        setSelectedShare(newItemData as ShareItem);
+        setView('WRITE');
+    };
+
     return (
         <div className="kakao-share-page">
             {view === 'LIST' && (
@@ -214,6 +228,7 @@ const KakaoSharePage = () => {
                     onShare={handleShare}
                     onDelete={handleDelete}
                     onDeleteMultiple={handleDeleteMultiple}
+                    onCopyToNew={handleCopyToNew}
                 />
             )}
             {view === 'DETAIL' && (
@@ -223,6 +238,7 @@ const KakaoSharePage = () => {
                     onShare={handleShare}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
+                    onCopyToNew={handleCopyToNew}
                 />
             )}
             {view === 'WRITE' && <WriteView onBack={handleBack} onSave={handleSave} initialData={selectedShare} />}

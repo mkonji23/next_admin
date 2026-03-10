@@ -47,7 +47,7 @@ const AppMenuitem = (props: AppMenuItemProps) => {
             });
             // 탭 클릭 시 해당 탭을 활성화
             setStoreActiveTab(item.to);
-            router.replace(item.to); // 메뉴 클릭 시 URL 업데이트
+            router.push(item.to); // 메뉴 클릭 시 URL 업데이트
         }
 
         // 서브메뉴 확장을 위한 active 상태 설정

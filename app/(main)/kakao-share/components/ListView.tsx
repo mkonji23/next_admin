@@ -14,13 +14,23 @@ interface ListViewProps {
     shares: ShareItem[];
     onRowSelect: (id: string) => void;
     onNewPost: () => void;
-    onShare: (item: ShareItem, type: 'student' | 'parent') => void;
+    onShare: (item: ShareItem) => void;
     onSearch: () => void;
     onDelete: (id: string) => void;
     onDeleteMultiple: (selectedItems: ShareItem[]) => void;
+    onCopyToNew: (item: ShareItem) => void;
 }
 
-const ListView = ({ shares, onRowSelect, onNewPost, onShare, onDelete, onDeleteMultiple, onSearch }: ListViewProps) => {
+const ListView = ({
+    shares,
+    onRowSelect,
+    onNewPost,
+    onShare,
+    onDelete,
+    onDeleteMultiple,
+    onSearch,
+    onCopyToNew
+}: ListViewProps) => {
     const [selectedItems, setSelectedItems] = useState<ShareItem[]>([]);
     const { showToast } = useToast();
 
@@ -47,9 +57,9 @@ const ListView = ({ shares, onRowSelect, onNewPost, onShare, onDelete, onDeleteM
         setGlobalFilterValue(value);
     };
 
-    const copyLink = (item: ShareItem) => {
+    const copyLink = (item: ShareItem, type: 'student' | 'parent' = 'student') => {
         const baseUri = typeof window !== 'undefined' ? window.location.origin : '';
-        const shareLink = `${baseUri}/kakao-share/view/student/${item._id}`;
+        const shareLink = `${baseUri}/kakao-share/view/${type}/${item._id}`;
 
         navigator.clipboard
             .writeText(shareLink)
@@ -118,32 +128,59 @@ const ListView = ({ shares, onRowSelect, onNewPost, onShare, onDelete, onDeleteM
             <div className="flex gap-2">
                 <Button
                     icon="pi pi-copy"
-                    className="p-button-rounded p-button-info p-button-text"
-                    tooltip="링크 복사"
-                    tooltipOptions={{ position: 'bottom' }}
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        copyLink(rowData);
-                    }}
-                />
-                <Button
-                    icon="pi pi-user"
                     className="p-button-rounded p-button-warning p-button-text"
-                    tooltip="학생용 공유"
+                    tooltip="링크 복사(학생용)"
                     tooltipOptions={{ position: 'bottom' }}
                     onClick={(e) => {
                         e.stopPropagation();
-                        onShare(rowData, 'student');
+                        copyLink(rowData, 'student');
                     }}
                 />
                 <Button
-                    icon="pi pi-users"
+                    icon="pi pi-copy"
                     className="p-button-rounded p-button-success p-button-text"
-                    tooltip="학부모용 공유"
+                    tooltip="링크 복사(학부모용)"
                     tooltipOptions={{ position: 'bottom' }}
                     onClick={(e) => {
                         e.stopPropagation();
-                        onShare(rowData, 'parent');
+                        copyLink(rowData, 'parent');
+                    }}
+                />
+                <Button
+                    icon="pi pi-share-alt"
+                    className="p-button-rounded p-button-primary p-button-text"
+                    tooltip="카카오톡 공유"
+                    tooltipOptions={{ position: 'bottom' }}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onShare(rowData);
+                    }}
+                />
+            </div>
+        );
+    };
+
+    const actionBodyTemplate = (rowData: ShareItem) => {
+        return (
+            <div className="flex gap-2">
+                <Button
+                    icon="pi pi-clone"
+                    className="p-button-rounded p-button-secondary p-button-text"
+                    tooltip="복사하여 새로 만들기"
+                    tooltipOptions={{ position: 'bottom' }}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onCopyToNew(rowData);
+                    }}
+                />
+                <Button
+                    icon="pi pi-trash"
+                    className="p-button-rounded p-button-danger p-button-text"
+                    tooltip="삭제"
+                    tooltipOptions={{ position: 'bottom' }}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete(rowData._id);
                     }}
                 />
             </div>
@@ -196,20 +233,8 @@ const ListView = ({ shares, onRowSelect, onNewPost, onShare, onDelete, onDeleteM
                     body={(rowData) => formatDate(rowData.createdDate)}
                     sortable
                 />
-                <Column header="공유 (학생/학부모)" body={shareBodyTemplate} />
-                <Column
-                    header="삭제"
-                    body={(rowData: ShareItem) => (
-                        <Button
-                            icon="pi pi-trash"
-                            className="p-button-rounded p-button-danger p-button-text"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onDelete(rowData._id);
-                            }}
-                        />
-                    )}
-                />
+                <Column header="공유" body={shareBodyTemplate} />
+                <Column header="작업" body={actionBodyTemplate} />
             </DataTable>
         </div>
     );
