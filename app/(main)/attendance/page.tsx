@@ -560,12 +560,13 @@ const AttendancePage = () => {
                     <div className="card">
                         <h5>출석부</h5>
                         <div className="grid formgrid p-fluid mb-3">
-                            <div className="field col-12 md:col-3">
+                            <div className="field col-12 md:col-4">
                                 <label htmlFor="class-selector">수업클래스 선택</label>
                                 <Dropdown
                                     id="class-selector"
                                     value={selectedClass}
                                     options={classes}
+                                    scrollHeight="400px"
                                     onChange={handleClassChange}
                                     placeholder="클래스 선택"
                                     optionLabel="label"
