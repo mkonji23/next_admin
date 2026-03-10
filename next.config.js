@@ -6,6 +6,9 @@ const nextConfig = {
         // 하지만 가급적 에러를 고치는 것이 권장됩니다.
         ignoreBuildErrors: true
     },
+    experimental: {
+        middlewareClientMaxBodySize: '100mb'
+    },
     async rewrites() {
         return [
             {
@@ -15,5 +18,7 @@ const nextConfig = {
         ];
     }
 };
+
+module.exports = nextConfig;
 
 module.exports = nextConfig;

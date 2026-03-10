@@ -127,16 +127,37 @@ const WeekSchedulePage = () => {
         handleUpdate(studentId, field, newValue);
     };
 
-    // 엔터 키 누를 때 아래 행으로 이동
-    const handleKeyDown = (e: React.KeyboardEvent, index: number, field: string, totalRows: number) => {
+    // 엔터 키 누를 때 아래 행으로 이동 (Alt+Enter는 줄바꿈)
+    const handleKeyDown = (e: React.KeyboardEvent, studentId: string, index: number, field: string, totalRows: number) => {
         if (e.key === 'Enter') {
+            if (e.altKey) {
+                // Alt + Enter: 줄바꿈 수동 삽입
+                e.preventDefault();
+                const target = e.target as HTMLTextAreaElement;
+                const start = target.selectionStart;
+                const end = target.selectionEnd;
+                const value = target.value;
+                const newValue = value.substring(0, start) + '\n' + value.substring(end);
+
+                handleUpdate(studentId, field, newValue);
+
+                // 커서 위치 조정을 위해 다음 틱에서 설정
+                setTimeout(() => {
+                    target.selectionStart = target.selectionEnd = start + 1;
+                }, 0);
+                return;
+            }
+            
+            // 일반 Enter: 다음 행으로 이동
             e.preventDefault();
             const nextIndex = index + 1;
             if (nextIndex < totalRows) {
                 const nextInput = document.getElementById(`input-${nextIndex}-${field}`);
                 if (nextInput) {
-                    (nextInput as HTMLInputElement).focus();
-                    (nextInput as HTMLInputElement).select(); // 텍스트 전체 선택 (옵션)
+                    (nextInput as HTMLElement).focus();
+                    if (nextInput instanceof HTMLTextAreaElement) {
+                        nextInput.select();
+                    }
                 }
             }
         }
@@ -231,27 +252,30 @@ const WeekSchedulePage = () => {
                 .sticky-col-3 { position: sticky; left: 200px; z-index: 20; background: #f1f3f5 !important; }
                 
                 .schedule-cell {
-                    padding: 4px;
+                    min-height: 48px;
                     border: 1px solid #dee2e6;
                     background: white;
                     display: flex;
-                    align-items: center;
+                    align-items: stretch;
                     justify-content: center;
                 }
                 
-                .sticky-cell-1 { position: sticky; left: 0; z-index: 5; background: #fff !important; font-weight: 600; !important; }
-                .sticky-cell-2 { position: sticky; left: 120px; z-index: 5; background: #fff !important; }
-                .sticky-cell-3 { position: sticky; left: 200px; z-index: 5; background: #fff !important; border-right: 2px solid  !important; }
+                .sticky-cell-1 { position: sticky; left: 0; z-index: 5; background: #fff !important; font-weight: 600 !important; display: flex; align-items: center; justify-content: center; }
+                .sticky-cell-2 { position: sticky; left: 120px; z-index: 5; background: #fff !important; display: flex; align-items: center; justify-content: center; }
+                .sticky-cell-3 { position: sticky; left: 200px; z-index: 5; background: #fff !important; border-right: 2px solid #dee2e6 !important; display: flex; align-items: center; justify-content: center; }
 
                 .schedule-input {
                     width: 100%;
-                    height: 100%;
                     border: 1px solid transparent;
                     background: transparent;
-                    padding: 6px;
+                    padding: 8px 6px;
                     font-size: 0.9rem;
                     border-radius: 4px;
                     transition: all 0.2s;
+                    resize: none;
+                    white-space: pre-wrap;
+                    font-family: inherit;
+                    line-height: 1.5;
                 }
                 .schedule-input:hover {
                     background: #f8f9fa;
@@ -409,101 +433,101 @@ const WeekSchedulePage = () => {
                                             />
                                         </div>
                                         <div className="schedule-cell">
-                                            <input
+                                            <textarea
                                                 id={`input-${index}-bookFee`}
                                                 className="schedule-input"
                                                 value={s.bookFee || ''}
                                                 onChange={(e) => handleUpdate(s.studentId, 'bookFee', e.target.value)}
                                                 onKeyDown={(e) =>
-                                                    handleKeyDown(e, index, 'bookFee', processedSchedules.length)
+                                                    handleKeyDown(e, s.studentId, index, 'bookFee', processedSchedules.length)
                                                 }
                                             />
                                         </div>
                                         <div className="schedule-cell">
-                                            <input
+                                            <textarea
                                                 id={`input-${index}-clinic`}
                                                 className="schedule-input"
                                                 value={s.clinic || ''}
                                                 onChange={(e) => handleUpdate(s.studentId, 'clinic', e.target.value)}
                                                 onKeyDown={(e) =>
-                                                    handleKeyDown(e, index, 'clinic', processedSchedules.length)
+                                                    handleKeyDown(e, s.studentId, index, 'clinic', processedSchedules.length)
                                                 }
                                             />
                                         </div>
                                         <div className="schedule-cell">
-                                            <input
+                                            <textarea
                                                 id={`input-${index}-mon`}
                                                 className="schedule-input"
                                                 value={s.mon || ''}
                                                 onChange={(e) => handleUpdate(s.studentId, 'mon', e.target.value)}
                                                 onKeyDown={(e) =>
-                                                    handleKeyDown(e, index, 'mon', processedSchedules.length)
+                                                    handleKeyDown(e, s.studentId, index, 'mon', processedSchedules.length)
                                                 }
                                             />
                                         </div>
                                         <div className="schedule-cell">
-                                            <input
+                                            <textarea
                                                 id={`input-${index}-tue`}
                                                 className="schedule-input"
                                                 value={s.tue || ''}
                                                 onChange={(e) => handleUpdate(s.studentId, 'tue', e.target.value)}
                                                 onKeyDown={(e) =>
-                                                    handleKeyDown(e, index, 'tue', processedSchedules.length)
+                                                    handleKeyDown(e, s.studentId, index, 'tue', processedSchedules.length)
                                                 }
                                             />
                                         </div>
                                         <div className="schedule-cell">
-                                            <input
+                                            <textarea
                                                 id={`input-${index}-wed`}
                                                 className="schedule-input"
                                                 value={s.wed || ''}
                                                 onChange={(e) => handleUpdate(s.studentId, 'wed', e.target.value)}
                                                 onKeyDown={(e) =>
-                                                    handleKeyDown(e, index, 'wed', processedSchedules.length)
+                                                    handleKeyDown(e, s.studentId, index, 'wed', processedSchedules.length)
                                                 }
                                             />
                                         </div>
                                         <div className="schedule-cell">
-                                            <input
+                                            <textarea
                                                 id={`input-${index}-thu`}
                                                 className="schedule-input"
                                                 value={s.thu || ''}
                                                 onChange={(e) => handleUpdate(s.studentId, 'thu', e.target.value)}
                                                 onKeyDown={(e) =>
-                                                    handleKeyDown(e, index, 'thu', processedSchedules.length)
+                                                    handleKeyDown(e, s.studentId, index, 'thu', processedSchedules.length)
                                                 }
                                             />
                                         </div>
                                         <div className="schedule-cell">
-                                            <input
+                                            <textarea
                                                 id={`input-${index}-fri`}
                                                 className="schedule-input"
                                                 value={s.fri || ''}
                                                 onChange={(e) => handleUpdate(s.studentId, 'fri', e.target.value)}
                                                 onKeyDown={(e) =>
-                                                    handleKeyDown(e, index, 'fri', processedSchedules.length)
+                                                    handleKeyDown(e, s.studentId, index, 'fri', processedSchedules.length)
                                                 }
                                             />
                                         </div>
                                         <div className="schedule-cell">
-                                            <input
+                                            <textarea
                                                 id={`input-${index}-sat`}
                                                 className="schedule-input"
                                                 value={s.sat || ''}
                                                 onChange={(e) => handleUpdate(s.studentId, 'sat', e.target.value)}
                                                 onKeyDown={(e) =>
-                                                    handleKeyDown(e, index, 'sat', processedSchedules.length)
+                                                    handleKeyDown(e, s.studentId, index, 'sat', processedSchedules.length)
                                                 }
                                             />
                                         </div>
                                         <div className="schedule-cell">
-                                            <input
+                                            <textarea
                                                 id={`input-${index}-sun`}
                                                 className="schedule-input"
                                                 value={s.sun || ''}
                                                 onChange={(e) => handleUpdate(s.studentId, 'sun', e.target.value)}
                                                 onKeyDown={(e) =>
-                                                    handleKeyDown(e, index, 'sun', processedSchedules.length)
+                                                    handleKeyDown(e, s.studentId, index, 'sun', processedSchedules.length)
                                                 }
                                             />
                                         </div>

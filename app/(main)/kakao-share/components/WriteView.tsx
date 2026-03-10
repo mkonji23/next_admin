@@ -322,7 +322,7 @@ const WriteView = ({ onBack, onSave, initialData }: WriteViewProps) => {
                                 name="files"
                                 multiple
                                 accept="image/*"
-                                maxFileSize={25000000}
+                                maxFileSize={50000000}
                                 onSelect={onFileSelect}
                                 onClear={onClear}
                                 onRemove={onFileRemove}
