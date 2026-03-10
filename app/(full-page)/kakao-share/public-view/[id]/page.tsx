@@ -48,7 +48,7 @@ const PublicShareViewPage = () => {
         if (id) {
             fetchDetail();
         }
-    }, [id, http]);
+    }, [id]);
 
     const downloadImage = async (url: string, index: number) => {
         try {
