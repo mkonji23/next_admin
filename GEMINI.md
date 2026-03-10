@@ -69,3 +69,5 @@
 ## manul update
 
 -   AppMenu.tsx 기준으로 업데이트 한다.
+
+    // 참고: AppMenu.tsx에 정의된 다른 모든 경로들을 여기에 추가해야 합니다.
