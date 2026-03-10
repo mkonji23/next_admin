@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/useToast';
 import { useHttp } from '@/util/axiosInstance';
 import { ShareItem } from '../types';
 import { Student } from '@/types/class';
+import { compressImages } from '@/util/imageResizer';
 
 interface WriteViewProps {
     onBack: () => void;
@@ -24,6 +25,7 @@ const WriteView = ({ onBack, onSave, initialData }: WriteViewProps) => {
     const http = useHttp();
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [students, setStudents] = useState<Student[]>([]);
+    const [isOptimizing, setIsOptimizing] = useState(false);
 
     useEffect(() => {
         const fetchStudents = async () => {
@@ -64,8 +66,25 @@ const WriteView = ({ onBack, onSave, initialData }: WriteViewProps) => {
             showToast({ severity: 'warn', summary: '입력 확인', detail: '모든 필드를 입력해주세요.' });
             return;
         }
+        setIsOptimizing(true);
+        try {
+            // 이미지 최적화 (가로/세로 최대 1200px, 품질 0.7 시도)
+            // 전체 파일 합계가 4MB를 넘으면 자동으로 해상도와 품질을 낮춤
+            const optimizedFiles = await compressImages(selectedFiles, {
+                maxWidth: 1200,
+                maxHeight: 1200,
+                quality: 0.7,
+                maxTotalSize: 4 * 1024 * 1024 // 4MB 제한
+            });
 
-        await onSave(values, selectedFiles);
+            setIsOptimizing(false);
+            await onSave(values, optimizedFiles);
+        } catch (error) {
+            console.error('Optimization error:', error);
+            showToast({ severity: 'error', summary: '오류', detail: '이미지 최적화 중 오류가 발생했습니다.' });
+        } finally {
+            setIsOptimizing(false);
+        }
     };
 
     const validate = (values: any) => {
@@ -322,7 +341,7 @@ const WriteView = ({ onBack, onSave, initialData }: WriteViewProps) => {
                                 name="files"
                                 multiple
                                 accept="image/*"
-                                maxFileSize={50000000}
+                                maxFileSize={25000000}
                                 onSelect={onFileSelect}
                                 onClear={onClear}
                                 onRemove={onFileRemove}
@@ -339,7 +358,8 @@ const WriteView = ({ onBack, onSave, initialData }: WriteViewProps) => {
                                 label={initialData ? '수정 내용 저장' : '새 게시글 등록'}
                                 icon={initialData ? 'pi pi-save' : 'pi pi-check'}
                                 className={initialData ? 'p-button-info' : 'p-button-primary'}
-                                disabled={submitting}
+                                disabled={submitting || isOptimizing}
+                                loading={isOptimizing}
                             />
                         </div>
                     </form>
