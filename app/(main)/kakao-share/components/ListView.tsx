@@ -210,10 +210,12 @@ const ListView = ({
                 value={shares}
                 selectionMode="checkbox"
                 selection={selectedItems}
-                onSelectionChange={(e) => setSelectedItems(e.value as ShareItem[])}
+                onSelectionChange={(e) => {
+                    console.log('e', e);
+                    setSelectedItems(e.value as ShareItem[]);
+                }}
                 emptyMessage="검색 결과가 없습니다."
                 dataKey="_id"
-                responsiveLayout="scroll"
                 filters={filters}
                 globalFilterFields={['shareTitle', 'actualTitle', 'studentName', 'telNo', 'pTelNo']}
                 header={header}

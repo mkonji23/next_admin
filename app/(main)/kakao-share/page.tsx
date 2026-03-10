@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/useToast';
 import { useHttp } from '@/util/axiosInstance';
 import useKakaoShare from '@/hooks/useKakaoShare';
@@ -21,7 +21,11 @@ const KakaoSharePage = () => {
     const http = useHttp();
     const { shareDefault } = useKakaoShare();
 
+    // 브라우저 뒤로가기 제어를 위한 로직
+    const prevViewRef = useRef(view);
+
     const fetchShares = async () => {
+        // ... 생략 (기존 코드와 동일)
         try {
             const res = await http.get('/choiMath/share/list');
             setShares(res.data || []);
@@ -192,8 +196,12 @@ const KakaoSharePage = () => {
     };
 
     const handleBack = () => {
-        setView('LIST');
-        setSelectedShare(null);
+        if (view !== 'LIST') {
+            window.history.back();
+        } else {
+            setView('LIST');
+            setSelectedShare(null);
+        }
     };
 
     const handleNewPost = () => {
@@ -216,6 +224,26 @@ const KakaoSharePage = () => {
         setSelectedShare(newItemData as ShareItem);
         setView('WRITE');
     };
+
+    useEffect(() => {
+        const handlePopState = () => {
+            // 브라우저 뒤로가기 발생 시, LIST가 아니라면 LIST로 복구
+            if (view !== 'LIST') {
+                setView('LIST');
+                setSelectedShare(null);
+            }
+        };
+
+        // 상세나 작성 화면으로 진입할 때만 히스토리에 상태 추가
+        if (prevViewRef.current === 'LIST' && view !== 'LIST') {
+            window.history.pushState({ view }, '');
+        }
+
+        prevViewRef.current = view;
+
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [view]);
 
     return (
         <div className="kakao-share-page">
