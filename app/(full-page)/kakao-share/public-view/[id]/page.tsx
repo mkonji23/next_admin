@@ -81,7 +81,7 @@ const PublicShareViewPage = () => {
         );
     }
 
-    if (!shareData) {
+    if (!loading && !shareData) {
         return (
             <div className="flex align-items-center justify-content-center min-h-screen p-3">
                 <Card title="데이터를 찾을 수 없습니다.">
@@ -94,12 +94,12 @@ const PublicShareViewPage = () => {
     return (
         <div className="layout-content p-3 md:p-5 flex justify-content-center min-h-screen bg-gray-50">
             <div className="w-full" style={{ maxWidth: '800px' }}>
-                <Card title={shareData.actualTitle} className="shadow-4 mb-4">
+                <Card title={shareData?.actualTitle} className="shadow-4 mb-4">
                     <div className="flex justify-content-between align-items-center mb-4 text-sm text-gray-500">
                         <div className="flex align-items-center gap-2">
-                            <span>등록일: {formatDate(shareData.createdDate)}</span>
+                            <span>등록일: {formatDate(shareData?.createdDate)}</span>
                         </div>
-                        {shareData.studentName && (
+                        {shareData?.studentName && (
                             <span>
                                 공유 대상: <span className="text-900 font-bold">{shareData.studentName}</span>
                             </span>
@@ -108,7 +108,7 @@ const PublicShareViewPage = () => {
 
                     <div className="mb-6">
                         <InputTextarea
-                            value={shareData.actualContent}
+                            value={shareData?.actualContent}
                             rows={10}
                             readOnly
                             autoResize

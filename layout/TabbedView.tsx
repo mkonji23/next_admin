@@ -91,7 +91,7 @@ const TabbedView = ({ initialTab }: TabbedViewProps) => {
     return (
         <div>
             {tabs.length > 0 && <TabMenu model={menuItems} activeIndex={activeIndex} onTabChange={onTabChange} />}
-            <div className="p-4">
+            <div className="p-0 md:p-4">
                 {tabs.map((tab) => {
                     return (
                         <div key={tab.id} style={{ display: activeTab === tab.id ? 'block' : 'none' }}>
