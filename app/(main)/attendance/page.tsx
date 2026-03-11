@@ -645,22 +645,11 @@ const AttendancePage = () => {
                                             value={selectedScrollDate}
                                             onChange={(e) => handleDateSelect(e.value as Date)}
                                             dateFormat="yy/mm/dd"
-                                            showIcon
+                                            showButtonBar
+                                            inline
                                             icon="pi pi-calendar"
                                             placeholder="날짜 선택"
                                         />
-                                        <div className="flex gap-2 justify-content-end">
-                                            <Button
-                                                label="취소"
-                                                severity="secondary"
-                                                size="small"
-                                                onClick={() => {
-                                                    if (datePickerOverlayRef.current) {
-                                                        datePickerOverlayRef.current.hide();
-                                                    }
-                                                }}
-                                            />
-                                        </div>
                                     </div>
                                 </OverlayPanel>
                             </div>

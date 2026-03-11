@@ -139,7 +139,7 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete, onCopyTo
                                 </div>
                                 <div className="col-12 mb-3">
                                     <span className="text-500 font-medium block mb-1">설명(공유)</span>
-                                    <div className="text-700 truncate-cell">{selectedShare.shareContent}</div>
+                                    <div className="text-700">{selectedShare.shareContent}</div>
                                 </div>
                             </div>
                             <div className="flex gap-2">
