@@ -323,6 +323,7 @@ const Crud = () => {
 
                     <DataTable
                         ref={dt}
+                        showGridlines
                         value={products}
                         selection={selectedProducts}
                         onSelectionChange={(e) => setSelectedProducts(e.value as any)}

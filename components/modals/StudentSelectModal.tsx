@@ -130,6 +130,7 @@ const StudentSelectModal = ({ visible, pData, onClose }: StudentSelectModalProps
                 <small className="text-500">선택된 학생: {selectedStudentObjects.length}명</small>
             </div>
             <DataTable
+                showGridlines
                 value={filteredStudents}
                 loading={loading}
                 paginator

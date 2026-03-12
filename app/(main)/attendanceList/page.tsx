@@ -266,6 +266,7 @@ const AttendanceListPage = () => {
                         <div className="mb-4">
                             <h3>수업별 통계</h3>
                             <DataTable
+                                showGridlines
                                 value={statistics.classes}
                                 loading={loading}
                                 emptyMessage="데이터가 없습니다."
@@ -325,6 +326,7 @@ const AttendanceListPage = () => {
                                         {classItem.className} ({classItem.year}년 {classItem.month}월)
                                     </h4>
                                     <DataTable
+                                        showGridlines
                                         value={classItem.students || []}
                                         loading={loading}
                                         emptyMessage="학생 데이터가 없습니다."
@@ -396,6 +398,7 @@ const AttendanceListPage = () => {
                         <div className="mb-4">
                             <h3>학생별 통계</h3>
                             <DataTable
+                                showGridlines
                                 value={statistics.student}
                                 loading={loading}
                                 emptyMessage="데이터가 없습니다."

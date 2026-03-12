@@ -92,6 +92,14 @@ export interface StudentStatisticsSummary {
     averageHomeworkRate: number;
 }
 
+export interface AttendanceDetail {
+    status: string;
+    homework: number;
+    note: string;
+    statusTime: string;
+    date: string;
+}
+
 export interface StudentClassStatistics {
     classId: string;
     className: string;
@@ -108,6 +116,7 @@ export interface StudentClassStatistics {
         homeworkRate: number;
         homeworkCount: number;
     };
+    attendance?: AttendanceDetail[];
 }
 
 export interface StudentAttendanceStatisticsResponse {

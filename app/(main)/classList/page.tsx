@@ -380,6 +380,7 @@ const ClassListPage = () => {
         <div className="card">
             <h1>클래스 목록</h1>
             <DataTable
+                showGridlines
                 value={classes}
                 header={header}
                 loading={loading}

@@ -207,6 +207,7 @@ const ListView = ({
                 </div>
             </div>
             <DataTable
+                showGridlines
                 value={shares}
                 selectionMode="checkbox"
                 selection={selectedItems}

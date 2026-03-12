@@ -141,7 +141,17 @@ const OverlayDemo = () => {
                             <div>
                                 <Button type="button" label="DataTable" onClick={toggleDataTable} outlined />
                                 <OverlayPanel ref={op2} appendTo={typeof window !== 'undefined' ? document.body : null} showCloseIcon id="overlay_panel" style={{ width: '450px' }}>
-                                    <DataTable value={products} selection={selectedProduct || undefined} onSelectionChange={onSelectionChange} selectionMode="single" responsiveLayout="scroll" paginator rows={5} onRowSelect={onProductSelect}>
+                                    <DataTable
+                                        showGridlines
+                                        value={products}
+                                        selection={selectedProduct || undefined}
+                                        onSelectionChange={onSelectionChange}
+                                        selectionMode="single"
+                                        responsiveLayout="scroll"
+                                        paginator
+                                        rows={5}
+                                        onRowSelect={onProductSelect}
+                                    >
                                         <Column field="name" header="Name" sortable headerStyle={{ minWidth: '10rem' }} />
                                         <Column header="Image" body={imageBodyTemplate} headerStyle={{ minWidth: '10rem' }} />
                                         <Column field="price" header="Price" body={priceBodyTemplate} sortable headerStyle={{ minWidth: '8rem' }} />

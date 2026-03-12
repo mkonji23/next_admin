@@ -176,6 +176,7 @@ const UserListPage = () => {
         <div className="card">
             <h1>사용자 목록</h1>
             <DataTable
+                showGridlines
                 value={users}
                 header={header}
                 paginator

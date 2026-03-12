@@ -38,6 +38,7 @@ const StudentAttendanceStatisticsPage = () => {
     const [classes, setClasses] = useState<ClassOption[]>([]);
     const [statistics, setStatistics] = useState<StudentAttendanceStatisticsResponse | null>(null);
     const [loading, setLoading] = useState(false);
+    const [expandedRows, setExpandedRows] = useState<any>(null);
     const http = useHttp();
     const { showToast } = useToast();
 
@@ -45,6 +46,64 @@ const StudentAttendanceStatisticsPage = () => {
         fetchStudents();
         fetchClasses();
     }, []);
+
+    const rowExpansionTemplate = (data: StudentClassStatistics) => {
+        return (
+            <div className="p-3">
+                <h5>{data.className} 상세 출석 내역</h5>
+                <DataTable value={data?.attendance} showGridlines>
+                    <Column
+                        field="date"
+                        header="날짜"
+                        body={(rowData) => {
+                            const dateStr = rowData.date;
+                            if (dateStr && dateStr.length === 8) {
+                                return `${dateStr.substring(0, 4)}-${dateStr.substring(4, 6)}-${dateStr.substring(
+                                    6,
+                                    8
+                                )}`;
+                            }
+                            return dateStr;
+                        }}
+                        sortable
+                    />
+                    <Column
+                        field="status"
+                        header="출석"
+                        body={(rowData) => {
+                            const statusMap: any = {
+                                present: { label: '출석', severity: 'success' },
+                                absent: { label: '결석', severity: 'danger' },
+                                late: { label: '지각', severity: 'warning' },
+                                none: { label: '미지정', severity: 'info' }
+                            };
+                            const status = statusMap[rowData.status] || { label: rowData.status, severity: 'info' };
+                            return <Tag value={status.label} severity={status.severity} />;
+                        }}
+                        sortable
+                    />
+                    <Column
+                        field="homework"
+                        header="숙제"
+                        body={(rowData) => {
+                            const homeworkMap: any = {
+                                1: { label: '완료', severity: 'success' },
+                                0: { label: '미완료', severity: 'danger' },
+                                2: { label: '부분완료', severity: 'warning' }
+                            };
+                            const homework = homeworkMap[rowData.homework] || {
+                                label: rowData.homework,
+                                severity: 'info'
+                            };
+                            return <Tag value={homework.label} severity={homework.severity} />;
+                        }}
+                        sortable
+                    />
+                    <Column field="note" header="비고" />
+                </DataTable>
+            </div>
+        );
+    };
 
     const fetchStudents = async () => {
         try {
@@ -371,12 +430,18 @@ const StudentAttendanceStatisticsPage = () => {
                         <div className="mb-4">
                             <h3>수업별 상세 통계</h3>
                             <DataTable
+                                showGridlines
                                 value={statistics.classes}
                                 loading={loading}
                                 emptyMessage="데이터가 없습니다."
                                 paginator
                                 rows={10}
+                                expandedRows={expandedRows}
+                                onRowToggle={(e) => setExpandedRows(e.data)}
+                                rowExpansionTemplate={rowExpansionTemplate}
+                                dataKey={(data: StudentClassStatistics) => data[`key`]}
                             >
+                                <Column expander={true} style={{ width: '3rem' }} />
                                 <Column field="className" header="수업명" sortable />
                                 <Column field="year" header="연도" sortable />
                                 <Column field="month" header="월" sortable />

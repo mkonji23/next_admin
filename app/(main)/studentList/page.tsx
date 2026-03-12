@@ -491,6 +491,7 @@ const StudentListPage = () => {
         <div className="card">
             <h1>학생 목록 </h1>
             <DataTable
+                showGridlines
                 value={students}
                 header={header}
                 paginator

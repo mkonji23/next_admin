@@ -202,7 +202,7 @@ const Dashboard = () => {
             <div className="col-12 xl:col-6">
                 <div className="card">
                     <h5>Recent Sales</h5>
-                    <DataTable value={products} rows={5} paginator responsiveLayout="scroll">
+                    <DataTable value={products} showGridlines rows={5} paginator responsiveLayout="scroll">
                         <Column
                             header="Image"
                             body={(data) => (

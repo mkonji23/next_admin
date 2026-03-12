@@ -215,6 +215,7 @@ const BucketList = ({ initialData }: ClientComponentProps) => {
         <>
             <div className="card">
                 <DataTable
+                    showGridlines
                     value={bucketLists}
                     selectionMode={'single'}
                     header={header}
@@ -273,7 +274,7 @@ const BucketList = ({ initialData }: ClientComponentProps) => {
                         headerClassName="w-10rem"
                     />
                 </TreeTable>
-                {/* <DataTable value={files} selectionMode={'single'} header={header2} tableStyle={{ minWidth: '50rem' }}>
+                {/* <DataTable showGridlines value={files} selectionMode={'single'} header={header2} tableStyle={{ minWidth: '50rem' }}>
                     {getColumns(files)?.map((item) => (
                         <Column
                             key={String(item?.field)}
