@@ -53,7 +53,9 @@ const StudentAttendanceStatisticsPage = () => {
         fetchClasses();
     }, []);
 
-    const rowExpansionTemplate = (data: StudentClassStatistics) => {
+    const rowExpansionTemplate = (tdata: StudentClassStatistics) => {
+        console.log('tdata', tdata);
+        const data = { ...tdata, attendance: tdata.attendance?.filter((item) => item.status !== 'none') };
         return (
             <div className="p-3">
                 <h5>{data.className} 상세 출석 내역</h5>
