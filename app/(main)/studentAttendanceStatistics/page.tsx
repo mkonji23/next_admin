@@ -44,7 +44,7 @@ const StudentAttendanceStatisticsPage = () => {
     const [classes, setClasses] = useState<ClassOption[]>([]);
     const [statistics, setStatistics] = useState<StudentAttendanceStatisticsResponse | null>(null);
     const [loading, setLoading] = useState(false);
-    const [expandedRows, setExpandedRows] = useState<any>(null);
+    const [expandedRows, setExpandedRows] = useState<any>({});
     const http = useHttp();
     const { showToast } = useToast();
 
@@ -92,7 +92,7 @@ const StudentAttendanceStatisticsPage = () => {
                             let progress = rowData.homework;
                             if (progress === 1) progress = 100;
                             else if (progress === 2) progress = 50;
-                            
+
                             const option = HOMEWORK_PROGRESS_OPTIONS.find((opt) => opt.value === progress);
                             const label = option ? option.label : `${progress}%`;
                             const severity = getHomeworkSeverity(progress);
