@@ -101,6 +101,7 @@ export interface AttendanceDetail {
 }
 
 export interface StudentClassStatistics {
+    id: string;
     classId: string;
     className: string;
     year: string;

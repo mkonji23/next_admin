@@ -16,6 +16,12 @@ import {
     StudentClassStatistics,
     StudentAttendanceStatisticsResponse
 } from '@/types/attendanceStatistics';
+import {
+    ATTENDANCE_STATUS_OPTIONS,
+    getAttendanceSeverity,
+    getHomeworkSeverity,
+    HOMEWORK_PROGRESS_OPTIONS
+} from '@/constants/attendance';
 
 interface StudentOption {
     label: string;
@@ -71,14 +77,10 @@ const StudentAttendanceStatisticsPage = () => {
                         field="status"
                         header="출석"
                         body={(rowData) => {
-                            const statusMap: any = {
-                                present: { label: '출석', severity: 'success' },
-                                absent: { label: '결석', severity: 'danger' },
-                                late: { label: '지각', severity: 'warning' },
-                                none: { label: '미지정', severity: 'info' }
-                            };
-                            const status = statusMap[rowData.status] || { label: rowData.status, severity: 'info' };
-                            return <Tag value={status.label} severity={status.severity} />;
+                            const option = ATTENDANCE_STATUS_OPTIONS.find((opt) => opt.value === rowData.status);
+                            const label = option ? option.label : rowData.status;
+                            const severity = getAttendanceSeverity(rowData.status);
+                            return <Tag value={label} severity={severity} />;
                         }}
                         sortable
                     />
@@ -86,16 +88,15 @@ const StudentAttendanceStatisticsPage = () => {
                         field="homework"
                         header="숙제"
                         body={(rowData) => {
-                            const homeworkMap: any = {
-                                1: { label: '완료', severity: 'success' },
-                                0: { label: '미완료', severity: 'danger' },
-                                2: { label: '부분완료', severity: 'warning' }
-                            };
-                            const homework = homeworkMap[rowData.homework] || {
-                                label: rowData.homework,
-                                severity: 'info'
-                            };
-                            return <Tag value={homework.label} severity={homework.severity} />;
+                            // homework 값이 0, 1, 2 등으로 들어올 경우 대비 (1: 100%, 2: 50%, 0: 0%)
+                            let progress = rowData.homework;
+                            if (progress === 1) progress = 100;
+                            else if (progress === 2) progress = 50;
+                            
+                            const option = HOMEWORK_PROGRESS_OPTIONS.find((opt) => opt.value === progress);
+                            const label = option ? option.label : `${progress}%`;
+                            const severity = getHomeworkSeverity(progress);
+                            return <Tag value={label} severity={severity} />;
                         }}
                         sortable
                     />
@@ -175,7 +176,17 @@ const StudentAttendanceStatisticsPage = () => {
             }
 
             const response = await http.get('/choiMath/attendance/getStudentStatistics', { params });
-            setStatistics(response.data || null);
+            const data = response.data || null;
+
+            if (data && data.classes) {
+                // Unique ID 생성 (TypeScript 에러 해결 및 row expansion 정상 작동을 위함)
+                data.classes = data.classes.map((cls: StudentClassStatistics) => ({
+                    ...cls,
+                    id: `${cls.classId}-${cls.year}-${cls.month}`
+                }));
+            }
+
+            setStatistics(data);
         } catch (error: any) {
             console.error('Error fetching statistics:', error);
             const errorMessage = error.response?.data?.message || error.message || '통계를 불러오는데 실패했습니다.';
@@ -439,7 +450,7 @@ const StudentAttendanceStatisticsPage = () => {
                                 expandedRows={expandedRows}
                                 onRowToggle={(e) => setExpandedRows(e.data)}
                                 rowExpansionTemplate={rowExpansionTemplate}
-                                dataKey={(data: StudentClassStatistics) => data[`key`]}
+                                dataKey="id"
                             >
                                 <Column expander={true} style={{ width: '3rem' }} />
                                 <Column field="className" header="수업명" sortable />
