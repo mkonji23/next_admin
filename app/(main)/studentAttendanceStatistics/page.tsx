@@ -22,7 +22,8 @@ import {
     getHomeworkSeverity,
     HOMEWORK_PROGRESS_OPTIONS
 } from '@/constants/attendance';
-
+import dayjs from 'dayjs';
+import 'dayjs/locale/ko';
 interface StudentOption {
     label: string;
     value: string;
@@ -36,6 +37,7 @@ interface ClassOption {
 }
 
 const StudentAttendanceStatisticsPage = () => {
+    dayjs.locale('ko');
     const [selectedYear, setSelectedYear] = useState<Date | null>(null);
     const [selectedMonth, setSelectedMonth] = useState<Date | null>(null);
     const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
@@ -61,17 +63,17 @@ const StudentAttendanceStatisticsPage = () => {
                 <h5>{data.className} 상세 출석 내역</h5>
                 <DataTable value={data?.attendance} showGridlines>
                     <Column
+                        style={{ width: '25%' }}
                         field="date"
                         header="날짜"
                         body={(rowData) => {
                             const dateStr = rowData.date;
-                            if (dateStr && dateStr.length === 8) {
-                                return `${dateStr.substring(0, 4)}-${dateStr.substring(4, 6)}-${dateStr.substring(
-                                    6,
-                                    8
-                                )}`;
-                            }
-                            return dateStr;
+                            const dt = dayjs(dateStr);
+                            const formatDt = dt.format('YYYY-MM-DD (dd)');
+                            const day = dt.day();
+                            const colorClass = day === 0 ? 'text-red-500' : day === 6 ? 'text-blue-500' : '';
+
+                            return <span className={colorClass}>{formatDt}</span>;
                         }}
                         sortable
                     />
@@ -404,7 +406,6 @@ const StudentAttendanceStatisticsPage = () => {
                         view="year"
                         dateFormat="yy"
                         showIcon
-                        showButtonBar
                         placeholder="연도 선택"
                     />
                 </div>
