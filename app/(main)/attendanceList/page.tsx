@@ -247,6 +247,7 @@ const AttendanceListPage = () => {
                         onChange={(e) => setDate(e.value as Date)}
                         view="month"
                         dateFormat="yy/mm"
+                        appendTo={'self'}
                     />
                 </div>
 

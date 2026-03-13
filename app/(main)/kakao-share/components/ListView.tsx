@@ -223,6 +223,7 @@ const ListView = ({
                 rows={10}
                 paginator
             >
+                <Column header="No." body={(data, options) => options.rowIndex + 1} style={{ width: '1rem' }} />
                 <Column selectionMode="multiple" headerStyle={{ width: '3rem' }}></Column>
                 <Column field="shareTitle" header="공유 제목 (카카오)" body={titleBodyTemplate} sortable />
                 <Column field="actualTitle" header="게시글 제목" sortable />

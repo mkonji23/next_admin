@@ -62,6 +62,7 @@ const StudentAttendanceStatisticsPage = () => {
             <div className="p-3">
                 <h5>{data.className} 상세 출석 내역</h5>
                 <DataTable value={data?.attendance} showGridlines>
+                    <Column header="No." body={(data, options) => options.rowIndex + 1} style={{ width: '3rem' }} />
                     <Column
                         style={{ width: '25%' }}
                         field="date"
@@ -407,6 +408,7 @@ const StudentAttendanceStatisticsPage = () => {
                         dateFormat="yy"
                         showIcon
                         placeholder="연도 선택"
+                        appendTo="self"
                     />
                 </div>
                 <div className="field col-12 md:col-2">
@@ -420,6 +422,7 @@ const StudentAttendanceStatisticsPage = () => {
                         showIcon
                         showButtonBar
                         placeholder="월 선택"
+                        appendTo="self"
                     />
                 </div>
                 <div className="field col-6 md:col-2 flex align-items-end">
@@ -455,6 +458,7 @@ const StudentAttendanceStatisticsPage = () => {
                                 rowExpansionTemplate={rowExpansionTemplate}
                                 dataKey="id"
                             >
+                                <Column header="No." body={(data, options) => options.rowIndex + 1} style={{ width: '3rem' }} />
                                 <Column expander={true} style={{ width: '3rem' }} />
                                 <Column field="className" header="수업명" sortable />
                                 <Column field="year" header="연도" sortable />
