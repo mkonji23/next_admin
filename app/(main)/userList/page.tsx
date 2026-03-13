@@ -10,8 +10,11 @@ import { useCustomModal } from '@/hooks/useCustomModal';
 import { useConfirm } from '@/hooks/useConfirm';
 import { getCommonLabel } from '@/util/common';
 import { USER_AUTH_OPTIONS } from '@/constants/user';
+import useAuth from '@/hooks/useAuth';
+import useAuthStore from '@/store/useAuthStore';
 
 const UserListPage = () => {
+    const { userInfo } = useAuthStore();
     const { openModal } = useCustomModal();
     const { showConfirm } = useConfirm();
     const [users, setUsers] = useState<User[]>([]);
@@ -81,6 +84,17 @@ const UserListPage = () => {
     const handleDeleteUsers = async () => {
         if (selectedUsers.length === 0) {
             showToast({ severity: 'warn', summary: '선택 오류', detail: '삭제할 사용자를 선택해주세요.' });
+            return;
+        }
+
+        // 자기 자신 삭제 방지 체크
+        const isSelfSelected = selectedUsers.some((user) => user.userId === userInfo.userId);
+        if (isSelfSelected) {
+            showToast({
+                severity: 'error',
+                summary: '삭제 불가',
+                detail: '자기 자신은 삭제할 수 없습니다.'
+            });
             return;
         }
 
@@ -186,6 +200,7 @@ const UserListPage = () => {
                 onSelectionChange={(e) => setSelectedUsers(e.value as User[])}
                 dataKey="userId"
                 selectionMode="checkbox"
+                isDataSelectable={(event) => event.data.userId !== userInfo.userId}
             >
                 <Column selectionMode="multiple" headerStyle={{ width: '3rem' }}></Column>
                 <Column field="userId" header="ID" sortable filter></Column>

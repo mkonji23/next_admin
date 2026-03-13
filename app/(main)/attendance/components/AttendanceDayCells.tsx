@@ -6,6 +6,7 @@ import { InputText } from 'primereact/inputtext';
 import { Tag } from 'primereact/tag';
 import { Button } from 'primereact/button';
 import { OverlayPanel } from 'primereact/overlaypanel';
+import confetti from 'canvas-confetti';
 import {
     ATTENDANCE_STATUS_OPTIONS,
     HOMEWORK_PROGRESS_OPTIONS,
@@ -49,6 +50,7 @@ const AttendanceDayCells = React.memo<AttendanceDayCellsProps>(({ user, day, onU
     const attendanceField = `day_${day}_attendance`;
     const homeworkField = `day_${day}_homework`;
     const noteField = `day_${day}_note`;
+    const praiseField = `day_${day}_praise`;
     const lateTimeField = `day_${day}_lateTime`;
 
     const lateTimeOverlayRef = useRef<OverlayPanel>(null);
@@ -57,6 +59,7 @@ const AttendanceDayCells = React.memo<AttendanceDayCellsProps>(({ user, day, onU
     const [localAttendance, setLocalAttendance] = useState<string>((user[attendanceField] as string) || 'none');
     const [localHomework, setLocalHomework] = useState<number>((user[homeworkField] as number) || 0);
     const [localNote, setLocalNote] = useState<string>((user[noteField] as string) || '');
+    const [localPraise, setLocalPraise] = useState<boolean>(!!user[praiseField]);
     const [localLateTime, setLocalLateTime] = useState<number | null>((user[lateTimeField] as number) || null);
 
     // 각 셀의 변경을 debounce하여 부모 상태 업데이트 최소화
@@ -82,6 +85,14 @@ const AttendanceDayCells = React.memo<AttendanceDayCellsProps>(({ user, day, onU
                 onUpdate(user.id, noteField, value);
             }, 300),
         [user.id, noteField, onUpdate]
+    );
+
+    const debouncedPraiseUpdate = useMemo(
+        () =>
+            debounce((value: boolean) => {
+                onUpdate(user.id, praiseField, value);
+            }, 300),
+        [user.id, praiseField, onUpdate]
     );
 
     const debouncedLateTimeUpdate = useMemo(
@@ -129,6 +140,21 @@ const AttendanceDayCells = React.memo<AttendanceDayCellsProps>(({ user, day, onU
         [debouncedNoteUpdate]
     );
 
+    const handlePraiseToggle = useCallback(() => {
+        setLocalPraise((prev) => {
+            const newValue = !prev;
+            if (newValue) {
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+            }
+            debouncedPraiseUpdate(newValue);
+            return newValue;
+        });
+    }, [debouncedPraiseUpdate]);
+
     const handleLateTimeChange = useCallback(
         (value: number | null) => {
             setLocalLateTime(value);
@@ -174,6 +200,7 @@ const AttendanceDayCells = React.memo<AttendanceDayCellsProps>(({ user, day, onU
         setLocalAttendance(attendanceValue);
         setLocalHomework((user[homeworkField] as number) || 0);
         setLocalNote((user[noteField] as string) || '');
+        setLocalPraise(!!user[praiseField]);
         const lateTimeValue = user[lateTimeField];
 
         // 지각 상태이고 lateTime이 없으면 기본값 15분 설정
@@ -189,7 +216,7 @@ const AttendanceDayCells = React.memo<AttendanceDayCellsProps>(({ user, day, onU
         } else {
             setLocalLateTime(null);
         }
-    }, [user, attendanceField, homeworkField, noteField, lateTimeField, debouncedLateTimeUpdate]);
+    }, [user, attendanceField, homeworkField, noteField, praiseField, lateTimeField, debouncedLateTimeUpdate]);
 
     return (
         <div className="attendance-day-group" role="group" aria-label={`${day}일 출석 정보`}>
@@ -274,6 +301,16 @@ const AttendanceDayCells = React.memo<AttendanceDayCellsProps>(({ user, day, onU
                     appendTo={typeof window !== 'undefined' ? document.body : 'self'}
                     panelStyle={{ zIndex: 9999 }}
                     aria-label={`${day}일 숙제 진행률`}
+                />
+            </div>
+            <div className="attendance-cell" role="cell">
+                <Button
+                    icon="pi pi-face-smile"
+                    className={`${localPraise ? 'p-button-success' : 'p-button-secondary'}`}
+                    onClick={handlePraiseToggle}
+                    style={{ width: '100%', height: '100%', padding: 0 }}
+                    tooltip="칭찬하기"
+                    tooltipOptions={{ position: 'top' }}
                 />
             </div>
             <div className="attendance-cell" role="cell">

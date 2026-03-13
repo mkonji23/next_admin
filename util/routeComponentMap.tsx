@@ -1,4 +1,3 @@
-
 import React, { ReactNode } from 'react';
 
 // page.tsx 파일들을 동적으로 가져오기 위해 React.lazy를 사용합니다.
@@ -18,7 +17,7 @@ const routeMap: { [key: string]: React.LazyExoticComponent<React.ComponentType<a
     '/settings/kakao': React.lazy(() => import('@/app/(main)/settings/kakao/page')),
     '/manual': React.lazy(() => import('@/app/(main)/manual/page')),
     '/dash': React.lazy(() => import('@/app/(main)/dash/page')),
-    '/profile': React.lazy(() => import('@/app/(main)/profile/page')),
+    '/profile': React.lazy(() => import('@/app/(main)/profile/page'))
     // 참고: AppMenu.tsx에 정의된 다른 모든 경로들을 여기에 추가해야 합니다.
     // 예: '/uikit/formlayout': React.lazy(() => import('@/app/(main)/uikit/formlayout/page')),
 };
@@ -29,4 +28,3 @@ export const getComponentForPath = (path: string): React.ReactNode => {
 };
 
 export default routeMap;
-

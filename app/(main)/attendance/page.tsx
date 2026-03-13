@@ -168,19 +168,21 @@ const AttendancePage = () => {
                     school: student.school || ''
                 };
 
-                // 각 날짜에 대한 출석/숙제/비고/지각시간 데이터 설정
+                // 각 날짜에 대한 출석/숙제/비고/지각시간/칭찬 데이터 설정
                 for (let i = 1; i <= daysInMonth; i++) {
                     const dayKey = i.toString();
                     if (student.attendance && student.attendance[dayKey]) {
                         userData[`day_${i}_attendance`] = student.attendance[dayKey]?.status || 'none';
                         userData[`day_${i}_homework`] = student.attendance[dayKey]?.homework || 0;
                         userData[`day_${i}_note`] = student.attendance[dayKey]?.note || '';
+                        userData[`day_${i}_praise`] = !!student.attendance[dayKey]?.praise;
                         const lateTimeValue = student.attendance[dayKey]?.lateTime;
                         userData[`day_${i}_lateTime`] = typeof lateTimeValue === 'number' ? lateTimeValue : null;
                     } else {
                         userData[`day_${i}_attendance`] = 'none';
                         userData[`day_${i}_homework`] = 0;
                         userData[`day_${i}_note`] = '';
+                        userData[`day_${i}_praise`] = false;
                         userData[`day_${i}_lateTime`] = null;
                     }
                 }
@@ -204,10 +206,8 @@ const AttendancePage = () => {
             // 선택한 날짜가 현재 표시된 월과 같은지 확인
             if (targetDate.getFullYear() === date.getFullYear() && targetDate.getMonth() === date.getMonth()) {
                 const day = targetDate.getDate();
-                const attendanceColWidth = 150;
-                const homeworkColWidth = 120;
-                const noteColWidth = 150;
-                const dayWidth = attendanceColWidth + homeworkColWidth + noteColWidth;
+                const colWidth = 140; // 모든 서브 셀의 너비 (CSS에서 140px로 정의됨)
+                const dayWidth = colWidth * 4; // 출석, 숙제, 칭찬, 비고 4개 셀
                 const scrollPos = (day - 1) * dayWidth;
 
                 requestAnimationFrame(() => {
@@ -339,6 +339,7 @@ const AttendancePage = () => {
                     const day = key.split('_')[1];
                     const homeworkKey = `day_${day}_homework`;
                     const noteKey = `day_${day}_note`;
+                    const praiseKey = `day_${day}_praise`;
                     const lateTimeKey = `day_${day}_lateTime`;
                     // 날짜를 yyyymmdd 형태로 생성
                     const dayStr = String(day).padStart(2, '0');
@@ -348,6 +349,7 @@ const AttendancePage = () => {
                         status: string;
                         homework: number;
                         note?: string;
+                        praise?: boolean;
                         lateTime?: number;
                         date: string;
                         statusTime: Date;
@@ -355,6 +357,7 @@ const AttendancePage = () => {
                         status: status,
                         homework: user[homeworkKey] as number,
                         note: (user[noteKey] as string) || '',
+                        praise: !!user[praiseKey],
                         statusTime: (user[`statusTime`] as any) || dayjs().toDate(),
                         date: dateStr
                     };
@@ -397,6 +400,12 @@ const AttendancePage = () => {
             return { ...item, [dayAttendance]: status, ['statusTime']: dayjs().toDate() };
         });
         setUsers(userList);
+        handleMoveToday();
+        showToast({
+            severity: 'success',
+            summary: '전체 출석 체크',
+            detail: `전원 출석 체크가 완료되었습니다.\n (출석부 저장 필요)`
+        });
     };
 
     // 출석부 저장
@@ -464,7 +473,7 @@ const AttendancePage = () => {
             <style>{`
                 .attendance-table {
                     display: grid;
-                    grid-template-columns: 150px repeat(${daysInMonth * 3}, 140px);
+                    grid-template-columns: 150px repeat(${daysInMonth * 4}, 140px);
                     width: max-content;
                     min-width: 100%;
                     border: 1px solid #dee2e6;
@@ -492,7 +501,7 @@ const AttendancePage = () => {
                 }
                 
                 .attendance-header-day-group {
-                    grid-column: span 3;
+                    grid-column: span 4;
                     padding: 8px;
                     border: 1px solid #dee2e6;
                     border-bottom: 1px solid #dee2e6;
@@ -582,6 +591,19 @@ const AttendancePage = () => {
                                     onChange={(e) => setDate(e.value as Date)}
                                     view="month"
                                     dateFormat="yy/mm"
+                                    appendTo={'self'}
+                                />
+                            </div>
+                            <div className="field col-12 md:col-2">
+                                <label htmlFor="refreshBtn">&nbsp;</label>
+                                <Button
+                                    id="refreshBtn"
+                                    icon="pi pi-refresh"
+                                    rounded
+                                    raised
+                                    label="새로고침"
+                                    onClick={fetchClasses}
+                                    className="p-button-primary"
                                 />
                             </div>
                         </div>

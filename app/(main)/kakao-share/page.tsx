@@ -25,7 +25,6 @@ const KakaoSharePage = () => {
     const prevViewRef = useRef(view);
 
     const fetchShares = async () => {
-        // ... 생략 (기존 코드와 동일)
         try {
             const res = await http.get('/choiMath/share/list');
             setShares(res.data || []);

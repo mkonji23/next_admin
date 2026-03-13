@@ -80,6 +80,14 @@ const AttendanceTableHeader: React.FC<AttendanceTableHeaderProps> = ({
                         숙제
                     </div>,
                     <div
+                        key={`sub_praise_${day}`}
+                        className="attendance-header-sub-cell"
+                        role="columnheader"
+                        style={{ borderRight: '1px solid #dee2e6' }}
+                    >
+                        칭찬
+                    </div>,
+                    <div
                         key={`sub_note_${day}`}
                         className="attendance-header-sub-cell"
                         role="columnheader"

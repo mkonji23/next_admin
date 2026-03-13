@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { Toast, ToastMessage } from 'primereact/toast';
 import { createContext, ReactNode, useContext, useRef } from 'react';
@@ -19,8 +19,9 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
         toastRef.current?.show({
             severity: props.severity || 'info',
             summary: props.summary || 'Confirmed',
-            detail: props.detail || 'No Content',
-            life: 3000
+            detail: props.detail || '',
+            life: 3000,
+            className: 'custom-toast' // 클래스 지정
         });
     };
 

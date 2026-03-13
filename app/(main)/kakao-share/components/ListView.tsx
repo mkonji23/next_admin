@@ -225,7 +225,13 @@ const ListView = ({
             >
                 <Column header="No." body={(data, options) => options.rowIndex + 1} style={{ width: '1rem' }} />
                 <Column selectionMode="multiple" headerStyle={{ width: '3rem' }}></Column>
-                <Column field="shareTitle" header="공유 제목 (카카오)" body={titleBodyTemplate} sortable />
+                <Column
+                    field="shareTitle"
+                    header="공유 제목 (카카오)"
+                    body={titleBodyTemplate}
+                    style={{ width: '25%' }}
+                    sortable
+                />
                 <Column field="actualTitle" header="게시글 제목" sortable />
                 <Column field="studentName" header="공유 대상" sortable />
                 <Column field="telNo" header="학생 연락처" sortable />

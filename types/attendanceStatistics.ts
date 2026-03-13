@@ -100,6 +100,28 @@ export interface AttendanceDetail {
     date: string;
 }
 
+export interface PraiseDetail {
+    date: string;
+    praise: boolean;
+    status?: string;
+    homework?: number;
+}
+
+export interface PraiseClass {
+    classId: string;
+    className: string;
+    details: PraiseDetail[];
+}
+
+export interface PraiseStatistics {
+    studentId: string;
+    name: string;
+    grade?: string;
+    school?: string;
+    totalPraiseCnt: number;
+    classes: PraiseClass[];
+}
+
 export interface StudentClassStatistics {
     id: string;
     classId: string;

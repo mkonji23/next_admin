@@ -22,13 +22,14 @@
         "@types/react": "^18.2.0",
         "@types/react-dom": "^18.2.0",
         "axios": "^1.8.4",
+        "canvas-confetti": "^1.9.4",
         "chart.js": "4.2.1",
         "dayjs": "^1.11.19",
         "final-form": "^5.0.0",
         "js-cookie": "^3.0.5",
         "next": "^15.0.0-rc.1",
         "primeflex": "^3.3.1",
-        "primeicons": "^6.0.1",
+        "primeicons": "^7.0.0",
         "primereact": "10.2.1",
         "react": "^18.2.0",
         "react-activation": "^0.13.4",
@@ -39,6 +40,7 @@
         "zustand": "^5.0.3"
     },
     "devDependencies": {
+        "@types/canvas-confetti": "^1.9.0",
         "@types/js-cookie": "^3.0.6",
         "eslint": "8.43.0",
         "eslint-config-next": "^15.0.0-rc.1",

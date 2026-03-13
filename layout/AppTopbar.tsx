@@ -14,6 +14,7 @@ import ChatPanel from '@/components/chat/ChatPanel';
 import { Badge } from 'primereact/badge';
 import { Button } from 'primereact/button';
 import useKakaoShare from '@/hooks/useKakaoShare';
+import { useTabStore } from '@/store/useTabStore';
 
 const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
     const { layoutConfig, layoutState, onMenuToggle, showProfileSidebar } = useContext(LayoutContext);
@@ -27,7 +28,7 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
     const [chatVisible, setChatVisible] = useState(false);
     const [mounted, setMounted] = useState(false);
     const { shareDefault, unLink } = useKakaoShare();
-
+    const { addTab, activeTab, setActiveTab } = useTabStore();
     const handleShare = () => {
         shareDefault({
             title: '나의 출석부',
@@ -51,6 +52,17 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
     const handleLogout = () => {
         logout();
         router.push('/auth/login');
+    };
+
+    const goToProfile = () => {
+        addTab({
+            id: '/profile',
+            label: '프로필',
+            path: '/profile'
+        });
+        // 탭 클릭 시 해당 탭을 활성화
+        setActiveTab('/profile');
+        router.push('/profile'); // 메뉴 클릭 시 URL 업데이트
     };
 
     return (
@@ -127,7 +139,7 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
                     className="p-link layout-topbar-button"
                     tooltip="프로필"
                     tooltipOptions={{ position: 'bottom' }}
-                    onClick={() => router.push('/profile')}
+                    onClick={() => goToProfile()}
                 >
                     <i className="pi pi-user"></i>
                     <span>Profile</span>

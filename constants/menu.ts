@@ -11,22 +11,26 @@ export const AppMenuModel: AppMenuItem[] = [
     {
         label: 'Attendance',
         items: [
-            // { label: '칭찬현황', icon: 'pi pi-fw pi-heart', to: '/praise' },
+            { label: '칭찬 현황 통계', icon: 'pi pi-fw pi-heart', to: '/praise' },
             { label: '출석부', icon: 'pi pi-fw pi-check-square', to: '/attendance' },
             { label: '학생별 주간스케줄', icon: 'pi pi-fw pi-calendar', to: '/weekSchedule' }
         ]
     },
     {
-        label: 'Settings',
+        label: 'Share',
         items: [
-            { label: '사용자 목록', icon: 'pi pi-fw pi-users', to: '/userList' },
-            { label: '학생 목록', icon: 'pi pi-fw pi-user', to: '/studentList' },
-            { label: '클래스 목록', icon: 'pi pi-fw pi-book', to: '/classList' },
             { label: '카카오 공유 게시판', icon: 'pi pi-fw pi-share-alt', to: '/kakao-share' },
-            { label: '토큰 발급', icon: 'pi pi-fw pi-key', to: '/settings/kakao' }
+            { label: '토큰 발급(X)', icon: 'pi pi-fw pi-key', to: '/settings/kakao' }
         ]
     },
-
+    {
+        label: 'Settings',
+        items: [
+            { label: '학생 목록', icon: 'pi pi-fw pi-user', to: '/studentList' },
+            { label: '클래스 목록', icon: 'pi pi-fw pi-book', to: '/classList' },
+            { label: '사용자 목록', icon: 'pi pi-fw pi-users', to: '/userList' }
+        ]
+    },
     {
         label: 'HELP',
         items: [
