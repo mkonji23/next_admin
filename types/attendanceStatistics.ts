@@ -110,7 +110,7 @@ export interface PraiseDetail {
 export interface PraiseClass {
     classId: string;
     className: string;
-    details: PraiseDetail[];
+    attendance?: PraiseDetail[];
 }
 
 export interface PraiseStatistics {

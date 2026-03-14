@@ -9,7 +9,7 @@ import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
-import { PraiseStatistics } from '@/types/attendanceStatistics';
+import { PraiseClass, PraiseDetail, PraiseStatistics } from '@/types/attendanceStatistics';
 import dayjs from 'dayjs';
 import { Tag } from 'primereact/tag';
 import { FilterMatchMode } from 'primereact/api';
@@ -22,6 +22,7 @@ const PraiseStatisticsPage = () => {
     const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [expandedRows, setExpandedRows] = useState<any>({});
+    const [expandedRows2, setExpandedRows2] = useState<any>({});
     const [filters, setFilters] = useState<DataTableFilterMeta>({
         global: { value: null, matchMode: FilterMatchMode.CONTAINS }
     });
@@ -52,8 +53,8 @@ const PraiseStatisticsPage = () => {
         setLoading(true);
         try {
             const params: any = {
-                dateFrom: dayjs(dateFrom).format('YYYY-MM-DD'),
-                dateTo: dayjs(dateTo).format('YYYY-MM-DD')
+                dateFrom: dayjs(dateFrom).format('YYYYMMDD'),
+                dateTo: dayjs(dateTo).format('YYYYMMDD')
             };
 
             if (selectedStudent) {
@@ -106,17 +107,41 @@ const PraiseStatisticsPage = () => {
         return (
             <div className="p-3">
                 <h5>{data.name} 학생 상세 내역</h5>
-                <DataTable value={data?.classes}>
+                <DataTable
+                    value={data?.classes}
+                    expandedRows={expandedRows2}
+                    onRowToggle={(e) => setExpandedRows2(e.data)}
+                    rowExpansionTemplate={rowExpansionTemplate2}
+                    dataKey="classId"
+                >
+                    <Column expander style={{ width: '3em' }} />
                     <Column
                         field="date"
-                        header="일자"
+                        header="클래스명"
                         sortable
-                        body={(rowData) => dayjs(rowData.date).format('YYYY-MM-DD')}
+                        body={(rowData: PraiseClass) => rowData.className}
+                    />
+                </DataTable>
+            </div>
+        );
+    };
+
+    // 칭찬DataTable
+    const rowExpansionTemplate2 = (data2: PraiseClass) => {
+        const filterAttendance = data2?.attendance?.filter((item) => item.praise);
+        return (
+            <div className="p-3">
+                <DataTable value={filterAttendance}>
+                    <Column
+                        field="date"
+                        header="날짜"
+                        sortable
+                        body={(rowData: PraiseDetail) => dayjs(rowData?.date).format('YYYY-MM-DD')}
                     />
                     <Column
                         field="status"
                         header="출석상태"
-                        body={(rowData) => (
+                        body={(rowData: PraiseDetail) => (
                             <Tag
                                 value={
                                     rowData.status === 'class_present'
@@ -125,11 +150,11 @@ const PraiseStatisticsPage = () => {
                                         ? '결석'
                                         : '지각'
                                 }
-                                severity={getAttendanceSeverity(rowData.status)}
+                                severity={getAttendanceSeverity(rowData.status || '')}
                             />
                         )}
                     />
-                    <Column field="homework" header="숙제진행률" body={(rowData) => `${rowData.homework}%`} />
+                    <Column field="homework" header="숙제" body={(rowData) => `${rowData?.homework || 0}%`} />
                     <Column
                         field="praise"
                         header="칭찬여부"
@@ -145,7 +170,6 @@ const PraiseStatisticsPage = () => {
             </div>
         );
     };
-
     const getRank = (praiseCount: number) => {
         if (!statistics || statistics.length === 0) return 0;
         const sortedUniqueCounts = Array.from(new Set(statistics.map((s) => s.totalPraiseCnt))).sort((a, b) => b - a);
