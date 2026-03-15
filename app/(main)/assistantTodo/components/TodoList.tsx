@@ -40,8 +40,9 @@ const TodoList: React.FC<TodoListProps> = ({ todos, selectedTodo, onSelectionCha
                     header="업무 내용"
                     sortable
                     style={{ width: '40%' }}
+                    bodyClassName={'field-highlight'}
                     body={(rowData) => (
-                        <div className="truncate-cell " onClick={() => onEdit(rowData)}>
+                        <div className="truncate-cell" onClick={() => onEdit(rowData)}>
                             {rowData.content}
                         </div>
                     )}
@@ -58,7 +59,7 @@ const TodoList: React.FC<TodoListProps> = ({ todos, selectedTodo, onSelectionCha
                     )}
                     style={{ width: '20%' }}
                 />
-                <Column field="workingHours" header="근무시간" style={{ width: '15%' }} />
+                <Column field="workingHours" header="근무시간" style={{ width: '10%' }} />
                 <Column
                     field="isCompleted"
                     header="상태"

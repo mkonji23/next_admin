@@ -12,14 +12,9 @@ interface TodoDetailProps {
     onDelete: (id: string) => void;
 }
 
-const TodoDetail: React.FC<TodoDetailProps> = ({
-    selectedTodo,
-    onEdit,
-    onToggleComplete,
-    onDelete
-}) => {
+const TodoDetail: React.FC<TodoDetailProps> = ({ selectedTodo, onEdit, onToggleComplete, onDelete }) => {
     return (
-        <div className="card h-full">
+        <div className="card h-screen">
             <div className="flex justify-content-between align-items-center mb-4">
                 <h5 className="m-0">업무 상세 내용</h5>
                 {selectedTodo && (
@@ -32,7 +27,9 @@ const TodoDetail: React.FC<TodoDetailProps> = ({
                         />
                         <Button
                             icon={selectedTodo.isCompleted ? 'pi pi-times' : 'pi pi-check'}
-                            className={`p-button-rounded p-button-sm ${selectedTodo.isCompleted ? 'p-button-secondary' : 'p-button-success'}`}
+                            className={`p-button-rounded p-button-sm ${
+                                selectedTodo.isCompleted ? 'p-button-secondary' : 'p-button-success'
+                            }`}
                             onClick={() => onToggleComplete(selectedTodo)}
                             tooltip={selectedTodo.isCompleted ? '진행 중으로 변경' : '완료 처리'}
                         />
@@ -73,7 +70,12 @@ const TodoDetail: React.FC<TodoDetailProps> = ({
                             readOnly
                             rows={10}
                             className="w-full"
-                            style={{ border: 'none', backgroundColor: 'transparent', padding: 0 }}
+                            style={{
+                                border: 'none',
+                                backgroundColor: 'transparent',
+                                padding: 0,
+                                whiteSpace: 'pre-line'
+                            }}
                         />
                     </div>
                     <div>

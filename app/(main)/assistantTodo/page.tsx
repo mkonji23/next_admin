@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import dayjs from 'dayjs';
 import { Button } from 'primereact/button';
 import { useToast } from '@/hooks/useToast';
@@ -39,11 +39,11 @@ const AssistantTodoPage = () => {
         } catch (error) {
             showToast({ severity: 'error', summary: '조회 실패', detail: '목록을 불러오지 못했습니다.' });
         }
-    }, [currentDate, showToast]);
+    }, []);
 
     useEffect(() => {
         fetchTodos();
-    }, [fetchTodos]);
+    }, []);
 
     const handleToggleComplete = async (todo: Todo) => {
         try {
@@ -141,14 +141,18 @@ const AssistantTodoPage = () => {
         });
     };
 
-    const events = todos.map((todo) => ({
-        id: todo.id,
-        title: todo.content,
-        start: todo.date,
-        allDay: true,
-        backgroundColor: todo.isCompleted ? '#4caf50' : '#2196f3',
-        borderColor: todo.isCompleted ? '#4caf50' : '#2196f3'
-    }));
+    const events = useMemo(
+        () =>
+            todos.map((todo) => ({
+                id: todo.id,
+                title: todo.content,
+                start: todo.date,
+                allDay: true,
+                backgroundColor: todo.isCompleted ? '#4caf50' : '#2196f3',
+                borderColor: todo.isCompleted ? '#4caf50' : '#2196f3'
+            })),
+        [todos]
+    );
 
     return (
         <div className="grid">

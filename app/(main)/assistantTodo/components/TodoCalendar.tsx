@@ -21,6 +21,7 @@ const TodoCalendar: React.FC<TodoCalendarProps> = ({
     onDatesSet,
     onAddTodo
 }) => {
+    console.log('events', events);
     return (
         <div className="card">
             <div className="flex justify-content-between align-items-center mb-4">

@@ -47,3 +47,14 @@
   max-width: 300px;
   display: block; /* Helps ensure text-overflow works correctly */
 }
+
+.field-highlight {
+  color: #1976d2;
+  font-weight: bold;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.field-highlight:hover {
+  color: #0d47a1;
+}
