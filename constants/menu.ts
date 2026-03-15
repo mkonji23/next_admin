@@ -5,15 +5,16 @@ export const AppMenuModel: AppMenuItem[] = [
         label: 'Statistics',
         items: [
             { label: '출석 현황 통계', icon: 'pi pi-fw pi-chart-bar', to: '/attendanceList', badge: 'NEW' },
-            { label: '학생별 출석현황 통계', icon: 'pi pi-fw pi-user', to: '/studentAttendanceStatistics' }
+            { label: '학생별 출석현황 통계', icon: 'pi pi-fw pi-user', to: '/studentAttendanceStatistics' },
+            { label: '칭찬 현황 통계', icon: 'pi pi-fw pi-heart', to: '/praise' }
         ]
     },
     {
         label: 'Attendance',
         items: [
-            { label: '칭찬 현황 통계', icon: 'pi pi-fw pi-heart', to: '/praise' },
             { label: '출석부', icon: 'pi pi-fw pi-check-square', to: '/attendance' },
-            { label: '학생별 주간스케줄', icon: 'pi pi-fw pi-calendar', to: '/weekSchedule' }
+            { label: '학생별 주간스케줄', icon: 'pi pi-fw pi-calendar', to: '/weekSchedule' },
+            { label: '조교 할 일 목록', icon: 'pi pi-fw pi-list', to: '/assistantTodo' }
         ]
     },
     {

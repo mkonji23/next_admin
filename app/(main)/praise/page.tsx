@@ -20,6 +20,8 @@ const PraiseStatisticsPage = () => {
     const [dateTo, setDateTo] = useState<Date>(dayjs().endOf('month').toDate());
     const [students, setStudents] = useState<any[]>([]);
     const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
+    const [classes, setClasses] = useState<any[]>([]);
+    const [selectedClass, setSelectedClass] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [expandedRows, setExpandedRows] = useState<any>({});
     const [expandedRows2, setExpandedRows2] = useState<any>({});
@@ -33,6 +35,7 @@ const PraiseStatisticsPage = () => {
 
     useEffect(() => {
         fetchStudents();
+        fetchClasses();
         fetchPraiseStatistics();
     }, []);
 
@@ -49,6 +52,19 @@ const PraiseStatisticsPage = () => {
         }
     };
 
+    const fetchClasses = async () => {
+        try {
+            const response = await http.get('/choiMath/class/');
+            setClasses(response.data);
+        } catch (error) {
+            showToast({
+                severity: 'error',
+                summary: '조회 실패',
+                detail: '클래스 목록을 불러오는데 실패했습니다.'
+            });
+        }
+    };
+
     const fetchPraiseStatistics = async () => {
         setLoading(true);
         try {
@@ -59,6 +75,10 @@ const PraiseStatisticsPage = () => {
 
             if (selectedStudent) {
                 params.studentId = selectedStudent;
+            }
+
+            if (selectedClass) {
+                params.classId = selectedClass;
             }
 
             const response = await http.get('/choiMath/attendance/getPraiseStatistics', { params });
@@ -241,6 +261,22 @@ const PraiseStatisticsPage = () => {
                                 options={students}
                                 onChange={(e) => setSelectedStudent(e.value)}
                                 placeholder="학생 선택"
+                                showClear
+                                style={{ minWidth: '200px' }}
+                            />
+                        </div>
+                        <div className="flex flex-column gap-2">
+                            <label htmlFor="classSelect" className="font-bold text-sm">
+                                클래스 선택 (선택)
+                            </label>
+                            <Dropdown
+                                id="classSelect"
+                                value={selectedClass}
+                                options={classes}
+                                optionLabel="className"
+                                optionValue="classId"
+                                onChange={(e) => setSelectedClass(e.value)}
+                                placeholder="클래스 선택"
                                 showClear
                                 style={{ minWidth: '200px' }}
                             />

@@ -17,7 +17,8 @@ const routeMap: { [key: string]: React.LazyExoticComponent<React.ComponentType<a
     '/settings/kakao': React.lazy(() => import('@/app/(main)/settings/kakao/page')),
     '/manual': React.lazy(() => import('@/app/(main)/manual/page')),
     '/dash': React.lazy(() => import('@/app/(main)/dash/page')),
-    '/profile': React.lazy(() => import('@/app/(main)/profile/page'))
+    '/profile': React.lazy(() => import('@/app/(main)/profile/page')),
+    '/assistantTodo': React.lazy(() => import('@/app/(main)/assistantTodo/page'))
     // 참고: AppMenu.tsx에 정의된 다른 모든 경로들을 여기에 추가해야 합니다.
     // 예: '/uikit/formlayout': React.lazy(() => import('@/app/(main)/uikit/formlayout/page')),
 };

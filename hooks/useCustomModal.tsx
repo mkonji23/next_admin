@@ -4,6 +4,7 @@ import UserModal from '@/components/modals/UserModal';
 import ClassModal from '@/components/modals/ClassModal';
 import StudentModal from '@/components/modals/StudentModal';
 import StudentSelectModal from '@/components/modals/StudentSelectModal';
+import TodoModal from '@/components/modals/TodoModal';
 import { ModalConfig, ModalContextType, ModalProviderProps, ModalState, OpenModalParams } from '@/types/modal';
 
 export type { ModalConfig } from '@/types/modal';
@@ -37,6 +38,7 @@ export const ModalProvider = ({ children }: ModalProviderProps) => {
         registerModal({ id: 'class', component: ClassModal });
         registerModal({ id: 'student', component: StudentModal });
         registerModal({ id: 'studentSelect', component: StudentSelectModal });
+        registerModal({ id: 'todo', component: TodoModal });
         
         // 여기에 다른 모달들을 추가할 수 있습니다
         // registerModal({ id: 'other', component: OtherModal });
