@@ -203,7 +203,18 @@ const UserListPage = () => {
                 isDataSelectable={(event) => event.data.userId !== userInfo.userId}
             >
                 <Column selectionMode="multiple" headerStyle={{ width: '3rem' }}></Column>
-                <Column field="userId" header="ID" sortable filter></Column>
+                <Column
+                    field="userId"
+                    header="ID"
+                    bodyClassName={'field-highlight'}
+                    sortable
+                    filter
+                    body={(rowData) => (
+                        <div className="truncate-cell" onClick={() => openEditDialog(rowData)}>
+                            {rowData.userId}
+                        </div>
+                    )}
+                ></Column>
                 <Column field="userName" header="이름" sortable filter></Column>
                 <Column field="email" header="이메일" sortable filter></Column>
                 <Column field="auth" header="권한" sortable filter body={authBodyTemplate}></Column>

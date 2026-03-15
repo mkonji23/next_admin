@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { create } from 'zustand';
 import Cookies from 'js-cookie';
@@ -9,6 +9,7 @@ interface User {
     createdDate: string;
     token: string;
     auth?: string | null;
+    menuPermissions?: string[];
 }
 
 interface UserInfo {

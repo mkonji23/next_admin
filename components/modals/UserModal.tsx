@@ -2,12 +2,14 @@
 import { Dialog } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
 import { Dropdown } from 'primereact/dropdown';
+import { MultiSelect } from 'primereact/multiselect';
 import { Password } from 'primereact/password';
 import { Button } from 'primereact/button';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
 import { USER_AUTH_OPTIONS } from '@/constants/user';
+import { AppMenuModel } from '@/constants/menu';
 
 export interface User {
     userId: string;
@@ -15,6 +17,7 @@ export interface User {
     email: string;
     auth: string | null;
     password?: string;
+    menuPermissions?: string[];
 }
 
 interface UserModalProps {
@@ -35,26 +38,45 @@ const UserModal = ({ visible, pData, onClose }: UserModalProps) => {
     const http = useHttp();
     const { showToast } = useToast();
 
+    const menuOptions = useMemo(() => {
+        const options: { label: string; value: string }[] = [];
+        AppMenuModel.forEach((group) => {
+            if (group.items) {
+                group.items.forEach((item) => {
+                    if (item.to) {
+                        options.push({
+                            label: `${group.label} > ${item.label}`,
+                            value: item.to
+                        });
+                    }
+                });
+            }
+        });
+        return options;
+    }, []);
+
     const [user, setUser] = useState<User>({
         userId: '',
         userName: '',
         email: '',
         password: '',
-        auth: null
+        auth: null,
+        menuPermissions: []
     });
     const [submitted, setSubmitted] = useState(false);
 
     useEffect(() => {
         if (visible) {
             if (mode === 'edit' && initialUser) {
-                setUser({ ...initialUser });
+                setUser({ ...initialUser, menuPermissions: initialUser.menuPermissions || [] });
             } else {
                 setUser({
                     userId: '',
                     userName: '',
                     email: '',
                     password: '',
-                    auth: null
+                    auth: null,
+                    menuPermissions: []
                 });
             }
             setSubmitted(false);
@@ -89,6 +111,7 @@ const UserModal = ({ visible, pData, onClose }: UserModalProps) => {
                     email: user.email,
                     auth: user.auth,
                     password: user.password,
+                    menuPermissions: user.menuPermissions || [],
                     createdDate: new Date()
                 };
 
@@ -112,17 +135,8 @@ const UserModal = ({ visible, pData, onClose }: UserModalProps) => {
 
     const dialogFooter = (
         <div>
-            <Button 
-                label="취소" 
-                icon="pi pi-times" 
-                onClick={handleCancel} 
-                className="p-button-text"
-            />
-            <Button 
-                label={saveButtonLabel} 
-                icon="pi pi-check" 
-                onClick={handleSave}
-            />
+            <Button label="취소" icon="pi pi-times" onClick={handleCancel} className="p-button-text" />
+            <Button label={saveButtonLabel} icon="pi pi-check" onClick={handleSave} />
         </div>
     );
 
@@ -137,7 +151,9 @@ const UserModal = ({ visible, pData, onClose }: UserModalProps) => {
             onHide={handleCancel}
         >
             <div className="field">
-                <label htmlFor="userId">사용자 ID <span className="text-red-500">{!isEditMode && '*'}</span></label>
+                <label htmlFor="userId">
+                    사용자 ID <span className="text-red-500">{!isEditMode && '*'}</span>
+                </label>
                 <InputText
                     id="userId"
                     value={user.userId}
@@ -151,7 +167,9 @@ const UserModal = ({ visible, pData, onClose }: UserModalProps) => {
                 )}
             </div>
             <div className="field">
-                <label htmlFor="userName">이름 <span className="text-red-500">*</span></label>
+                <label htmlFor="userName">
+                    이름 <span className="text-red-500">*</span>
+                </label>
                 <InputText
                     id="userName"
                     value={user.userName}
@@ -162,7 +180,9 @@ const UserModal = ({ visible, pData, onClose }: UserModalProps) => {
                 {submitted && !user.userName && <small className="p-invalid">이름을 입력해주세요.</small>}
             </div>
             <div className="field">
-                <label htmlFor="email">이메일 <span className="text-red-500">*</span></label>
+                <label htmlFor="email">
+                    이메일 <span className="text-red-500">*</span>
+                </label>
                 <InputText
                     id="email"
                     type="email"
@@ -175,7 +195,9 @@ const UserModal = ({ visible, pData, onClose }: UserModalProps) => {
             </div>
             {!isEditMode && (
                 <div className="field">
-                    <label htmlFor="password">비밀번호 <span className="text-red-500">*</span></label>
+                    <label htmlFor="password">
+                        비밀번호 <span className="text-red-500">*</span>
+                    </label>
                     <Password
                         id="password"
                         value={user.password || ''}
@@ -189,7 +211,9 @@ const UserModal = ({ visible, pData, onClose }: UserModalProps) => {
                 </div>
             )}
             <div className="field">
-                <label htmlFor="auth">권한 <span className="text-red-500">*</span></label>
+                <label htmlFor="auth">
+                    권한 <span className="text-red-500">*</span>
+                </label>
                 <Dropdown
                     id="auth"
                     value={user.auth}
@@ -200,6 +224,19 @@ const UserModal = ({ visible, pData, onClose }: UserModalProps) => {
                 />
                 {submitted && !user.auth && <small className="p-invalid">권한을 선택해주세요.</small>}
             </div>
+            {user.auth !== 'admin' && (
+                <div className="field">
+                    <label htmlFor="menuPermissions">메뉴 접근 권한</label>
+                    <MultiSelect
+                        id="menuPermissions"
+                        value={user.menuPermissions}
+                        options={menuOptions}
+                        onChange={(e) => setUser({ ...user, menuPermissions: e.value })}
+                        placeholder="접근 가능한 메뉴를 선택하세요"
+                        display="chip"
+                    />
+                </div>
+            )}
         </Dialog>
     );
 };
