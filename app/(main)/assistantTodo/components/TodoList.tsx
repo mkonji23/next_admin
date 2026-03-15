@@ -17,7 +17,7 @@ interface TodoListProps {
 const TodoList: React.FC<TodoListProps> = ({ todos, selectedTodo, onSelectionChange, onEdit, onToggleComplete }) => {
     return (
         <div className="card mt-4">
-            <h5>목록</h5>
+            <h5>할 일 목록(리스트)</h5>
             <DataTable
                 value={todos}
                 paginator
