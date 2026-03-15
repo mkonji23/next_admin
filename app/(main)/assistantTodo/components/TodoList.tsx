@@ -1,0 +1,82 @@
+import React from 'react';
+import { DataTable } from 'primereact/datatable';
+import { Column } from 'primereact/column';
+import { Tag } from 'primereact/tag';
+import { InputSwitch } from 'primereact/inputswitch';
+import dayjs from 'dayjs';
+import { Todo, TodoUser } from '@/types/todo';
+
+interface TodoListProps {
+    todos: Todo[];
+    selectedTodo: Todo | null;
+    onSelectionChange: (todo: Todo | null) => void;
+    onEdit: (todo: Todo) => void;
+    onToggleComplete: (todo: Todo) => void;
+}
+
+const TodoList: React.FC<TodoListProps> = ({ todos, selectedTodo, onSelectionChange, onEdit, onToggleComplete }) => {
+    return (
+        <div className="card mt-4">
+            <h5>목록</h5>
+            <DataTable
+                value={todos}
+                paginator
+                rows={10}
+                dataKey="id"
+                selectionMode="single"
+                selection={selectedTodo}
+                onSelectionChange={(e) => onSelectionChange(e.value as Todo)}
+                emptyMessage="할 일이 없습니다."
+            >
+                <Column
+                    field="date"
+                    header="날짜"
+                    sortable
+                    body={(rowData) => dayjs(rowData.date).format('YYYY-MM-DD')}
+                    style={{ width: '15%' }}
+                />
+                <Column
+                    field="content"
+                    header="업무 내용"
+                    sortable
+                    style={{ width: '40%' }}
+                    body={(rowData) => (
+                        <div className="truncate-cell " onClick={() => onEdit(rowData)}>
+                            {rowData.content}
+                        </div>
+                    )}
+                />
+                <Column
+                    field="assignees"
+                    header="담당자"
+                    body={(rowData) => (
+                        <div className="flex flex-wrap gap-1">
+                            {rowData.assignees.map((item: TodoUser, idx: number) => (
+                                <Tag key={idx} value={item.userName} severity="info" />
+                            ))}
+                        </div>
+                    )}
+                    style={{ width: '20%' }}
+                />
+                <Column field="workingHours" header="근무시간" style={{ width: '15%' }} />
+                <Column
+                    field="isCompleted"
+                    header="상태"
+                    sortable
+                    body={(rowData) => (
+                        <div className="flex align-items-center gap-2">
+                            <InputSwitch checked={rowData.isCompleted} onChange={() => onToggleComplete(rowData)} />
+                            <Tag
+                                value={rowData.isCompleted ? '완료' : '진행 중'}
+                                severity={rowData.isCompleted ? 'success' : 'warning'}
+                            />
+                        </div>
+                    )}
+                    style={{ width: '15%' }}
+                />
+            </DataTable>
+        </div>
+    );
+};
+
+export default TodoList;

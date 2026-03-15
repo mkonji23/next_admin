@@ -133,7 +133,7 @@ const TodoModal = ({ visible, pData, onClose }: TodoModalProps) => {
                             className="p-button-success"
                         />
                     )}
-                    <Button label="취소" icon="pi pi-times" onClick={() => onClose(null)} className="p-button-text" />
+                    <Button label="취소" icon="pi pi-times" onClick={() => onClose()} className="p-button-text" />
                     <Button
                         label="수정"
                         icon="pi pi-check"
