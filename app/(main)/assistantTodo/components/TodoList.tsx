@@ -5,6 +5,7 @@ import { Tag } from 'primereact/tag';
 import { InputSwitch } from 'primereact/inputswitch';
 import dayjs from 'dayjs';
 import { Todo, TodoUser } from '@/types/todo';
+import { useCustomModal } from '@/hooks/useCustomModal';
 
 interface TodoListProps {
     todos: Todo[];
@@ -15,6 +16,19 @@ interface TodoListProps {
 }
 
 const TodoList: React.FC<TodoListProps> = ({ todos, selectedTodo, onSelectionChange, onEdit, onToggleComplete }) => {
+    const { openModal } = useCustomModal();
+
+    const handleContentClick = (todo: Todo) => {
+        onSelectionChange(todo);
+        openModal({
+            id: 'todoDetailModal',
+            pData: {
+                todo,
+                onToggleComplete
+            }
+        });
+    };
+
     return (
         <div className="card mt-4">
             <h5>할 일 목록(리스트)</h5>
@@ -42,7 +56,11 @@ const TodoList: React.FC<TodoListProps> = ({ todos, selectedTodo, onSelectionCha
                     style={{ width: '40%' }}
                     bodyClassName={'field-highlight'}
                     body={(rowData) => (
-                        <div className="truncate-cell" onClick={() => onEdit(rowData)}>
+                        <div
+                            className="truncate-cell cursor-pointer text-blue-500 font-semibold hover:underline"
+                            onClick={() => handleContentClick(rowData)}
+                            onDoubleClick={() => onEdit(rowData)}
+                        >
                             {rowData.content}
                         </div>
                     )}

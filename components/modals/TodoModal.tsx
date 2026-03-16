@@ -153,7 +153,7 @@ const TodoModal = ({ visible, pData, onClose }: TodoModalProps) => {
     return (
         <Dialog
             visible={visible}
-            style={{ width: '550px' }}
+            style={{ width: '750px' }}
             header={mode === 'edit' ? '할 일 수정' : '신규 할 일'}
             modal
             className="p-fluid"
@@ -204,11 +204,10 @@ const TodoModal = ({ visible, pData, onClose }: TodoModalProps) => {
                 </label>
                 <InputTextarea
                     id="content"
-                    style={{ height: '200px' }}
+                    style={{ height: '300px' }}
                     value={todo.content}
                     onChange={(e) => setTodo({ ...todo, content: e.target.value })}
                     required
-                    rows={3}
                     className={submitted && !todo.content ? 'p-invalid' : ''}
                 />
             </div>

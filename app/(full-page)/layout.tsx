@@ -6,9 +6,9 @@ interface SimpleLayoutProps {
     children: React.ReactNode;
 }
 
-export const metadata: Metadata = {
+export const metadata = {
     title: '출석부',
-    description: '수학출석부다1'
+    description: '수학 문제 풀이 서비스'
 };
 
 export default function SimpleLayout({ children }: SimpleLayoutProps) {

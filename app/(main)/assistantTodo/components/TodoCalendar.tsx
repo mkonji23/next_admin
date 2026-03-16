@@ -21,18 +21,17 @@ const TodoCalendar: React.FC<TodoCalendarProps> = ({
     onDatesSet,
     onAddTodo
 }) => {
-    console.log('events', events);
     return (
         <div className="card">
             <div className="flex justify-content-between align-items-center mb-4">
-                <h5 className="m-0">조교 할 일 목록 (캘린더)</h5>
+                <h5 className="m-0">조교쌤 일자별 업무(캘린더)</h5>
                 <Button label="신규 등록" icon="pi pi-plus" onClick={onAddTodo} />
             </div>
 
             <div className="calendar-container">
                 <FullCalendar
                     plugins={[dayGridPlugin, interactionPlugin]}
-                    initialView="dayGridMonth"
+                    initialView="dayGridWeek"
                     headerToolbar={{
                         left: 'prev,next today',
                         center: 'title',

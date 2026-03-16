@@ -107,14 +107,27 @@ const AssistantTodoPage = () => {
         }
     };
 
+    const openDetailModal = async (todo: Todo) => {
+        setSelectedTodo(todo);
+        await openModal({
+            id: 'todoDetailModal',
+            pData: {
+                todo,
+                onToggleComplete: handleToggleComplete
+            }
+        });
+    };
+
     const handleEventClick = (clickInfo: any) => {
         const todo = todos.find((t) => t.id === clickInfo.event.id);
+        if (!todo) return;
+
         // 더블클릭시
         if (clickInfo.jsEvent.detail === 2) {
-            todo && handleEdit(todo);
-            return;
+            handleEdit(todo);
         } else {
-            if (todo) setSelectedTodo(todo);
+            // openDetailModal(todo);
+            setSelectedTodo(todo);
         }
     };
 

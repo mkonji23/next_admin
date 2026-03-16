@@ -14,7 +14,7 @@ export const AppMenuModel: AppMenuItem[] = [
         items: [
             { label: '출석부', icon: 'pi pi-fw pi-check-square', to: '/attendance' },
             { label: '학생별 주간스케줄', icon: 'pi pi-fw pi-calendar', to: '/weekSchedule' },
-            { label: '조교 할 일 목록', icon: 'pi pi-fw pi-list', to: '/assistantTodo' }
+            { label: '조교쌤 일자별 업무', icon: 'pi pi-fw pi-list', to: '/assistantTodo' }
         ]
     },
     {

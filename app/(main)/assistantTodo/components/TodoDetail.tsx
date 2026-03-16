@@ -68,13 +68,14 @@ const TodoDetail: React.FC<TodoDetailProps> = ({ selectedTodo, onEdit, onToggleC
                         <InputTextarea
                             value={selectedTodo.content}
                             readOnly
-                            rows={10}
+                            rows={25}
                             className="w-full"
                             style={{
                                 border: 'none',
                                 backgroundColor: 'transparent',
                                 padding: 0,
-                                whiteSpace: 'pre-line'
+                                whiteSpace: 'pre-line',
+                                fontSize: '15px'
                             }}
                         />
                     </div>

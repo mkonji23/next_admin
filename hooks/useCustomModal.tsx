@@ -3,9 +3,11 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import UserModal from '@/components/modals/UserModal';
 import ClassModal from '@/components/modals/ClassModal';
 import StudentModal from '@/components/modals/StudentModal';
-import StudentSelectModal from '@/components/modals/StudentSelectModal';
 import TodoModal from '@/components/modals/TodoModal';
+import TodoDetail from '@/app/(main)/assistantTodo/components/TodoDetail';
+import ToDoDetailModal from '@/components/modals/ToDoDetailModal';
 import { ModalConfig, ModalContextType, ModalProviderProps, ModalState, OpenModalParams } from '@/types/modal';
+import StudentSelectModal from '@/components/modals/StudentSelectModal';
 
 export type { ModalConfig } from '@/types/modal';
 
@@ -18,7 +20,6 @@ export const useCustomModal = () => {
     }
     return context;
 };
-
 
 export const ModalProvider = ({ children }: ModalProviderProps) => {
     const [modals, setModals] = useState<Map<string, React.ComponentType<any>>>(new Map());
@@ -39,31 +40,34 @@ export const ModalProvider = ({ children }: ModalProviderProps) => {
         registerModal({ id: 'student', component: StudentModal });
         registerModal({ id: 'studentSelect', component: StudentSelectModal });
         registerModal({ id: 'todo', component: TodoModal });
-        
+        registerModal({ id: 'todoDetailModal', component: ToDoDetailModal });
+
         // 여기에 다른 모달들을 추가할 수 있습니다
-        // registerModal({ id: 'other', component: OtherModal });
     }, [registerModal]);
 
-    const openModal = useCallback(<T = any, R = any>(params: OpenModalParams<T>): Promise<R> => {
-        return new Promise((resolve, reject) => {
-            if (!modals.has(params.id)) {
-                reject(new Error(`Modal with id "${params.id}" is not registered`));
-                return;
-            }
+    const openModal = useCallback(
+        <T = any, R = any>(params: OpenModalParams<T>): Promise<R> => {
+            return new Promise((resolve, reject) => {
+                if (!modals.has(params.id)) {
+                    reject(new Error(`Modal with id "${params.id}" is not registered`));
+                    return;
+                }
 
-            setModalStates((prev) => {
-                const newMap = new Map(prev);
-                newMap.set(params.id, {
-                    id: params.id,
-                    visible: true,
-                    pData: params.pData,
-                    resolve,
-                    reject
+                setModalStates((prev) => {
+                    const newMap = new Map(prev);
+                    newMap.set(params.id, {
+                        id: params.id,
+                        visible: true,
+                        pData: params.pData,
+                        resolve,
+                        reject
+                    });
+                    return newMap;
                 });
-                return newMap;
             });
-        });
-    }, [modals]);
+        },
+        [modals]
+    );
 
     const closeModal = useCallback((id: string, result?: any) => {
         setModalStates((prev) => {
@@ -103,5 +107,4 @@ export const ModalProvider = ({ children }: ModalProviderProps) => {
             })}
         </ModalContext.Provider>
     );
-};   
-       
+};
