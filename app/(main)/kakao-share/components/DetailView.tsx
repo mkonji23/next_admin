@@ -134,11 +134,11 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete, onCopyTo
                         <div className="p-3 border-1 surface-border border-round surface-card">
                             <div className="grid">
                                 <div className="col-12 mb-2">
-                                    <span className="text-500 font-medium block mb-1">제목(공유)</span>
+                                    <span className="text-500 font-medium block mb-1">제목(카카오)</span>
                                     <div className="text-900 font-bold">{selectedShare.shareTitle}</div>
                                 </div>
                                 <div className="col-12 mb-3">
-                                    <span className="text-500 font-medium block mb-1">설명(공유)</span>
+                                    <span className="text-500 font-medium block mb-1">설명(카카오)</span>
                                     <div className="text-700">{selectedShare.shareContent}</div>
                                 </div>
                             </div>

@@ -7,8 +7,22 @@ interface SimpleLayoutProps {
 }
 
 export const metadata = {
-    title: '출석부',
-    description: '수학 문제 풀이 서비스'
+    title: 'C.C.Math',
+    description: 'Think First, Solve Right',
+    openGraph: {
+        title: 'C.C.Math',
+        description: 'Think First, Solve Right',
+        url: 'https://chochomath.vercel.app',
+        siteName: '출석부',
+        images: [
+            {
+                url: 'https://chochomath.vercel.app/layout/images/bae.jpg',
+                width: 1200,
+                height: 630
+            }
+        ],
+        type: 'website'
+    }
 };
 
 export default function SimpleLayout({ children }: SimpleLayoutProps) {

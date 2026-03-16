@@ -118,7 +118,7 @@ const ListView = ({
                     onRowSelect(rowData._id);
                 }}
             >
-                {rowData.actualTitle}
+                {rowData.shareTitle}
             </span>
         );
     };

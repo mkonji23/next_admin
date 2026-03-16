@@ -92,6 +92,8 @@ const KakaoSharePage = () => {
 
                     await http.post(`/choiMath/share/update/${selectedShare._id}`, updateData);
                 }
+                setView('DETAIL');
+                await fetchDetail(selectedShare?._id || '');
                 showToast({ severity: 'success', summary: '수정 완료', detail: '게시글이 성공적으로 수정되었습니다.' });
             } else {
                 // [생성 모드]: 멀티파트 전송
@@ -111,14 +113,17 @@ const KakaoSharePage = () => {
                     multipartData.append('files', file);
                 });
 
-                await http.post('/choiMath/share/create', multipartData, {
+                const res = await http.post('/choiMath/share/create', multipartData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
+
+                if (res?.data?.insertedId) {
+                    setView('DETAIL');
+                    await fetchDetail(res?.data?.insertedId || '');
+                }
                 showToast({ severity: 'success', summary: '저장 완료', detail: '게시글이 성공적으로 등록되었습니다.' });
             }
 
-            setView('LIST');
-            setSelectedShare(null);
             fetchShares();
         } catch (error) {
             console.error('Save error:', error);
