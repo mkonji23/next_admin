@@ -168,7 +168,7 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete, onCopyTo
                                 <Button
                                     label="카카오톡 공유"
                                     icon="pi pi-share-alt"
-                                    className="p-button-primary flex-1"
+                                    className="p-button-primary flex-2"
                                     onClick={() => onShare(selectedShare)}
                                 />
                             </div>
