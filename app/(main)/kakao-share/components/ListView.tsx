@@ -19,6 +19,14 @@ interface ListViewProps {
     onDelete: (id: string) => void;
     onDeleteMultiple: (selectedItems: ShareItem[]) => void;
     onCopyToNew: (item: ShareItem) => void;
+    filters: any;
+    setFilters: (filters: any) => void;
+    globalFilterValue: string;
+    setGlobalFilterValue: (value: string) => void;
+    first: number;
+    setFirst: (first: number) => void;
+    selectedItems: ShareItem[];
+    setSelectedItems: (items: ShareItem[]) => void;
 }
 
 const ListView = ({
@@ -29,9 +37,16 @@ const ListView = ({
     onDelete,
     onDeleteMultiple,
     onSearch,
-    onCopyToNew
+    onCopyToNew,
+    filters,
+    setFilters,
+    globalFilterValue,
+    setGlobalFilterValue,
+    first,
+    setFirst,
+    selectedItems,
+    setSelectedItems
 }: ListViewProps) => {
-    const [selectedItems, setSelectedItems] = useState<ShareItem[]>([]);
     const { showToast } = useToast();
 
     const initFilters = () => {
@@ -39,9 +54,6 @@ const ListView = ({
             global: { value: null, matchMode: FilterMatchMode.CONTAINS }
         };
     };
-
-    const [filters, setFilters] = useState(initFilters());
-    const [globalFilterValue, setGlobalFilterValue] = useState('');
 
     const clearFilter = () => {
         setFilters(initFilters());
@@ -198,7 +210,6 @@ const ListView = ({
                         onClick={() => {
                             if (selectedItems.length === 0) return;
                             onDeleteMultiple(selectedItems);
-                            setSelectedItems([]);
                         }}
                         disabled={selectedItems.length === 0}
                     />
@@ -212,7 +223,6 @@ const ListView = ({
                 selectionMode="checkbox"
                 selection={selectedItems}
                 onSelectionChange={(e) => {
-                    console.log('e', e);
                     setSelectedItems(e.value as ShareItem[]);
                 }}
                 emptyMessage="검색 결과가 없습니다."
@@ -222,6 +232,8 @@ const ListView = ({
                 header={header}
                 rows={10}
                 paginator
+                first={first}
+                onPage={(e) => setFirst(e.first)}
             >
                 <Column header="No." body={(data, options) => options.rowIndex + 1} style={{ width: '1rem' }} />
                 <Column selectionMode="multiple" headerStyle={{ width: '3rem' }}></Column>

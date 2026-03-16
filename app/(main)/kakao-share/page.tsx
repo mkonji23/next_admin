@@ -10,11 +10,20 @@ import { ShareItem } from './types';
 import ListView from './components/ListView';
 import DetailView from './components/DetailView';
 import WriteView from './components/WriteView';
+import { FilterMatchMode } from 'primereact/api';
 
 const KakaoSharePage = () => {
     const [view, setView] = useState<'LIST' | 'DETAIL' | 'WRITE'>('LIST');
     const [shares, setShares] = useState<ShareItem[]>([]);
     const [selectedShare, setSelectedShare] = useState<ShareItem | null>(null);
+
+    // List view state to be maintained
+    const [filters, setFilters] = useState({
+        global: { value: null, matchMode: FilterMatchMode.CONTAINS }
+    });
+    const [globalFilterValue, setGlobalFilterValue] = useState('');
+    const [first, setFirst] = useState(0);
+    const [listSelectedItems, setListSelectedItems] = useState<ShareItem[]>([]);
 
     const { showToast } = useToast();
     const { showConfirm } = useConfirm();
@@ -37,14 +46,21 @@ const KakaoSharePage = () => {
     // 초기화
     useEffect(() => {
         fetchShares();
+        // 초기 상태 설정
+        if (typeof window !== 'undefined') {
+            window.history.replaceState({ view: 'LIST', selectedShare: null }, '');
+        }
     }, []);
 
     // 2. 상세 조회
-    const fetchDetail = async (id: string) => {
+    const fetchDetail = async (id: string, pushHistory = true) => {
         try {
             const res = await http.get(`/choiMath/share/detail/${id}`);
             setSelectedShare(res.data);
             setView('DETAIL');
+            if (pushHistory) {
+                window.history.pushState({ view: 'DETAIL', selectedShare: res.data }, '');
+            }
         } catch (error) {
             console.error('Detail error:', error);
             showToast({ severity: 'error', summary: '오류', detail: '상세 정보를 불러오지 못했습니다.' });
@@ -54,6 +70,7 @@ const KakaoSharePage = () => {
     // 3. 게시글 저장 (생성 및 수정)
     const handleSave = async (formData: any, files: File[]) => {
         try {
+            let detailId = selectedShare?._id;
             if (selectedShare && selectedShare._id) {
                 // [수정 모드]
                 if (files.length > 0) {
@@ -92,8 +109,6 @@ const KakaoSharePage = () => {
 
                     await http.post(`/choiMath/share/update/${selectedShare._id}`, updateData);
                 }
-                setView('DETAIL');
-                await fetchDetail(selectedShare?._id || '');
                 showToast({ severity: 'success', summary: '수정 완료', detail: '게시글이 성공적으로 수정되었습니다.' });
             } else {
                 // [생성 모드]: 멀티파트 전송
@@ -118,10 +133,21 @@ const KakaoSharePage = () => {
                 });
 
                 if (res?.data?.insertedId) {
-                    setView('DETAIL');
-                    await fetchDetail(res?.data?.insertedId || '');
+                    detailId = res?.data?.insertedId;
                 }
                 showToast({ severity: 'success', summary: '저장 완료', detail: '게시글이 성공적으로 등록되었습니다.' });
+            }
+
+            if (detailId) {
+                // 상세 화면으로 이동 (히스토리 교체)
+                const res = await http.get(`/choiMath/share/detail/${detailId}`);
+                setSelectedShare(res.data);
+                setView('DETAIL');
+                window.history.replaceState({ view: 'DETAIL', selectedShare: res.data }, '');
+            } else {
+                setView('LIST');
+                setSelectedShare(null);
+                window.history.replaceState({ view: 'LIST', selectedShare: null }, '');
             }
 
             fetchShares();
@@ -147,6 +173,7 @@ const KakaoSharePage = () => {
             showToast({ severity: 'success', summary: '삭제 완료', detail: '게시글이 삭제되었습니다.' });
             setView('LIST');
             setSelectedShare(null);
+            window.history.replaceState({ view: 'LIST', selectedShare: null }, '');
             fetchShares();
         } catch (error) {
             console.error('Delete error:', error);
@@ -169,6 +196,7 @@ const KakaoSharePage = () => {
             // 다건 삭제 API 사용 (POST /choiMath/share/delete)
             await http.post('/choiMath/share/delete', { ids });
             showToast({ severity: 'success', summary: '삭제 완료', detail: '선택한 게시글들이 삭제되었습니다.' });
+            setListSelectedItems([]);
             fetchShares();
         } catch (error) {
             console.error('Multiple Delete error:', error);
@@ -197,20 +225,19 @@ const KakaoSharePage = () => {
     const handleEdit = (item: ShareItem) => {
         setSelectedShare(item);
         setView('WRITE');
+        window.history.pushState({ view: 'WRITE', selectedShare: item }, '');
     };
 
     const handleBack = () => {
         if (view !== 'LIST') {
             window.history.back();
-        } else {
-            setView('LIST');
-            setSelectedShare(null);
         }
     };
 
     const handleNewPost = () => {
         setSelectedShare(null);
         setView('WRITE');
+        window.history.pushState({ view: 'WRITE', selectedShare: null }, '');
     };
 
     const handleCopyToNew = (item: ShareItem) => {
@@ -220,34 +247,28 @@ const KakaoSharePage = () => {
             ...rest,
             actualTitle: `${item.actualTitle}`,
             shareTitle: `${item.shareTitle}`
-            // studentId, studentName, telNo, pTelNo are kept as they are part of 'rest'
-            // If they should be reset, they need to be explicitly set to undefined here.
-            // For now, assuming they should be copied.
         };
 
         setSelectedShare(newItemData as ShareItem);
         setView('WRITE');
+        window.history.pushState({ view: 'WRITE', selectedShare: newItemData }, '');
     };
 
     useEffect(() => {
-        const handlePopState = () => {
-            // 브라우저 뒤로가기 발생 시, LIST가 아니라면 LIST로 복구
-            if (view !== 'LIST') {
+        const handlePopState = (event: PopStateEvent) => {
+            const state = event.state;
+            if (state) {
+                setView(state.view || 'LIST');
+                setSelectedShare(state.selectedShare || null);
+            } else {
                 setView('LIST');
                 setSelectedShare(null);
             }
         };
 
-        // 상세나 작성 화면으로 진입할 때만 히스토리에 상태 추가
-        if (prevViewRef.current === 'LIST' && view !== 'LIST') {
-            window.history.pushState({ view }, '');
-        }
-
-        prevViewRef.current = view;
-
         window.addEventListener('popstate', handlePopState);
         return () => window.removeEventListener('popstate', handlePopState);
-    }, [view]);
+    }, []);
 
     return (
         <div className="kakao-share-page">
@@ -255,12 +276,20 @@ const KakaoSharePage = () => {
                 <ListView
                     shares={shares}
                     onSearch={fetchShares}
-                    onRowSelect={fetchDetail}
+                    onRowSelect={(id) => fetchDetail(id)}
                     onNewPost={handleNewPost}
                     onShare={handleShare}
                     onDelete={handleDelete}
                     onDeleteMultiple={handleDeleteMultiple}
                     onCopyToNew={handleCopyToNew}
+                    filters={filters}
+                    setFilters={setFilters}
+                    globalFilterValue={globalFilterValue}
+                    setGlobalFilterValue={setGlobalFilterValue}
+                    first={first}
+                    setFirst={setFirst}
+                    selectedItems={listSelectedItems}
+                    setSelectedItems={setListSelectedItems}
                 />
             )}
             {view === 'DETAIL' && (
