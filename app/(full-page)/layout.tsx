@@ -7,11 +7,11 @@ interface SimpleLayoutProps {
 }
 
 export const metadata = {
-    title: 'C.C.Math',
-    description: 'Think First, Solve Right',
+    title: 'chochoMath',
+    description: '최하정 선생님의 출석부 사이트입니다.',
     openGraph: {
-        title: 'C.C.Math',
-        description: 'Think First, Solve Right',
+        title: 'chochoMath',
+        description: '최하정 선생님의 출석부 사이트입니다.',
         url: 'https://chochomath.vercel.app',
         siteName: '출석부',
         images: [
