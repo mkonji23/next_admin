@@ -49,30 +49,85 @@ const StudentAttendanceStatisticsPage = () => {
     const [statistics, setStatistics] = useState<StudentAttendanceStatisticsResponse | null>(null);
     const [loading, setLoading] = useState(false);
     const [expandedRows, setExpandedRows] = useState<any>({});
-    const [chartData, setChartData] = useState<ChartData | null>(null);
-    const [chartOptions, setChartOptions] = useState<ChartOptions | null>(null);
-    const [homeworkChartData, setHomeworkChartData] = useState<ChartData | null>(null);
-    const [homeworkChartOptions, setHomeworkChartOptions] = useState<ChartOptions | null>(null);
+    const [classCharts, setClassCharts] = useState<
+        {
+            classId: string;
+            className: string;
+            attendancePieData: ChartData;
+            attendancePieOptions: ChartOptions;
+            homeworkDoughnutData: ChartData;
+            homeworkDoughnutOptions: ChartOptions;
+        }[]
+    >([]);
     const http = useHttp();
     const { showToast } = useToast();
 
-    const initChart = () => {
+    const initChart = useCallback(() => {
+        if (!statistics || !statistics.classes) {
+            setClassCharts([]);
+            return;
+        }
+
         const documentStyle = getComputedStyle(document.documentElement);
         const textColor = documentStyle.getPropertyValue('--text-color');
         const textColorSecondary = documentStyle.getPropertyValue('--text-color-secondary');
         const surfaceBorder = documentStyle.getPropertyValue('--surface-border');
 
-        // 단건 조회 (클래스 선택됨)
-        if (selectedClass && statistics?.classes.length === 1) {
-            const cls = statistics.classes[0];
-            const stats = cls.statistics;
+        type AggregatedClassStats = {
+            className: string; // Base class name
+            present: number;
+            absent: number;
+            late: number;
+            homeworkRates: number[]; // Store all homework rates to average later
+            count: number; // Number of entries aggregated (months)
+        };
+
+        const aggregatedStats = new Map<string, AggregatedClassStats>();
+
+        statistics.classes.forEach((cls) => {
+            const classId = cls.classId;
+            if (!aggregatedStats.has(classId)) {
+                aggregatedStats.set(classId, {
+                    className: cls.className.split(' (')[0], // Extract base name
+                    present: 0,
+                    absent: 0,
+                    late: 0,
+                    homeworkRates: [],
+                    count: 0
+                });
+            }
+            const current = aggregatedStats.get(classId)!;
+            current.present += cls.statistics?.present || 0;
+            current.absent += cls.statistics?.absent || 0;
+            current.late += cls.statistics?.late || 0;
+            if (cls.statistics?.homeworkRate !== undefined) {
+                current.homeworkRates.push(cls.statistics.homeworkRate);
+            }
+            current.count++;
+        });
+
+        const newClassCharts: {
+            classId: string;
+            className: string;
+            attendancePieData: ChartData;
+            attendancePieOptions: ChartOptions;
+            homeworkDoughnutData: ChartData;
+            homeworkDoughnutOptions: ChartOptions;
+        }[] = [];
+
+        aggregatedStats.forEach((aggStats, classId) => {
+            // Simple average for homework rate for now
+            const averageHomeworkRate =
+                aggStats.homeworkRates.length > 0
+                    ? aggStats.homeworkRates.reduce((sum, rate) => sum + rate, 0) / aggStats.homeworkRates.length
+                    : 0;
 
             // 출석 분포 Pie 차트
             const pieData: ChartData = {
                 labels: ['출석', '지각', '결석'],
                 datasets: [
                     {
-                        data: [stats?.present || 0, stats?.late || 0, stats?.absent || 0],
+                        data: [aggStats.present, aggStats.late, aggStats.absent],
                         backgroundColor: [
                             documentStyle.getPropertyValue('--green-500'),
                             documentStyle.getPropertyValue('--orange-500'),
@@ -81,6 +136,10 @@ const StudentAttendanceStatisticsPage = () => {
                     }
                 ]
             };
+
+            const totalAttendance = aggStats.present + aggStats.late + aggStats.absent;
+            const attendancePercentage =
+                totalAttendance > 0 ? ((aggStats.present / totalAttendance) * 100).toFixed(1) : 0;
 
             const pieOptions: ChartOptions = {
                 plugins: {
@@ -109,7 +168,7 @@ const StudentAttendanceStatisticsPage = () => {
                     },
                     title: {
                         display: true,
-                        text: '출석 현황 분포',
+                        text: [`출석 현황 분포`, `(${attendancePercentage}%)`],
                         color: textColor,
                         font: { size: 16 }
                     }
@@ -117,14 +176,20 @@ const StudentAttendanceStatisticsPage = () => {
             };
 
             // 과제 달성률 Doughnut 차트 (진척도 형태)
-            const rate = stats?.homeworkRate || 0;
+            const rate = averageHomeworkRate;
             const doughnutData: ChartData = {
                 labels: ['달성', '미달성'],
                 datasets: [
                     {
                         data: [rate, 100 - rate],
-                        backgroundColor: [documentStyle.getPropertyValue('--purple-500'), documentStyle.getPropertyValue('--surface-200')],
-                        hoverBackgroundColor: [documentStyle.getPropertyValue('--purple-400'), documentStyle.getPropertyValue('--surface-100')]
+                        backgroundColor: [
+                            documentStyle.getPropertyValue('--purple-500'),
+                            documentStyle.getPropertyValue('--surface-200')
+                        ],
+                        hoverBackgroundColor: [
+                            documentStyle.getPropertyValue('--purple-400'),
+                            documentStyle.getPropertyValue('--surface-100')
+                        ]
                     }
                 ]
             };
@@ -155,138 +220,33 @@ const StudentAttendanceStatisticsPage = () => {
                     },
                     title: {
                         display: true,
-                        text: `과제 달성률 (${rate.toFixed(1)}%)`,
+                        text: [`과제 달성률`, `(${rate.toFixed(1)}%)`],
                         color: textColor,
                         font: { size: 16 }
                     }
                 }
             };
 
-            setChartData(pieData);
-            setChartOptions(pieOptions);
-            setHomeworkChartData(doughnutData);
-            setHomeworkChartOptions(doughnutOptions);
+            newClassCharts.push({
+                classId: classId,
+                className: aggStats.className,
+                attendancePieData: pieData,
+                attendancePieOptions: pieOptions,
+                homeworkDoughnutData: doughnutData,
+                homeworkDoughnutOptions: doughnutOptions
+            });
+        });
+
+        setClassCharts(newClassCharts);
+    }, [statistics]);
+
+    useEffect(() => {
+        if (statistics && statistics.classes) {
+            initChart();
         } else {
-            // 다건 조회 (전체 클래스) - 기존 Stacked Bar + Line
-            const labels = statistics!.classes.map((cls) => `${cls.className} (${cls.year}-${cls.month})`);
-            const presentData = statistics!.classes.map((cls) => cls.statistics?.present || 0);
-            const absentData = statistics!.classes.map((cls) => cls.statistics?.absent || 0);
-            const lateData = statistics!.classes.map((cls) => cls.statistics?.late || 0);
-            const homeworkRates = statistics!.classes.map((cls) => cls.statistics?.homeworkRate || 0);
-
-            const data: ChartData = {
-                labels: labels,
-                datasets: [
-                    {
-                        type: 'bar',
-                        label: '출석',
-                        backgroundColor: documentStyle.getPropertyValue('--green-500'),
-                        data: presentData,
-                        stack: 'attendance',
-                        yAxisID: 'y',
-                        order: 1
-                    },
-                    {
-                        type: 'bar',
-                        label: '지각',
-                        backgroundColor: documentStyle.getPropertyValue('--orange-500'),
-                        data: lateData,
-                        stack: 'attendance',
-                        yAxisID: 'y',
-                        order: 1
-                    },
-                    {
-                        type: 'bar',
-                        label: '결석',
-                        backgroundColor: documentStyle.getPropertyValue('--red-500'),
-                        data: absentData,
-                        stack: 'attendance',
-                        yAxisID: 'y',
-                        order: 1
-                    },
-                    {
-                        type: 'line',
-                        label: '과제 달성률 (%)',
-                        borderColor: documentStyle.getPropertyValue('--purple-500'),
-                        borderWidth: 2,
-                        fill: false,
-                        tension: 0.4,
-                        data: homeworkRates,
-                        yAxisID: 'y1',
-                        order: 0
-                    }
-                ]
-            };
-
-            const options: ChartOptions = {
-                maintainAspectRatio: false,
-                aspectRatio: 0.6,
-                plugins: {
-                    legend: {
-                        labels: {
-                            color: textColor
-                        }
-                    },
-                    tooltip: {
-                        mode: 'index',
-                        intersect: false
-                    }
-                },
-                scales: {
-                    x: {
-                        stacked: true,
-                        ticks: {
-                            color: textColorSecondary
-                        },
-                        grid: {
-                            color: surfaceBorder
-                        }
-                    },
-                    y: {
-                        type: 'linear',
-                        display: true,
-                        position: 'left',
-                        stacked: true,
-                        ticks: {
-                            color: textColorSecondary,
-                            precision: 0
-                        },
-                        grid: {
-                            color: surfaceBorder
-                        },
-                        title: {
-                            display: true,
-                            text: '횟수 (회)',
-                            color: textColorSecondary
-                        }
-                    },
-                    y1: {
-                        type: 'linear',
-                        display: true,
-                        position: 'right',
-                        min: 0,
-                        max: 100,
-                        ticks: {
-                            color: textColorSecondary
-                        },
-                        grid: {
-                            drawOnChartArea: false,
-                            color: surfaceBorder
-                        },
-                        title: {
-                            display: true,
-                            text: '달성률 (%)',
-                            color: textColorSecondary
-                        }
-                    }
-                }
-            };
-
-            setChartData(data);
-            setChartOptions(options);
-            setHomeworkChartData(null);
+            setClassCharts([]); // Clear charts if no statistics or classes
         }
-    };
+    }, [statistics, initChart]);
 
     useEffect(() => {
         fetchStudents();
@@ -295,7 +255,7 @@ const StudentAttendanceStatisticsPage = () => {
 
     useEffect(() => {
         if (statistics && statistics.classes) {
-            initChart();
+            initChart(statistics.classes);
         }
     }, [statistics]);
 
@@ -568,6 +528,8 @@ const StudentAttendanceStatisticsPage = () => {
         return <Tag value={`${rate.toFixed(1)}%`} severity={severity} />;
     };
 
+    console.log('classCharts', classCharts);
+
     return (
         <div className="card">
             <h1>학생별 출석현황 통계</h1>
@@ -648,11 +610,42 @@ const StudentAttendanceStatisticsPage = () => {
                         {summaryBodyTemplate(statistics.summary)}
                     </div>
 
-                    {chartData && (
+                    {classCharts.length > 0 && (
                         <div className="mb-4">
-                            <Card title="수업별 출석 및 과제 달성률 추이">
-                                <Chart type="line" data={chartData} options={chartOptions || {}} height="350px" />
-                            </Card>
+                            <h3>수업별 통계 차트</h3>
+                            {classCharts.map((classChart) => (
+                                <div key={classChart.className} className="mb-4">
+                                    <h4>{classChart.className}</h4>
+                                    <div className="grid">
+                                        <div className="col-12 md:col-6">
+                                            <Card>
+                                                <div className="flex justify-content-center">
+                                                    <Chart
+                                                        type="pie"
+                                                        data={classChart.attendancePieData}
+                                                        options={classChart.attendancePieOptions}
+                                                        height="300px"
+                                                        style={{ width: '100%', maxWidth: '300px' }}
+                                                    />
+                                                </div>
+                                            </Card>
+                                        </div>
+                                        <div className="col-12 md:col-6">
+                                            <Card>
+                                                <div className="flex justify-content-center">
+                                                    <Chart
+                                                        type="doughnut"
+                                                        data={classChart.homeworkDoughnutData}
+                                                        options={classChart.homeworkDoughnutOptions}
+                                                        height="300px"
+                                                        style={{ width: '100%', maxWidth: '300px' }}
+                                                    />
+                                                </div>
+                                            </Card>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     )}
 

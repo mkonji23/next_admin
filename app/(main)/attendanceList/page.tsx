@@ -51,7 +51,7 @@ const AttendanceListPage = () => {
         const surfaceBorder = documentStyle.getPropertyValue('--surface-border');
 
         // 단건 조회 (클래스 선택됨)
-        if (selectedClass && statistics?.classes.length === 1) {
+        if (selectedClass && statistics?.classes?.length === 1) {
             const cls = statistics.classes[0];
             const stats = cls.statistics;
 
@@ -111,8 +111,14 @@ const AttendanceListPage = () => {
                 datasets: [
                     {
                         data: [rate, 100 - rate],
-                        backgroundColor: [documentStyle.getPropertyValue('--purple-500'), documentStyle.getPropertyValue('--surface-200')],
-                        hoverBackgroundColor: [documentStyle.getPropertyValue('--purple-400'), documentStyle.getPropertyValue('--surface-100')]
+                        backgroundColor: [
+                            documentStyle.getPropertyValue('--purple-500'),
+                            documentStyle.getPropertyValue('--surface-200')
+                        ],
+                        hoverBackgroundColor: [
+                            documentStyle.getPropertyValue('--purple-400'),
+                            documentStyle.getPropertyValue('--surface-100')
+                        ]
                     }
                 ]
             };
@@ -486,14 +492,26 @@ const AttendanceListPage = () => {
                                     <div className="col-12 md:col-6">
                                         <Card>
                                             <div className="flex justify-content-center">
-                                                <Chart type="pie" data={chartData} options={chartOptions || {}} height="300px" style={{ width: '100%', maxWidth: '300px' }} />
+                                                <Chart
+                                                    type="pie"
+                                                    data={chartData}
+                                                    options={chartOptions || {}}
+                                                    height="300px"
+                                                    style={{ width: '100%', maxWidth: '300px' }}
+                                                />
                                             </div>
                                         </Card>
                                     </div>
                                     <div className="col-12 md:col-6">
                                         <Card>
                                             <div className="flex justify-content-center">
-                                                <Chart type="doughnut" data={homeworkChartData} options={homeworkChartOptions || {}} height="300px" style={{ width: '100%', maxWidth: '300px' }} />
+                                                <Chart
+                                                    type="doughnut"
+                                                    data={homeworkChartData}
+                                                    options={homeworkChartOptions || {}}
+                                                    height="300px"
+                                                    style={{ width: '100%', maxWidth: '300px' }}
+                                                />
                                             </div>
                                         </Card>
                                     </div>
