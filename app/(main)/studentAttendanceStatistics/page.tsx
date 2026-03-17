@@ -8,6 +8,8 @@ import { Calendar } from 'primereact/calendar';
 import { Card } from 'primereact/card';
 import { Button } from 'primereact/button';
 import { Tag } from 'primereact/tag';
+import { Chart } from 'primereact/chart';
+import { ChartData, ChartOptions } from 'chart.js';
 import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
 import { Student } from '@/types/class';
@@ -47,13 +49,255 @@ const StudentAttendanceStatisticsPage = () => {
     const [statistics, setStatistics] = useState<StudentAttendanceStatisticsResponse | null>(null);
     const [loading, setLoading] = useState(false);
     const [expandedRows, setExpandedRows] = useState<any>({});
+    const [chartData, setChartData] = useState<ChartData | null>(null);
+    const [chartOptions, setChartOptions] = useState<ChartOptions | null>(null);
+    const [homeworkChartData, setHomeworkChartData] = useState<ChartData | null>(null);
+    const [homeworkChartOptions, setHomeworkChartOptions] = useState<ChartOptions | null>(null);
     const http = useHttp();
     const { showToast } = useToast();
+
+    const initChart = () => {
+        const documentStyle = getComputedStyle(document.documentElement);
+        const textColor = documentStyle.getPropertyValue('--text-color');
+        const textColorSecondary = documentStyle.getPropertyValue('--text-color-secondary');
+        const surfaceBorder = documentStyle.getPropertyValue('--surface-border');
+
+        // 단건 조회 (클래스 선택됨)
+        if (selectedClass && statistics?.classes.length === 1) {
+            const cls = statistics.classes[0];
+            const stats = cls.statistics;
+
+            // 출석 분포 Pie 차트
+            const pieData: ChartData = {
+                labels: ['출석', '지각', '결석'],
+                datasets: [
+                    {
+                        data: [stats?.present || 0, stats?.late || 0, stats?.absent || 0],
+                        backgroundColor: [
+                            documentStyle.getPropertyValue('--green-500'),
+                            documentStyle.getPropertyValue('--orange-500'),
+                            documentStyle.getPropertyValue('--red-500')
+                        ]
+                    }
+                ]
+            };
+
+            const pieOptions: ChartOptions = {
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            color: textColor
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context: any) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed !== null) {
+                                    const total = (context.dataset.data as number[]).reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
+                                    label += `${context.parsed}회 (${percentage}%)`;
+                                }
+                                return label;
+                            }
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: '출석 현황 분포',
+                        color: textColor,
+                        font: { size: 16 }
+                    }
+                }
+            };
+
+            // 과제 달성률 Doughnut 차트 (진척도 형태)
+            const rate = stats?.homeworkRate || 0;
+            const doughnutData: ChartData = {
+                labels: ['달성', '미달성'],
+                datasets: [
+                    {
+                        data: [rate, 100 - rate],
+                        backgroundColor: [documentStyle.getPropertyValue('--purple-500'), documentStyle.getPropertyValue('--surface-200')],
+                        hoverBackgroundColor: [documentStyle.getPropertyValue('--purple-400'), documentStyle.getPropertyValue('--surface-100')]
+                    }
+                ]
+            };
+
+            const doughnutOptions: ChartOptions = {
+                cutout: '60%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            color: textColor
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context: any) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed !== null) {
+                                    label += `${context.parsed.toFixed(1)}%`;
+                                }
+                                return label;
+                            }
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: `과제 달성률 (${rate.toFixed(1)}%)`,
+                        color: textColor,
+                        font: { size: 16 }
+                    }
+                }
+            };
+
+            setChartData(pieData);
+            setChartOptions(pieOptions);
+            setHomeworkChartData(doughnutData);
+            setHomeworkChartOptions(doughnutOptions);
+        } else {
+            // 다건 조회 (전체 클래스) - 기존 Stacked Bar + Line
+            const labels = statistics!.classes.map((cls) => `${cls.className} (${cls.year}-${cls.month})`);
+            const presentData = statistics!.classes.map((cls) => cls.statistics?.present || 0);
+            const absentData = statistics!.classes.map((cls) => cls.statistics?.absent || 0);
+            const lateData = statistics!.classes.map((cls) => cls.statistics?.late || 0);
+            const homeworkRates = statistics!.classes.map((cls) => cls.statistics?.homeworkRate || 0);
+
+            const data: ChartData = {
+                labels: labels,
+                datasets: [
+                    {
+                        type: 'bar',
+                        label: '출석',
+                        backgroundColor: documentStyle.getPropertyValue('--green-500'),
+                        data: presentData,
+                        stack: 'attendance',
+                        yAxisID: 'y',
+                        order: 1
+                    },
+                    {
+                        type: 'bar',
+                        label: '지각',
+                        backgroundColor: documentStyle.getPropertyValue('--orange-500'),
+                        data: lateData,
+                        stack: 'attendance',
+                        yAxisID: 'y',
+                        order: 1
+                    },
+                    {
+                        type: 'bar',
+                        label: '결석',
+                        backgroundColor: documentStyle.getPropertyValue('--red-500'),
+                        data: absentData,
+                        stack: 'attendance',
+                        yAxisID: 'y',
+                        order: 1
+                    },
+                    {
+                        type: 'line',
+                        label: '과제 달성률 (%)',
+                        borderColor: documentStyle.getPropertyValue('--purple-500'),
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.4,
+                        data: homeworkRates,
+                        yAxisID: 'y1',
+                        order: 0
+                    }
+                ]
+            };
+
+            const options: ChartOptions = {
+                maintainAspectRatio: false,
+                aspectRatio: 0.6,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: textColor
+                        }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: true,
+                        ticks: {
+                            color: textColorSecondary
+                        },
+                        grid: {
+                            color: surfaceBorder
+                        }
+                    },
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        stacked: true,
+                        ticks: {
+                            color: textColorSecondary,
+                            precision: 0
+                        },
+                        grid: {
+                            color: surfaceBorder
+                        },
+                        title: {
+                            display: true,
+                            text: '횟수 (회)',
+                            color: textColorSecondary
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        min: 0,
+                        max: 100,
+                        ticks: {
+                            color: textColorSecondary
+                        },
+                        grid: {
+                            drawOnChartArea: false,
+                            color: surfaceBorder
+                        },
+                        title: {
+                            display: true,
+                            text: '달성률 (%)',
+                            color: textColorSecondary
+                        }
+                    }
+                }
+            };
+
+            setChartData(data);
+            setChartOptions(options);
+            setHomeworkChartData(null);
+        }
+    };
 
     useEffect(() => {
         fetchStudents();
         fetchClasses();
     }, []);
+
+    useEffect(() => {
+        if (statistics && statistics.classes) {
+            initChart();
+        }
+    }, [statistics]);
 
     const rowExpansionTemplate = (tdata: StudentClassStatistics) => {
         console.log('tdata', tdata);
@@ -217,109 +461,70 @@ const StudentAttendanceStatisticsPage = () => {
             <div className="grid">
                 <div className="col-12">
                     <Card style={{ border: '1px solid #dee2e6' }}>
-                        <div className="flex flex-column gap-2">
-                            <div className="flex align-items-center gap-2">
-                                <span className="text-500 text-sm">학생명:</span>
-                                <span className="text-lg font-bold">{summary.studentName || '-'}</span>
-                            </div>
-                            {summary.studentGrade && (
+                        <div className="flex flex-column gap-3">
+                            <div className="flex flex-wrap gap-4 align-items-center">
                                 <div className="flex align-items-center gap-2">
-                                    <span className="text-500 text-sm">학년:</span>
-                                    <span className="text-lg">{summary.studentGrade}</span>
+                                    <span className="font-bold text-sm">학생명:</span>
+                                    <span className="text-lg font-bold">{summary.studentName || '-'}</span>
                                 </div>
-                            )}
-                            {summary.studentSchool && (
-                                <div className="flex align-items-center gap-2">
-                                    <span className="text-500 text-sm">학교:</span>
-                                    <span className="text-lg">{summary.studentSchool}</span>
+                                {summary.studentGrade && (
+                                    <div className="flex align-items-center gap-2">
+                                        <span className="font-bold text-sm">학년:</span>
+                                        <span className="text-lg font-bold">{summary.studentGrade}</span>
+                                    </div>
+                                )}
+                                {summary.studentSchool && (
+                                    <div className="flex align-items-center gap-2">
+                                        <span className="font-bold text-sm">학교:</span>
+                                        <span className="text-lg font-bold">{summary.studentSchool}</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="surface-border border-top-1 pt-3">
+                                <div className="grid">
+                                    <div className="col-6 md:col-4 lg:col-2 flex flex-column gap-1 mb-3">
+                                        <span className="font-bold text-xs">총 수업 수</span>
+                                        <span className="text-xl font-bold">{summary.totalClasses}개</span>
+                                    </div>
+                                    <div className="col-6 md:col-4 lg:col-2 flex flex-column gap-1 mb-3">
+                                        <span className="font-bold text-xs">총 수업횟수</span>
+                                        <span className="text-xl font-bold">{summary.totalDays}회</span>
+                                    </div>
+                                    <div className="col-6 md:col-4 lg:col-2 flex flex-column gap-1 mb-3">
+                                        <span className="font-bold text-xs">총 출석</span>
+                                        <span className="text-xl font-bold text-green-500">
+                                            {summary.totalPresent}회
+                                        </span>
+                                    </div>
+                                    <div className="col-6 md:col-4 lg:col-2 flex flex-column gap-1 mb-3">
+                                        <span className="font-bold text-xs">총 결석</span>
+                                        <span className="text-xl font-bold text-red-500">{summary.totalAbsent}회</span>
+                                    </div>
+                                    <div className="col-6 md:col-4 lg:col-2 flex flex-column gap-1 mb-3">
+                                        <span className="font-bold text-xs">총 지각</span>
+                                        <span className="text-xl font-bold text-orange-500">{summary.totalLate}회</span>
+                                    </div>
+                                    <div className="col-6 md:col-4 lg:col-2 flex flex-column gap-1 mb-3">
+                                        <span className="font-bold text-xs">평균 출석률</span>
+                                        <span className="text-xl font-bold text-blue-500">
+                                            {summary.averageAttendanceRate.toFixed(1)}%
+                                        </span>
+                                    </div>
+                                    <div className="col-6 md:col-4 lg:col-2 flex flex-column gap-1 mb-3">
+                                        <span className="font-bold text-xs">평균 지각률</span>
+                                        <span className="text-xl font-bold text-orange-500">
+                                            {summary.averageLateRate?.toFixed(1) || '0.0'}%
+                                        </span>
+                                    </div>
+                                    <div className="col-6 md:col-4 lg:col-2 flex flex-column gap-1 mb-3">
+                                        <span className="font-bold text-xs">평균 과제 달성률</span>
+                                        <span className="text-xl font-bold text-purple-500">
+                                            {summary.averageHomeworkRate.toFixed(1)}%
+                                        </span>
+                                    </div>
                                 </div>
-                            )}
-                        </div>
-                    </Card>
-                </div>
-                <div className="col-12 md:col-6 lg:col-3">
-                    <Card style={{ border: '1px solid #dee2e6' }}>
-                        <div className="flex flex-column align-items-center">
-                            <span className="text-500 text-sm mb-2">총 수업 수</span>
-                            <span className="text-2xl font-bold">{summary.totalClasses}개</span>
-                        </div>
-                    </Card>
-                </div>
-                <div className="col-12 md:col-6 lg:col-3">
-                    <Card style={{ border: '1px solid #dee2e6' }}>
-                        <div className="flex flex-column align-items-center">
-                            <span className="text-500 text-sm mb-2">총 수업일수</span>
-                            <span className="text-2xl font-bold">{summary.totalDays}일</span>
-                        </div>
-                    </Card>
-                </div>
-                <div className="col-12 md:col-6 lg:col-3">
-                    <Card style={{ border: '1px solid #dee2e6' }}>
-                        <div className="flex flex-column align-items-center">
-                            <span className="text-500 text-sm mb-2">총 출석</span>
-                            <span className="text-2xl font-bold text-green-500">{summary.totalPresent}회</span>
-                        </div>
-                    </Card>
-                </div>
-                <div className="col-12 md:col-6 lg:col-3">
-                    <Card style={{ border: '1px solid #dee2e6' }}>
-                        <div className="flex flex-column align-items-center">
-                            <span className="text-500 text-sm mb-2">총 결석</span>
-                            <span className="text-2xl font-bold text-red-500">{summary.totalAbsent}회</span>
-                        </div>
-                    </Card>
-                </div>
-                {summary.totalLate !== undefined && (
-                    <div className="col-12 md:col-6 lg:col-3">
-                        <Card style={{ border: '1px solid #dee2e6' }}>
-                            <div className="flex flex-column align-items-center">
-                                <span className="text-500 text-sm mb-2">총 지각</span>
-                                <span className="text-2xl font-bold text-orange-500">{summary.totalLate}회</span>
                             </div>
-                        </Card>
-                    </div>
-                )}
-                <div className="col-12 md:col-6 lg:col-3">
-                    <Card style={{ border: '1px solid #dee2e6' }}>
-                        <div className="flex flex-column align-items-center">
-                            <span className="text-500 text-sm mb-2">평균 출석률</span>
-                            <span className="text-2xl font-bold text-blue-500">
-                                {summary.averageAttendanceRate.toFixed(1)}%
-                            </span>
-                        </div>
-                    </Card>
-                </div>
-                {summary.averageAbsentRate !== undefined && (
-                    <div className="col-12 md:col-6 lg:col-3">
-                        <Card style={{ border: '1px solid #dee2e6' }}>
-                            <div className="flex flex-column align-items-center">
-                                <span className="text-500 text-sm mb-2">평균 결석률</span>
-                                <span className="text-2xl font-bold text-red-500">
-                                    {summary.averageAbsentRate.toFixed(1)}%
-                                </span>
-                            </div>
-                        </Card>
-                    </div>
-                )}
-                {summary.averageLateRate !== undefined && (
-                    <div className="col-12 md:col-6 lg:col-3">
-                        <Card style={{ border: '1px solid #dee2e6' }}>
-                            <div className="flex flex-column align-items-center">
-                                <span className="text-500 text-sm mb-2">평균 지각률</span>
-                                <span className="text-2xl font-bold text-orange-500">
-                                    {summary.averageLateRate.toFixed(1)}%
-                                </span>
-                            </div>
-                        </Card>
-                    </div>
-                )}
-                <div className="col-12 md:col-6 lg:col-3">
-                    <Card style={{ border: '1px solid #dee2e6' }}>
-                        <div className="flex flex-column align-items-center">
-                            <span className="text-500 text-sm mb-2">평균 과제 달성률</span>
-                            <span className="text-2xl font-bold text-purple-500">
-                                {summary.averageHomeworkRate.toFixed(1)}%
-                            </span>
                         </div>
                     </Card>
                 </div>
@@ -443,6 +648,14 @@ const StudentAttendanceStatisticsPage = () => {
                         {summaryBodyTemplate(statistics.summary)}
                     </div>
 
+                    {chartData && (
+                        <div className="mb-4">
+                            <Card title="수업별 출석 및 과제 달성률 추이">
+                                <Chart type="line" data={chartData} options={chartOptions || {}} height="350px" />
+                            </Card>
+                        </div>
+                    )}
+
                     {statistics.classes && statistics.classes.length > 0 && (
                         <div className="mb-4">
                             <h3>수업별 상세 통계</h3>
@@ -458,14 +671,18 @@ const StudentAttendanceStatisticsPage = () => {
                                 rowExpansionTemplate={rowExpansionTemplate}
                                 dataKey="id"
                             >
-                                <Column header="No." body={(data, options) => options.rowIndex + 1} style={{ width: '3rem' }} />
+                                <Column
+                                    header="No."
+                                    body={(data, options) => options.rowIndex + 1}
+                                    style={{ width: '3rem' }}
+                                />
                                 <Column expander={true} style={{ width: '3rem' }} />
                                 <Column field="className" header="수업명" sortable />
                                 <Column field="year" header="연도" sortable />
                                 <Column field="month" header="월" sortable />
                                 <Column
                                     field="statistics.totalDays"
-                                    header="수업일수"
+                                    header="수업횟수"
                                     sortable
                                     body={(rowData) => rowData.statistics?.totalDays || 0}
                                 />
