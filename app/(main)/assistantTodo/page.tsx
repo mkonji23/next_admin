@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/useToast';
 import { useConfirm } from '@/hooks/useConfirm';
 import { Todo, TodoUser } from '@/types/todo';
 import { useCustomModal } from '@/hooks/useCustomModal';
+import useAuthStore from '@/store/useAuthStore'; // Import useAuthStore
 
 // 신규 컴포넌트 임포트
 import TodoCalendar from './components/TodoCalendar';
@@ -26,6 +27,8 @@ const AssistantTodoPage = () => {
     const { showToast } = useToast();
     const { showConfirm } = useConfirm();
     const { openModal } = useCustomModal();
+    const { userInfo } = useAuthStore(); // Get userInfo from useAuthStore
+    const currentUserId = userInfo.userId; // Get current user's ID
 
     const fetchTodos = useCallback(async () => {
         try {
@@ -156,15 +159,29 @@ const AssistantTodoPage = () => {
 
     const events = useMemo(
         () =>
-            todos.map((todo) => ({
-                id: todo.id,
-                title: todo.content,
-                start: todo.date,
-                allDay: true,
-                backgroundColor: todo.isCompleted ? '#4caf50' : '#2196f3',
-                borderColor: todo.isCompleted ? '#4caf50' : '#2196f3'
-            })),
-        [todos]
+            todos.map((todo) => {
+                const isAssignedToCurrentUser = todo.assignees.some(
+                    (assignee: TodoUser) => assignee.userId === currentUserId
+                );
+
+                let backgroundColor = todo.isCompleted ? '#4caf50' : '#2196f3'; // Default: completed (green) / in progress (blue)
+                let borderColor = todo.isCompleted ? '#4caf50' : '#2196f3';
+
+                if (isAssignedToCurrentUser) {
+                    backgroundColor = todo.isCompleted ? '#fa90ce' : 'var(--yellow-500)'; // Light blue for assigned, slightly darker if completed
+                    borderColor = todo.isCompleted ? '#fa90ce' : 'var(--yellow-300)'; // Darker blue border for completed assigned tasks
+                }
+
+                return {
+                    id: todo.id,
+                    title: todo.content,
+                    start: todo.date,
+                    allDay: true,
+                    backgroundColor: backgroundColor,
+                    borderColor: borderColor
+                };
+            }),
+        [todos, currentUserId]
     );
 
     return (
@@ -185,6 +202,7 @@ const AssistantTodoPage = () => {
                     onSelectionChange={setSelectedTodo}
                     onEdit={handleEdit}
                     onToggleComplete={handleToggleComplete}
+                    currentUserId={currentUserId}
                 />
             </div>
 
@@ -238,6 +256,13 @@ const AssistantTodoPage = () => {
                 .fc-day-sat .fc-col-header-cell-cushion,
                 .fc-daygrid-day.fc-day-sat .fc-daygrid-day-number {
                     color: #2196f3 !important; /* Material Blue */
+                }
+                /* 내가 담당자로 지정된 할 일 */
+                .my-assigned-todo-row {
+                    background-color: var(--yellow-400); /* Light blue background */
+                }
+                .my-assigned-todo-row-completed {
+                    background-color: #fa90ce; /* Light blue background */
                 }
             `}</style>
         </div>

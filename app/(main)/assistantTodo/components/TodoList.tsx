@@ -13,9 +13,17 @@ interface TodoListProps {
     onSelectionChange: (todo: Todo | null) => void;
     onEdit: (todo: Todo) => void;
     onToggleComplete: (todo: Todo) => void;
+    currentUserId?: string;
 }
 
-const TodoList: React.FC<TodoListProps> = ({ todos, selectedTodo, onSelectionChange, onEdit, onToggleComplete }) => {
+const TodoList: React.FC<TodoListProps> = ({
+    todos,
+    selectedTodo,
+    onSelectionChange,
+    onEdit,
+    onToggleComplete,
+    currentUserId
+}) => {
     const { openModal } = useCustomModal();
 
     const handleContentClick = (todo: Todo) => {
@@ -41,6 +49,17 @@ const TodoList: React.FC<TodoListProps> = ({ todos, selectedTodo, onSelectionCha
                 selection={selectedTodo}
                 onSelectionChange={(e) => onSelectionChange(e.value as Todo)}
                 emptyMessage="할 일이 없습니다."
+                rowClassName={(rowData) => {
+                    const isAssignedToCurrentUser = rowData.assignees.some(
+                        (assignee: TodoUser) => assignee.userId === currentUserId
+                    );
+                    if (isAssignedToCurrentUser) {
+                        if (rowData.isCompleted) return 'my-assigned-todo-row-completed';
+                        return 'my-assigned-todo-row-completed';
+                    }
+
+                    return '';
+                }}
             >
                 <Column
                     field="date"

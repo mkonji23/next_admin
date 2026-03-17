@@ -10,6 +10,7 @@ interface User {
     token: string;
     auth?: string | null;
     menuPermissions?: string[];
+    tagColor?: string;
 }
 
 interface UserInfo {

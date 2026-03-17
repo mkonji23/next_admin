@@ -7,6 +7,7 @@ import { Password } from 'primereact/password';
 import { Button } from 'primereact/button';
 import { Tag } from 'primereact/tag';
 import { Dialog } from 'primereact/dialog';
+import { ColorPicker } from 'primereact/colorpicker';
 import useAuthStore from '@/store/useAuthStore';
 import { getCommonLabel } from '@/util/common';
 import { USER_AUTH_OPTIONS } from '@/constants/user';
@@ -32,6 +33,7 @@ const ProfilePage = () => {
         confirmPassword: ''
     });
     const [passwordSubmitted, setPasswordSubmitted] = useState(false);
+    const [selectedTagColor, setSelectedTagColor] = useState<string | undefined>(undefined);
 
     useEffect(() => {
         initializeFromStorage();
@@ -46,6 +48,8 @@ const ProfilePage = () => {
                 email: userInfo.email || '',
                 auth: userInfo.auth || ''
             });
+            // Initialize selectedTagColor from userInfo
+            setSelectedTagColor(userInfo.tagColor || undefined);
         }
     }, [mounted, userInfo]);
 
@@ -62,6 +66,7 @@ const ProfilePage = () => {
                 email: userInfo.email || '',
                 auth: userInfo.auth || ''
             });
+            setSelectedTagColor(userInfo.tagColor || undefined); // Reset tag color on cancel
         }
     };
 
@@ -82,6 +87,10 @@ const ProfilePage = () => {
             }
             if (formData.email !== userInfo.email) {
                 updateData.email = formData.email;
+            }
+            // Check for tag color change
+            if (selectedTagColor !== userInfo.tagColor) {
+                updateData.tagColor = selectedTagColor;
             }
 
             if (Object.keys(updateData).length === 0) {
@@ -290,6 +299,37 @@ const ProfilePage = () => {
                                             <Tag
                                                 value={getCommonLabel(USER_AUTH_OPTIONS, userInfo.auth)}
                                                 severity="info"
+                                            />
+                                        ) : (
+                                            <span className="text-500">-</span>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                            <div className="field col-12 md:col-6">
+                                <label htmlFor="tagColor">태그 색상</label>
+                                {isEditing ? (
+                                    <div className="p-inputgroup">
+                                        <InputText
+                                           id="tagColor"
+                                           value={selectedTagColor || ''}
+                                           onChange={(e) => setSelectedTagColor(e.target.value)}
+                                           className="w-auto"
+                                           placeholder="#RRGGBB 또는 색상 이름"
+                                        />
+                                        <ColorPicker
+                                           value={selectedTagColor ? selectedTagColor.replace('#', '') : null}
+                                           onChange={(e) => setSelectedTagColor(e.value ? `#${e.value}` : undefined)}
+                                           format="hex"
+                                           appendTo="self"
+                                           style={{ width: '50px' }}
+                                        />                                    </div>
+                                ) : (
+                                    <div className="p-2">
+                                        {userInfo?.tagColor ? (
+                                            <Tag
+                                                value={userInfo.tagColor}
+                                                style={{ backgroundColor: userInfo.tagColor }}
                                             />
                                         ) : (
                                             <span className="text-500">-</span>
