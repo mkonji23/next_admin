@@ -21,6 +21,7 @@ const PublicShareViewPage = () => {
     const [shareData, setShareData] = useState<ShareItem | null>(null);
     const { loading } = useLoading();
     const [images, setImages] = useState<any[]>([]);
+    const [isFetched, setIsFetched] = useState(false);
 
     const downloadImage = async (url: string, index: number) => {
         try {
@@ -65,6 +66,7 @@ const PublicShareViewPage = () => {
                 const res = await http.get(`/choiMath/share/detail/${id}`);
                 const data = res.data;
                 setShareData(data);
+                setIsFetched(true);
 
                 if (data.shareImageUrls && data.shareImageUrls.length > 0) {
                     const formattedImages = data.shareImageUrls.map((item: any) => {
@@ -89,8 +91,8 @@ const PublicShareViewPage = () => {
 
     return (
         <>
-            {loading && { loadingTemplate }}
-            {!loading && !shareData && { noDataTempate }}
+            {loading && loadingTemplate}
+
             {!loading && shareData && (
                 <div className="layout-content p-3 md:p-5 flex justify-content-center min-h-screen bg-gray-50">
                     <div className="w-full" style={{ maxWidth: '800px' }}>
@@ -174,6 +176,8 @@ const PublicShareViewPage = () => {
                     </div>
                 </div>
             )}
+
+            {!loading && isFetched && !shareData && noDataTempate}
         </>
     );
 };
