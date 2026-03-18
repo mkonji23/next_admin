@@ -8,20 +8,28 @@ interface AttendanceTableHeaderProps {
     year: number;
     month: number;
     totalStudents: number;
+    fieldNames: { [key: string]: string };
 }
 
 const AttendanceTableHeader: React.FC<AttendanceTableHeaderProps> = ({
     daysInMonth,
     year,
     month,
-    totalStudents
+    totalStudents,
+    fieldNames = {
+        attendance: '출석',
+        homework: '숙제',
+        praise: '칭찬',
+        testScore: '점수',
+        note: '비고'
+    }
 }) => {
     const monthStr: string = String(month + 1).padStart(2, '0');
     const dayHeaders: number[] = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+    const fieldKeys = Object.keys(fieldNames);
 
     return (
         <div className="attendance-header" role="rowgroup">
-            {/* 첫 번째 헤더 행 */}
             <div className="attendance-header-row" role="row">
                 <div className="attendance-header-cell-name" role="columnheader">
                     <div className="flex justify-content-between align-items-center">
@@ -60,44 +68,35 @@ const AttendanceTableHeader: React.FC<AttendanceTableHeaderProps> = ({
                     );
                 })}
             </div>
-            {/* 두 번째 헤더 행 */}
             <div className="attendance-header-row" role="row">
-                {dayHeaders.flatMap((day: number) => [
-                    <div
-                        key={`sub_att_${day}`}
-                        className="attendance-header-sub-cell"
-                        role="columnheader"
-                        style={{ borderRight: '1px solid #dee2e6' }}
-                    >
-                        출석
-                    </div>,
-                    <div
-                        key={`sub_hw_${day}`}
-                        className="attendance-header-sub-cell"
-                        role="columnheader"
-                        style={{ borderRight: '1px solid #dee2e6' }}
-                    >
-                        숙제
-                    </div>,
-                    <div
-                        key={`sub_praise_${day}`}
-                        className="attendance-header-sub-cell"
-                        role="columnheader"
-                        style={{ borderRight: '1px solid #dee2e6' }}
-                    >
-                        칭찬
-                    </div>,
-                    <div
-                        key={`sub_note_${day}`}
-                        className="attendance-header-sub-cell"
-                        role="columnheader"
-                        style={{
-                            borderRight: day < daysInMonth ? '2px solid #007ad9' : 'none'
-                        }}
-                    >
-                        비고
-                    </div>
-                ])}
+                {dayHeaders.flatMap((day: number) =>
+                    fieldKeys.map((fieldKey, index) => {
+                        const isLastSubCell = index === fieldKeys.length - 1;
+
+                        const subCellStyle: React.CSSProperties = {
+                            borderRight: isLastSubCell
+                                ? day < daysInMonth
+                                    ? '2px solid #007ad9'
+                                    : 'none'
+                                : '1px solid #dee2e6'
+                        };
+
+                        // Note: Width is now controlled by the grid-template-columns in page.tsx
+                        // No inline style for width is needed here anymore, but keeping it won't hurt
+                        // as grid template takes precedence.
+
+                        return (
+                            <div
+                                key={`sub_${fieldKey}_${day}`}
+                                className="attendance-header-sub-cell"
+                                role="columnheader"
+                                style={subCellStyle}
+                            >
+                                {fieldNames[fieldKey]}
+                            </div>
+                        );
+                    })
+                )}
             </div>
         </div>
     );

@@ -16,17 +16,12 @@ import {
 } from '@/constants/attendance';
 import { debounce } from '@/util/debounce';
 
-interface AttendanceStatusOption {
+interface StatusOption {
     label: string;
     value: string;
 }
 
-interface HomeworkProgressOption {
-    label: string;
-    value: number;
-}
-
-interface LateTimeOption {
+interface NumericOption {
     label: string;
     value: number;
 }
@@ -52,71 +47,36 @@ const AttendanceDayCells = React.memo<AttendanceDayCellsProps>(({ user, day, onU
     const noteField = `day_${day}_note`;
     const praiseField = `day_${day}_praise`;
     const lateTimeField = `day_${day}_lateTime`;
+    const testScoreField = `day_${day}_testScore`;
 
     const lateTimeOverlayRef = useRef<OverlayPanel>(null);
 
-    // 로컬 상태로 즉각적인 UI 반응성 확보
     const [localAttendance, setLocalAttendance] = useState<string>((user[attendanceField] as string) || 'none');
     const [localHomework, setLocalHomework] = useState<number>((user[homeworkField] as number) || 0);
     const [localNote, setLocalNote] = useState<string>((user[noteField] as string) || '');
     const [localPraise, setLocalPraise] = useState<boolean>(!!user[praiseField]);
     const [localLateTime, setLocalLateTime] = useState<number | null>((user[lateTimeField] as number) || null);
+    const [localTestScore, setLocalTestScore] = useState<number>((user[testScoreField] as number) || 0);
 
-    // 각 셀의 변경을 debounce하여 부모 상태 업데이트 최소화
-    const debouncedAttendanceUpdate = useMemo(
-        () =>
-            debounce((value: string) => {
-                onUpdate(user.id, attendanceField, value);
-            }, 300),
-        [user.id, attendanceField, onUpdate]
-    );
+    const createDebouncedUpdate = (field: string) =>
+        useMemo(() => debounce((value: any) => onUpdate(user.id, field, value), 300), [user.id, field, onUpdate]);
 
-    const debouncedHomeworkUpdate = useMemo(
-        () =>
-            debounce((value: number) => {
-                onUpdate(user.id, homeworkField, value);
-            }, 300),
-        [user.id, homeworkField, onUpdate]
-    );
-
-    const debouncedNoteUpdate = useMemo(
-        () =>
-            debounce((value: string) => {
-                onUpdate(user.id, noteField, value);
-            }, 300),
-        [user.id, noteField, onUpdate]
-    );
-
-    const debouncedPraiseUpdate = useMemo(
-        () =>
-            debounce((value: boolean) => {
-                onUpdate(user.id, praiseField, value);
-            }, 300),
-        [user.id, praiseField, onUpdate]
-    );
-
-    const debouncedLateTimeUpdate = useMemo(
-        () =>
-            debounce((value: number | null) => {
-                onUpdate(user.id, lateTimeField, value);
-            }, 300),
-        [user.id, lateTimeField, onUpdate]
-    );
+    const debouncedAttendanceUpdate = createDebouncedUpdate(attendanceField);
+    const debouncedHomeworkUpdate = createDebouncedUpdate(homeworkField);
+    const debouncedNoteUpdate = createDebouncedUpdate(noteField);
+    const debouncedPraiseUpdate = createDebouncedUpdate(praiseField);
+    const debouncedLateTimeUpdate = createDebouncedUpdate(lateTimeField);
+    const debouncedTestScoreUpdate = createDebouncedUpdate(testScoreField);
 
     const handleAttendanceChange = useCallback(
         (value: string) => {
-            setLocalAttendance(value); // 즉시 UI 업데이트
-            debouncedAttendanceUpdate(value); // debounce된 부모 업데이트
-
-            // 지각 선택 시 기본값 15분 설정
-            if (value === 'late') {
-                if (localLateTime === null) {
-                    const defaultLateTime = 15; // 기본값 15분
-                    setLocalLateTime(defaultLateTime);
-                    debouncedLateTimeUpdate(defaultLateTime);
-                }
-            } else {
-                // 지각이 아닐 때는 지각 시간 초기화
+            setLocalAttendance(value);
+            debouncedAttendanceUpdate(value);
+            if (value === 'late' && localLateTime === null) {
+                const defaultLateTime = 15;
+                setLocalLateTime(defaultLateTime);
+                debouncedLateTimeUpdate(defaultLateTime);
+            } else if (value !== 'late') {
                 setLocalLateTime(null);
                 debouncedLateTimeUpdate(null);
             }
@@ -143,13 +103,7 @@ const AttendanceDayCells = React.memo<AttendanceDayCellsProps>(({ user, day, onU
     const handlePraiseToggle = useCallback(() => {
         setLocalPraise((prev) => {
             const newValue = !prev;
-            if (newValue) {
-                confetti({
-                    particleCount: 100,
-                    spread: 70,
-                    origin: { y: 0.6 }
-                });
-            }
+            if (newValue) confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
             debouncedPraiseUpdate(newValue);
             return newValue;
         });
@@ -159,64 +113,45 @@ const AttendanceDayCells = React.memo<AttendanceDayCellsProps>(({ user, day, onU
         (value: number | null) => {
             setLocalLateTime(value);
             debouncedLateTimeUpdate(value);
-            // OverlayPanel 닫기
-            if (lateTimeOverlayRef.current) {
-                lateTimeOverlayRef.current.hide();
-            }
+            lateTimeOverlayRef.current?.hide();
         },
         [debouncedLateTimeUpdate]
     );
 
-    // 선택된 지각 시간 레이블 가져오기
+    const handleTestScoreChange = useCallback(
+        (value: string) => {
+            const score = parseInt(value, 10);
+            const newScore = isNaN(score) ? 0 : score;
+            setLocalTestScore(newScore);
+            debouncedTestScoreUpdate(newScore);
+        },
+        [debouncedTestScoreUpdate]
+    );
+
     const getLateTimeLabel = useCallback((minutes: number | null): string => {
         if (minutes === null) return '';
-        const option = LATE_TIME_OPTIONS.find((opt) => opt.value === minutes);
-        return option ? option.label : '';
+        return LATE_TIME_OPTIONS.find((opt) => opt.value === minutes)?.label || '';
     }, []);
 
-    // 지각 시간에 따른 색상 반환
     const getLateTimeColor = useCallback((minutes: number | null): string => {
-        if (minutes === null) return '#6c757d'; // 기본 회색
-
-        // 시간에 따라 색상 결정
-        if (minutes <= 15) {
-            return '#28a745'; // 초록색 (15분 이하)
-        } else if (minutes <= 30) {
-            return '#ffc107'; // 노란색 (30분)
-        } else if (minutes <= 60) {
-            return '#fd7e14'; // 주황색 (1시간)
-        } else if (minutes <= 120) {
-            return '#dc3545'; // 빨간색 (2시간)
-        } else {
-            return '#c82333'; // 진한 빨간색 (3시간 이상)
-        }
+        if (minutes === null) return '#6c757d';
+        if (minutes <= 15) return '#28a745';
+        if (minutes <= 30) return '#ffc107';
+        if (minutes <= 60) return '#fd7e14';
+        if (minutes <= 120) return '#dc3545';
+        return '#c82333';
     }, []);
 
     const isLate = localAttendance === 'late';
 
-    // user prop이 변경되면 로컬 상태 동기화
     useEffect(() => {
-        const attendanceValue = (user[attendanceField] as string) || 'none';
-        setLocalAttendance(attendanceValue);
+        setLocalAttendance((user[attendanceField] as string) || 'none');
         setLocalHomework((user[homeworkField] as number) || 0);
         setLocalNote((user[noteField] as string) || '');
         setLocalPraise(!!user[praiseField]);
-        const lateTimeValue = user[lateTimeField];
-
-        // 지각 상태이고 lateTime이 없으면 기본값 15분 설정
-        if (attendanceValue === 'late') {
-            if (typeof lateTimeValue === 'number') {
-                setLocalLateTime(lateTimeValue);
-            } else {
-                // 기본값 15분 설정
-                const defaultLateTime = 15;
-                setLocalLateTime(defaultLateTime);
-                debouncedLateTimeUpdate(defaultLateTime);
-            }
-        } else {
-            setLocalLateTime(null);
-        }
-    }, [user, attendanceField, homeworkField, noteField, praiseField, lateTimeField, debouncedLateTimeUpdate]);
+        setLocalTestScore((user[testScoreField] as number) || 0);
+        setLocalLateTime((user[lateTimeField] as number) || null);
+    }, [user, attendanceField, homeworkField, noteField, praiseField, testScoreField, lateTimeField]);
 
     return (
         <div className="attendance-day-group" role="group" aria-label={`${day}일 출석 정보`}>
@@ -224,31 +159,26 @@ const AttendanceDayCells = React.memo<AttendanceDayCellsProps>(({ user, day, onU
                 <Dropdown
                     value={localAttendance}
                     options={[...ATTENDANCE_STATUS_OPTIONS]}
-                    onChange={(e: DropdownChangeEvent) => handleAttendanceChange(e.value)}
-                    itemTemplate={(option: AttendanceStatusOption) => (
+                    onChange={(e) => handleAttendanceChange(e.value)}
+                    itemTemplate={(option: StatusOption) => (
                         <Tag value={option.label} severity={getAttendanceSeverity(option.value) as any} />
                     )}
-                    valueTemplate={(option: AttendanceStatusOption) => {
-                        if (option) {
-                            return <Tag value={option.label} severity={getAttendanceSeverity(option.value) as any} />;
-                        }
-                        return <span>선택</span>;
-                    }}
+                    valueTemplate={(option: StatusOption) =>
+                        option ? (
+                            <Tag value={option.label} severity={getAttendanceSeverity(option.value) as any} />
+                        ) : (
+                            <span>선택</span>
+                        )
+                    }
                     style={{ width: isLate ? 'calc(100% - 10px)' : '100%' }}
                     appendTo={typeof window !== 'undefined' ? document.body : 'self'}
-                    panelStyle={{ zIndex: 9999 }}
-                    aria-label={`${day}일 출석 상태`}
                 />
                 {isLate && (
                     <>
                         <Button
                             icon="pi pi-clock"
                             className="p-button-text p-button-sm"
-                            onClick={(e) => {
-                                if (lateTimeOverlayRef.current) {
-                                    lateTimeOverlayRef.current.toggle(e);
-                                }
-                            }}
+                            onClick={(e) => lateTimeOverlayRef.current?.toggle(e)}
                             style={{
                                 padding: '4px',
                                 minWidth: '12px',
@@ -256,9 +186,7 @@ const AttendanceDayCells = React.memo<AttendanceDayCellsProps>(({ user, day, onU
                                 height: '24px',
                                 color: getLateTimeColor(localLateTime)
                             }}
-                            aria-label={`${day}일 지각 시간 선택`}
-                            tooltip={localLateTime ? `${getLateTimeLabel(localLateTime)}` : '지각 시간 선택'}
-                            tooltipOptions={{ position: 'top' }}
+                            tooltip={localLateTime ? getLateTimeLabel(localLateTime) : '지각 시간 선택'}
                         />
                         <OverlayPanel ref={lateTimeOverlayRef} dismissable>
                             <div className="flex flex-column gap-2" style={{ minWidth: '150px' }}>
@@ -271,11 +199,6 @@ const AttendanceDayCells = React.memo<AttendanceDayCellsProps>(({ user, day, onU
                                             localLateTime === option.value ? 'p-button-secondary' : ''
                                         }`}
                                         onClick={() => handleLateTimeChange(option.value)}
-                                        style={{
-                                            width: '100%',
-                                            textAlign: 'left',
-                                            justifyContent: 'flex-start'
-                                        }}
                                     />
                                 ))}
                             </div>
@@ -285,41 +208,47 @@ const AttendanceDayCells = React.memo<AttendanceDayCellsProps>(({ user, day, onU
             </div>
             <div className="attendance-cell" role="cell">
                 <Dropdown
+                    className="w-full"
                     value={localHomework}
                     options={[...HOMEWORK_PROGRESS_OPTIONS]}
-                    onChange={(e: DropdownChangeEvent) => handleHomeworkChange(e.value)}
-                    itemTemplate={(option: HomeworkProgressOption) => (
+                    onChange={(e) => handleHomeworkChange(e.value)}
+                    itemTemplate={(option: NumericOption) => (
                         <Tag value={option.label} severity={getHomeworkSeverity(option.value) as any} />
                     )}
-                    valueTemplate={(option: HomeworkProgressOption | null) => {
-                        if (option) {
-                            return <Tag value={option.label} severity={getHomeworkSeverity(option.value) as any} />;
-                        }
-                        return <span>선택</span>;
-                    }}
-                    style={{ width: '100%' }}
+                    valueTemplate={(option: NumericOption | null) =>
+                        option ? (
+                            <Tag value={option.label} severity={getHomeworkSeverity(option.value) as any} />
+                        ) : (
+                            <span>선택</span>
+                        )
+                    }
                     appendTo={typeof window !== 'undefined' ? document.body : 'self'}
-                    panelStyle={{ zIndex: 9999 }}
-                    aria-label={`${day}일 숙제 진행률`}
                 />
             </div>
-            <div className="attendance-cell" role="cell">
+            <div className="attendance-cell praise-cell" role="cell">
                 <Button
                     icon="pi pi-face-smile"
                     className={`${localPraise ? 'p-button-success' : 'p-button-secondary'}`}
                     onClick={handlePraiseToggle}
-                    style={{ width: '100%', height: '100%', padding: 0 }}
                     tooltip="칭찬하기"
-                    tooltipOptions={{ position: 'top' }}
+                />
+            </div>
+            <div className="attendance-cell test-score-cell" role="cell">
+                <InputText
+                    className="w-full"
+                    type="number"
+                    value={localTestScore.toString()}
+                    onChange={(e) => handleTestScoreChange(e.target.value)}
+                    placeholder="점수"
+                    style={{ textAlign: 'right' }}
                 />
             </div>
             <div className="attendance-cell" role="cell">
                 <InputText
+                    className="w-full"
                     value={localNote || ''}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleNoteChange(e.target?.value || '')}
+                    onChange={(e) => handleNoteChange(e.target.value)}
                     placeholder=""
-                    style={{ width: '100%' }}
-                    aria-label={`${day}일 비고`}
                 />
             </div>
         </div>
@@ -327,5 +256,4 @@ const AttendanceDayCells = React.memo<AttendanceDayCellsProps>(({ user, day, onU
 });
 
 AttendanceDayCells.displayName = 'AttendanceDayCells';
-
 export default AttendanceDayCells;

@@ -13,34 +13,47 @@ import { USER_AUTH_OPTIONS } from '@/constants/user';
 import ChatPanel from '@/components/chat/ChatPanel';
 import { Badge } from 'primereact/badge';
 import { Button } from 'primereact/button';
-import useKakaoShare from '@/hooks/useKakaoShare';
+import { OverlayPanel } from 'primereact/overlaypanel';
 import { useTabStore } from '@/store/useTabStore';
 
+interface Notification {
+    id: number;
+    text: string;
+    time: string;
+    icon: string;
+    read: boolean;
+}
+
 const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
-    const { layoutConfig, layoutState, onMenuToggle, showProfileSidebar } = useContext(LayoutContext);
+    const { layoutConfig, onMenuToggle } = useContext(LayoutContext);
     const menubuttonRef = useRef(null);
     const topbarmenuRef = useRef(null);
     const topbarmenubuttonRef = useRef(null);
-    const chatButtonRef = useRef<HTMLButtonElement>(null);
     const { logout } = useAuth();
     const router = useRouter();
     const { userInfo, initializeFromStorage } = useAuthStore();
-    const [chatVisible, setChatVisible] = useState(false);
     const [mounted, setMounted] = useState(false);
-    const { shareDefault, unLink } = useKakaoShare();
-    const { addTab, activeTab, setActiveTab } = useTabStore();
-    const handleShare = () => {
-        shareDefault({
-            title: '나의 출석부',
-            description: '출석부 서비스입니다. 함께 사용해보세요!',
-            buttonText: '방문하기'
-        });
-    };
+    const { addTab, setActiveTab } = useTabStore();
+
+    // 알림 관련 상태 및 참조
+    const notificationPanelRef = useRef<OverlayPanel>(null);
+    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [unreadCount, setUnreadCount] = useState(0);
 
     useEffect(() => {
-        // 컴포넌트 마운트 시 localStorage에서 userInfo 복원
+        // 컴포넌트 마운트 시 userInfo 복원 및 임시 알림 데이터 설정
         initializeFromStorage();
         setMounted(true);
+
+        // 임시 알림 데이터
+        const mockNotifications: Notification[] = [
+            { id: 1, text: '새로운 공지가 등록되었습니다.', time: '5분 전', icon: 'pi pi-info-circle', read: false },
+            { id: 2, text: '숙제 제출 마감일이 임박했습니다.', time: '30분 전', icon: 'pi pi-exclamation-triangle', read: false },
+            { id: 3, text: '다음 주 수업 일정이 변경되었습니다.', time: '1시간 전', icon: 'pi pi-calendar', read: false },
+            { id: 4, text: '시스템 점검이 예정되어 있습니다.', time: '3시간 전', icon: 'pi pi-cog', read: true }
+        ];
+        setNotifications(mockNotifications);
+        setUnreadCount(mockNotifications.filter((n) => !n.read).length);
     }, [initializeFromStorage]);
 
     useImperativeHandle(ref, () => ({
@@ -55,43 +68,33 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
     };
 
     const goToProfile = () => {
-        addTab({
-            id: '/profile',
-            label: '프로필',
-            path: '/profile'
-        });
-        // 탭 클릭 시 해당 탭을 활성화
-        setActiveTab('/profile');
-        router.push('/profile'); // 메뉴 클릭 시 URL 업데이트
+        const tab = { id: '/profile', label: '프로필', path: '/profile' };
+        addTab(tab);
+        setActiveTab(tab.id);
+        router.push(tab.path);
+    };
+
+    const handleNotificationClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+        notificationPanelRef.current?.toggle(event);
+    };
+
+    const markAllAsRead = () => {
+        setUnreadCount(0);
+        setNotifications(notifications.map(n => ({ ...n, read: true })));
     };
 
     return (
         <div className="layout-topbar">
-            <button
-                ref={menubuttonRef}
-                type="button"
-                className="p-link layout-menu-button layout-topbar-button"
-                onClick={onMenuToggle}
-            >
+            <button ref={menubuttonRef} type="button" className="p-link layout-menu-button layout-topbar-button" onClick={onMenuToggle}>
                 <i className="pi pi-bars" />
             </button>
 
             <Link href="/" className="layout-topbar-logo">
-                <img
-                    src={`/layout/images/logo-${layoutConfig.colorScheme !== 'light' ? 'white' : 'dark'}.svg`}
-                    width="47.22px"
-                    height={'35px'}
-                    alt="logo"
-                />
+                <img src={`/layout/images/logo-${layoutConfig.colorScheme !== 'light' ? 'white' : 'dark'}.svg`} width="47.22px" height={'35px'} alt="logo" />
                 <span>출석부</span>
             </Link>
 
-            <button
-                ref={topbarmenubuttonRef}
-                type="button"
-                className="p-link layout-topbar-menu-button layout-topbar-button"
-                onClick={showProfileSidebar}
-            >
+            <button ref={topbarmenubuttonRef} type="button" className="p-link layout-topbar-menu-button layout-topbar-button" onClick={onMenuToggle}>
                 <i className="pi pi-ellipsis-v" />
             </button>
 
@@ -99,70 +102,46 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
                 <div className="layout-topbar-user-info">
                     {userInfo?.userName && <span className="user-name">{userInfo.userName}</span>}
                     {userInfo?.userId && <span className="user-id">({userInfo.userId})</span>}
-                    {userInfo?.auth && (
-                        <span className="user-auth">{getCommonLabel(USER_AUTH_OPTIONS, userInfo.auth)}</span>
-                    )}
+                    {userInfo?.auth && <span className="user-auth">{getCommonLabel(USER_AUTH_OPTIONS, userInfo.auth)}</span>}
                 </div>
             )}
 
-            {/* <button
-                ref={chatButtonRef}
-                type="button"
-                className="p-link layout-topbar-button layout-topbar-chat-button"
-                onClick={handleChatToggle}
-            >
-                <i className="pi pi-comments p-overlay-badge">
-                    {unreadCount > 0 && (
-                        <Badge value={unreadCount > 99 ? '99+' : unreadCount.toString()} severity="danger" />
-                    )}
-                </i>
-            </button> */}
-
-            <ChatPanel visible={chatVisible} onHide={() => setChatVisible(false)} target={chatButtonRef.current} />
-
-            <div
-                ref={topbarmenuRef}
-                className={classNames('layout-topbar-menu', {
-                    'layout-topbar-menu-mobile-active': layoutState.profileSidebarVisible
-                })}
-            >
-                {/* <Button
-                    className="p-link layout-topbar-button"
-                    tooltip="카카오톡 공유"
-                    tooltipOptions={{ position: 'bottom' }}
-                    onClick={handleShare}
-                >
-                    <i className="pi pi-share-alt"></i>
-                    <span>Share</span>
-                </Button> */}
-                <Button
-                    className="p-link layout-topbar-button"
-                    tooltip="프로필"
-                    tooltipOptions={{ position: 'bottom' }}
-                    onClick={() => goToProfile()}
-                >
+            <div ref={topbarmenuRef} className="layout-topbar-menu">
+                <button type="button" className="p-link layout-topbar-button" onClick={handleNotificationClick}>
+                    <i className="pi pi-bell p-overlay-badge">
+                        {unreadCount > 0 && <Badge value={unreadCount} severity="danger" />}
+                    </i>
+                    <span>알림</span>
+                </button>
+                <Button className="p-link layout-topbar-button" tooltip="프로필" tooltipOptions={{ position: 'bottom' }} onClick={goToProfile}>
                     <i className="pi pi-user"></i>
                     <span>Profile</span>
                 </Button>
-                {/* <Button
-                    className="p-link layout-topbar-button"
-                    tooltip="설정"
-                    tooltipOptions={{ position: 'bottom' }}
-                    onClick={() => router.push('/documentation')}
-                >
-                    <i className="pi pi-cog"></i>
-                    <span>Settings</span>
-                </Button> */}
-                <Button
-                    className="p-link layout-topbar-button"
-                    onClick={handleLogout}
-                    tooltip="로그아웃"
-                    tooltipOptions={{ position: 'bottom' }}
-                >
+                <Button className="p-link layout-topbar-button" onClick={handleLogout} tooltip="로그아웃" tooltipOptions={{ position: 'bottom' }}>
                     <i className="pi pi-sign-out"></i>
                     <span>Quit</span>
                 </Button>
             </div>
+
+            <OverlayPanel ref={notificationPanelRef} appendTo={typeof window !== 'undefined' ? document.body : undefined} style={{ width: '350px' }}>
+                <div className="flex flex-column gap-3">
+                    <div className="flex justify-content-between align-items-center">
+                        <span className="font-bold text-lg">알림</span>
+                        <Button label="모두 읽음" className="p-button-text" onClick={markAllAsRead} />
+                    </div>
+                    <ul className="list-none p-0 m-0 flex flex-column gap-3">
+                        {notifications.map((notification) => (
+                            <li key={notification.id} className={`flex align-items-start p-2 border-round ${!notification.read ? 'bg-blue-50' : ''}`}>
+                                <i className={`${notification.icon} text-2xl mr-3`}></i>
+                                <div className="flex-1">
+                                    <p className="m-0 text-sm">{notification.text}</p>
+                                    <span className="text-xs text-color-secondary">{notification.time}</span>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            </OverlayPanel>
         </div>
     );
 });

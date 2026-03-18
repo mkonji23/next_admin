@@ -11,6 +11,7 @@ import { ConfirmProvider } from '@/hooks/useConfirm';
 import { ModalProvider } from '@/hooks/useCustomModal';
 import KakaoScript from '@/components/KakaoScript';
 import { GlobalLoading } from '@/layout/GlobalLoading';
+import NotificationListener from '@/components/chat/NotificationListener';
 
 interface RootLayoutProps {
     children: React.ReactNode;
@@ -31,6 +32,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
                                 <ConfirmProvider>
                                     <GlobalLoading />
                                     <ModalProvider>{children}</ModalProvider>
+                                    <NotificationListener />
                                 </ConfirmProvider>
                             </LoadingProvider>
                         </ToastProvider>
