@@ -58,15 +58,12 @@ const AttendanceDayCells = React.memo<AttendanceDayCellsProps>(({ user, day, onU
     const [localLateTime, setLocalLateTime] = useState<number | null>((user[lateTimeField] as number) || null);
     const [localTestScore, setLocalTestScore] = useState<number>((user[testScoreField] as number) || 0);
 
-    const createDebouncedUpdate = (field: string) =>
-        useMemo(() => debounce((value: any) => onUpdate(user.id, field, value), 300), [user.id, field, onUpdate]);
-
-    const debouncedAttendanceUpdate = createDebouncedUpdate(attendanceField);
-    const debouncedHomeworkUpdate = createDebouncedUpdate(homeworkField);
-    const debouncedNoteUpdate = createDebouncedUpdate(noteField);
-    const debouncedPraiseUpdate = createDebouncedUpdate(praiseField);
-    const debouncedLateTimeUpdate = createDebouncedUpdate(lateTimeField);
-    const debouncedTestScoreUpdate = createDebouncedUpdate(testScoreField);
+    const debouncedAttendanceUpdate = useMemo(() => debounce((value: any) => onUpdate(user.id, attendanceField, value), 300), [user.id, attendanceField, onUpdate]);
+    const debouncedHomeworkUpdate = useMemo(() => debounce((value: any) => onUpdate(user.id, homeworkField, value), 300), [user.id, homeworkField, onUpdate]);
+    const debouncedNoteUpdate = useMemo(() => debounce((value: any) => onUpdate(user.id, noteField, value), 300), [user.id, noteField, onUpdate]);
+    const debouncedPraiseUpdate = useMemo(() => debounce((value: any) => onUpdate(user.id, praiseField, value), 300), [user.id, praiseField, onUpdate]);
+    const debouncedLateTimeUpdate = useMemo(() => debounce((value: any) => onUpdate(user.id, lateTimeField, value), 300), [user.id, lateTimeField, onUpdate]);
+    const debouncedTestScoreUpdate = useMemo(() => debounce((value: any) => onUpdate(user.id, testScoreField, value), 300), [user.id, testScoreField, onUpdate]);
 
     const handleAttendanceChange = useCallback(
         (value: string) => {
