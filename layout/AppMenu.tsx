@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useContext, useMemo } from 'react';
 import { LayoutContext } from './context/layoutcontext';
 import { MenuProvider } from './context/menucontext';
