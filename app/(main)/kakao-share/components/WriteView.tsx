@@ -87,7 +87,7 @@ const WriteView = ({ onBack, onSave, initialData }: WriteViewProps) => {
 
     const validate = (values: any) => {
         const errors: any = {};
-        if (!values.classId) errors.classId = '필수 입력 항목입니다.';
+        // if (!values.classId) errors.classId = '필수 입력 항목입니다.';
         if (!values.studentId) errors.studentId = '필수 입력 항목입니다.';
         if (!values.actualTitle) errors.actualTitle = '필수 입력 항목입니다.';
         if (!values.shareTitle) errors.shareTitle = '필수 입력 항목입니다.';
