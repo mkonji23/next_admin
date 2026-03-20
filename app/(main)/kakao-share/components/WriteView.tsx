@@ -10,15 +10,15 @@ import { Dropdown } from 'primereact/dropdown';
 import { useToast } from '@/hooks/useToast';
 import { useHttp } from '@/util/axiosInstance';
 import { ShareItem } from '../types';
-import { Student } from '@/types/class';
+import { Class, Student } from '@/types/class';
 import { compressImages } from '@/util/imageResizer';
+import StudentDropDown from '../../../../components/select/StudentDropDown';
 
 interface WriteViewProps {
     onBack: () => void;
     onSave: (values: any, files: File[]) => Promise<void>;
     initialData?: ShareItem | null;
 }
-
 const WriteView = ({ onBack, onSave, initialData }: WriteViewProps) => {
     const fileUploadRef = useRef<FileUpload>(null);
     const { showToast } = useToast();
@@ -26,19 +26,23 @@ const WriteView = ({ onBack, onSave, initialData }: WriteViewProps) => {
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [students, setStudents] = useState<Student[]>([]);
     const [isOptimizing, setIsOptimizing] = useState(false);
+    const [classes, setClasses] = useState<Class[]>([]);
 
     useEffect(() => {
-        const fetchStudents = async () => {
+        const fetchClasses = async () => {
             try {
-                const response = await http.get('/choiMath/student/getStudentList');
-                // 재원 중인 학생만 필터링
-                const enrolledStudents = (response.data || []).filter((s: Student) => !s.isWithdrawn);
-                setStudents(enrolledStudents);
+                const response = await http.get('/choiMath/class/');
+                setClasses(response.data);
             } catch (error) {
-                console.error('Error fetching students:', error);
+                console.error('Error fetching classes:', error);
+                showToast({
+                    severity: 'error',
+                    summary: '조회 실패',
+                    detail: '클래스 목록을 불러오는데 실패했습니다.'
+                });
             }
         };
-        fetchStudents();
+        fetchClasses();
     }, []);
 
     const handleDownload = async (url: string, fileName: string) => {
@@ -60,12 +64,6 @@ const WriteView = ({ onBack, onSave, initialData }: WriteViewProps) => {
     };
 
     const onSubmit = async (values: any) => {
-        const { shareTitle, shareContent, actualTitle, actualContent } = values;
-
-        if (!shareTitle || !shareContent || !actualTitle || !actualContent) {
-            showToast({ severity: 'warn', summary: '입력 확인', detail: '모든 필드를 입력해주세요.' });
-            return;
-        }
         setIsOptimizing(true);
         try {
             // 이미지 최적화 (가로/세로 최대 1200px, 품질 0.7 시도)
@@ -89,10 +87,10 @@ const WriteView = ({ onBack, onSave, initialData }: WriteViewProps) => {
 
     const validate = (values: any) => {
         const errors: any = {};
+        if (!values.classId) errors.classId = '필수 입력 항목입니다.';
+        if (!values.studentId) errors.studentId = '필수 입력 항목입니다.';
         if (!values.actualTitle) errors.actualTitle = '필수 입력 항목입니다.';
         if (!values.shareTitle) errors.shareTitle = '필수 입력 항목입니다.';
-        if (!values.shareContent) errors.shareContent = '필수 입력 항목입니다.';
-        if (!values.actualContent) errors.actualContent = '필수 입력 항목입니다.';
         return errors;
     };
 
@@ -127,11 +125,14 @@ const WriteView = ({ onBack, onSave, initialData }: WriteViewProps) => {
         setSelectedFiles([]);
     };
 
-    const studentOptions = students.map((s) => ({
-        label: `${s.name} (${s.grade} / ${s.school})`,
-        value: s.studentId,
-        student: s
-    }));
+    const handleFinalSubmit = async (e, handleSubmit, errors) => {
+        const result = await handleSubmit(e);
+        // Validation 실패 시
+        if (!result && Object.keys(errors).length > 0) {
+            showToast({ severity: 'error', summary: '입력실패', detail: '입력 항목을 확인해주세요.' });
+            return;
+        }
+    };
 
     return (
         <div className="card">
@@ -145,6 +146,7 @@ const WriteView = ({ onBack, onSave, initialData }: WriteViewProps) => {
                 initialValues={
                     initialData
                         ? {
+                              classId: initialData.classId,
                               shareTitle: initialData.shareTitle,
                               shareContent: initialData.shareContent,
                               actualTitle: initialData.actualTitle,
@@ -157,52 +159,74 @@ const WriteView = ({ onBack, onSave, initialData }: WriteViewProps) => {
                         : {}
                 }
                 validate={validate}
-                render={({ handleSubmit, submitting, form }) => (
-                    <form onSubmit={handleSubmit} className="p-fluid grid">
-                        {/* 학생 선택 섹션 */}
+                render={({ handleSubmit, submitting, form, errors }) => (
+                    <form onSubmit={(e) => handleFinalSubmit(e, handleSubmit, errors)} className="p-fluid grid">
                         <div className="field col-12">
-                            <label className="font-bold text-primary">공유 대상 학생 선택</label>
-                            <Dropdown
-                                options={studentOptions}
-                                filter
-                                showClear
-                                placeholder="학생을 검색하여 선택하세요"
-                                onChange={(e) => {
-                                    if (e.value) {
-                                        const s = students.find((std) => std.studentId === e.value);
-                                        if (s) {
-                                            form.change('studentId', s.studentId);
-                                            form.change('studentName', s.name);
-                                            form.change('telNo', s.phoneNumber || '');
-                                            form.change('pTelNo', s.parentPhoneNumber || '');
-                                        }
-                                    } else {
-                                        form.change('studentId', undefined);
-                                        form.change('studentName', undefined);
-                                        form.change('telNo', undefined);
-                                        form.change('pTelNo', undefined);
-                                    }
-                                }}
-                                value={form.getState().values.studentId}
-                            />
-                        </div>
-
-                        <div className="field col-12 md:col-3">
-                            <label htmlFor="studentId" className="font-bold">
-                                학생 ID
-                            </label>
-                            <Field name="studentId">
-                                {({ input }) => (
-                                    <InputText {...input} id="studentId" readOnly className="bg-gray-100" />
+                            <label className="font-bold text-primary">클래스 선택</label>
+                            <Field name="classId">
+                                {({ input, meta }) => (
+                                    <>
+                                        <Dropdown
+                                            {...input}
+                                            className={meta.touched && meta.error ? 'p-invalid' : ''}
+                                            options={classes}
+                                            optionLabel="className"
+                                            optionValue="classId" // value에 담길 값을 ID로 지정
+                                            dataKey="classId" // 고유 키 지정
+                                            showClear
+                                            placeholder="클래스를 선택하세요"
+                                            onChange={(e) => {
+                                                // optionValue가 설정되면 e.value는 객체가 아니라 'classId' 값이 됩니다.
+                                                const selectedId = e.value;
+                                                const selectedObj = classes.find((c) => c.classId === selectedId);
+                                                form.change('classId', selectedId);
+                                                setStudents(selectedObj?.students || []);
+                                            }}
+                                            value={form.getState().values.classId}
+                                            disabled={initialData ? true : false}
+                                        />
+                                        {meta.touched && meta.error && <small className="p-error">{meta.error}</small>}
+                                    </>
                                 )}
                             </Field>
                         </div>
-                        <div className="field col-12 md:col-3">
-                            <label htmlFor="studentName" className="font-bold">
-                                학생 이름
-                            </label>
-                            <Field name="studentName">{({ input }) => <InputText {...input} id="studentName" />}</Field>
+
+                        <div className="field col-12">
+                            <label className="font-bold text-primary">학생 선택</label>
+                            <Field name="studentId">
+                                {({ input, meta }) => (
+                                    <>
+                                        <StudentDropDown
+                                            {...input}
+                                            className={meta.touched && meta.error ? 'p-invalid' : ''}
+                                            options={students}
+                                            placeholder={
+                                                students.length > 0
+                                                    ? '학생을 검색하여 선택하세요'
+                                                    : '클래스를 먼저 선택하거나 학생을 등록해주세요'
+                                            }
+                                            onChange={(selectedStudent) => {
+                                                if (selectedStudent) {
+                                                    form.change('studentId', selectedStudent.studentId);
+                                                    form.change('studentName', selectedStudent.name);
+                                                    form.change('telNo', selectedStudent.phoneNumber || '');
+                                                    form.change('pTelNo', selectedStudent.parentPhoneNumber || '');
+                                                } else {
+                                                    form.change('studentId', undefined);
+                                                    form.change('studentName', undefined);
+                                                    form.change('telNo', undefined);
+                                                    form.change('pTelNo', undefined);
+                                                }
+                                            }}
+                                            value={form.getState().values.studentId}
+                                            disabled={students.length === 0 || initialData ? true : false}
+                                        />
+                                        {meta.touched && meta.error && <small className="p-error">{meta.error}</small>}
+                                    </>
+                                )}
+                            </Field>
                         </div>
+
                         <div className="field col-12 md:col-3">
                             <label htmlFor="telNo" className="font-bold">
                                 학생 연락처

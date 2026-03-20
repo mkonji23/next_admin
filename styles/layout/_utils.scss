@@ -48,6 +48,17 @@
   display: block; /* Helps ensure text-overflow works correctly */
 }
 
+@for $i from 1 through 5 {
+  .truncate-cell-#{$i * 100} {
+    max-width: #{$i * 100}px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;
+  }
+}
+/* 결과: .truncate-cell-100, -200, -300, -400, -500 자동 생성 */
+
 .field-highlight {
   color: #1976d2;
   font-weight: bold;

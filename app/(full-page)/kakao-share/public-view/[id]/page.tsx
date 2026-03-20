@@ -5,15 +5,11 @@ import { useParams } from 'next/navigation';
 import { useHttp } from '@/util/axiosInstance';
 import { Card } from 'primereact/card';
 import { ProgressSpinner } from 'primereact/progressspinner';
-import { InputTextarea } from 'primereact/inputtextarea';
-import { Button } from 'primereact/button';
-import dayjs from 'dayjs';
 import { ShareItem } from '@/app/(main)/kakao-share/types';
 import { useLoading } from '@/layout/context/loadingcontext';
-import { Image } from 'primereact/image';
+import KakaoShareViewContent from '@/components/kakaoShare/KakaoShareViewContent'; // Import the new component
 
-// 공개 공유용 페이지
-const PublicShareViewPage = () => {
+const PublicShareViewPage: React.FC = () => {
     const params = useParams();
     const id = params.id as string;
 
@@ -41,11 +37,7 @@ const PublicShareViewPage = () => {
         }
     };
 
-    const formatDate = (dateStr?: string) => {
-        if (!dateStr) return '';
-        return dayjs(dateStr).format('YYYY-MM-DD HH:mm');
-    };
-
+    // Templates defined directly in the component
     const loadingTemplate = (
         <div className="flex align-items-center justify-content-center min-h-screen">
             <ProgressSpinner />
@@ -81,105 +73,38 @@ const PublicShareViewPage = () => {
                 }
             } catch (error) {
                 console.error('Fetch detail error:', error);
+                setIsFetched(true); // Mark as fetched even on error
             }
         };
 
         if (id) {
             fetchDetail();
+        } else {
+            setIsFetched(true); // If no ID, it's 'fetched' in the sense that we can't fetch anything
         }
     }, [id]);
 
-    return (
-        <>
-            {loading && loadingTemplate}
+    if (loading) {
+        return loadingTemplate;
+    }
 
-            {!loading && shareData && (
-                <div className="layout-content p-3 md:p-5 flex justify-content-center min-h-screen bg-gray-50">
-                    <div className="w-full" style={{ maxWidth: '800px' }}>
-                        <Card title={shareData?.actualTitle} className="shadow-4 mb-4">
-                            <div className="flex justify-content-between align-items-center mb-4 text-sm text-gray-500">
-                                <div className="flex align-items-center gap-2">
-                                    <span>등록일: {formatDate(shareData?.createdDate)}</span>
-                                </div>
-                                {shareData?.studentName && (
-                                    <span>
-                                        공유 대상: <span className="text-900 font-bold">{shareData.studentName}</span>
-                                    </span>
-                                )}
-                            </div>
+    if (!shareData && isFetched) { // Render noDataTemplate only after fetching attempt
+        return noDataTempate;
+    }
 
-                            <div className="mb-6">
-                                <InputTextarea
-                                    value={shareData?.actualContent}
-                                    rows={10}
-                                    readOnly
-                                    autoResize
-                                    className="w-full border-none surface-50 p-3 line-height-3 text-700 font-sans"
-                                    style={{ resize: 'none', background: 'transparent' }}
-                                />
-                            </div>
+    // Render the shared content component
+    if (shareData) {
+        return (
+            <KakaoShareViewContent
+                shareData={shareData}
+                images={images}
+                downloadImageFn={downloadImage}
+                // pageType is undefined for public view
+            />
+        );
+    }
 
-                            {images && images.length > 0 && (
-                                <div className="flex flex-column gap-3">
-                                    <h6 className="font-bold border-bottom-1 surface-border pb-2 mb-3">
-                                        첨부 이미지 (클릭 시 확대)
-                                    </h6>
-
-                                    <div className="grid">
-                                        {images.map((img, idx) => {
-                                            return (
-                                                <div key={idx} className="col-12 sm:col-6 lg:col-4 mb-3">
-                                                    <div className="relative border-round overflow-hidden shadow-2 surface-card h-full">
-                                                        <div className="flex align-items-center justify-content-center cursor-pointer hover:shadow-4 transition-duration-200">
-                                                            <Image
-                                                                src={img.thumbnailImageSrc}
-                                                                alt={`share-img-${idx}`}
-                                                                width="100%"
-                                                                preview
-                                                            />
-                                                        </div>
-                                                        <Button
-                                                            icon="pi pi-download"
-                                                            className="p-button-rounded p-button-secondary p-button-text p-button-sm absolute top-0 left-0 m-2"
-                                                            style={{
-                                                                background: 'rgba(255,255,255,0.7)',
-                                                                color: '#333',
-                                                                width: '1.75rem',
-                                                                height: '1.75rem'
-                                                            }}
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                downloadImage(img.itemImageSrc, idx);
-                                                            }}
-                                                            tooltip="다운로드"
-                                                        />
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            )}
-                        </Card>
-
-                        <div className="text-center py-4 flex flex-column align-items-center gap-2">
-                            <img
-                                src="/layout/images/bae.jpg"
-                                alt="Footer Logo"
-                                style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover' }}
-                                className="shadow-2"
-                            />
-                            <div className="text-gray-400 text-xs">
-                                &copy; {new Date().getFullYear()} chochoMath. All rights reserved.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {!loading && isFetched && !shareData && noDataTempate}
-        </>
-    );
+    return null; // Should not reach here if logic is correct, but good for safety
 };
 
 export default PublicShareViewPage;

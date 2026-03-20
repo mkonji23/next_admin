@@ -35,6 +35,7 @@ const KakaoSharePage = () => {
 
     const fetchShares = async () => {
         try {
+            setFirst(0);
             const res = await http.get('/choiMath/share/list');
             setShares(res.data || []);
         } catch (error) {
@@ -82,7 +83,8 @@ const KakaoSharePage = () => {
                     multipartData.append('actualContent', formData.actualContent);
 
                     // 학생 정보 추가
-                    if (formData.studentId) multipartData.append('studentId', formData.studentId);
+                    multipartData.append('classId', formData.classId);
+                    multipartData.append('studentId', formData.studentId);
                     if (formData.studentName) multipartData.append('studentName', formData.studentName);
                     if (formData.telNo) multipartData.append('telNo', formData.telNo);
                     if (formData.pTelNo) multipartData.append('pTelNo', formData.pTelNo);
@@ -97,6 +99,7 @@ const KakaoSharePage = () => {
                 } else {
                     // 2. 이미지가 없는 경우: 일반 JSON 사용 (req.body로 전송)
                     const updateData = {
+                        classId: formData.classId,
                         shareTitle: formData.shareTitle,
                         shareContent: formData.shareContent,
                         actualTitle: formData.actualTitle,
@@ -113,13 +116,14 @@ const KakaoSharePage = () => {
             } else {
                 // [생성 모드]: 멀티파트 전송
                 const multipartData = new FormData();
+                multipartData.append('classId', formData.classId);
+                multipartData.append('studentId', formData.studentId);
                 multipartData.append('shareTitle', formData.shareTitle);
                 multipartData.append('shareContent', formData.shareContent);
                 multipartData.append('actualTitle', formData.actualTitle);
                 multipartData.append('actualContent', formData.actualContent);
 
                 // 학생 정보 추가
-                if (formData.studentId) multipartData.append('studentId', formData.studentId);
                 if (formData.studentName) multipartData.append('studentName', formData.studentName);
                 if (formData.telNo) multipartData.append('telNo', formData.telNo);
                 if (formData.pTelNo) multipartData.append('pTelNo', formData.pTelNo);
@@ -223,6 +227,7 @@ const KakaoSharePage = () => {
     };
 
     const handleEdit = (item: ShareItem) => {
+        console.log('item', item);
         setSelectedShare(item);
         setView('WRITE');
         window.history.pushState({ view: 'WRITE', selectedShare: item }, '');

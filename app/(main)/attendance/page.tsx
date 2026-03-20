@@ -14,7 +14,7 @@ import dayjs from 'dayjs';
 import AttendanceRow from './components/AttendanceRow';
 import AttendanceTableHeader from './components/AttendanceTableHeader';
 
-interface ClassOption {
+export interface ClassOption {
     label: string;
     value: string;
     classId: string;

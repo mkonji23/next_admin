@@ -8,6 +8,7 @@ import { Divider } from 'primereact/divider';
 import { Tag } from 'primereact/tag';
 import { ShareItem } from '../types';
 import { useToast } from '@/hooks/useToast';
+import dayjs from 'dayjs';
 
 interface DetailViewProps {
     selectedShare: ShareItem | null;
@@ -99,24 +100,38 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete, onCopyTo
                             </div>
 
                             {/* 학생 정보 요약 */}
-                            {(selectedShare.studentName || selectedShare.telNo || selectedShare.pTelNo) && (
-                                <div className="flex flex-wrap gap-4 mb-3 p-3 surface-100 border-round text-sm">
-                                    {selectedShare.studentName && (
-                                        <div>
-                                            <span className="text-500 mr-2">공유 대상:</span>
-                                            <span className="text-900 font-bold">{selectedShare.studentName}</span>
-                                        </div>
-                                    )}
-                                    <div>
-                                        <span className="text-500 mr-2">학생 연락처:</span>
-                                        <span className="text-900">{selectedShare?.telNo || '등록 필요'}</span>
-                                    </div>
-                                    <div>
-                                        <span className="text-500 mr-2">학부모 연락처:</span>
-                                        <span className="text-900">{selectedShare?.pTelNo || '등록 필요'}</span>
-                                    </div>
+                            <div className="flex flex-wrap gap-4 mb-3 p-3 surface-100 border-round text-sm">
+                                <div>
+                                    <span className="text-500 mr-2">클래스:</span>
+                                    <span className="text-900 font-bold">{selectedShare?.className || ''}</span>
                                 </div>
-                            )}
+                                <div>
+                                    <span className="text-500 mr-2">학생 이름:</span>
+                                    <span className="text-900 font-bold">{selectedShare?.studentName || ''}</span>
+                                </div>
+                                <div>
+                                    <span className="text-500 mr-2">학생 연락처:</span>
+                                    <span className="text-900">{selectedShare?.telNo || '등록 필요'}</span>
+                                </div>
+                                <div>
+                                    <span className="text-500 mr-2">학부모 연락처:</span>
+                                    <span className="text-900">{selectedShare?.pTelNo || '등록 필요'}</span>
+                                </div>
+                                <div>
+                                    <span className="text-500 mr-2">등록일:</span>
+                                    <span className="text-900">
+                                        {dayjs(selectedShare?.createdDate).format('YYYY-MM-DD hh:mm:ss') || ''}
+                                    </span>
+                                </div>
+                                {selectedShare?.updatedDate && (
+                                    <div>
+                                        <span className="text-500 mr-2">수정일:</span>
+                                        <span className="text-900">
+                                            {dayjs(selectedShare?.updatedDate).format('YYYY-MM-DD hh:mm:ss') || ''}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
 
                             <div
                                 className="p-3 surface-50 border-round text-700 line-height-3"

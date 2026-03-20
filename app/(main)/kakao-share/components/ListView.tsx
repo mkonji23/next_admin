@@ -124,7 +124,7 @@ const ListView = ({
     const titleBodyTemplate = (rowData: ShareItem) => {
         return (
             <span
-                className="text-primary font-bold cursor-pointer hover:underline"
+                className="truncate-cell-300 text-primary font-bold cursor-pointer hover:underline"
                 onClick={(e) => {
                     e.stopPropagation();
                     onRowSelect(rowData._id);
@@ -235,28 +235,36 @@ const ListView = ({
                 first={first}
                 onPage={(e) => setFirst(e.first)}
             >
-                <Column header="No." body={(data, options) => options.rowIndex + 1} style={{ width: '1rem' }} />
-                <Column selectionMode="multiple" headerStyle={{ width: '3rem' }}></Column>
                 <Column
-                    field="shareTitle"
-                    header="공유 제목 (카카오)"
-                    body={titleBodyTemplate}
-                    style={{ width: '25%' }}
-                    sortable
+                    header="No."
+                    body={(data, options) => options.rowIndex + 1}
+                    style={{ width: '1rem' }}
+                    align={'right'}
                 />
-                <Column field="actualTitle" header="게시글 제목" sortable />
-                <Column field="studentName" header="공유 대상" sortable />
-                <Column field="telNo" header="학생 연락처" sortable />
-                <Column field="pTelNo" header="학부모 연락처" sortable />
+                <Column selectionMode="multiple" headerStyle={{ width: '1rem' }}></Column>
+                <Column field="shareTitle" header="공유 제목 (카카오)" body={titleBodyTemplate} sortable />
+                {/* <Column field="actualTitle" header="게시글 제목" sortable /> */}
+                <Column field="studentName" header="학생" headerStyle={{ minWidth: '80px' }} sortable />
+                <Column field="className" header="클래스" headerStyle={{ minWidth: '100px' }} sortable />
+                <Column field="telNo" header="학생 연락처" headerStyle={{ minWidth: '100px' }} sortable />
+                <Column field="pTelNo" header="학부모 연락처" headerStyle={{ minWidth: '150px' }} sortable />
 
+                <Column header="공유" body={shareBodyTemplate} />
+                <Column header="작업" body={actionBodyTemplate} />
                 <Column
                     field="createdDate"
                     header="등록일"
+                    headerStyle={{ minWidth: '150px' }}
                     body={(rowData) => formatDate(rowData.createdDate)}
                     sortable
                 />
-                <Column header="공유" body={shareBodyTemplate} />
-                <Column header="작업" body={actionBodyTemplate} />
+                <Column
+                    field="updatedDate"
+                    header="수정일"
+                    headerStyle={{ minWidth: '150px' }}
+                    body={(rowData) => formatDate(rowData.updatedDate)}
+                    sortable
+                />
             </DataTable>
         </div>
     );
