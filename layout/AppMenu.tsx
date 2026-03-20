@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useContext, useMemo } from 'react';
+import React, { useContext, useMemo, useState, useEffect } from 'react';
 import { LayoutContext } from './context/layoutcontext';
 import { MenuProvider } from './context/menucontext';
 import AppMenuitem from './AppMenuitem';
@@ -8,16 +8,22 @@ import { AppMenuModel } from '@/constants/menu';
 import useAuthStore from '@/store/useAuthStore';
 
 const AppMenu = () => {
-    const { layoutConfig } = useContext(LayoutContext);
     const { userInfo } = useAuthStore();
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     const model = useMemo(() => {
-        // 관리자는 모든 메뉴를 봅니다.
-        if (userInfo.auth === 'admin') return AppMenuModel;
-        // 권한 정보가 아예 없는 경우(레거시 사용자 등) 모든 메뉴를 표시합니다.
-        // 빈 배열([])인 경우는 접근 권한이 하나도 없는 것으로 간주하여 필터링합니다.
-        if (userInfo.menuPermissions === undefined) return AppMenuModel;
+        console.log('userInfo', userInfo);
+        // 서버 렌더링 시점이나 클라이언트의 첫 번째 렌더링(하이드레이션) 시점에는
+        // 전체 메뉴(AppMenuModel)를 반환하여 서버 HTML과 일치시킵니다.
+        if (!mounted || userInfo.auth === 'admin' || userInfo.menuPermissions === undefined) {
+            return AppMenuModel;
+        }
 
+        // 브라우저에 마운트된 이후에만 실제 권한에 따른 필터링을 수행합니다.
         return AppMenuModel.map((group) => {
             if (!group.items) return group;
 
@@ -31,7 +37,7 @@ const AppMenu = () => {
                 items: visibleItems
             };
         }).filter((group) => group.items && group.items.length > 0);
-    }, [userInfo.auth, userInfo.menuPermissions]);
+    }, [userInfo.auth, userInfo.menuPermissions, mounted]);
 
     return (
         <MenuProvider>
