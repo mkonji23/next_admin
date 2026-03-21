@@ -203,8 +203,20 @@ const ListView = ({
         <div className="card">
             <div className="flex justify-content-between align-items-center mb-4">
                 <div className="flex gap-2">
+                    <Button severity="success" label="글쓰기" icon="pi pi-pencil" onClick={onNewPost} />
                     <Button
-                        label={selectedItems.length > 0 ? `선택 삭제 (${selectedItems.length})` : '선택 삭제'}
+                        label={'복사'}
+                        icon="pi pi-copy"
+                        className="p-button-info p-button-outlined"
+                        onClick={() => {
+                            if (selectedItems.length !== 1) return;
+                            onCopyToNew(selectedItems[0]);
+                        }}
+                        disabled={selectedItems.length !== 1}
+                    />
+
+                    <Button
+                        label={selectedItems.length > 0 ? `삭제 (${selectedItems.length})` : '삭제'}
                         icon="pi pi-trash"
                         className="p-button-danger p-button-outlined"
                         onClick={() => {
@@ -213,7 +225,6 @@ const ListView = ({
                         }}
                         disabled={selectedItems.length === 0}
                     />
-                    <Button label="글쓰기" icon="pi pi-pencil" onClick={onNewPost} />
                     <Button label="조회" icon="pi pi-search" onClick={onSearch} />
                 </div>
             </div>
