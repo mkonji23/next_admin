@@ -78,9 +78,9 @@ const KakaoSharePage = () => {
                     // 1. 새 이미지가 포함된 경우: FormData 사용 (multipart/form-data)
                     const multipartData = new FormData();
                     multipartData.append('shareTitle', formData.shareTitle);
-                    multipartData.append('shareContent', formData.shareContent);
+                    multipartData.append('shareContent', formData.shareContent || '');
                     multipartData.append('actualTitle', formData.actualTitle);
-                    multipartData.append('actualContent', formData.actualContent);
+                    multipartData.append('actualContent', formData.actualContent || '');
 
                     // 학생 정보 추가
                     multipartData.append('classId', formData.classId);
@@ -101,9 +101,9 @@ const KakaoSharePage = () => {
                     const updateData = {
                         classId: formData.classId,
                         shareTitle: formData.shareTitle,
-                        shareContent: formData.shareContent,
+                        shareContent: formData.shareContent || '',
                         actualTitle: formData.actualTitle,
-                        actualContent: formData.actualContent,
+                        actualContent: formData.actualContent || '',
                         studentId: formData.studentId,
                         studentName: formData.studentName,
                         telNo: formData.telNo,
@@ -119,9 +119,9 @@ const KakaoSharePage = () => {
                 multipartData.append('classId', formData.classId);
                 multipartData.append('studentId', formData.studentId);
                 multipartData.append('shareTitle', formData.shareTitle);
-                multipartData.append('shareContent', formData.shareContent);
+                multipartData.append('shareContent', formData.shareContent || '');
                 multipartData.append('actualTitle', formData.actualTitle);
-                multipartData.append('actualContent', formData.actualContent);
+                multipartData.append('actualContent', formData.actualContent || '');
 
                 // 학생 정보 추가
                 if (formData.studentName) multipartData.append('studentName', formData.studentName);

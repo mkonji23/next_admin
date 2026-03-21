@@ -162,7 +162,9 @@ const WriteView = ({ onBack, onSave, initialData }: WriteViewProps) => {
                 render={({ handleSubmit, submitting, form, errors }) => (
                     <form onSubmit={(e) => handleFinalSubmit(e, handleSubmit, errors)} className="p-fluid grid">
                         <div className="field col-12">
-                            <label className="font-bold text-primary">클래스 선택</label>
+                            <label className="font-bold text-primary">
+                                클래스 선택 <span className="text-red-500">*</span>
+                            </label>
                             <Field name="classId">
                                 {({ input, meta }) => (
                                     <>
@@ -192,7 +194,9 @@ const WriteView = ({ onBack, onSave, initialData }: WriteViewProps) => {
                         </div>
 
                         <div className="field col-12">
-                            <label className="font-bold text-primary">학생 선택</label>
+                            <label className="font-bold text-primary">
+                                학생 선택 <span className="text-red-500">*</span>
+                            </label>
                             <Field name="studentId">
                                 {({ input, meta }) => (
                                     <>
@@ -240,10 +244,11 @@ const WriteView = ({ onBack, onSave, initialData }: WriteViewProps) => {
                             <Field name="pTelNo">{({ input }) => <InputText {...input} id="pTelNo" />}</Field>
                         </div>
 
-                        <div className="field col-12 md:col-6">
+                        <div className="field col-12 ">
                             <label htmlFor="shareTitle" className="font-bold">
                                 카카오 공유 제목
                             </label>
+                            <span className="text-red-500">*</span>
                             <Field name="shareTitle">
                                 {({ input, meta }) => (
                                     <>
@@ -279,7 +284,7 @@ const WriteView = ({ onBack, onSave, initialData }: WriteViewProps) => {
 
                         <div className="field col-12 md:col-6">
                             <label htmlFor="actualTitle" className="font-bold">
-                                실제 게시글 제목
+                                실제 게시글 제목 <span className="text-red-500">*</span>
                             </label>
                             <Field name="actualTitle">
                                 {({ input, meta }) => (
