@@ -265,14 +265,14 @@ const ListView = ({
                 <Column
                     field="createdDate"
                     header="등록일"
-                    headerStyle={{ minWidth: '150px' }}
+                    headerStyle={{ minWidth: '160px' }}
                     body={(rowData) => formatDate(rowData.createdDate)}
                     sortable
                 />
                 <Column
                     field="updatedDate"
                     header="수정일"
-                    headerStyle={{ minWidth: '150px' }}
+                    headerStyle={{ minWidth: '160px' }}
                     body={(rowData) => formatDate(rowData.updatedDate)}
                     sortable
                 />

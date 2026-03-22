@@ -250,6 +250,9 @@ const KakaoSharePage = () => {
 
         const newItemData: Partial<ShareItem> = {
             ...rest,
+            classId: '',
+            studentId: '',
+            studentName: '',
             actualTitle: `${item.actualTitle}`,
             shareTitle: `${item.shareTitle}`
         };

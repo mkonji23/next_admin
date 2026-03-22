@@ -2,7 +2,7 @@
 
 import { useLoading } from '@/layout/context/loadingcontext';
 import Cookies from 'js-cookie';
-import axios, { AxiosInstance, AxiosResponse } from 'axios';
+import axios, { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { useToast } from '@/hooks/useToast';
 import { useRouter } from 'next/navigation';
 
@@ -18,15 +18,18 @@ export const useHttp = (): AxiosInstance => {
     });
 
     const { setLoading } = useLoading();
+
     // 요청 인터셉터 (Request Interceptor)
     axiosInstance.interceptors.request.use(
-        (config) => {
+        (config: InternalAxiosRequestConfig) => {
             // App route 호출
             if (config.url?.startsWith('/app')) {
                 config.baseURL = '/api';
                 config.url = config.url.replace('/app', '');
             }
-            setLoading(true);
+            if (!config.disableLoading) {
+                setLoading(true);
+            }
             const token = Cookies.get('token');
             if (token) {
                 config.headers.Authorization = `Bearer ${token}`; // 헤더에 토큰 추가
@@ -34,7 +37,11 @@ export const useHttp = (): AxiosInstance => {
             return config;
         },
         (error) => {
-            setLoading(false);
+            // 요청 에러 시에는 disableLoading 여부와 관계없이 로딩을 중단해야 할 수 있습니다.
+            const config = error.config;
+            if (!config?.disableLoading) {
+                setLoading(false);
+            }
             return Promise.reject(error);
         }
     );
@@ -42,11 +49,17 @@ export const useHttp = (): AxiosInstance => {
     // 응답 인터셉터 (Response Interceptor)
     axiosInstance.interceptors.response.use(
         <T>(response: AxiosResponse<T>) => {
-            setLoading(false);
+            const config = response.config;
+            if (!config.disableLoading) {
+                setLoading(false);
+            }
             return response;
         },
         (error) => {
-            setLoading(false);
+            const config = error.config;
+            if (!config?.disableLoading) {
+                setLoading(false);
+            }
             if (error.response && axios.isAxiosError(error)) {
                 const { status } = error.response;
                 const exceptUrl = ['/choiMath/share/detail-with-auth'];

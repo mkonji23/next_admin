@@ -14,14 +14,45 @@ import { Badge } from 'primereact/badge';
 import { Button } from 'primereact/button';
 import { OverlayPanel } from 'primereact/overlaypanel';
 import { useTabStore } from '@/store/useTabStore';
+import { useNotificationStore } from '@/store/useNotificationStore';
+import { useHttp } from '@/util/axiosInstance';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import 'dayjs/locale/ko';
 
-interface Notification {
-    id: number;
-    text: string;
-    time: string;
-    icon: string;
-    read: boolean;
-}
+dayjs.extend(relativeTime);
+dayjs.locale('ko');
+
+const getNotificationIcon = (type: string): string => {
+    switch (type) {
+        case 'SHARE_CREATED':
+            return 'pi pi-share-alt';
+        case 'NEW_MESSAGE':
+            return 'pi pi-envelope';
+        case 'TEST_RESULT':
+            return 'pi pi-chart-bar';
+        default:
+            return 'pi pi-info-circle';
+    }
+};
+
+const formatNotificationTime = (date: string): string => {
+    const now = dayjs();
+    const notificationTime = dayjs(date);
+    const diffMinutes = now.diff(notificationTime, 'minute');
+    const diffHours = now.diff(notificationTime, 'hour');
+
+    if (diffMinutes < 5) {
+        return '방금 전';
+    }
+    if (diffMinutes < 60) {
+        return `${diffMinutes}분 전`;
+    }
+    if (diffHours < 3) {
+        return `${diffHours}시간 전`;
+    }
+    return notificationTime.format('YYYY-MM-DD HH:mm');
+};
 
 const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
     const { layoutConfig, layoutState, onMenuToggle, showProfileSidebar } = useContext(LayoutContext);
@@ -33,55 +64,35 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
     const { userInfo, initializeFromStorage } = useAuthStore();
     const [mounted, setMounted] = useState(false);
     const { addTab, setActiveTab } = useTabStore();
-
-    // 알림 관련 상태 및 참조
+    const { notifications, setNotifications } = useNotificationStore();
     const notificationPanelRef = useRef<OverlayPanel>(null);
-    const [notifications, setNotifications] = useState<Notification[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
+    const http = useHttp();
 
     useEffect(() => {
-        // 컴포넌트 마운트 시 userInfo 복원 및 임시 알림 데이터 설정
         initializeFromStorage();
         setMounted(true);
 
-        // 임시 알림 데이터
-        const mockNotifications: Notification[] = [
-            { id: 1, text: '새로운 공지가 등록되었습니다.', time: '5분 전', icon: 'pi pi-info-circle', read: false },
-            {
-                id: 2,
-                text: '숙제 제출 마감일이 임박했습니다.',
-                time: '30분 전',
-                icon: 'pi pi-exclamation-triangle',
-                read: false
-            },
-            {
-                id: 3,
-                text: '다음 주 수업 일정이 변경되었습니다.',
-                time: '1시간 전',
-                icon: 'pi pi-calendar',
-                read: false
-            },
-            { id: 4, text: '시스템 점검이 예정되어 있습니다.', time: '3시간 전', icon: 'pi pi-cog', read: true }
-        ];
-        setNotifications(mockNotifications);
-        setUnreadCount(mockNotifications.filter((n) => !n.read).length);
+        const fetchNotifications = async () => {
+            if (!userInfo.userId) return;
+            try {
+                const response = await http.get(`/choiMath/notifications/${userInfo?.userId}`, {
+                    disableLoading: true
+                });
+                setNotifications(response.data);
+            } catch (error) {
+                console.error('Failed to fetch notifications:', error);
+            }
+        };
 
-        // // 5초마다 새로운 알림을 시뮬레이션하는 리스너
-        // const interval = setInterval(() => {
-        //     const newNotification: Notification = {
-        //         id: Date.now(),
-        //         text: '새로운 테스트 결과가 도착했습니다.',
-        //         time: '방금 전',
-        //         icon: 'pi pi-check-square',
-        //         read: false
-        //     };
-        //     setNotifications((prev) => [newNotification, ...prev]);
-        //     setUnreadCount((prev) => prev + 1);
-        // }, 5000);
-
-        // 컴포넌트 언마운트 시 인터벌 정리
-        // return () => clearInterval(interval);
+        fetchNotifications();
     }, [initializeFromStorage]);
+
+    useEffect(() => {
+        if (notifications) {
+            setUnreadCount(notifications.filter((n) => !n.isRead).length);
+        }
+    }, [notifications]);
 
     useImperativeHandle(ref, () => ({
         menubutton: menubuttonRef.current,
@@ -105,9 +116,22 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
         notificationPanelRef.current?.toggle(event);
     };
 
-    const markAllAsRead = () => {
-        setUnreadCount(0);
-        setNotifications(notifications.map((n) => ({ ...n, read: true })));
+    const markAllAsRead = async () => {
+        const unreadNotifications = notifications.filter((n) => !n.isRead);
+        if (unreadNotifications.length === 0) return;
+
+        try {
+            await http.post(
+                `/choiMath/notifications/read`,
+                { notificationIds: notifications.map((item) => item._id) },
+                { disableLoading: true }
+            );
+            // 로컬 상태 업데이트
+            const updatedNotifications = notifications.map((n) => ({ ...n, isRead: true }));
+            setNotifications(updatedNotifications);
+        } catch (error) {
+            console.error('Failed to mark all notifications as read:', error);
+        }
     };
 
     return (
@@ -196,20 +220,30 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
                         className="list-none p-0 m-0 flex flex-column gap-3"
                         style={{ maxHeight: '400px', overflowY: 'auto' }}
                     >
-                        {notifications.map((notification) => (
-                            <li
-                                key={notification.id}
-                                className={`flex align-items-start p-2 border-round ${
-                                    !notification.read ? 'bg-blue-50' : ''
-                                }`}
-                            >
-                                <i className={`${notification.icon} text-2xl mr-3`}></i>
-                                <div className="flex-1">
-                                    <p className="m-0 text-sm">{notification.text}</p>
-                                    <span className="text-xs text-color-secondary">{notification.time}</span>
-                                </div>
-                            </li>
-                        ))}
+                        {notifications?.filter((item) => !item.isRead).length > 0 ? (
+                            notifications
+                                ?.filter((item) => !item.isRead)
+                                ?.map((notification) => (
+                                    <li
+                                        key={notification?._id}
+                                        className={`flex align-items-start p-2 border-round ${
+                                            !notification.isRead ? 'bg-blue-50' : ''
+                                        }`}
+                                    >
+                                        <i className={`${getNotificationIcon(notification.type)} text-2xl mr-3`}></i>
+                                        <div className="flex-1">
+                                            <p className="m-0 text-sm">{notification?.content}</p>
+                                            <span className="text-xs text-color-secondary">
+                                                {formatNotificationTime(notification?.createdAt)}
+                                            </span>
+                                        </div>
+                                    </li>
+                                ))
+                        ) : (
+                            <div className="flex align-items-center justify-content-center p-3 text-color-secondary">
+                                알림이 없습니다.
+                            </div>
+                        )}
                     </ul>
                 </div>
             </OverlayPanel>

@@ -138,13 +138,13 @@ const WriteView = ({ onBack, onSave, initialData }: WriteViewProps) => {
         <div className="card">
             <div className="flex align-items-center mb-4">
                 <Button type="button" icon="pi pi-arrow-left" className="p-button-text mr-2" onClick={onBack} />
-                <h5>{initialData ? '게시글 수정' : '새 게시글 작성'}</h5>
+                <h5>{initialData?.classId ? '게시글 수정' : '새 게시글 작성'}</h5>
             </div>
 
             <Form
                 onSubmit={onSubmit}
                 initialValues={
-                    initialData
+                    initialData?.classId
                         ? {
                               classId: initialData.classId,
                               shareTitle: initialData.shareTitle,
@@ -185,7 +185,7 @@ const WriteView = ({ onBack, onSave, initialData }: WriteViewProps) => {
                                                 setStudents(selectedObj?.students || []);
                                             }}
                                             value={form.getState().values.classId}
-                                            disabled={initialData ? true : false}
+                                            disabled={initialData?.classId ? true : false}
                                         />
                                         {meta.touched && meta.error && <small className="p-error">{meta.error}</small>}
                                     </>
@@ -223,7 +223,7 @@ const WriteView = ({ onBack, onSave, initialData }: WriteViewProps) => {
                                                 }
                                             }}
                                             value={form.getState().values.studentId}
-                                            disabled={students.length === 0 || initialData ? true : false}
+                                            disabled={students.length === 0 || initialData?.classId ? true : false}
                                         />
                                         {meta.touched && meta.error && <small className="p-error">{meta.error}</small>}
                                     </>
@@ -384,9 +384,9 @@ const WriteView = ({ onBack, onSave, initialData }: WriteViewProps) => {
                         <div className="col-12 mt-4">
                             <Button
                                 type="submit"
-                                label={initialData ? '수정 내용 저장' : '새 게시글 등록'}
-                                icon={initialData ? 'pi pi-save' : 'pi pi-check'}
-                                className={initialData ? 'p-button-info' : 'p-button-primary'}
+                                label={initialData?.classId ? '수정 내용 저장' : '새 게시글 등록'}
+                                icon={initialData?.classId ? 'pi pi-save' : 'pi pi-check'}
+                                className={initialData?.classId ? 'p-button-info' : 'p-button-primary'}
                                 disabled={submitting || isOptimizing}
                                 loading={isOptimizing}
                             />

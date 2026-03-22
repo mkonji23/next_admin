@@ -37,7 +37,7 @@ const AppMenu = () => {
                 items: visibleItems
             };
         }).filter((group) => group.items && group.items.length > 0);
-    }, [userInfo.auth, userInfo.menuPermissions, mounted]);
+    }, [userInfo.auth, mounted]);
 
     return (
         <MenuProvider>
