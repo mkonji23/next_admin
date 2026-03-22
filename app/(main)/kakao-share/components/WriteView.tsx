@@ -226,7 +226,7 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
                                                 setStudents(selectedObj?.students || []);
                                             }}
                                             value={form.getState().values.classId}
-                                            disabled={editData ? true : false}
+                                            disabled={editData && !isCopy ? true : false}
                                         />
                                         {meta.touched && meta.error && <small className="p-error">{meta.error}</small>}
                                     </>

@@ -180,12 +180,22 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
                     'layout-topbar-menu-mobile-active': layoutState.profileSidebarVisible
                 })}
             >
-                <button type="button" className="p-link layout-topbar-button" onClick={handleNotificationClick}>
+                <Button
+                    className="p-link layout-topbar-button"
+                    tooltip="알림"
+                    tooltipOptions={{ position: 'bottom' }}
+                    onClick={handleNotificationClick}
+                >
                     <i className="pi pi-bell p-overlay-badge">
                         {unreadCount > 0 && <Badge value={unreadCount} severity="danger" />}
                     </i>
                     <span>알림</span>
-                </button>
+                </Button>
+                <div>
+                    {!layoutState.profileSidebarVisible && unreadCount > 0 && (
+                        <Badge style={{ marginLeft: '-12px' }} value={unreadCount} severity="danger" />
+                    )}
+                </div>
                 <Button
                     className="p-link layout-topbar-button"
                     tooltip="프로필"
@@ -193,7 +203,7 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
                     onClick={goToProfile}
                 >
                     <i className="pi pi-user"></i>
-                    <span>Profile</span>
+                    <span>프로필</span>
                 </Button>
                 <Button
                     className="p-link layout-topbar-button"
@@ -202,7 +212,7 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
                     tooltipOptions={{ position: 'bottom' }}
                 >
                     <i className="pi pi-sign-out"></i>
-                    <span>Quit</span>
+                    <span>로그아웃</span>
                 </Button>
             </div>
 
