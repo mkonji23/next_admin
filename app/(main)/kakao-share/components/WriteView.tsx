@@ -16,6 +16,7 @@ import StudentDropDown from '../../../../components/select/StudentDropDown';
 import Lightbox from 'yet-another-react-lightbox';
 import Download from 'yet-another-react-lightbox/plugins/download';
 import 'yet-another-react-lightbox/styles.css';
+import Zoom from 'yet-another-react-lightbox/plugins/zoom';
 
 interface WriteViewProps {
     onBack: () => void;
@@ -463,10 +464,15 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
             />
             <Lightbox
                 open={lightboxOpen}
+                zoom={{
+                    maxZoomPixelRatio: 3, // 최대 3배까지 확대
+                    zoomInMultiplier: 2, // 한 번 클릭 시 확대 배율
+                    doubleTapDelay: 300 // 더블 탭 인식 시간
+                }}
                 close={() => setLightboxOpen(false)}
                 index={lightboxIndex}
                 slides={slides}
-                plugins={[Download]}
+                plugins={[Download, Zoom]}
             />
         </div>
     );

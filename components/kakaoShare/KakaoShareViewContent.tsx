@@ -10,6 +10,7 @@ import Lightbox from 'yet-another-react-lightbox';
 import Download from 'yet-another-react-lightbox/plugins/download';
 import 'yet-another-react-lightbox/styles.css';
 import { ShareItem } from '@/app/(main)/kakao-share/types';
+import Zoom from 'yet-another-react-lightbox/plugins/zoom';
 
 interface KakaoShareViewContentProps {
     shareData: ShareItem;
@@ -138,11 +139,16 @@ const KakaoShareViewContent: React.FC<KakaoShareViewContentProps> = ({
 
             <Lightbox
                 open={open}
+                zoom={{
+                    maxZoomPixelRatio: 3, // 최대 3배까지 확대
+                    zoomInMultiplier: 2, // 한 번 클릭 시 확대 배율
+                    doubleTapDelay: 300 // 더블 탭 인식 시간
+                }}
                 close={() => setOpen(false)}
                 index={index}
                 slides={slides}
                 carousel={{ finite: true }}
-                plugins={[Download]}
+                plugins={[Download, Zoom]}
             />
         </div>
     );

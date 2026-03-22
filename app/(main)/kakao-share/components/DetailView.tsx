@@ -205,17 +205,22 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete, onCopyTo
                                         return (
                                             <div key={idx} className="col-6 mb-3">
                                                 <div className="relative border-round overflow-hidden shadow-2 surface-card hover:shadow-4 transition-duration-200">
-                                                    <div 
+                                                    <div
                                                         className="cursor-pointer"
                                                         onClick={() => {
                                                             setIndex(idx);
                                                             setOpen(true);
                                                         }}
                                                     >
-                                                        <img 
-                                                            src={url} 
-                                                            alt={`img-${idx}`} 
-                                                            style={{ width: '100%', height: '120px', objectFit: 'cover', display: 'block' }} 
+                                                        <img
+                                                            src={url}
+                                                            alt={`img-${idx}`}
+                                                            style={{
+                                                                width: '100%',
+                                                                height: '120px',
+                                                                objectFit: 'cover',
+                                                                display: 'block'
+                                                            }}
                                                         />
                                                     </div>
                                                     <Button
@@ -250,6 +255,11 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete, onCopyTo
 
             <Lightbox
                 open={open}
+                zoom={{
+                    maxZoomPixelRatio: 3, // 최대 3배까지 확대
+                    zoomInMultiplier: 2, // 한 번 클릭 시 확대 배율
+                    doubleTapDelay: 300 // 더블 탭 인식 시간
+                }}
                 close={() => setOpen(false)}
                 index={index}
                 slides={slides}
