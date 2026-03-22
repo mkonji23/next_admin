@@ -13,6 +13,7 @@ import WriteView from './components/WriteView';
 import { FilterMatchMode } from 'primereact/api';
 
 const KakaoSharePage = () => {
+    const [isCopy, setIsCopy] = useState<boolean>(false);
     const [view, setView] = useState<'LIST' | 'DETAIL' | 'WRITE'>('LIST');
     const [shares, setShares] = useState<ShareItem[]>([]);
     const [selectedShare, setSelectedShare] = useState<ShareItem | null>(null);
@@ -57,7 +58,7 @@ const KakaoSharePage = () => {
     const fetchDetail = async (id: string, pushHistory = true) => {
         try {
             const res = await http.get(`/choiMath/share/detail/${id}`);
-            setSelectedShare(res.data);
+            setSelectedShare(res.data || {});
             setView('DETAIL');
             if (pushHistory) {
                 window.history.pushState({ view: 'DETAIL', selectedShare: res.data }, '');
@@ -85,6 +86,7 @@ const KakaoSharePage = () => {
                     // 학생 정보 추가
                     multipartData.append('classId', formData.classId);
                     multipartData.append('studentId', formData.studentId);
+                    multipartData.append('shareImageUrls', JSON.stringify(formData.shareImageUrls));
                     if (formData.studentName) multipartData.append('studentName', formData.studentName);
                     if (formData.telNo) multipartData.append('telNo', formData.telNo);
                     if (formData.pTelNo) multipartData.append('pTelNo', formData.pTelNo);
@@ -107,7 +109,8 @@ const KakaoSharePage = () => {
                         studentId: formData.studentId,
                         studentName: formData.studentName,
                         telNo: formData.telNo,
-                        pTelNo: formData.pTelNo
+                        pTelNo: formData.pTelNo,
+                        shareImageUrls: JSON.stringify(formData.shareImageUrls)
                     };
 
                     await http.post(`/choiMath/share/update/${selectedShare._id}`, updateData);
@@ -227,7 +230,6 @@ const KakaoSharePage = () => {
     };
 
     const handleEdit = (item: ShareItem) => {
-        console.log('item', item);
         setSelectedShare(item);
         setView('WRITE');
         window.history.pushState({ view: 'WRITE', selectedShare: item }, '');
@@ -241,6 +243,7 @@ const KakaoSharePage = () => {
 
     const handleNewPost = () => {
         setSelectedShare(null);
+        setIsCopy(false);
         setView('WRITE');
         window.history.pushState({ view: 'WRITE', selectedShare: null }, '');
     };
@@ -258,6 +261,7 @@ const KakaoSharePage = () => {
         };
 
         setSelectedShare(newItemData as ShareItem);
+        setIsCopy(true);
         setView('WRITE');
         window.history.pushState({ view: 'WRITE', selectedShare: newItemData }, '');
     };
@@ -277,6 +281,10 @@ const KakaoSharePage = () => {
         window.addEventListener('popstate', handlePopState);
         return () => window.removeEventListener('popstate', handlePopState);
     }, []);
+
+    useEffect(() => {
+        if (view !== 'WRITE') setIsCopy(false);
+    }, [view]);
 
     return (
         <div className="kakao-share-page">
@@ -310,7 +318,9 @@ const KakaoSharePage = () => {
                     onCopyToNew={handleCopyToNew}
                 />
             )}
-            {view === 'WRITE' && <WriteView onBack={handleBack} onSave={handleSave} initialData={selectedShare} />}
+            {view === 'WRITE' && (
+                <WriteView isCopy={isCopy} onBack={handleBack} onSave={handleSave} initialData={selectedShare!} />
+            )}
         </div>
     );
 };

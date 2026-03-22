@@ -1,31 +1,41 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card } from 'primereact/card';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { Tag } from 'primereact/tag';
 import { Button } from 'primereact/button';
-import { Image } from 'primereact/image';
 import dayjs from 'dayjs';
-import { ShareItem } from '@/app/(main)/kakao-share/types'; // Assuming types are here
+import Lightbox from 'yet-another-react-lightbox';
+import Download from 'yet-another-react-lightbox/plugins/download';
+import 'yet-another-react-lightbox/styles.css';
+import { ShareItem } from '@/app/(main)/kakao-share/types';
 
 interface KakaoShareViewContentProps {
-    shareData: ShareItem; // Made non-nullable as parent components will ensure it's available
+    shareData: ShareItem;
     images: any[];
     downloadImageFn: (url: string, index: number) => Promise<void>;
-    pageType?: string; // 'student' | 'parent' or undefined for public
+    pageType?: string;
 }
 
 const KakaoShareViewContent: React.FC<KakaoShareViewContentProps> = ({
     shareData,
     images,
     downloadImageFn,
-    pageType,
+    pageType
 }) => {
+    const [open, setOpen] = useState(false);
+    const [index, setIndex] = useState(0);
+
     const formatDate = (dateStr?: string) => {
         if (!dateStr) return '';
         return dayjs(dateStr).format('YYYY-MM-DD HH:mm');
     };
+
+    const slides = images.map((img) => ({
+        src: img.itemImageSrc,
+        downloadUrl: img.itemImageSrc
+    }));
 
     return (
         <div className="layout-content p-3 md:p-5 flex justify-content-center min-h-screen bg-gray-50">
@@ -33,7 +43,7 @@ const KakaoShareViewContent: React.FC<KakaoShareViewContentProps> = ({
                 <Card title={shareData.actualTitle} className="shadow-4 mb-4">
                     <div className="flex justify-content-between align-items-center mb-4 text-sm text-gray-500 flex-wrap gap-2">
                         <div className="flex align-items-center gap-2">
-                            {pageType && ( // Render tag only if pageType is provided
+                            {pageType && (
                                 <Tag
                                     value={pageType === 'parent' ? '학부모용' : '학생용'}
                                     severity={pageType === 'parent' ? 'success' : 'info'}
@@ -75,12 +85,17 @@ const KakaoShareViewContent: React.FC<KakaoShareViewContentProps> = ({
                                     return (
                                         <div key={idx} className="col-12 sm:col-6 lg:col-4 mb-3">
                                             <div className="relative border-round overflow-hidden shadow-2 surface-card h-full">
-                                                <div className="flex align-items-center justify-content-center cursor-pointer hover:shadow-4 transition-duration-200">
-                                                    <Image
+                                                <div
+                                                    className="flex align-items-center justify-content-center cursor-pointer hover:shadow-4 transition-duration-200"
+                                                    onClick={() => {
+                                                        setIndex(idx);
+                                                        setOpen(true);
+                                                    }}
+                                                >
+                                                    <img
                                                         src={img.thumbnailImageSrc}
                                                         alt={`share-img-${idx}`}
-                                                        width="100%"
-                                                        preview
+                                                        style={{ width: '100%', display: 'block' }}
                                                     />
                                                 </div>
                                                 <Button
@@ -90,7 +105,8 @@ const KakaoShareViewContent: React.FC<KakaoShareViewContentProps> = ({
                                                         background: 'rgba(255,255,255,0.7)',
                                                         color: '#333',
                                                         width: '1.75rem',
-                                                        height: '1.75rem'
+                                                        height: '1.75rem',
+                                                        zIndex: 1
                                                     }}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
@@ -119,6 +135,15 @@ const KakaoShareViewContent: React.FC<KakaoShareViewContentProps> = ({
                     </div>
                 </div>
             </div>
+
+            <Lightbox
+                open={open}
+                close={() => setOpen(false)}
+                index={index}
+                slides={slides}
+                carousel={{ finite: true }}
+                plugins={[Download]}
+            />
         </div>
     );
 };

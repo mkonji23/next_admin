@@ -13,13 +13,18 @@ import { ShareItem } from '../types';
 import { Class, Student } from '@/types/class';
 import { compressImages } from '@/util/imageResizer';
 import StudentDropDown from '../../../../components/select/StudentDropDown';
+import Lightbox from 'yet-another-react-lightbox';
+import Download from 'yet-another-react-lightbox/plugins/download';
+import 'yet-another-react-lightbox/styles.css';
 
 interface WriteViewProps {
     onBack: () => void;
     onSave: (values: any, files: File[]) => Promise<void>;
-    initialData?: ShareItem | null;
+    initialData?: ShareItem;
+    isCopy?: Boolean;
 }
-const WriteView = ({ onBack, onSave, initialData }: WriteViewProps) => {
+const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewProps) => {
+    const [editData, setEditData] = useState<ShareItem>();
     const fileUploadRef = useRef<FileUpload>(null);
     const { showToast } = useToast();
     const http = useHttp();
@@ -28,11 +33,16 @@ const WriteView = ({ onBack, onSave, initialData }: WriteViewProps) => {
     const [isOptimizing, setIsOptimizing] = useState(false);
     const [classes, setClasses] = useState<Class[]>([]);
 
+    // Lightbox state
+    const [lightboxOpen, setLightboxOpen] = useState(false);
+    const [lightboxIndex, setLightboxIndex] = useState(0);
+
     useEffect(() => {
         const fetchClasses = async () => {
             try {
                 const response = await http.get('/choiMath/class/');
-                setClasses(response.data);
+                const data = response.data || [];
+                setClasses(data);
             } catch (error) {
                 console.error('Error fetching classes:', error);
                 showToast({
@@ -44,6 +54,10 @@ const WriteView = ({ onBack, onSave, initialData }: WriteViewProps) => {
         };
         fetchClasses();
     }, []);
+
+    useEffect(() => {
+        initialData && setEditData(initialData);
+    }, [initialData]);
 
     const handleDownload = async (url: string, fileName: string) => {
         try {
@@ -66,17 +80,27 @@ const WriteView = ({ onBack, onSave, initialData }: WriteViewProps) => {
     const onSubmit = async (values: any) => {
         setIsOptimizing(true);
         try {
-            // 이미지 최적화 (가로/세로 최대 1200px, 품질 0.7 시도)
-            // 전체 파일 합계가 4MB를 넘으면 자동으로 해상도와 품질을 낮춤
-            const optimizedFiles = await compressImages(selectedFiles, {
-                maxWidth: 1200,
-                maxHeight: 1200,
-                quality: 0.7,
-                maxTotalSize: 4 * 1024 * 1024 // 4MB 제한
-            });
+            const newValues = {
+                ...values,
+                shareImageUrls: editData?.shareImageUrls.map((item) => {
+                    return { ...item, versionInfo: '' };
+                })
+            };
+            if (selectedFiles) {
+                // 이미지 최적화
+                const optimizedFiles = await compressImages(selectedFiles, {
+                    maxWidth: 1200,
+                    maxHeight: 1200,
+                    quality: 0.7,
+                    maxTotalSize: 4 * 1024 * 1024 // 4MB 제한
+                });
 
-            setIsOptimizing(false);
-            await onSave(values, optimizedFiles);
+                setIsOptimizing(false);
+                await onSave(newValues, optimizedFiles);
+            } else {
+                setIsOptimizing(false);
+                await onSave(newValues, []);
+            }
         } catch (error) {
             console.error('Optimization error:', error);
             showToast({ severity: 'error', summary: '오류', detail: '이미지 최적화 중 오류가 발생했습니다.' });
@@ -87,7 +111,6 @@ const WriteView = ({ onBack, onSave, initialData }: WriteViewProps) => {
 
     const validate = (values: any) => {
         const errors: any = {};
-        // if (!values.classId) errors.classId = '필수 입력 항목입니다.';
         if (!values.studentId) errors.studentId = '필수 입력 항목입니다.';
         if (!values.actualTitle) errors.actualTitle = '필수 입력 항목입니다.';
         if (!values.shareTitle) errors.shareTitle = '필수 입력 항목입니다.';
@@ -127,34 +150,52 @@ const WriteView = ({ onBack, onSave, initialData }: WriteViewProps) => {
 
     const handleFinalSubmit = async (e, handleSubmit, errors) => {
         const result = await handleSubmit(e);
-        // Validation 실패 시
         if (!result && Object.keys(errors).length > 0) {
             showToast({ severity: 'error', summary: '입력실패', detail: '입력 항목을 확인해주세요.' });
             return;
         }
     };
 
+    const existingImages = editData?.shareImageUrls?.filter((item) => !item.isDelete);
+
+    const slides = existingImages?.map((item) => ({
+        src: typeof item === 'string' ? item : item.url
+    }));
+
+    // 이미지 삭제
+    const deleteImages = (url) => {
+        const delShareImageUrls = editData?.shareImageUrls.map((item) => {
+            if (item.url === url) {
+                return {
+                    ...item,
+                    isDelete: true
+                };
+            }
+            return item;
+        });
+        editData && setEditData((prev) => ({ ...prev, shareImageUrls: delShareImageUrls }));
+    };
+
     return (
         <div className="card">
             <div className="flex align-items-center mb-4">
                 <Button type="button" icon="pi pi-arrow-left" className="p-button-text mr-2" onClick={onBack} />
-                <h5>{initialData?.classId ? '게시글 수정' : '새 게시글 작성'}</h5>
+                <h5>{editData && !isCopy ? '게시글 수정' : '새 게시글 작성'}</h5>
             </div>
-
             <Form
                 onSubmit={onSubmit}
                 initialValues={
-                    initialData?.classId
+                    editData
                         ? {
-                              classId: initialData.classId,
-                              shareTitle: initialData.shareTitle,
-                              shareContent: initialData.shareContent,
-                              actualTitle: initialData.actualTitle,
-                              actualContent: initialData.actualContent,
-                              studentId: initialData.studentId,
-                              studentName: initialData.studentName,
-                              telNo: initialData.telNo,
-                              pTelNo: initialData.pTelNo
+                              classId: !isCopy ? editData.classId : '',
+                              shareTitle: editData.shareTitle,
+                              shareContent: editData.shareContent,
+                              actualTitle: editData.actualTitle,
+                              actualContent: editData.actualContent,
+                              studentId: !isCopy ? editData.studentId : '',
+                              studentName: !isCopy ? editData.studentName : '',
+                              telNo: !isCopy ? editData.telNo : '',
+                              pTelNo: !isCopy ? editData.pTelNo : ''
                           }
                         : {}
                 }
@@ -173,19 +214,18 @@ const WriteView = ({ onBack, onSave, initialData }: WriteViewProps) => {
                                             className={meta.touched && meta.error ? 'p-invalid' : ''}
                                             options={classes}
                                             optionLabel="className"
-                                            optionValue="classId" // value에 담길 값을 ID로 지정
-                                            dataKey="classId" // 고유 키 지정
+                                            optionValue="classId"
+                                            dataKey="classId"
                                             showClear
                                             placeholder="클래스를 선택하세요"
                                             onChange={(e) => {
-                                                // optionValue가 설정되면 e.value는 객체가 아니라 'classId' 값이 됩니다.
                                                 const selectedId = e.value;
                                                 const selectedObj = classes.find((c) => c.classId === selectedId);
                                                 form.change('classId', selectedId);
                                                 setStudents(selectedObj?.students || []);
                                             }}
                                             value={form.getState().values.classId}
-                                            disabled={initialData?.classId ? true : false}
+                                            disabled={editData ? true : false}
                                         />
                                         {meta.touched && meta.error && <small className="p-error">{meta.error}</small>}
                                     </>
@@ -223,7 +263,7 @@ const WriteView = ({ onBack, onSave, initialData }: WriteViewProps) => {
                                                 }
                                             }}
                                             value={form.getState().values.studentId}
-                                            disabled={students.length === 0 || initialData?.classId ? true : false}
+                                            disabled={students.length === 0 || editData?.classId ? true : false}
                                         />
                                         {meta.touched && meta.error && <small className="p-error">{meta.error}</small>}
                                     </>
@@ -321,13 +361,13 @@ const WriteView = ({ onBack, onSave, initialData }: WriteViewProps) => {
                         </div>
                         <div className="field col-12">
                             <label className="font-bold">이미지 첨부 (최대 5개)</label>
-                            {initialData && initialData.shareImageUrls?.length > 0 && (
+                            {editData && existingImages && existingImages?.length > 0 && (
                                 <div className="mb-3 p-3 surface-100 border-round">
                                     <p className="text-sm font-medium text-700 mb-2">
-                                        기존 이미지 ({initialData.shareImageUrls.length}개)
+                                        기존 이미지 ({existingImages?.length}개)
                                     </p>
                                     <div className="flex gap-2 overflow-x-auto pb-2">
-                                        {initialData.shareImageUrls.map((item, idx) => {
+                                        {existingImages?.map((item, idx) => {
                                             const url = typeof item === 'string' ? item : item.url;
                                             const fileName = url.split('/').pop()?.split('?')[0] || `image-${idx}.jpg`;
                                             return (
@@ -335,33 +375,60 @@ const WriteView = ({ onBack, onSave, initialData }: WriteViewProps) => {
                                                     <img
                                                         src={url}
                                                         alt="prev"
-                                                        className="border-round shadow-1"
-                                                        style={{ width: '80px', height: '80px', objectFit: 'cover' }}
-                                                    />
-                                                    <Button
-                                                        type="button"
-                                                        icon="pi pi-download"
-                                                        className="p-button-rounded p-button-secondary p-button-sm absolute shadow-2"
+                                                        className="border-round shadow-1 cursor-pointer"
                                                         style={{
-                                                            top: '2px',
-                                                            right: '2px',
-                                                            width: '24px',
-                                                            height: '24px',
-                                                            opacity: 0.8
+                                                            width: '80px',
+                                                            height: '80px',
+                                                            objectFit: 'cover'
                                                         }}
-                                                        onClick={(e) => {
-                                                            e.preventDefault();
-                                                            handleDownload(url, fileName);
+                                                        onClick={() => {
+                                                            setLightboxIndex(idx);
+                                                            setLightboxOpen(true);
                                                         }}
-                                                        tooltip="다운로드"
-                                                        tooltipOptions={{ position: 'bottom' }}
                                                     />
+                                                    <div
+                                                        className="absolute flex gap-1"
+                                                        style={{ top: '2px', right: '2px', zIndex: 10 }}
+                                                    >
+                                                        <Button
+                                                            type="button"
+                                                            icon="pi pi-download"
+                                                            className="p-button-rounded p-button-secondary p-button-sm shadow-2"
+                                                            style={{
+                                                                width: '24px',
+                                                                height: '24px',
+                                                                opacity: 0.8
+                                                            }}
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                handleDownload(url, fileName);
+                                                            }}
+                                                            tooltip="다운로드"
+                                                            tooltipOptions={{ position: 'bottom' }}
+                                                        />
+                                                        <Button
+                                                            type="button"
+                                                            icon="pi pi-times"
+                                                            className="p-button-rounded p-button-danger p-button-sm shadow-2"
+                                                            style={{
+                                                                width: '24px',
+                                                                height: '24px',
+                                                                opacity: 0.8
+                                                            }}
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                deleteImages(url);
+                                                            }}
+                                                            tooltip="삭제"
+                                                            tooltipOptions={{ position: 'bottom' }}
+                                                        />
+                                                    </div>
                                                 </div>
                                             );
                                         })}
                                     </div>
                                     <p className="text-xs text-500 mt-2">
-                                        * 새로운 파일을 선택하면 기존 이미지는 모두 대체됩니다.
+                                        * 새로운 파일을 선택하면 기존 이미지에서 추가됩니다.
                                     </p>
                                 </div>
                             )}
@@ -384,15 +451,22 @@ const WriteView = ({ onBack, onSave, initialData }: WriteViewProps) => {
                         <div className="col-12 mt-4">
                             <Button
                                 type="submit"
-                                label={initialData?.classId ? '수정 내용 저장' : '새 게시글 등록'}
-                                icon={initialData?.classId ? 'pi pi-save' : 'pi pi-check'}
-                                className={initialData?.classId ? 'p-button-info' : 'p-button-primary'}
+                                label={editData && !isCopy ? '수정 내용 저장' : '새 게시글 등록'}
+                                icon={editData && !isCopy ? 'pi pi-save' : 'pi pi-check'}
+                                className={editData && !isCopy ? 'p-button-info' : 'p-button-primary'}
                                 disabled={submitting || isOptimizing}
                                 loading={isOptimizing}
                             />
                         </div>
                     </form>
                 )}
+            />
+            <Lightbox
+                open={lightboxOpen}
+                close={() => setLightboxOpen(false)}
+                index={lightboxIndex}
+                slides={slides}
+                plugins={[Download]}
             />
         </div>
     );

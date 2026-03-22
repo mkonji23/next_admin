@@ -1,6 +1,7 @@
 export interface ShareImage {
     url: string;
     fileId?: string;
+    isDelete?: boolean;
 }
 
 export interface ShareItem {
@@ -12,7 +13,7 @@ export interface ShareItem {
     shareContent: string;
     actualTitle: string;
     actualContent: string;
-    shareImageUrls: (string | ShareImage)[];
+    shareImageUrls: ShareImage[];
     studentId?: string;
     studentName?: string;
     telNo?: string;
