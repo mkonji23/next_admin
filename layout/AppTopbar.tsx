@@ -180,22 +180,29 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
                     'layout-topbar-menu-mobile-active': layoutState.profileSidebarVisible
                 })}
             >
-                <Button
-                    className="p-link layout-topbar-button"
-                    tooltip="알림"
-                    tooltipOptions={{ position: 'bottom' }}
-                    onClick={handleNotificationClick}
-                >
-                    <i className="pi pi-bell p-overlay-badge">
-                        {unreadCount > 0 && <Badge value={unreadCount} severity="danger" />}
-                    </i>
-                    <span>알림</span>
-                </Button>
-                <div>
-                    {!layoutState.profileSidebarVisible && unreadCount > 0 && (
-                        <Badge style={{ marginLeft: '-12px' }} value={unreadCount} severity="danger" />
-                    )}
-                </div>
+                {layoutState.profileSidebarVisible === true ? (
+                    <Button
+                        className="p-link layout-topbar-button"
+                        tooltip="알림"
+                        tooltipOptions={{ position: 'bottom' }}
+                        onClick={handleNotificationClick}
+                    >
+                        <i className="pi pi-bell p-overlay-badge">
+                            {unreadCount > 0 && <Badge value={unreadCount} severity="danger" />}
+                        </i>
+                        <span>알림</span>
+                    </Button>
+                ) : (
+                    <button className="p-link" onClick={handleNotificationClick}>
+                        <i
+                            className="pi pi-bell ml-4 mt-1 mr-1 p-text-secondary p-overlay-badge"
+                            style={{ fontSize: '1.5rem' }}
+                        >
+                            {unreadCount > 0 && <Badge value={unreadCount} severity="danger" />}
+                        </i>
+                    </button>
+                )}
+
                 <Button
                     className="p-link layout-topbar-button"
                     tooltip="프로필"
