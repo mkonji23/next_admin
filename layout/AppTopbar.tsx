@@ -247,11 +247,15 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
                                             !notification.isRead ? 'bg-blue-50' : ''
                                         }`}
                                     >
-                                        <i className={`${getNotificationIcon(notification.type)} text-2xl mr-3`}></i>
+                                        <i
+                                            className={`${getNotificationIcon(
+                                                notification?.detail?.type
+                                            )} text-2xl mr-3`}
+                                        ></i>
                                         <div className="flex-1">
-                                            <p className="m-0 text-sm">{notification?.content}</p>
+                                            <p className="m-0 text-sm">{notification?.detail?.content}</p>
                                             <span className="text-xs text-color-secondary">
-                                                {formatNotificationTime(notification?.createdAt)}
+                                                {formatNotificationTime(notification?.detail?.createdAt)}
                                             </span>
                                         </div>
                                     </li>

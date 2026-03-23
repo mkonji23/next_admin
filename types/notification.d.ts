@@ -1,10 +1,19 @@
 export interface Notification {
     _id: string;
-    recipientIds: string[];
+    recipientId: string;
+    createdAt: string;
+    content: string;
+    isRead: boolean;
+    createdAt: Date;
+    detail: NotificationDetail;
+}
+
+interface NotificationDetail {
+    _id: string;
     senderId: string;
+    targetAuth: string;
     type: string;
     content: string;
     link: string;
-    isRead: boolean;
     createdAt: string;
 }

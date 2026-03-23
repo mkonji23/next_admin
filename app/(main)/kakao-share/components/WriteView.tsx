@@ -83,8 +83,11 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
         try {
             const newValues = {
                 ...values,
-                shareImageUrls: editData?.shareImageUrls.map((item) => {
-                    return { ...item, versionInfo: '' };
+                ...(editData?.shareImageUrls && {
+                    shareImageUrls: editData.shareImageUrls.map((item) => ({
+                        ...item,
+                        versionInfo: ''
+                    }))
                 })
             };
             if (selectedFiles) {
