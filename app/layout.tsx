@@ -34,7 +34,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
                                         {children}
                                         <GlobalLoading />
                                     </ModalProvider>
-                                    <Notificat ionListener />
+                                    <NotificationListener />
                                 </ConfirmProvider>
                             </LoadingProvider>
                         </ToastProvider>
