@@ -5,15 +5,15 @@ export interface ShareImage {
 }
 
 export interface ShareItem {
-    _id: string;
-    classId: string;
-    className: string;
-    publicUrl: string;
-    shareTitle: string;
-    shareContent: string;
-    actualTitle: string;
-    actualContent: string;
-    shareImageUrls: ShareImage[];
+    _id?: string;
+    classId?: string;
+    className?: string;
+    publicUrl?: string;
+    shareTitle?: string;
+    shareContent?: string;
+    actualTitle?: string;
+    actualContent?: string;
+    shareImageUrls?: ShareImage[];
     studentId?: string;
     studentName?: string;
     telNo?: string;

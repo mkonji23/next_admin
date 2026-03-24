@@ -30,9 +30,11 @@ export default function RootLayout({ children }: RootLayoutProps) {
                         <ToastProvider>
                             <LoadingProvider>
                                 <ConfirmProvider>
-                                    <GlobalLoading />
-                                    <ModalProvider>{children}</ModalProvider>
-                                    <NotificationListener />
+                                    <ModalProvider>
+                                        {children}
+                                        <GlobalLoading />
+                                    </ModalProvider>
+                                    <Notificat ionListener />
                                 </ConfirmProvider>
                             </LoadingProvider>
                         </ToastProvider>
