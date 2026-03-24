@@ -14,6 +14,7 @@ import TodoCalendar from './components/TodoCalendar';
 import TodoList from './components/TodoList';
 import TodoDetail from './components/TodoDetail';
 import { useHttp } from '@/util/axiosInstance';
+import { getUserTagColor } from '@/util/userTagColors';
 
 const AssistantTodoPage = () => {
     const [todos, setTodos] = useState<Todo[]>([]);
@@ -160,25 +161,29 @@ const AssistantTodoPage = () => {
     const events = useMemo(
         () =>
             todos.map((todo) => {
-                const isAssignedToCurrentUser = todo.assignees.some(
-                    (assignee: TodoUser) => assignee.userId === currentUserId
-                );
+                let backgroundColor;
+                if (todo.assignees.length === 1) {
+                    // 한 명일 때는 해당 사용자의 색상 사용
+                    backgroundColor = getUserTagColor(todo.assignees[0].userName);
+                } else {
+                    //기본 색상
+                    backgroundColor = getUserTagColor('default');
+                }
 
-                let backgroundColor = todo.isCompleted ? '#4caf50' : '#2196f3'; // Default: completed (green) / in progress (blue)
-                let borderColor = todo.isCompleted ? '#4caf50' : '#2196f3';
-
-                if (isAssignedToCurrentUser) {
-                    backgroundColor = todo.isCompleted ? '#fa90ce' : 'var(--yellow-500)'; // Light blue for assigned, slightly darker if completed
-                    borderColor = todo.isCompleted ? '#fa90ce' : 'var(--yellow-300)'; // Darker blue border for completed assigned tasks
+                // 완료 상태는 테두리 색상으로 표현
+                let borderColor = backgroundColor;
+                if (todo.isCompleted) {
+                    borderColor = '#4caf50'; // 완료 시 초록색 테두리
                 }
 
                 return {
                     id: todo.id,
-                    title: todo.content,
+                    title: todo.isCompleted ? `[완료] ${todo.content}` : todo.content,
                     start: todo.date,
                     allDay: true,
                     backgroundColor: backgroundColor,
-                    borderColor: borderColor
+                    borderColor: borderColor,
+                    textColor: '#ffffff'
                 };
             }),
         [todos, currentUserId]

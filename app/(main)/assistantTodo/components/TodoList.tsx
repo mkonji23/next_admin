@@ -6,6 +6,7 @@ import { InputSwitch } from 'primereact/inputswitch';
 import dayjs from 'dayjs';
 import { Todo, TodoUser } from '@/types/todo';
 import { useCustomModal } from '@/hooks/useCustomModal';
+import { getUserTagColor } from '@/util/userTagColors';
 
 interface TodoListProps {
     todos: Todo[];
@@ -66,7 +67,7 @@ const TodoList: React.FC<TodoListProps> = ({
                     header="날짜"
                     sortable
                     body={(rowData) => dayjs(rowData.date).format('YYYY-MM-DD')}
-                    style={{ width: '15%' }}
+                    headerStyle={{ minWidth: '120px' }}
                 />
                 <Column
                     field="content"
@@ -86,19 +87,32 @@ const TodoList: React.FC<TodoListProps> = ({
                 />
                 <Column
                     field="assignees"
+                    headerStyle={{ minWidth: '100px' }}
                     header="담당자"
                     body={(rowData) => (
                         <div className="flex flex-wrap gap-1">
-                            {rowData.assignees.map((item: TodoUser, idx: number) => (
-                                <Tag key={idx} value={item.userName} severity="info" />
-                            ))}
+                            {rowData.assignees.map((item: TodoUser, idx: number) => {
+                                const backgroundColor = getUserTagColor(item.userName);
+                                return (
+                                    <Tag
+                                        key={idx}
+                                        value={item.userName}
+                                        style={{
+                                            backgroundColor: backgroundColor,
+                                            color: '#ffffff',
+                                            borderRadius: '4px'
+                                        }}
+                                    />
+                                );
+                            })}
                         </div>
                     )}
                     style={{ width: '20%' }}
                 />
-                <Column field="workingHours" header="근무시간" style={{ width: '10%' }} />
+                <Column field="workingHours" header="근무시간" headerStyle={{ minWidth: '100px' }} />
                 <Column
                     field="isCompleted"
+                    headerStyle={{ minWidth: '120px' }}
                     header="상태"
                     sortable
                     body={(rowData) => (
