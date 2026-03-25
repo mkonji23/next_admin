@@ -219,7 +219,10 @@ const UserModal = ({ visible, pData, onClose }: UserModalProps) => {
                 <InputText
                     id="userId"
                     value={user.userId}
-                    onChange={(e) => setUser({ ...user, userId: e.target.value })}
+                    onChange={(e) => {
+                        const sanitizedValue = e.target.value.replace(/[^a-zA-Z0-9_-]/g, '');
+                        setUser({ ...user, userId: sanitizedValue });
+                    }}
                     disabled={isEditMode}
                     required={!isEditMode}
                     className={submitted && !isEditMode && !user.userId ? 'p-invalid' : ''}

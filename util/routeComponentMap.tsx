@@ -13,7 +13,7 @@ const routeMap: { [key: string]: React.LazyExoticComponent<React.ComponentType<a
     '/userList': React.lazy(() => import('@/app/(main)/userList/page')),
     '/studentList': React.lazy(() => import('@/app/(main)/studentList/page')),
     '/classList': React.lazy(() => import('@/app/(main)/classList/page')),
-    '/kakao-share': React.lazy(() => import('@/app/(main)/kakao-share/page')),
+    '/kakao-share': React.lazy(() => import('@/app/(main)/kakao-share/[[...id]]/page')),
     '/settings/kakao': React.lazy(() => import('@/app/(main)/settings/kakao/page')),
     '/manual': React.lazy(() => import('@/app/(main)/manual/page')),
     '/dash': React.lazy(() => import('@/app/(main)/dash/page')),
@@ -24,8 +24,22 @@ const routeMap: { [key: string]: React.LazyExoticComponent<React.ComponentType<a
 };
 
 export const getComponentForPath = (path: string): React.ReactNode => {
-    const Component = routeMap[path];
-    return Component ? <Component /> : <div>페이지를 찾을 수 없습니다: {path}</div>;
+    // Exact match check
+    let Component = routeMap[path];
+
+    // Dynamic match check (e.g., /kakao-share/67e2...)
+    if (!Component) {
+        // Find if the path starts with any of our defined base routes
+        const baseRoutes = ['/kakao-share'];
+        for (const base of baseRoutes) {
+            if (path.startsWith(`${base}/`)) {
+                Component = routeMap[base];
+                break;
+            }
+        }
+    }
+
+    return Component ? <Component path={path} /> : <div>페이지를 찾을 수 없습니다: {path}</div>;
 };
 
 export default routeMap;

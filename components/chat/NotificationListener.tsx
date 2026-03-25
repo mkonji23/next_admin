@@ -6,7 +6,7 @@ import Pusher from 'pusher-js';
 import { useToast } from '@/hooks/useToast';
 import useAuthStore from '@/store/useAuthStore';
 import { useNotificationStore } from '@/store/useNotificationStore';
-import { Notification } from '@/types/notification';
+import { Notification, PusherMessage } from '@/types/notification';
 import { useHttp } from '@/util/axiosInstance'; // Import useHttp
 
 export default function NotificationListener() {
@@ -37,11 +37,11 @@ export default function NotificationListener() {
         const channel = pusher.subscribe(`user-${userInfo.userId}`);
 
         // 3. 이벤트 바인딩 (Express 서버에서 지정한 이벤트명)
-        channel.bind('notification', (data: Notification) => {
+        channel.bind('notification', (data: PusherMessage) => {
             // Add new notification to the store
             fetchNotifications();
             // Optionally, show a toast
-            showToast({ severity: 'info', summary: '새 알림', detail: data.content });
+            showToast({ severity: 'info', summary: '새 알림', detail: data.message });
         });
 
         // 4. 컴포넌트 언마운트 시 구독 해제 (중요: 메모리 누수 방지)
@@ -49,7 +49,7 @@ export default function NotificationListener() {
             channel.unbind_all();
             channel.unsubscribe();
         };
-    }, []);
+    }, [userInfo]);
 
     return null;
 }

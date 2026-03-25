@@ -37,9 +37,7 @@ const StudentSelectModal = ({ visible, pData, onClose }: StudentSelectModalProps
         if (visible && students.length > 0 && pData?.selectedStudents) {
             // 이미 선택된 학생들을 Student 객체로 변환
             const selected = students.filter((student) =>
-                pData.selectedStudents?.some((s) => 
-                    (s.studentId === student.studentId) 
-                )
+                pData.selectedStudents?.some((s) => s.studentId === student.studentId)
             );
             setSelectedStudentObjects(selected);
         } else if (visible && students.length > 0 && !pData?.selectedStudents) {
@@ -52,9 +50,7 @@ const StudentSelectModal = ({ visible, pData, onClose }: StudentSelectModalProps
             setLoading(true);
             const response = await http.get('/choiMath/student/getStudentList');
             // 입원한 학생만 필터링 (isWithdrawn이 false이거나 undefined인 경우)
-            const enrolledStudents = (response.data || []).filter(
-                (student: Student) => !student.isWithdrawn
-            );
+            const enrolledStudents = (response.data || []).filter((student: Student) => !student.isWithdrawn);
             setStudents(enrolledStudents);
         } catch (error) {
             console.error('Error fetching students:', error);
@@ -142,7 +138,7 @@ const StudentSelectModal = ({ visible, pData, onClose }: StudentSelectModalProps
                 selectionMode="checkbox"
             >
                 <Column selectionMode="multiple" headerStyle={{ width: '3rem' }}></Column>
-                <Column field="name" header="이름" sortable></Column>
+                <Column field="name" headerStyle={{ width: '6rem' }} header="이름" sortable></Column>
                 <Column field="grade" header="학년" sortable></Column>
                 <Column field="school" header="학교" sortable></Column>
                 <Column field="description" header="설명" sortable></Column>

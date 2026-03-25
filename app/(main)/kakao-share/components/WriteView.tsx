@@ -83,8 +83,11 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
         try {
             const newValues = {
                 ...values,
-                shareImageUrls: editData?.shareImageUrls.map((item) => {
-                    return { ...item, versionInfo: '' };
+                ...(editData?.shareImageUrls && {
+                    shareImageUrls: editData.shareImageUrls.map((item) => ({
+                        ...item,
+                        versionInfo: ''
+                    }))
                 })
             };
             if (selectedFiles) {
@@ -165,7 +168,7 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
 
     // 이미지 삭제
     const deleteImages = (url) => {
-        const delShareImageUrls = editData?.shareImageUrls.map((item) => {
+        const delShareImageUrls = editData?.shareImageUrls?.map((item) => {
             if (item.url === url) {
                 return {
                     ...item,
@@ -252,6 +255,7 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
                                             }
                                             onChange={(selectedStudent) => {
                                                 if (selectedStudent) {
+                                                    console.log('selectedStudent', selectedStudent);
                                                     form.change('studentId', selectedStudent.studentId);
                                                     form.change('studentName', selectedStudent.name);
                                                     form.change('telNo', selectedStudent.phoneNumber || '');

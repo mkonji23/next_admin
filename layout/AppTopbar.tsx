@@ -16,6 +16,7 @@ import { OverlayPanel } from 'primereact/overlaypanel';
 import { useTabStore } from '@/store/useTabStore';
 import { useNotificationStore } from '@/store/useNotificationStore';
 import { useHttp } from '@/util/axiosInstance';
+import { AppMenuModel } from '@/constants/menu';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/ko';
@@ -134,6 +135,45 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
         }
     };
 
+    const handleNotificationNavigation = (notification: any) => {
+        const link = notification?.detail?.link;
+        if (link) {
+            // 메뉴 모델에서 해당 링크의 라벨을 찾습니다.
+            let label = '카카오공유 상세';
+            for (const group of AppMenuModel) {
+                if (group.items) {
+                    const item = group.items.find((i) => i.to === link);
+                    if (item) {
+                        label = item.label || label;
+                        break;
+                    }
+                }
+            }
+
+            const tab = { id: link, label: label, path: link };
+            addTab(tab);
+            setActiveTab(tab.id);
+            router.push(link);
+        }
+        notificationPanelRef.current?.hide();
+    };
+
+    const formatNotificationContent = (content: string) => {
+        if (!content) return '';
+        const index = content.indexOf('님');
+        if (index === -1) return content;
+
+        const before = content.substring(0, index);
+        const after = content.substring(index);
+
+        return (
+            <>
+                <strong style={{ textDecoration: 'underline' }}>{before}</strong>
+                {after}
+            </>
+        );
+    };
+
     return (
         <div className="layout-topbar">
             <button
@@ -180,22 +220,29 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
                     'layout-topbar-menu-mobile-active': layoutState.profileSidebarVisible
                 })}
             >
-                <Button
-                    className="p-link layout-topbar-button"
-                    tooltip="알림"
-                    tooltipOptions={{ position: 'bottom' }}
-                    onClick={handleNotificationClick}
-                >
-                    <i className="pi pi-bell p-overlay-badge">
-                        {unreadCount > 0 && <Badge value={unreadCount} severity="danger" />}
-                    </i>
-                    <span>알림</span>
-                </Button>
-                <div>
-                    {!layoutState.profileSidebarVisible && unreadCount > 0 && (
-                        <Badge style={{ marginLeft: '-12px' }} value={unreadCount} severity="danger" />
-                    )}
-                </div>
+                {layoutState.profileSidebarVisible === true ? (
+                    <Button
+                        className="p-link layout-topbar-button"
+                        tooltip="알림"
+                        tooltipOptions={{ position: 'bottom' }}
+                        onClick={handleNotificationClick}
+                    >
+                        <i className="pi pi-bell p-overlay-badge">
+                            {unreadCount > 0 && <Badge value={unreadCount} severity="danger" />}
+                        </i>
+                        <span>알림</span>
+                    </Button>
+                ) : (
+                    <button className="p-link" onClick={handleNotificationClick}>
+                        <i
+                            className="pi pi-bell ml-4 mt-1 mr-1 p-text-secondary p-overlay-badge"
+                            style={{ fontSize: '1.5rem' }}
+                        >
+                            {unreadCount > 0 && <Badge value={unreadCount} severity="danger" />}
+                        </i>
+                    </button>
+                )}
+
                 <Button
                     className="p-link layout-topbar-button"
                     tooltip="프로필"
@@ -236,15 +283,22 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
                                 ?.map((notification) => (
                                     <li
                                         key={notification?._id}
-                                        className={`flex align-items-start p-2 border-round ${
+                                        className={`flex align-items-start p-2 border-round cursor-pointer hover:surface-100 ${
                                             !notification.isRead ? 'bg-blue-50' : ''
                                         }`}
+                                        onClick={() => handleNotificationNavigation(notification)}
                                     >
-                                        <i className={`${getNotificationIcon(notification.type)} text-2xl mr-3`}></i>
+                                        <i
+                                            className={`${getNotificationIcon(
+                                                notification?.detail?.type
+                                            )} text-2xl mr-3`}
+                                        ></i>
                                         <div className="flex-1">
-                                            <p className="m-0 text-sm">{notification?.content}</p>
+                                            <p className="m-0 text-sm">
+                                                {formatNotificationContent(notification?.detail?.content)}
+                                            </p>
                                             <span className="text-xs text-color-secondary">
-                                                {formatNotificationTime(notification?.createdAt)}
+                                                {formatNotificationTime(notification?.detail?.createdAt)}
                                             </span>
                                         </div>
                                     </li>
