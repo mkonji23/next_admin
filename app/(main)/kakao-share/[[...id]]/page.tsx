@@ -6,13 +6,13 @@ import { useHttp } from '@/util/axiosInstance';
 import useKakaoShare from '@/hooks/useKakaoShare';
 import { useConfirm } from '@/hooks/useConfirm';
 
-import { ShareItem } from './types';
-import ListView from './components/ListView';
-import DetailView from './components/DetailView';
-import WriteView from './components/WriteView';
 import { FilterMatchMode } from 'primereact/api';
+import DetailView from '../components/DetailView';
+import ListView from '../components/ListView';
+import WriteView from '../components/WriteView';
+import { ShareItem } from '../types';
 
-const KakaoSharePage = () => {
+const KakaoSharePage = ({ path }: { path?: string }) => {
     const [isCopy, setIsCopy] = useState<boolean>(false);
     const [view, setView] = useState<'LIST' | 'DETAIL' | 'WRITE'>('LIST');
     const [shares, setShares] = useState<ShareItem[]>([]);
@@ -31,9 +31,6 @@ const KakaoSharePage = () => {
     const http = useHttp();
     const { shareDefault } = useKakaoShare();
 
-    // 브라우저 뒤로가기 제어를 위한 로직
-    const prevViewRef = useRef(view);
-
     const fetchShares = async () => {
         try {
             setFirst(0);
@@ -45,29 +42,34 @@ const KakaoSharePage = () => {
         }
     };
 
-    // 초기화
-    useEffect(() => {
-        fetchShares();
-        // 초기 상태 설정
-        if (typeof window !== 'undefined') {
-            window.history.replaceState({ view: 'LIST', selectedShare: null }, '');
-        }
-    }, []);
-
     // 2. 상세 조회
-    const fetchDetail = async (id: string, pushHistory = true) => {
+    const fetchDetail = async (id: string) => {
         try {
             const res = await http.get(`/choiMath/share/detail/${id}`);
             setSelectedShare(res.data || {});
             setView('DETAIL');
-            if (pushHistory) {
-                window.history.pushState({ view: 'DETAIL', selectedShare: res.data }, '');
-            }
         } catch (error) {
             console.error('Detail error:', error);
             showToast({ severity: 'error', summary: '오류', detail: '상세 정보를 불러오지 못했습니다.' });
+            setView('LIST');
         }
     };
+
+    // 초기화 및 경로 감지
+    useEffect(() => {
+        if (path && path.startsWith('/kakao-share/')) {
+            const id = path.split('/')[2];
+            if (id) {
+                fetchDetail(id);
+            } else {
+                fetchShares();
+                setView('LIST');
+            }
+        } else {
+            fetchShares();
+            setView('LIST');
+        }
+    }, [path]);
 
     // 3. 게시글 저장 (생성 및 수정)
     const handleSave = async (formData: any, files: File[]) => {
@@ -146,15 +148,13 @@ const KakaoSharePage = () => {
             }
 
             if (detailId) {
-                // 상세 화면으로 이동 (히스토리 교체)
+                // 상세 화면으로 이동
                 const res = await http.get(`/choiMath/share/detail/${detailId}`);
                 setSelectedShare(res.data);
                 setView('DETAIL');
-                window.history.replaceState({ view: 'DETAIL', selectedShare: res.data }, '');
             } else {
                 setView('LIST');
                 setSelectedShare(null);
-                window.history.replaceState({ view: 'LIST', selectedShare: null }, '');
             }
 
             fetchShares();
@@ -175,12 +175,10 @@ const KakaoSharePage = () => {
         if (!confirmed) return;
 
         try {
-            // 다건 삭제 API 사용 (POST /choiMath/share/delete)
             await http.post('/choiMath/share/delete', { ids: [id] });
             showToast({ severity: 'success', summary: '삭제 완료', detail: '게시글이 삭제되었습니다.' });
             setView('LIST');
             setSelectedShare(null);
-            window.history.replaceState({ view: 'LIST', selectedShare: null }, '');
             fetchShares();
         } catch (error) {
             console.error('Delete error:', error);
@@ -200,7 +198,6 @@ const KakaoSharePage = () => {
 
         try {
             const ids = selectedItems.map((item) => item._id);
-            // 다건 삭제 API 사용 (POST /choiMath/share/delete)
             await http.post('/choiMath/share/delete', { ids });
             showToast({ severity: 'success', summary: '삭제 완료', detail: '선택한 게시글들이 삭제되었습니다.' });
             setListSelectedItems([]);
@@ -214,16 +211,14 @@ const KakaoSharePage = () => {
     const handleShare = (item: ShareItem) => {
         const firstImageUrl = item.shareImageUrls?.[0];
         const imageUrl = typeof firstImageUrl === 'string' ? firstImageUrl : firstImageUrl?.url;
-        // 도메인 주소 결정 (환경변수 우선, 없으면 현재 호스트 사용)
         const baseUri =
             process.env.NEXT_PUBLIC_KAKAO_SHARED_URI || (typeof window !== 'undefined' ? window.location.origin : '');
 
         const shareLink = `${baseUri}/kakao-share/public-view/${item?.publicUrl}`;
 
         shareDefault({
-            title: item?.shareTitle,
-            description: item?.shareContent,
-            // imageUrl: imageUrl,
+            title: item?.shareTitle || '',
+            description: item?.shareContent || '',
             buttonText: '자세히 보기',
             linkUrl: shareLink
         });
@@ -232,20 +227,17 @@ const KakaoSharePage = () => {
     const handleEdit = (item: ShareItem) => {
         setSelectedShare(item);
         setView('WRITE');
-        window.history.pushState({ view: 'WRITE', selectedShare: item }, '');
     };
 
     const handleBack = () => {
-        if (view !== 'LIST') {
-            window.history.back();
-        }
+        setView('LIST');
+        setSelectedShare(null);
     };
 
     const handleNewPost = () => {
         setSelectedShare(null);
         setIsCopy(false);
         setView('WRITE');
-        window.history.pushState({ view: 'WRITE', selectedShare: null }, '');
     };
 
     const handleCopyToNew = (item: ShareItem) => {
@@ -263,24 +255,7 @@ const KakaoSharePage = () => {
         setSelectedShare(newItemData as ShareItem);
         setIsCopy(true);
         setView('WRITE');
-        window.history.pushState({ view: 'WRITE', selectedShare: newItemData }, '');
     };
-
-    useEffect(() => {
-        const handlePopState = (event: PopStateEvent) => {
-            const state = event.state;
-            if (state) {
-                setView(state.view || 'LIST');
-                setSelectedShare(state.selectedShare || null);
-            } else {
-                setView('LIST');
-                setSelectedShare(null);
-            }
-        };
-
-        window.addEventListener('popstate', handlePopState);
-        return () => window.removeEventListener('popstate', handlePopState);
-    }, []);
 
     useEffect(() => {
         if (view !== 'WRITE') setIsCopy(false);

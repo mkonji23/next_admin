@@ -6,7 +6,8 @@ import { Button } from 'primereact/button';
 import { Tag } from 'primereact/tag';
 import { InputTextarea } from 'primereact/inputtextarea';
 import dayjs from 'dayjs';
-import { Todo } from '@/types/todo';
+import { Todo, TodoUser } from '@/types/todo';
+import { getUserTagColor } from '@/util/userTagColors';
 
 interface ToDoDetailModalProps {
     visible: boolean;
@@ -67,11 +68,20 @@ const ToDoDetailModal: React.FC<ToDoDetailModalProps> = ({ visible, onClose, pDa
                     <div className="col-12 md:col-6 mb-3">
                         <label className="block text-900 font-bold mb-1">담당자</label>
                         <div className="flex flex-wrap gap-1">
-                            {todo.assignees.map((item, idx) => (
-                                <span key={idx} className="p-tag p-tag-info">
-                                    {item.userName}
-                                </span>
-                            ))}
+                            {todo.assignees.map((item: TodoUser, idx: number) => {
+                                const backgroundColor = getUserTagColor(item.userName);
+                                return (
+                                    <Tag
+                                        key={idx}
+                                        value={item.userName}
+                                        style={{
+                                            backgroundColor: backgroundColor,
+                                            color: '#ffffff',
+                                            borderRadius: '4px'
+                                        }}
+                                    />
+                                );
+                            })}
                         </div>
                     </div>
                     <div className="col-12 md:col-6 mb-3">

@@ -8,6 +8,11 @@ export interface Notification {
     detail: NotificationDetail;
 }
 
+export interface PusherMessage {
+    message: string;
+    createdAt: Date;
+}
+
 interface NotificationDetail {
     _id: string;
     senderId: string;
