@@ -658,7 +658,7 @@ const StudentAttendanceStatisticsPage = () => {
                                 loading={loading}
                                 emptyMessage="데이터가 없습니다."
                                 paginator
-                                rows={10}
+                                rows={30}
                                 expandedRows={expandedRows}
                                 onRowToggle={(e) => setExpandedRows(e.data)}
                                 rowExpansionTemplate={rowExpansionTemplate}

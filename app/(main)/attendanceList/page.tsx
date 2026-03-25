@@ -533,7 +533,7 @@ const AttendanceListPage = () => {
                                 loading={loading}
                                 emptyMessage="데이터가 없습니다."
                                 paginator
-                                rows={10}
+                                rows={30}
                             >
                                 <Column field="className" header="수업명" sortable />
                                 <Column field="year" header="연도" sortable />

@@ -102,40 +102,37 @@ const AttendancePage = () => {
         },
         [date]
     );
+    const loadAttendance = async () => {
+        try {
+            const year = date?.getFullYear().toString();
+            const month = String(date?.getMonth()! + 1).padStart(2, '0');
+            const response = await http.get('/choiMath/attendance/getAttendance', {
+                params: { classId: selectedClass, year, month }
+            });
+            const attendanceList = response.data || [];
 
+            if (attendanceList.length === 0) {
+                await http.post('/choiMath/attendance/insertAttendance', { classId: selectedClass, year, month });
+                showToast({ severity: 'success', summary: '출석부 생성 완료', detail: '출석부 신규생성완료!' });
+                const retryResponse = await http.get('/choiMath/attendance/getAttendance', {
+                    params: { classId: selectedClass, year, month }
+                });
+                processAttendanceData(retryResponse.data?.[0]);
+            } else {
+                processAttendanceData(attendanceList[0]);
+            }
+            scrolled.current = false;
+        } catch (error: any) {
+            const errorMessage = error.response?.data?.message || '출석부를 불러오는데 실패했습니다.';
+            showToast({ severity: 'error', summary: '조회 실패', detail: errorMessage });
+            setUsers([]);
+        }
+    };
     useEffect(() => {
         if (!selectedClass || !date) {
             if (users.length > 0) setUsers([]);
             return;
         }
-
-        const loadAttendance = async () => {
-            try {
-                const year = date.getFullYear().toString();
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-
-                const response = await http.get('/choiMath/attendance/getAttendance', {
-                    params: { classId: selectedClass, year, month }
-                });
-                const attendanceList = response.data || [];
-
-                if (attendanceList.length === 0) {
-                    await http.post('/choiMath/attendance/insertAttendance', { classId: selectedClass, year, month });
-                    showToast({ severity: 'success', summary: '출석부 생성 완료', detail: '출석부 신규생성완료!' });
-                    const retryResponse = await http.get('/choiMath/attendance/getAttendance', {
-                        params: { classId: selectedClass, year, month }
-                    });
-                    processAttendanceData(retryResponse.data?.[0]);
-                } else {
-                    processAttendanceData(attendanceList[0]);
-                }
-                scrolled.current = false;
-            } catch (error: any) {
-                const errorMessage = error.response?.data?.message || '출석부를 불러오는데 실패했습니다.';
-                showToast({ severity: 'error', summary: '조회 실패', detail: errorMessage });
-                setUsers([]);
-            }
-        };
 
         loadAttendance();
     }, [selectedClass]);
@@ -391,7 +388,7 @@ const AttendancePage = () => {
                                     rounded
                                     raised
                                     label="새로고침"
-                                    onClick={fetchClasses}
+                                    onClick={loadAttendance}
                                     className="p-button-primary"
                                 />
                             </div>
