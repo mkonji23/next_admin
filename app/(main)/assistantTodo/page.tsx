@@ -30,12 +30,13 @@ const AssistantTodoPage = () => {
     const { openModal } = useCustomModal();
     const { userInfo } = useAuthStore(); // Get userInfo from useAuthStore
     const currentUserId = userInfo.userId; // Get current user's ID
+    const [idChk, setIdCheck] = useState(false);
 
-    const fetchTodos = useCallback(async (userId = '') => {
+    const fetchTodos = useCallback(async () => {
         try {
             const response = await get('/choiMath/todo/getTodoList', {
                 params: {
-                    userId: userId,
+                    userId: idChk ? currentUserId : '',
                     startDate: currentDate.start,
                     endDate: currentDate.end
                 }
@@ -44,19 +45,16 @@ const AssistantTodoPage = () => {
         } catch (error) {
             showToast({ severity: 'error', summary: '조회 실패', detail: '목록을 불러오지 못했습니다.' });
         }
-    }, []);
+    }, [idChk]);
 
     const handleFetchCheck = (check) => {
-        if (check) {
-            fetchTodos(currentUserId);
-        } else {
-            fetchTodos();
-        }
+        console.log('check', check);
+        setIdCheck(check);
     };
 
     useEffect(() => {
         fetchTodos();
-    }, []);
+    }, [idChk]);
 
     const handleToggleComplete = async (todo: Todo) => {
         try {
@@ -118,17 +116,6 @@ const AssistantTodoPage = () => {
         } else {
             setSelectedTodo(null);
         }
-    };
-
-    const openDetailModal = async (todo: Todo) => {
-        setSelectedTodo(todo);
-        await openModal({
-            id: 'todoDetailModal',
-            pData: {
-                todo,
-                onToggleComplete: handleToggleComplete
-            }
-        });
     };
 
     const handleEventClick = (clickInfo: any) => {
