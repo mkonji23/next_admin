@@ -46,7 +46,7 @@ const ToDoDetailModal: React.FC<ToDoDetailModalProps> = ({ visible, onClose, pDa
         <Dialog
             header="업무 상세 조회"
             visible={visible}
-            style={{ width: '95vw' }}
+            style={{ width: '55vw' }}
             contentStyle={{ maxHeight: '70vh' }}
             footer={footer}
             onHide={() => onClose()}
