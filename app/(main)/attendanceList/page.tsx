@@ -535,7 +535,12 @@ const AttendanceListPage = () => {
                                 paginator
                                 rows={30}
                             >
-                                <Column field="className" header="수업명" sortable />
+                                <Column
+                                    field="className"
+                                    header="수업명"
+                                    sortable
+                                    headerStyle={{ minWidth: '150px' }}
+                                />
                                 <Column field="year" header="연도" sortable />
                                 <Column field="month" header="월" sortable />
                                 <Column
@@ -595,7 +600,12 @@ const AttendanceListPage = () => {
                                         paginator
                                         rows={10}
                                     >
-                                        <Column field="name" header="학생명" sortable />
+                                        <Column
+                                            field="name"
+                                            header="학생명"
+                                            sortable
+                                            headerStyle={{ minWidth: '100px' }}
+                                        />
                                         <Column field="grade" header="학년" sortable />
                                         <Column field="school" header="학교" sortable />
                                         <Column
@@ -667,8 +677,13 @@ const AttendanceListPage = () => {
                                 paginator
                                 rows={10}
                             >
-                                <Column field="className" header="수업명" sortable />
-                                <Column field="name" header="학생명" sortable />
+                                <Column
+                                    field="className"
+                                    header="수업명"
+                                    sortable
+                                    headerStyle={{ minWidth: '150px' }}
+                                />
+                                <Column field="name" header="학생명" sortable headerStyle={{ minWidth: '100px' }} />
                                 <Column field="grade" header="학년" sortable />
                                 <Column field="school" header="학교" sortable />
                                 <Column field="statistics.present" header="출석" sortable body={presentBodyTemplate} />
