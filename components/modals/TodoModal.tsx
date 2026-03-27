@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
 import { InputTextarea } from 'primereact/inputtextarea';
@@ -12,6 +12,9 @@ import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
 import { Todo, TodoUser } from '@/types/todo';
 import dayjs from 'dayjs';
+import { Editor } from 'primereact/editor';
+import Quill from 'quill';
+import { CustomEditor } from '../editor/CustomEditor';
 
 interface TodoModalProps {
     visible: boolean;
@@ -24,6 +27,8 @@ interface TodoModalProps {
 }
 
 const TodoModal = ({ visible, pData, onClose }: TodoModalProps) => {
+    const contentRef = useRef<Editor>(null);
+    const editorLoad = useRef(false);
     const mode = pData?.mode || 'new';
     const initialTodo = pData?.todo;
     const initialDate = pData?.initialDate || new Date();
@@ -93,6 +98,7 @@ const TodoModal = ({ visible, pData, onClose }: TodoModalProps) => {
                 date: dayjs(todo.date).format('YYYYMMDD'),
                 assignees: todo.assignees || [],
                 content: todo.content || '',
+                delta: todo.delta || [],
                 workingHours: todo.workingHours || '',
                 isCompleted: isCompletedValue,
                 createdAt: todo.createdAt
@@ -149,7 +155,6 @@ const TodoModal = ({ visible, pData, onClose }: TodoModalProps) => {
             )}
         </div>
     );
-
     return (
         <Dialog
             visible={visible}
@@ -202,13 +207,17 @@ const TodoModal = ({ visible, pData, onClose }: TodoModalProps) => {
                 <label htmlFor="content">
                     업무 내용 <span className="text-red-500">*</span>
                 </label>
-                <InputTextarea
-                    id="content"
-                    style={{ height: '300px' }}
+                <CustomEditor
                     value={todo.content}
-                    onChange={(e) => setTodo({ ...todo, content: e.target.value })}
-                    required
-                    className={submitted && !todo.content ? 'p-invalid' : ''}
+                    delta={todo.delta}
+                    style={{ height: '320px' }}
+                    onChange={(data) => {
+                        setTodo((prev) => ({
+                            ...prev,
+                            content: data.textValue,
+                            delta: data.delta
+                        }));
+                    }}
                 />
             </div>
             <div className="field flex align-items-center gap-2">

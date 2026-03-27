@@ -5,6 +5,7 @@ import { InputTextarea } from 'primereact/inputtextarea';
 import dayjs from 'dayjs';
 import { Todo, TodoUser } from '@/types/todo';
 import { getUserTagColor } from '@/util/userTagColors';
+import { CustomEditor } from '@/components/editor/CustomEditor';
 
 interface TodoDetailProps {
     selectedTodo: Todo | null;
@@ -75,19 +76,7 @@ const TodoDetail: React.FC<TodoDetailProps> = ({ selectedTodo, onEdit, onToggleC
                     </div>
                     <div className="mb-3">
                         <label className="block text-900 font-bold mb-1">업무 내용</label>
-                        <InputTextarea
-                            value={selectedTodo.content}
-                            readOnly
-                            rows={25}
-                            className="w-full"
-                            style={{
-                                border: 'none',
-                                backgroundColor: 'transparent',
-                                padding: 0,
-                                whiteSpace: 'pre-line',
-                                fontSize: '15px'
-                            }}
-                        />
+                        <CustomEditor value={selectedTodo.content} delta={selectedTodo.delta} readOnly={true} />
                     </div>
                     <div>
                         <label className="block text-900 font-bold mb-1">상태</label>

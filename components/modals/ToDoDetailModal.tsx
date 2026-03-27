@@ -8,6 +8,7 @@ import { InputTextarea } from 'primereact/inputtextarea';
 import dayjs from 'dayjs';
 import { Todo, TodoUser } from '@/types/todo';
 import { getUserTagColor } from '@/util/userTagColors';
+import { CustomEditor } from '../editor/CustomEditor';
 
 interface ToDoDetailModalProps {
     visible: boolean;
@@ -90,19 +91,7 @@ const ToDoDetailModal: React.FC<ToDoDetailModalProps> = ({ visible, onClose, pDa
                     </div>
                     <div className="col-12">
                         <label className="block text-1200 font-bold mb-1">업무 내용</label>
-                        <InputTextarea
-                            value={todo.content}
-                            readOnly
-                            autoResize
-                            className="w-full"
-                            style={{
-                                border: 'none',
-                                backgroundColor: 'var(--surface-50)',
-                                padding: '1rem',
-                                whiteSpace: 'pre-line',
-                                fontSize: '17px'
-                            }}
-                        />
+                        <CustomEditor value={todo.content} delta={todo.delta} readOnly={true} />
                     </div>
                 </div>
             </div>

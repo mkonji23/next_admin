@@ -31,10 +31,11 @@ const AssistantTodoPage = () => {
     const { userInfo } = useAuthStore(); // Get userInfo from useAuthStore
     const currentUserId = userInfo.userId; // Get current user's ID
 
-    const fetchTodos = useCallback(async () => {
+    const fetchTodos = useCallback(async (userId = '') => {
         try {
             const response = await get('/choiMath/todo/getTodoList', {
                 params: {
+                    userId: userId,
                     startDate: currentDate.start,
                     endDate: currentDate.end
                 }
@@ -44,6 +45,14 @@ const AssistantTodoPage = () => {
             showToast({ severity: 'error', summary: '조회 실패', detail: '목록을 불러오지 못했습니다.' });
         }
     }, []);
+
+    const handleFetchCheck = (check) => {
+        if (check) {
+            fetchTodos(currentUserId);
+        } else {
+            fetchTodos();
+        }
+    };
 
     useEffect(() => {
         fetchTodos();
@@ -173,7 +182,7 @@ const AssistantTodoPage = () => {
                 // 완료 상태는 테두리 색상으로 표현
                 let borderColor = backgroundColor;
                 if (todo.isCompleted) {
-                    borderColor = '#4caf50'; // 완료 시 초록색 테두리
+                    backgroundColor = '#4caf50'; // 완료 시 초록색 테두리
                 }
 
                 return {
@@ -199,6 +208,7 @@ const AssistantTodoPage = () => {
                     onEventChange={handleEventChange}
                     onDatesSet={handleDatesSet}
                     onAddTodo={() => handleAdd()}
+                    onChangeCheck={(check) => handleFetchCheck(check)}
                 />
 
                 <TodoList
