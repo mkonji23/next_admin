@@ -11,6 +11,8 @@ import Download from 'yet-another-react-lightbox/plugins/download';
 import 'yet-another-react-lightbox/styles.css';
 import { ShareItem } from '@/app/(main)/kakao-share/types';
 import Zoom from 'yet-another-react-lightbox/plugins/zoom';
+import { CustomEditor } from '@/components/editor/CustomEditor';
+import { useLightboxHistory } from '@/hooks/useLightboxHistory';
 
 interface KakaoShareViewContentProps {
     shareData: ShareItem;
@@ -27,6 +29,7 @@ const KakaoShareViewContent: React.FC<KakaoShareViewContentProps> = ({
 }) => {
     const [open, setOpen] = useState(false);
     const [index, setIndex] = useState(0);
+    const { handleClose } = useLightboxHistory(open, setOpen);
 
     const formatDate = (dateStr?: string) => {
         if (!dateStr) return '';
@@ -64,15 +67,8 @@ const KakaoShareViewContent: React.FC<KakaoShareViewContentProps> = ({
                         )}
                     </div>
 
-                    <div className="mb-6">
-                        <InputTextarea
-                            value={shareData.actualContent}
-                            rows={10}
-                            readOnly
-                            autoResize
-                            className="w-full border-none surface-50 p-3 line-height-3 text-700 font-sans"
-                            style={{ resize: 'none', background: 'transparent' }}
-                        />
+                    <div className="mb-6 surface-50 p-3 border-round">
+                        <CustomEditor value={shareData.actualContent || ''} delta={shareData.delta} readOnly={true} />
                     </div>
 
                     {images && images.length > 0 && (
@@ -144,7 +140,7 @@ const KakaoShareViewContent: React.FC<KakaoShareViewContentProps> = ({
                     zoomInMultiplier: 2, // 한 번 클릭 시 확대 배율
                     doubleTapDelay: 300 // 더블 탭 인식 시간
                 }}
-                close={() => setOpen(false)}
+                close={handleClose}
                 index={index}
                 slides={slides}
                 carousel={{ finite: true }}

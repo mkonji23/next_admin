@@ -13,6 +13,7 @@ export interface ShareItem {
     shareContent?: string;
     actualTitle?: string;
     actualContent?: string;
+    delta?: any;
     shareImageUrls?: ShareImage[];
     studentId?: string;
     studentName?: string;

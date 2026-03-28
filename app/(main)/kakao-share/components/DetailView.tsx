@@ -14,6 +14,8 @@ import Thumbnails from 'yet-another-react-lightbox/plugins/thumbnails';
 import Zoom from 'yet-another-react-lightbox/plugins/zoom';
 import 'yet-another-react-lightbox/styles.css';
 import 'yet-another-react-lightbox/plugins/thumbnails.css';
+import { CustomEditor } from '@/components/editor/CustomEditor';
+import { useLightboxHistory } from '@/hooks/useLightboxHistory';
 
 interface DetailViewProps {
     selectedShare: ShareItem | null;
@@ -28,6 +30,7 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete, onCopyTo
     const { showToast } = useToast();
     const [open, setOpen] = useState(false);
     const [index, setIndex] = useState(0);
+    const { handleClose } = useLightboxHistory(open, setOpen);
 
     if (!selectedShare) return null;
 
@@ -101,7 +104,11 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete, onCopyTo
                             label="삭제"
                             icon="pi pi-trash"
                             className="p-button-outlined p-button-danger"
-                            onClick={() => onDelete(selectedShare._id)}
+                            onClick={() => {
+                                if (selectedShare._id) {
+                                    onDelete(selectedShare._id);
+                                }
+                            }}
                         />
                     </div>
                 </div>
@@ -142,10 +149,10 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete, onCopyTo
                                 </div>
 
                                 <div
-                                    className="p-3 surface-50 border-round text-700 line-height-3"
-                                    style={{ whiteSpace: 'pre-wrap', minHeight: '150px' }}
+                                    className="p-3 surface-50 border-round"
+                                    style={{ minHeight: '150px' }}
                                 >
-                                    {selectedShare.actualContent}
+                                    <CustomEditor value={selectedShare.actualContent || ''} delta={selectedShare.delta} readOnly={true} />
                                 </div>
                             </div>
 
@@ -260,7 +267,7 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete, onCopyTo
                     zoomInMultiplier: 2, // 한 번 클릭 시 확대 배율
                     doubleTapDelay: 300 // 더블 탭 인식 시간
                 }}
-                close={() => setOpen(false)}
+                close={handleClose}
                 index={index}
                 slides={slides}
                 carousel={{ finite: true }}

@@ -24,7 +24,15 @@ export const CustomEditor = ({ value, delta, onChange, style, placeholder, readO
 
         // 초기 로드 시 값이 있다면 설정
         if (delta || value) {
-            const defaultData = delta?.ops ? delta.ops : [{ insert: value || '' }];
+            let parsedDelta = delta;
+            if (typeof delta === 'string') {
+                try {
+                    parsedDelta = JSON.parse(delta);
+                } catch (e) {
+                    console.error('Failed to parse delta', e);
+                }
+            }
+            const defaultData = parsedDelta?.ops ? parsedDelta.ops : [{ insert: value || '' }];
             quill.setContents(defaultData, 'api');
         }
     };
@@ -82,7 +90,15 @@ export const CustomEditor = ({ value, delta, onChange, style, placeholder, readO
         if (contentRef.current && editorLoad.current) {
             const quill = contentRef.current.getQuill();
             if (quill && source !== 'user') {
-                const ops = delta?.ops ? delta.ops : [{ insert: value || '' }];
+                let parsedDelta = delta;
+                if (typeof delta === 'string') {
+                    try {
+                        parsedDelta = JSON.parse(delta);
+                    } catch (e) {
+                        console.error('Failed to parse delta', e);
+                    }
+                }
+                const ops = parsedDelta?.ops ? parsedDelta.ops : [{ insert: value || '' }];
                 // 현재 에디터 내용과 새로 들어온 내용이 다를 때만 업데이트 (무한 루프 방지)
                 quill.setContents(ops, 'api');
             }

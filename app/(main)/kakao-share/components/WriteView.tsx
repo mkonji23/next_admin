@@ -17,6 +17,8 @@ import Lightbox from 'yet-another-react-lightbox';
 import Download from 'yet-another-react-lightbox/plugins/download';
 import 'yet-another-react-lightbox/styles.css';
 import Zoom from 'yet-another-react-lightbox/plugins/zoom';
+import { CustomEditor } from '@/components/editor/CustomEditor';
+import { useLightboxHistory } from '@/hooks/useLightboxHistory';
 
 interface WriteViewProps {
     onBack: () => void;
@@ -37,6 +39,7 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
     // Lightbox state
     const [lightboxOpen, setLightboxOpen] = useState(false);
     const [lightboxIndex, setLightboxIndex] = useState(0);
+    const { handleClose: handleLightboxClose } = useLightboxHistory(lightboxOpen, setLightboxOpen);
 
     useEffect(() => {
         const fetchClasses = async () => {
@@ -196,6 +199,7 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
                               shareContent: editData.shareContent,
                               actualTitle: editData.actualTitle,
                               actualContent: editData.actualContent,
+                              delta: editData.delta,
                               studentId: !isCopy ? editData.studentId : '',
                               studentName: !isCopy ? editData.studentName : '',
                               telNo: !isCopy ? editData.telNo : '',
@@ -352,12 +356,14 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
                             <Field name="actualContent">
                                 {({ input, meta }) => (
                                     <>
-                                        <InputTextarea
-                                            {...input}
-                                            id="actualContent"
-                                            rows={10}
+                                        <CustomEditor
+                                            value={input.value}
+                                            delta={form.getState().values.delta}
+                                            onChange={(data) => {
+                                                input.onChange(data.textValue);
+                                                form.change('delta', data.delta);
+                                            }}
                                             placeholder="상세 내용을 입력하세요."
-                                            className={meta.touched && meta.error ? 'p-invalid' : ''}
                                         />
                                         {meta.touched && meta.error && <small className="p-error">{meta.error}</small>}
                                     </>
@@ -473,7 +479,7 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
                     zoomInMultiplier: 2, // 한 번 클릭 시 확대 배율
                     doubleTapDelay: 300 // 더블 탭 인식 시간
                 }}
-                close={() => setLightboxOpen(false)}
+                close={handleLightboxClose}
                 index={lightboxIndex}
                 slides={slides}
                 plugins={[Download, Zoom]}

@@ -84,6 +84,7 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
                     multipartData.append('shareContent', formData.shareContent || '');
                     multipartData.append('actualTitle', formData.actualTitle);
                     multipartData.append('actualContent', formData.actualContent || '');
+                    if (formData.delta) multipartData.append('delta', JSON.stringify(formData.delta));
 
                     // 학생 정보 추가
                     multipartData.append('classId', formData.classId);
@@ -108,6 +109,7 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
                         shareContent: formData.shareContent || '',
                         actualTitle: formData.actualTitle,
                         actualContent: formData.actualContent || '',
+                        delta: formData.delta ? JSON.stringify(formData.delta) : null,
                         studentId: formData.studentId,
                         studentName: formData.studentName,
                         telNo: formData.telNo,
@@ -127,6 +129,7 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
                 multipartData.append('shareContent', formData.shareContent || '');
                 multipartData.append('actualTitle', formData.actualTitle);
                 multipartData.append('actualContent', formData.actualContent || '');
+                multipartData.append('delta', JSON.stringify(formData.delta || null));
 
                 // 학생 정보 추가
                 if (formData.studentName) multipartData.append('studentName', formData.studentName);
