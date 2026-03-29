@@ -23,11 +23,11 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-    title: 'Next Admin Dashboard',
-    description: '학원 관리 시스템 관리자 대시보드',
+    title: 'AMS',
+    description: '학원 관리 시스템',
     appleWebApp: {
         capable: true,
-        title: 'Next Admin',
+        title: 'AMS',
         statusBarStyle: 'default'
     },
     formatDetection: {

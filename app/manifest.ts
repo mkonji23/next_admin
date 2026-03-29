@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: 'Academy Management System',
     short_name: 'AMS',
     description: '출석부',
-    start_url: '/',
+    start_url: '/manual',
     display: 'standalone',
     background_color: '#ffffff',
     theme_color: '#ffffff',
@@ -27,13 +27,13 @@ export default function manifest(): MetadataRoute.Manifest {
         name: '대시보드 홈',
         short_name: '홈',
         description: '관리자 대시보드 메인으로 돌아갑니다.',
-        url: '/',
+        url: '/manual',
       },
       {
-        name: '빠른 출석체크',
-        short_name: '출석부',
-        description: '출석부 화면으로 곧장 진입합니다.',
-        url: '/attendance',
+        name: '학생 칭찬 현황',
+        short_name: '학생 칭찬 현황',
+        description: '학생 현황 화면으로 곧장 진입합니다.',
+        url: '/student-status',
       }
     ]
   };
