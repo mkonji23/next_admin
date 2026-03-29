@@ -490,6 +490,7 @@ const StudentListPage = () => {
     return (
         <div className="card">
             <h1>학생 목록 </h1>
+            {/* @ts-expect-error PReact DataTable selectionMode omitting to disable row click check */}
             <DataTable
                 showGridlines
                 value={students}
@@ -498,9 +499,8 @@ const StudentListPage = () => {
                 rows={10}
                 emptyMessage="학생을 찾을 수 없습니다."
                 selection={selectedStudents}
-                onSelectionChange={(e) => setSelectedStudents(e.value as Student[])}
+                onSelectionChange={(e: any) => setSelectedStudents(e.value)}
                 dataKey="studentId"
-                selectionMode="checkbox"
                 expandedRows={expandedRows}
                 onRowToggle={(e) => setExpandedRows(e.data)}
                 rowExpansionTemplate={rowExpansionTemplate}

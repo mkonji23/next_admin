@@ -136,6 +136,25 @@ const ManualPage = () => {
                                 <p className="mt-2"><strong>example (Dash):</strong> 시스템 UI 표준 구성을 확인하고 테스트하는 개발 참조용 페이지입니다.</p>
                             </div>
                         </AccordionTab>
+                        {/* 5. Fullpage (공용 페이지) */}
+                        <AccordionTab header={<div className="flex align-items-center gap-2"><i className="pi pi-desktop text-primary"></i><span>5. Fullpage (학생 현황 조회 레이아웃)</span></div>}>
+                            <Accordion multiple className="mt-2">
+                                <AccordionTab header="학생 칭찬/출석/과제 현황">
+                                    <div className="p-2 text-700">
+                                        <p className="font-bold text-900 mb-2">📌 기능 개요</p>
+                                        <p className="mb-3">학생 본인 또는 학부모가 HOC(고차 컴포넌트) 인증을 거쳐 개인별 학업 달성률을 확인할 수 있는 페이지입니다. 관리자는 Admin 전용 뷰(`/admin-student-status`)로 접근하여 사이드메뉴와 함께 조회할 수 있고, 학생은 공용 뷰(`/student-status`)로 진입하여 꽉 찬 화면에서 조회합니다.</p>
+                                        <p className="font-bold text-900 mb-2">🚀 사용 방법</p>
+                                        <ol className="pl-3 mb-3 line-height-3">
+                                            <li>초기 진입 시 <strong>학생 이름</strong>과 <strong>전화번호</strong>(학생 본인 또는 학부모)를 입력합니다. (숫자만 입력해도 무방)</li>
+                                            <li>인증 완료 후 상단에 <strong>총 칭찬 획득 배지 수</strong>가 시각적으로 표시됩니다.</li>
+                                            <li><strong>출석 현황 (도넛 차트):</strong> 툴팁에 마우스를 올리면 출석률, 결석률, 지각률 등의 % 정보가 표시됩니다.</li>
+                                            <li><strong>과제 현황 (다중 도넛 차트):</strong> 수강하는 각 클래스별 과제 수행률과 우측 또는 하단의 <strong>총 달성률</strong>을 확인할 수 있습니다.</li>
+                                            <li><strong>하단 칭찬 내역:</strong> 확장 기능을 통해 각 클래스별 칭찬받은 날짜와 당시의 출석/과제율을 목록으로 볼 수 있습니다.</li>
+                                        </ol>
+                                    </div>
+                                </AccordionTab>
+                            </Accordion>
+                        </AccordionTab>
                     </Accordion>
                 </div>
             </div>

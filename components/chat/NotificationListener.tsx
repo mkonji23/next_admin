@@ -21,7 +21,9 @@ export default function NotificationListener() {
         // Fetch initial notifications
         const fetchNotifications = async () => {
             try {
-                const response = await http.get(`/choiMath/notifications/${userInfo.userId}`); // Use http.get
+                const response = await http.get(`/choiMath/notifications/${userInfo.userId}`, {
+                    disableLoading: true
+                });
                 addNotification(response.data);
             } catch (error) {
                 console.error('Failed to fetch notifications:', error);

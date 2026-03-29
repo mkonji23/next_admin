@@ -38,5 +38,11 @@ export const AppMenuModel: AppMenuItem[] = [
             { label: '사용 매뉴얼', icon: 'pi pi-fw pi-book', to: '/manual' },
             { label: 'example', icon: 'pi pi-fw pi-home', to: '/dash' }
         ]
+    },
+    {
+        label: 'Fullpage',
+        items: [
+            { label: '학생 칭찬/출석 현황', icon: 'pi pi-fw pi-star', to: '/admin-student-status' }
+        ]
     }
 ];
