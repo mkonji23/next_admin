@@ -26,6 +26,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
     title: 'AMS',
     description: '학원 관리 시스템',
+    manifest: '/manifest.webmanifest',
     appleWebApp: {
         capable: true,
         title: 'AMS',
