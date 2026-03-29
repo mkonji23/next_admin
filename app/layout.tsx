@@ -12,6 +12,7 @@ import { ModalProvider } from '@/hooks/useCustomModal';
 import KakaoScript from '@/components/KakaoScript';
 import { GlobalLoading } from '@/layout/GlobalLoading';
 import NotificationListener from '@/components/chat/NotificationListener';
+import PwaInstallPrompt from '@/components/PwaInstallPrompt';
 import { Metadata, Viewport } from 'next';
 
 export const viewport: Viewport = {
@@ -55,6 +56,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
                                     <ModalProvider>
                                         {children}
                                         <GlobalLoading />
+                                        <PwaInstallPrompt />
                                     </ModalProvider>
                                     <NotificationListener />
                                 </ConfirmProvider>

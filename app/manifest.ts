@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: 'Academy Management System',
     short_name: 'AMS',
     description: '출석부',
-    start_url: '/',
+    start_url: '/manual',
     display: 'standalone',
     background_color: '#ffffff',
     theme_color: '#ffffff',
