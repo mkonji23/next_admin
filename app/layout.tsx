@@ -12,6 +12,28 @@ import { ModalProvider } from '@/hooks/useCustomModal';
 import KakaoScript from '@/components/KakaoScript';
 import { GlobalLoading } from '@/layout/GlobalLoading';
 import NotificationListener from '@/components/chat/NotificationListener';
+import { Metadata, Viewport } from 'next';
+
+export const viewport: Viewport = {
+    themeColor: '#ffffff',
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false
+};
+
+export const metadata: Metadata = {
+    title: 'Next Admin Dashboard',
+    description: '학원 관리 시스템 관리자 대시보드',
+    appleWebApp: {
+        capable: true,
+        title: 'Next Admin',
+        statusBarStyle: 'default'
+    },
+    formatDetection: {
+        telephone: false
+    }
+};
 
 interface RootLayoutProps {
     children: React.ReactNode;
