@@ -16,7 +16,6 @@ const AppMenu = () => {
     }, []);
 
     const model = useMemo(() => {
-        console.log('userInfo', userInfo);
         // 서버 렌더링 시점이나 클라이언트의 첫 번째 렌더링(하이드레이션) 시점에는
         // 전체 메뉴(AppMenuModel)를 반환하여 서버 HTML과 일치시킵니다.
         if (!mounted || userInfo.auth === 'admin' || userInfo.menuPermissions === undefined) {
