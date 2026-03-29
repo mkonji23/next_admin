@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from 'primereact/button';
 import { Card } from 'primereact/card';
 import { Divider } from 'primereact/divider';
@@ -148,11 +148,12 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete, onCopyTo
                                     </div>
                                 </div>
 
-                                <div
-                                    className="p-3 surface-50 border-round"
-                                    style={{ minHeight: '150px' }}
-                                >
-                                    <CustomEditor value={selectedShare.actualContent || ''} delta={selectedShare.delta} readOnly={true} />
+                                <div className="p-3 surface-50 border-round" style={{ minHeight: '150px' }}>
+                                    <CustomEditor
+                                        value={selectedShare?.actualContent}
+                                        delta={selectedShare.delta}
+                                        readOnly={true}
+                                    />
                                 </div>
                             </div>
 

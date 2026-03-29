@@ -103,7 +103,7 @@ export const CustomEditor = ({ value, delta, onChange, style, placeholder, readO
                 quill.setContents(ops, 'api');
             }
         }
-    }, [value, delta]);
+    }, [value, delta, editorLoad.current, contentRef.current]);
 
     return (
         <Editor

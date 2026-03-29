@@ -46,6 +46,7 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
     const fetchDetail = async (id: string) => {
         try {
             const res = await http.get(`/choiMath/share/detail/${id}`);
+            console.log('res', res);
             setSelectedShare(res.data || {});
             setView('DETAIL');
         } catch (error) {
@@ -73,6 +74,8 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
 
     // 3. 게시글 저장 (생성 및 수정)
     const handleSave = async (formData: any, files: File[]) => {
+        console.log('formData', formData);
+        console.log('files', files);
         try {
             let detailId = selectedShare?._id;
             if (selectedShare && selectedShare._id) {
