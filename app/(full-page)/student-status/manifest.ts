@@ -11,13 +11,13 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: '#4f46e5', // 학생용 테마 컬러 지정 (인디고 톤)
     icons: [
       {
-        src: '/icons/student-icon-256x256.png',
+        src: '/icons/icon-mac-256x256.png',
         sizes: '256x256',
         type: 'image/png',
       },
       {
-        src: '/icons/student-icon-1024x1024.png',
-        sizes: '512x512',
+        src: '/icons/icon-ios-1024x1024.png',
+        sizes: '1024x1024',
         type: 'image/png',
       },
     ],
