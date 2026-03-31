@@ -146,12 +146,6 @@ const PraiseStatisticsPage = () => {
             </div>
         );
     };
-
-    const getAttendanceLabel = (status) => {
-        const option = ATTENDANCE_STATUS_OPTIONS.find((opt) => opt.value === status);
-        return option ? option.label : '없음'; // 일치하는게 없으면 기본값 설정
-    };
-
     // 칭찬DataTable
     const rowExpansionTemplate2 = (data2: PraiseClass) => {
         const filterAttendance = data2?.attendance?.filter((item) => item.praise);

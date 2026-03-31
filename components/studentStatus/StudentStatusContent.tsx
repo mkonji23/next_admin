@@ -11,6 +11,7 @@ import { Button } from 'primereact/button';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import dayjs from 'dayjs';
+import { ATTENDANCE_STATUS_OPTIONS } from '@/constants/attendance';
 
 interface StudentStatusContentProps {
     studentAuthData?: StudentAuthData;
@@ -493,13 +494,10 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                         body={(rowData: any) => (
                             <Tag
                                 value={
-                                    rowData.status === 'class_present'
-                                        ? '출석'
-                                        : rowData.status === 'class_absent'
-                                        ? '결석'
-                                        : '지각'
+                                    ATTENDANCE_STATUS_OPTIONS.find((opt) => opt.value === rowData.status)?.label ||
+                                    '없음'
                                 }
-                                severity={getAttendanceSeverity(rowData.status || '') as any}
+                                severity={getAttendanceSeverity(rowData.status || '')}
                             />
                         )}
                     />
