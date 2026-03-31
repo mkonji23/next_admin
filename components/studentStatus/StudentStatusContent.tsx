@@ -12,6 +12,7 @@ import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import dayjs from 'dayjs';
 import { ATTENDANCE_STATUS_OPTIONS } from '@/constants/attendance';
+import { AI_PROGRESS_MESSAGES, AI_STUDENT_COMMENTS } from '@/constants/aiComments';
 
 interface StudentStatusContentProps {
     studentAuthData?: StudentAuthData;
@@ -104,68 +105,21 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
         let comments: string[] = [];
 
         // 1. 출석 코멘트
-        const attHigh = [
-            '단 한 번의 지각 없이 완벽한 출석률을 자랑하며,',
-            '불타는 학구열로 빈틈없는 출석 태도를 보여주며,',
-            '시간 약속을 칼같이 지키는 훌륭한 출석 태도를 바탕으로,',
-            '늘 가장 먼저 교실에 도착하는 모범적인 출석 태도와 함께,'
-        ];
-        const attMid = [
-            '전반적으로 안정적이고 성실하게 수업에 참여하고 있으며,',
-            '꾸준한 페이스로 규칙적인 출석 습관을 유지하고 있고,',
-            '큰 기복 없이 묵묵히 수업 일정을 잘 소화하고 있으며,'
-        ];
-        const attLow = [
-            '출석 관리에 조금만 더 신경 쓰면 공부의 흐름을 완벽히 탈 수 있으며,',
-            '가끔 지각이 아쉽지만 학원에 오면 누구보다 열심히 하며,',
-            '규칙적인 출석 습관을 기르면 훨씬 더 놀라운 성과가 기대되며,'
-        ];
+        const { attendance, homework, praise: praiseComments } = AI_STUDENT_COMMENTS;
 
-        if (attendRate >= 0.95) comments.push(getRandom(attHigh));
-        else if (attendRate >= 0.8) comments.push(getRandom(attMid));
-        else comments.push(getRandom(attLow));
+        if (attendRate >= 0.95) comments.push(getRandom(attendance.high));
+        else if (attendRate >= 0.8) comments.push(getRandom(attendance.mid));
+        else comments.push(getRandom(attendance.low));
 
         // 2. 과제 코멘트
-        const hwHigh = [
-            '주어진 과제를 완벽하게 소화해내는 뛰어난 학업 성취도를 보여줍니다.',
-            '과제 수행력이 데스크탑 CPU급으로 뛰어나 학습 이해도가 매우 깊습니다.',
-            '어떤 어려운 과제도 척척 해내는 모습이 여느 우등생 부럽지 않습니다.',
-            '과제 제출률이 완벽에 가까워 선생님들의 미소를 자아냅니다.'
-        ];
-        const hwMid = [
-            '매주 주어지는 과제를 묵묵하고 성실하게 끝마치며 순항 중입니다.',
-            '기본적인 과제들을 꼼꼼하게 챙기며 탄탄한 기본기를 다지고 있습니다.',
-            '스스로 학습량을 관리하며 차곡차곡 목표를 해결해 나가고 있습니다.'
-        ];
-        const hwLow = [
-            '복습과 과제 풀이에 조금만 더 시간을 투자하면 잠재력이 폭발할 것입니다.',
-            '수업 시간에 배운 내용을 과제로 한 번 더 다지는 연습이 필요해 보입니다.',
-            '과제 수행률을 조금 더 높이면 분명히 성적 향상의 지름길이 될 것입니다.'
-        ];
-
-        if (hwAvg >= 90) comments.push(getRandom(hwHigh));
-        else if (hwAvg >= 70) comments.push(getRandom(hwMid));
-        else comments.push(getRandom(hwLow));
+        if (hwAvg >= 90) comments.push(getRandom(homework.high));
+        else if (hwAvg >= 70) comments.push(getRandom(homework.mid));
+        else comments.push(getRandom(homework.low));
 
         // 3. 칭찬 코멘트
-        const praiseHigh = [
-            '특히 적극적인 참여로 수많은 칭찬 배지를 휩쓸고 있는 반의 에이스입니다! 🌟',
-            '넘치는 에너지와 긍정적인 태도로 학원의 분위기 메이커 역할을 톡톡히 하고 있습니다! 🎉',
-            '다른 학생들의 귀감이 될 정도로 많은 칭찬을 받는 자랑스러운 학생입니다! 🏆'
-        ];
-        const praiseMid = [
-            '조용하지만 강한 집중력으로 선생님들의 칭찬을 꾸준히 이끌어냅니다! 👍',
-            '눈에 띄게 발전하는 모습으로 점차 많은 칭찬을 받아가고 있습니다! ✨',
-            '성실한 태도가 빛을 발해 선생님들의 아낌없는 지지를 받고 있습니다! 🙌'
-        ];
-        const praiseLow = [
-            '앞으로 더 자신감을 가지고 수업에 참여해 숨겨진 매력을 마구 발산해주기를 기대합니다! 💪',
-            '작은 목표부터 하나씩 달성해가며 칭찬 배지를 모으는 재미를 느껴보기를 응원합니다! 🌱'
-        ];
-
-        if (praise >= 10) comments.push(getRandom(praiseHigh));
-        else if (praise >= 3) comments.push(getRandom(praiseMid));
-        else comments.push(getRandom(praiseLow));
+        if (praise >= 10) comments.push(getRandom(praiseComments.high));
+        else if (praise >= 3) comments.push(getRandom(praiseComments.mid));
+        else comments.push(getRandom(praiseComments.low));
 
         return comments.join(' ');
     }, [stats, chartData]);
@@ -554,27 +508,15 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
 
                         {aiAnalyzing ? (
                             (() => {
-                                let dynamicMessage = '';
-                                if (aiProgress < 20)
-                                    dynamicMessage =
-                                        '인공지능 슈퍼컴퓨터 전원을 켜기 위해 예열하는 중...사실없음... ⚡';
-                                else if (aiProgress < 40)
-                                    dynamicMessage = '데이터베이스를 보안망을 피해 은밀하게 뒤적거리는 중... 🕵️';
-                                else if (aiProgress < 60)
-                                    dynamicMessage =
-                                        '방대한 숙제와 지각 기록들 사이에서 긍정적인 면을 찾아내는 중... 🔍';
-                                else if (aiProgress < 85)
-                                    dynamicMessage =
-                                        '잔소리를 할까 칭찬을 할까 선생님의 마음으로 깊이 고민하는 중... 🤔';
-                                else if (aiProgress < 100)
-                                    dynamicMessage = '코멘트를 가장 예쁜 리본으로 정성스레 포장하는 중... 🎁';
-                                else dynamicMessage = '분석이 완료되었습니다! 두구두구두구... 🥁';
+                                const currentMessage =
+                                    AI_PROGRESS_MESSAGES.find((m) => aiProgress < m.threshold)?.message ||
+                                    AI_PROGRESS_MESSAGES[AI_PROGRESS_MESSAGES.length - 1].message;
 
                                 return (
                                     <div className="w-full md:w-8 z-1 flex flex-column align-items-center">
                                         <span className="text-yellow-200 font-bold mb-3 text-base md:text-xl text-center">
                                             <i className="pi pi-cog pi-spin mr-2"></i>
-                                            {dynamicMessage}
+                                            {currentMessage}
                                         </span>
                                         <ProgressBar
                                             value={aiProgress}

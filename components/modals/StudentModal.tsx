@@ -9,6 +9,7 @@ import { Button } from 'primereact/button';
 import { useState, useEffect } from 'react';
 import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
+import { useConfirm } from '@/hooks/useConfirm';
 
 export interface StudentClass {
     classId: string;
@@ -49,6 +50,7 @@ const StudentModal = ({ visible, pData, onClose }: StudentModalProps) => {
 
     const http = useHttp();
     const { showToast } = useToast();
+    const { showConfirm } = useConfirm();
 
     const [student, setStudent] = useState<Student>({
         name: '',
@@ -58,8 +60,7 @@ const StudentModal = ({ visible, pData, onClose }: StudentModalProps) => {
         parentPhoneNumber: '',
         description: '',
         registDate: '',
-        isWithdrawn: false,
-        simplePassword: '' // Added simplePassword to initial state
+        isWithdrawn: false
     });
     const [registDateValue, setRegistDateValue] = useState<Date | null>(null);
     const [submitted, setSubmitted] = useState(false);
@@ -70,7 +71,6 @@ const StudentModal = ({ visible, pData, onClose }: StudentModalProps) => {
         { label: '3학년', value: '3' }
     ];
 
-    // YYYYMMDD 형식을 Date 객체로 변환
     const parseDate = (dateString?: string): Date | null => {
         if (!dateString || dateString.length !== 8) return null;
         const year = parseInt(dateString.substring(0, 4));
@@ -79,7 +79,6 @@ const StudentModal = ({ visible, pData, onClose }: StudentModalProps) => {
         return new Date(year, month, day);
     };
 
-    // Date 객체를 YYYYMMDD 형식으로 변환
     const formatDate = (date: Date | null): string => {
         if (!date) return '';
         const year = date.getFullYear();
@@ -91,7 +90,7 @@ const StudentModal = ({ visible, pData, onClose }: StudentModalProps) => {
     useEffect(() => {
         if (visible) {
             if (mode === 'edit' && initialStudent) {
-                setStudent({ ...initialStudent, simplePassword: '' }); // Reset simplePassword on edit
+                setStudent({ ...initialStudent });
                 setRegistDateValue(parseDate(initialStudent.registDate));
             } else {
                 const today = new Date();
@@ -103,8 +102,7 @@ const StudentModal = ({ visible, pData, onClose }: StudentModalProps) => {
                     parentPhoneNumber: '',
                     description: '',
                     registDate: formatDate(today),
-                    isWithdrawn: false,
-                    simplePassword: '' // Reset simplePassword on new
+                    isWithdrawn: false
                 });
                 setRegistDateValue(today);
             }
@@ -116,10 +114,29 @@ const StudentModal = ({ visible, pData, onClose }: StudentModalProps) => {
     const header = isEditMode ? '학생 수정' : '학생 등록';
     const saveButtonLabel = isEditMode ? '저장' : '등록';
 
+    const handleResetPassword = async () => {
+        if (!student.studentId) return;
+
+        const isConfirmed = await showConfirm({
+            header: '비밀번호 초기화',
+            message: `'${student.name}' 학생의 비밀번호를 초기화하시겠습니까?`
+        });
+
+        if (isConfirmed) {
+            try {
+                await http.post('/choiMath/student/resetPassword', {
+                    studentId: student.studentId
+                });
+                showToast({ severity: 'success', summary: '성공', detail: '비밀번호가 초기화되었습니다.' });
+            } catch (error) {
+                showToast({ severity: 'error', summary: '실패', detail: '초기화에 실패했습니다.' });
+            }
+        }
+    };
+
     const handleSave = async () => {
         setSubmitted(true);
 
-        // Validation
         if (!student.name || !student.grade || !student.school) {
             showToast({ severity: 'error', summary: '입력 오류', detail: '이름, 학년, 학교는 필수 입력 항목입니다.' });
             return;
@@ -129,18 +146,12 @@ const StudentModal = ({ visible, pData, onClose }: StudentModalProps) => {
             const formattedRegistDate = formatDate(registDateValue);
 
             if (mode === 'new') {
-                // 이름을 쉼표로 분리하여 배열로 변환
-                const names = student.name
-                    .split(',')
-                    .map((name) => name.trim())
-                    .filter((name) => name.length > 0);
-
+                const names = student.name.split(',').map((name) => name.trim()).filter((name) => name.length > 0);
                 if (names.length === 0) {
                     showToast({ severity: 'error', summary: '입력 오류', detail: '이름을 입력해주세요.' });
                     return;
                 }
 
-                // 다건 등록을 위한 배열 생성
                 const studentsData = names.map((name) => ({
                     name: name,
                     grade: student.grade,
@@ -152,27 +163,9 @@ const StudentModal = ({ visible, pData, onClose }: StudentModalProps) => {
                     isWithdrawn: false
                 }));
 
-                const payload = {
-                    data: studentsData.length === 1 ? studentsData[0] : studentsData
-                };
-
-                if (student.simplePassword) {
-                    if (Array.isArray(payload.data)) {
-                        payload.data = payload.data.map(s => ({ ...s, simplePassword: student.simplePassword }));
-                    } else {
-                        payload.data = { ...payload.data, simplePassword: student.simplePassword };
-                    }
-                }
-
-                await http.post('/choiMath/student/saveStudent', payload);
-                const count = studentsData.length;
-                showToast({
-                    severity: 'success',
-                    summary: '등록 성공',
-                    detail: `${count}명의 학생이 등록되었습니다.`
-                });
+                await http.post('/choiMath/student/saveStudent', { data: studentsData.length === 1 ? studentsData[0] : studentsData });
+                showToast({ severity: 'success', summary: '등록 성공', detail: '등록되었습니다.' });
             } else {
-                // 수정 모드는 단건만 처리
                 const payload: Student = {
                     studentId: student.studentId,
                     name: student.name,
@@ -185,24 +178,17 @@ const StudentModal = ({ visible, pData, onClose }: StudentModalProps) => {
                     isWithdrawn: student.isWithdrawn || false
                 };
 
-                if (student.simplePassword) {
-                    payload.simplePassword = student.simplePassword;
-                }
-
                 await http.post('/choiMath/student/updateStudent', payload);
                 showToast({ severity: 'success', summary: '수정 성공', detail: '학생 정보가 수정되었습니다.' });
             }
             onClose(student);
         } catch (error: any) {
             console.error('Error saving student:', error);
-            const errorMessage = error.response?.data?.message || error.message || '작업에 실패했습니다.';
-            showToast({ severity: 'error', summary: '실패', detail: errorMessage });
+            showToast({ severity: 'error', summary: '실패', detail: '작업에 실패했습니다.' });
         }
     };
 
-    const handleCancel = () => {
-        onClose(null);
-    };
+    const handleCancel = () => onClose(null);
 
     const dialogFooter = (
         <div>
@@ -212,125 +198,48 @@ const StudentModal = ({ visible, pData, onClose }: StudentModalProps) => {
     );
 
     return (
-        <Dialog
-            visible={visible}
-            style={{ width: '550px' }}
-            header={header}
-            modal
-            className="p-fluid"
-            footer={dialogFooter}
-            onHide={handleCancel}
-        >
+        <Dialog visible={visible} style={{ width: '550px' }} header={header} modal className="p-fluid" footer={dialogFooter} onHide={handleCancel}>
             <div className="field">
-                <label htmlFor="name">
-                    이름 <span className="text-red-500">*</span>
-                    {!isEditMode && <small className="text-500 ml-2">(쉼표로 구분하여 여러 명 입력 가능)</small>}
-                </label>
-                <InputText
-                    id="name"
-                    value={student.name}
-                    onChange={(e) => setStudent({ ...student, name: e.target.value })}
-                    required
-                    placeholder={isEditMode ? '이름을 입력하세요' : '홍길동, 김철수, 이영희'}
-                    className={submitted && !student.name ? 'p-invalid' : ''}
-                />
-                {submitted && !student.name && <small className="p-invalid">이름을 입력해주세요.</small>}
-                {!isEditMode && student.name && (
-                    <small className="text-500">
-                        {student.name.split(',').filter((name) => name.trim().length > 0).length}명이 등록됩니다.
-                    </small>
-                )}
+                <label htmlFor="name">이름 <span className="text-red-500">*</span>{!isEditMode && <small className="text-500 ml-2">(쉼표 구분 가능)</small>}</label>
+                <InputText id="name" value={student.name} onChange={(e) => setStudent({ ...student, name: e.target.value })} required className={submitted && !student.name ? 'p-invalid' : ''} />
             </div>
             <div className="field">
-                <label htmlFor="grade">
-                    학년 <span className="text-red-500">*</span>
-                </label>
-                <Dropdown
-                    id="grade"
-                    value={student.grade}
-                    options={gradeOptions}
-                    onChange={(e) => setStudent({ ...student, grade: e.value })}
-                    placeholder="학년을 선택하세요"
-                    className={submitted && !student.grade ? 'p-invalid' : ''}
-                />
-                {submitted && !student.grade && <small className="p-invalid">학년을 선택해주세요.</small>}
+                <label htmlFor="grade">학년 <span className="text-red-500">*</span></label>
+                <Dropdown id="grade" value={student.grade} options={gradeOptions} onChange={(e) => setStudent({ ...student, grade: e.value })} placeholder="학년 선택" className={submitted && !student.grade ? 'p-invalid' : ''} />
             </div>
             <div className="field">
-                <label htmlFor="school">
-                    학교 <span className="text-red-500">*</span>
-                </label>
-                <InputText
-                    id="school"
-                    value={student.school}
-                    onChange={(e) => setStudent({ ...student, school: e.target.value })}
-                    required
-                    className={submitted && !student.school ? 'p-invalid' : ''}
-                />
-                {submitted && !student.school && <small className="p-invalid">학교를 입력해주세요.</small>}
+                <label htmlFor="school">학교 <span className="text-red-500">*</span></label>
+                <InputText id="school" value={student.school} onChange={(e) => setStudent({ ...student, school: e.target.value })} required className={submitted && !student.school ? 'p-invalid' : ''} />
             </div>
             <div className="field">
                 <label htmlFor="phoneNumber">학생 전화번호</label>
-                <InputText
-                    id="phoneNumber"
-                    value={student.phoneNumber || ''}
-                    onChange={(e) => setStudent({ ...student, phoneNumber: e.target.value })}
-                    placeholder="010-0000-0000"
-                />
+                <InputText id="phoneNumber" value={student.phoneNumber || ''} onChange={(e) => setStudent({ ...student, phoneNumber: e.target.value })} placeholder="010-0000-0000" />
             </div>
             <div className="field">
                 <label htmlFor="parentPhoneNumber">학부모 전화번호</label>
-                <InputText
-                    id="parentPhoneNumber"
-                    value={student.parentPhoneNumber || ''}
-                    onChange={(e) => setStudent({ ...student, parentPhoneNumber: e.target.value })}
-                    placeholder="010-0000-0000"
-                />
+                <InputText id="parentPhoneNumber" value={student.parentPhoneNumber || ''} onChange={(e) => setStudent({ ...student, parentPhoneNumber: e.target.value })} placeholder="010-0000-0000" />
             </div>
-            <div className="field">
-                <label htmlFor="simplePassword">간편 비밀번호</label>
-                <InputText
-                    id="simplePassword"
-                    value={student.simplePassword || ''}
-                    onChange={(e) => setStudent({ ...student, simplePassword: e.target.value })}
-                    placeholder="새로운 비밀번호를 입력하세요"
-                    type="password"
-                />
-            </div>
+            {isEditMode && (
+                <div className="field">
+                    <label>간편 비밀번호</label>
+                    <div>
+                        <Button type="button" label="비밀번호 초기화" icon="pi pi-key" className="p-button-outlined p-button-help" onClick={handleResetPassword} />
+                    </div>
+                </div>
+            )}
             <div className="field">
                 <label htmlFor="description">설명</label>
-                <InputTextarea
-                    id="description"
-                    value={student.description || ''}
-                    onChange={(e) => setStudent({ ...student, description: e.target.value })}
-                    rows={5}
-                    autoResize
-                />
+                <InputTextarea id="description" value={student.description || ''} onChange={(e) => setStudent({ ...student, description: e.target.value })} rows={5} autoResize />
             </div>
             <div className="field">
                 <label htmlFor="registDate">등록일자</label>
-                <Calendar
-                    id="registDate"
-                    value={registDateValue}
-                    onChange={(e) => {
-                        setRegistDateValue(e.value as Date);
-                        setStudent({ ...student, registDate: formatDate(e.value as Date) });
-                    }}
-                    dateFormat="yy-mm-dd"
-                    showIcon
-                    showButtonBar
-                />
+                <Calendar id="registDate" value={registDateValue} onChange={(e) => { setRegistDateValue(e.value as Date); setStudent({ ...student, registDate: formatDate(e.value as Date) }); }} dateFormat="yy-mm-dd" showIcon showButtonBar />
             </div>
             {isEditMode && (
                 <div className="field">
                     <div className="flex align-items-center">
-                        <Checkbox
-                            inputId="isWithdrawn"
-                            checked={student.isWithdrawn || false}
-                            onChange={(e) => setStudent({ ...student, isWithdrawn: e.checked ?? false })}
-                        />
-                        <label htmlFor="isWithdrawn" className="ml-2">
-                            퇴원 여부
-                        </label>
+                        <Checkbox inputId="isWithdrawn" checked={student.isWithdrawn || false} onChange={(e) => setStudent({ ...student, isWithdrawn: e.checked ?? false })} />
+                        <label htmlFor="isWithdrawn" className="ml-2">퇴원 여부</label>
                     </div>
                 </div>
             )}
