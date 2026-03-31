@@ -1,0 +1,21 @@
+{
+  "name": "학생 칭찬 현황",
+  "short_name": "칭찬현황",
+  "description": "학원 관리 시스템 - 학생 현황",
+  "start_url": "/student-status",
+  "display": "standalone",
+  "background_color": "#faebd7",
+  "theme_color": "#fff",
+  "icons": [
+          {
+              "src": "/icons/icon-mac-256x256.png",
+              "sizes": "256x256",
+              "type": "image/png"
+          },
+          {
+              "src": "/icons/icon-ios-1024x1024.png",
+              "sizes": "1024x1024",
+              "type": "image/png"
+          }
+      ]
+}
