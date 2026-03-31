@@ -13,6 +13,7 @@ import { PraiseClass, PraiseDetail, PraiseStatistics } from '@/types/attendanceS
 import dayjs from 'dayjs';
 import { Tag } from 'primereact/tag';
 import { FilterMatchMode } from 'primereact/api';
+import { ATTENDANCE_STATUS_OPTIONS } from '@/constants/attendance';
 
 const PraiseStatisticsPage = () => {
     const [statistics, setStatistics] = useState<PraiseStatistics[]>([]);
@@ -146,6 +147,11 @@ const PraiseStatisticsPage = () => {
         );
     };
 
+    const getAttendanceLabel = (status) => {
+        const option = ATTENDANCE_STATUS_OPTIONS.find((opt) => opt.value === status);
+        return option ? option.label : '없음'; // 일치하는게 없으면 기본값 설정
+    };
+
     // 칭찬DataTable
     const rowExpansionTemplate2 = (data2: PraiseClass) => {
         const filterAttendance = data2?.attendance?.filter((item) => item.praise);
@@ -164,11 +170,8 @@ const PraiseStatisticsPage = () => {
                         body={(rowData: PraiseDetail) => (
                             <Tag
                                 value={
-                                    rowData.status === 'class_present'
-                                        ? '출석'
-                                        : rowData.status === 'class_absent'
-                                        ? '결석'
-                                        : '지각'
+                                    ATTENDANCE_STATUS_OPTIONS.find((opt) => opt.value === rowData.status)?.label ||
+                                    '없음'
                                 }
                                 severity={getAttendanceSeverity(rowData.status || '')}
                             />
