@@ -260,12 +260,31 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                     };
                     const cAttOptions = {
                         cutout: '70%',
+                        // 1. 패딩을 최소화하거나 제거해서 차트 크기를 회복합니다.
+                        layout: {
+                            padding: 0
+                        },
+                        // 2. 차트가 캔버스 끝까지 꽉 차게 그립니다.
+                        maintainAspectRatio: false,
+
                         plugins: {
-                            // 툴팁 박스를 데이터 포인트 위로 올림
-                            yAlign: 'bottom', // 툴팁 박스가 위로 향하게 설정
-                            caretPadding: 20, // 숫자를 키울수록 원 바깥쪽으로 멀어집니다
                             legend: { display: false },
-                            tooltip: { callbacks: { label: (context: any) => ` ${context.label}: ${context.raw}건` } }
+                            tooltip: {
+                                // 3. 핵심: 툴팁 위치를 'nearest'가 아닌 'center' 근처에서 '바깥쪽'으로 유도
+                                position: 'nearest',
+
+                                // 4. 화살표 방향을 '바깥쪽'으로 고정 (도넛 위/아래에 따라 자동 조절됨)
+                                // 고정하고 싶다면 'bottom'을 쓰되, 패딩이 없으므로 잘릴 위험이 있습니다.
+                                yAlign: 'bottom',
+
+                                // 5. 간격을 너무 크게 잡으면 캔버스 밖으로 나가서 잘립니다. 적당히 조절!
+                                caretPadding: 10,
+
+                                displayColors: true,
+                                callbacks: {
+                                    label: (context) => ` ${context.label}: ${context.raw}건`
+                                }
+                            }
                         }
                     };
                     const percentage = Math.round((classPresent / cTotalAtt) * 100);
@@ -564,6 +583,11 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                                         const displayGrade = gradeVal.includes('학년') ? gradeVal : `${gradeVal}학년`;
                                         return (
                                             <Tag
+                                                style={{
+                                                    minWidth: '70px', // 원하는 가로 사이즈로 조절하세요
+                                                    display: 'inline-flex',
+                                                    justifyContent: 'center'
+                                                }}
                                                 value={displayGrade}
                                                 severity="info"
                                                 className="text-sm px-3 py-2 border-round-xl shadow-1 font-bold bg-indigo-500"
@@ -572,6 +596,11 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                                     })()}
                                 {(studentInfo.school || finalSchool) && (
                                     <Tag
+                                        style={{
+                                            minWidth: '70px', // 원하는 가로 사이즈로 조절하세요
+                                            display: 'inline-flex',
+                                            justifyContent: 'center'
+                                        }}
                                         value={studentInfo.school || finalSchool}
                                         severity="info"
                                         className="text-sm px-3 py-2 border-round-xl shadow-1 font-bold bg-blue-500"
