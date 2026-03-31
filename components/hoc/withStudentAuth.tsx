@@ -136,8 +136,7 @@ const withStudentAuth = <P extends object>(
                     if (studentData.grade) sessionStorage.setItem('student_auth_grade', studentData.grade);
                 }
             } catch (err: any) {
-                console.error('Password verify error:', err);
-                if (err.response?.data?.error === 'Invalid password') {
+                if (err === 'Invalid password') {
                     setError('비밀번호가 일치하지 않습니다.');
                 } else {
                     setError('비밀번호 확인 중 오류가 발생했습니다.');
@@ -357,6 +356,9 @@ const withStudentAuth = <P extends object>(
                         <p className="text-600 m-0">
                             {authState === 'INITIAL' && '학생 본인 확인 후 조회가 가능합니다.'}
                             {authState === 'PASSWORD_VERIFY' && '안전한 접속을 위해 비밀번호를 입력해주세요.'}
+                        </p>
+                        <p className="text-red-600 font-bold m-0">
+                            {authState === 'PASSWORD_VERIFY' && '비밀번호 분실시에는 관리자에게 문의하세요.'}
                         </p>
                     </div>
                     {renderContent()}

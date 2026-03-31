@@ -93,7 +93,11 @@ export const useHttp = (): AxiosInstance => {
                     });
                 }
             }
-            return Promise.reject(error.response ? error.response.data.message : 'no content');
+            return Promise.reject(
+                error.response
+                    ? error.response.data?.error || error.response?.statusText || error.response.data?.message
+                    : 'no content'
+            );
         }
     );
     return axiosInstance;
