@@ -113,6 +113,10 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
         router.push(tab.path);
     };
 
+    const handleGoToStudentStatus = () => {
+        router.push('/student-status');
+    };
+
     const handleNotificationClick = (event: React.MouseEvent<HTMLButtonElement>) => {
         notificationPanelRef.current?.toggle(event);
     };
@@ -245,6 +249,16 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
 
                 <Button
                     className="p-link layout-topbar-button"
+                    tooltip="학생용 칭찬 현황"
+                    tooltipOptions={{ position: 'bottom' }}
+                    onClick={handleGoToStudentStatus}
+                >
+                    <i className="pi pi-trophy"></i>
+                    <span>학생 칭찬 현황</span>
+                </Button>
+
+                <Button
+                    className="p-link layout-topbar-button"
                     tooltip="프로필"
                     tooltipOptions={{ position: 'bottom' }}
                     onClick={goToProfile}
@@ -252,6 +266,7 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
                     <i className="pi pi-user"></i>
                     <span>프로필</span>
                 </Button>
+
                 <Button
                     className="p-link layout-topbar-button"
                     onClick={handleLogout}

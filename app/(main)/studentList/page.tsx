@@ -10,6 +10,9 @@ import { Student } from '@/components/modals/StudentModal';
 import { useCustomModal } from '@/hooks/useCustomModal';
 import { useConfirm } from '@/hooks/useConfirm';
 import * as XLSX from 'xlsx';
+import { InputText } from 'primereact/inputtext';
+import { Dropdown } from 'primereact/dropdown';
+import { FilterMatchMode } from 'primereact/api';
 
 const StudentListPage = () => {
     const { openModal } = useCustomModal();
@@ -20,6 +23,19 @@ const StudentListPage = () => {
     const http = useHttp();
     const { showToast } = useToast();
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const [globalFilterValue, setGlobalFilterValue] = useState('');
+    const [filters, setFilters] = useState({
+        global: { value: null, matchMode: FilterMatchMode.CONTAINS }
+    });
+
+    const onGlobalFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        let _filters = { ...filters };
+        _filters['global'].value = value;
+        setFilters(_filters);
+        setGlobalFilterValue(value);
+    };
 
     const fetchStudents = async () => {
         try {
@@ -34,6 +50,7 @@ const StudentListPage = () => {
     useEffect(() => {
         fetchStudents();
     }, []);
+
 
     const exportToExcel = () => {
         let dataToExport =
@@ -432,57 +449,77 @@ const StudentListPage = () => {
     };
 
     const header = (
-        <div className="flex flex-wrap align-items-center justify-content-between gap-2">
-            <span className="text-xl text-900 font-bold">학생 목록 (총 {students.length}명)</span>
-            <div className="flex gap-2">
-                <input
-                    type="file"
-                    ref={fileInputRef}
-                    style={{ display: 'none' }}
-                    accept=".xlsx, .xls"
-                    onChange={handleImportExcel}
-                />
-                <Button
-                    icon="pi pi-file-excel"
-                    rounded
-                    raised
-                    label="엑셀 업로드"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="p-button-help"
-                />
-                <Button
-                    icon="pi pi-download"
-                    rounded
-                    raised
-                    label="엑셀 다운로드"
-                    onClick={exportToExcel}
-                    className="p-button-secondary"
-                />
-                <Button
-                    icon="pi pi-plus"
-                    rounded
-                    raised
-                    label="신규"
-                    onClick={openNewStudentDialog}
-                    className="p-button-info"
-                />
-                <Button
-                    icon="pi pi-trash"
-                    rounded
-                    raised
-                    label="삭제"
-                    onClick={handleDeleteStudents}
-                    className="p-button-danger"
-                    disabled={selectedStudents.length === 0}
-                />
-                <Button
-                    icon="pi pi-search"
-                    rounded
-                    raised
-                    label="조회"
-                    onClick={fetchStudents}
-                    className="p-button-success"
-                />
+        <div>
+            <div className="flex flex-wrap gap-2 align-items-center p-fluid mb-3 bg-gray-50 p-3 border-round">
+                <div className="flex-auto">
+                    <label htmlFor="filter_name" className="font-bold">이름</label>
+                    <InputText id="filter_name" name="name" value={filters.name} onChange={handleFilterChange} onKeyDown={onEnterPress} placeholder="이름으로 검색" className="p-inputtext-sm"/>
+                </div>
+                <div className="flex-auto">
+                    <label htmlFor="filter_school" className="font-bold">학교</label>
+                    <InputText id="filter_school" name="school" value={filters.school} onChange={handleFilterChange} onKeyDown={onEnterPress} placeholder="학교로 검색" className="p-inputtext-sm"/>
+                </div>
+                <div className="flex-auto">
+                    <label htmlFor="filter_grade" className="font-bold">학년</label>
+                    <Dropdown id="filter_grade" name="grade" value={filters.grade} options={gradeOptions} onChange={handleFilterChange} placeholder="전체 학년" className="p-inputtext-sm" />
+                </div>
+                 <div className="flex-auto">
+                    <label htmlFor="filter_status" className="font-bold">상태</label>
+                    <Dropdown id="filter_status" name="isWithdrawn" value={filters.isWithdrawn} options={statusOptions} onChange={handleFilterChange} placeholder="전체" className="p-inputtext-sm" />
+                </div>
+            </div>
+            <div className="flex flex-wrap align-items-center justify-content-between gap-2">
+                <span className="text-xl text-900 font-bold">학생 목록 (총 {students.length}명)</span>
+                <div className="flex gap-2">
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        style={{ display: 'none' }}
+                        accept=".xlsx, .xls"
+                        onChange={handleImportExcel}
+                    />
+                    <Button
+                        icon="pi pi-file-excel"
+                        rounded
+                        raised
+                        label="엑셀 업로드"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="p-button-help"
+                    />
+                    <Button
+                        icon="pi pi-download"
+                        rounded
+                        raised
+                        label="엑셀 다운로드"
+                        onClick={exportToExcel}
+                        className="p-button-secondary"
+                    />
+                    <Button
+                        icon="pi pi-plus"
+                        rounded
+                        raised
+                        label="신규"
+                        onClick={openNewStudentDialog}
+                        className="p-button-info"
+                    />
+                    <Button
+                        icon="pi pi-trash"
+                        rounded
+                        raised
+                        label="삭제"
+                        onClick={handleDeleteStudents}
+                        className="p-button-danger"
+                        disabled={selectedStudents.length === 0}
+                    />
+                    <Button
+                        icon="pi pi-search"
+                        rounded
+                        raised
+                        label="조회"
+                        onClick={fetchStudents}
+                        className="p-button-success"
+                    />
+                </div>
             </div>
         </div>
     );

@@ -31,6 +31,7 @@ export interface Student {
     updatedDate?: string | Date;
     isWithdrawn?: boolean;
     classes?: StudentClass[];
+    simplePassword?: string;
 }
 
 interface StudentModalProps {
@@ -57,7 +58,8 @@ const StudentModal = ({ visible, pData, onClose }: StudentModalProps) => {
         parentPhoneNumber: '',
         description: '',
         registDate: '',
-        isWithdrawn: false
+        isWithdrawn: false,
+        simplePassword: '' // Added simplePassword to initial state
     });
     const [registDateValue, setRegistDateValue] = useState<Date | null>(null);
     const [submitted, setSubmitted] = useState(false);
@@ -89,7 +91,7 @@ const StudentModal = ({ visible, pData, onClose }: StudentModalProps) => {
     useEffect(() => {
         if (visible) {
             if (mode === 'edit' && initialStudent) {
-                setStudent({ ...initialStudent });
+                setStudent({ ...initialStudent, simplePassword: '' }); // Reset simplePassword on edit
                 setRegistDateValue(parseDate(initialStudent.registDate));
             } else {
                 const today = new Date();
@@ -101,7 +103,8 @@ const StudentModal = ({ visible, pData, onClose }: StudentModalProps) => {
                     parentPhoneNumber: '',
                     description: '',
                     registDate: formatDate(today),
-                    isWithdrawn: false
+                    isWithdrawn: false,
+                    simplePassword: '' // Reset simplePassword on new
                 });
                 setRegistDateValue(today);
             }
@@ -153,6 +156,14 @@ const StudentModal = ({ visible, pData, onClose }: StudentModalProps) => {
                     data: studentsData.length === 1 ? studentsData[0] : studentsData
                 };
 
+                if (student.simplePassword) {
+                    if (Array.isArray(payload.data)) {
+                        payload.data = payload.data.map(s => ({ ...s, simplePassword: student.simplePassword }));
+                    } else {
+                        payload.data = { ...payload.data, simplePassword: student.simplePassword };
+                    }
+                }
+
                 await http.post('/choiMath/student/saveStudent', payload);
                 const count = studentsData.length;
                 showToast({
@@ -162,7 +173,7 @@ const StudentModal = ({ visible, pData, onClose }: StudentModalProps) => {
                 });
             } else {
                 // 수정 모드는 단건만 처리
-                const payload = {
+                const payload: Student = {
                     studentId: student.studentId,
                     name: student.name,
                     grade: student.grade,
@@ -173,6 +184,10 @@ const StudentModal = ({ visible, pData, onClose }: StudentModalProps) => {
                     registDate: formattedRegistDate,
                     isWithdrawn: student.isWithdrawn || false
                 };
+
+                if (student.simplePassword) {
+                    payload.simplePassword = student.simplePassword;
+                }
 
                 await http.post('/choiMath/student/updateStudent', payload);
                 showToast({ severity: 'success', summary: '수정 성공', detail: '학생 정보가 수정되었습니다.' });
@@ -269,6 +284,16 @@ const StudentModal = ({ visible, pData, onClose }: StudentModalProps) => {
                     value={student.parentPhoneNumber || ''}
                     onChange={(e) => setStudent({ ...student, parentPhoneNumber: e.target.value })}
                     placeholder="010-0000-0000"
+                />
+            </div>
+            <div className="field">
+                <label htmlFor="simplePassword">간편 비밀번호</label>
+                <InputText
+                    id="simplePassword"
+                    value={student.simplePassword || ''}
+                    onChange={(e) => setStudent({ ...student, simplePassword: e.target.value })}
+                    placeholder="새로운 비밀번호를 입력하세요"
+                    type="password"
                 />
             </div>
             <div className="field">

@@ -38,3 +38,8 @@ package-lock.json
 *.tsbuildinfo
 next-env.d.ts
 .turbo
+
+# Workbox 관련 생성 파일
+sw.js
+sw.js.map
+workbox-*.js

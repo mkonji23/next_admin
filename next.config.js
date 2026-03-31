@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const withPWA = require('@ducanh2912/next-pwa').default({
     dest: 'public',
-    disable: process.env.NODE_ENV === 'development', // 현재 테스트를 위해 개발 모드에서도 켜둡니다!
+    disable: false, // 현재 테스트를 위해 개발 모드에서도 켜둡니다!
     register: true,
     skipWaiting: true
 });
