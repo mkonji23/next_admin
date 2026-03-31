@@ -306,6 +306,9 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                     const cAttOptions = {
                         cutout: '70%',
                         plugins: {
+                            // 툴팁 박스를 데이터 포인트 위로 올림
+                            yAlign: 'bottom', // 툴팁 박스가 위로 향하게 설정
+                            caretPadding: 20, // 숫자를 키울수록 원 바깥쪽으로 멀어집니다
                             legend: { display: false },
                             tooltip: { callbacks: { label: (context: any) => ` ${context.label}: ${context.raw}건` } }
                         }
@@ -602,51 +605,53 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                 </div>
             </div>
             <div className="max-w-7xl mx-auto">
-                <div className="flex align-items-center justify-content-between mb-5 bg-white p-4 border-round-2xl shadow-1">
-                    <div className="flex align-items-center gap-3">
-                        <div className="w-4rem h-4rem border-circle bg-blue-100 flex align-items-center justify-content-center">
-                            <i className="pi pi-user text-blue-500 text-3xl"></i>
+                <Card className="mb-5 shadow-1 border-round-2xl">
+                    <div className="flex align-items-center justify-content-between">
+                        <div className="flex align-items-center gap-3">
+                            <div className="w-4rem h-4rem border-circle bg-blue-100 flex align-items-center justify-content-center">
+                                <i className="pi pi-user text-blue-500 text-3xl"></i>
+                            </div>
+                            <div>
+                                <h1 className="text-xl md:text-3xl font-bold m-0 text-900">{finalName} 학생</h1>
+                                <p className="text-500 m-0 mt-1">칭찬 현황을 확인해보세요!</p>
+                            </div>
                         </div>
-                        <div>
-                            <h1 className="text-xl md:text-3xl font-bold m-0 text-900">{finalName} 학생</h1>
-                            <p className="text-500 m-0 mt-1">칭찬 현황을 확인해보세요!</p>
-                        </div>
-                    </div>
-                    <div className="flex flex-column align-items-end gap-2">
-                        <div className="flex align-items-center gap-2">
-                            {(studentInfo.grade || finalGrade) &&
-                                (() => {
-                                    const gradeVal = String(studentInfo.grade || finalGrade);
-                                    const displayGrade = gradeVal.includes('학년') ? gradeVal : `${gradeVal}학년`;
-                                    return (
-                                        <Tag
-                                            value={displayGrade}
-                                            severity="info"
-                                            className="text-sm px-3 py-2 border-round-xl shadow-1 font-bold bg-indigo-500"
-                                        />
-                                    );
-                                })()}
-                            {(studentInfo.school || finalSchool) && (
-                                <Tag
-                                    value={studentInfo.school || finalSchool}
-                                    severity="info"
-                                    className="text-sm px-3 py-2 border-round-xl shadow-1 font-bold bg-blue-500"
+                        <div className="flex flex-column align-items-end gap-2">
+                            <div className="flex align-items-center gap-2">
+                                {(studentInfo.grade || finalGrade) &&
+                                    (() => {
+                                        const gradeVal = String(studentInfo.grade || finalGrade);
+                                        const displayGrade = gradeVal.includes('학년') ? gradeVal : `${gradeVal}학년`;
+                                        return (
+                                            <Tag
+                                                value={displayGrade}
+                                                severity="info"
+                                                className="text-sm px-3 py-2 border-round-xl shadow-1 font-bold bg-indigo-500"
+                                            />
+                                        );
+                                    })()}
+                                {(studentInfo.school || finalSchool) && (
+                                    <Tag
+                                        value={studentInfo.school || finalSchool}
+                                        severity="info"
+                                        className="text-sm px-3 py-2 border-round-xl shadow-1 font-bold bg-blue-500"
+                                    />
+                                )}
+                                <Button
+                                    icon="pi pi-sign-out"
+                                    severity="secondary"
+                                    text
+                                    rounded
+                                    aria-label="로그아웃"
+                                    tooltip="로그아웃"
+                                    tooltipOptions={{ position: 'bottom' }}
+                                    onClick={handleLogout}
+                                    className="ml-2 hover:bg-gray-200"
                                 />
-                            )}
-                            <Button
-                                icon="pi pi-sign-out"
-                                severity="secondary"
-                                text
-                                rounded
-                                aria-label="로그아웃"
-                                tooltip="로그아웃"
-                                tooltipOptions={{ position: 'bottom' }}
-                                onClick={handleLogout}
-                                className="ml-2 hover:bg-gray-200"
-                            />
+                            </div>
                         </div>
                     </div>
-                </div>
+                </Card>
 
                 <div className="grid gap-4 mb-4" style={{ margin: 0 }}>
                     {stats.classes?.map((c: any) => {
@@ -654,62 +659,66 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                         const rank = classRanks[c.classId] || 0;
                         return (
                             <div key={c.classId || c.className} className="col-12 sm:col-6 md:col lg:col flex-1 p-0">
-                                <div
-                                    className="bg-white p-4 border-round-2xl shadow-1 h-full flex flex-column justify-content-center align-items-center relative overflow-hidden"
-                                    style={{ minHeight: '160px' }}
-                                >
-                                    <div className="absolute top-0 right-0 p-3" style={{ opacity: 0.1 }}>
-                                        <i className="pi pi-star-fill text-7xl text-blue-500"></i>
+                                <Card className="shadow-1 border-round-2xl h-full relative overflow-hidden">
+                                    <div
+                                        className="flex flex-column justify-content-center align-items-center"
+                                        style={{ minHeight: '130px' }}
+                                    >
+                                        <div className="absolute top-0 right-0 p-3" style={{ opacity: 0.1 }}>
+                                            <i className="pi pi-star-fill text-7xl text-blue-500"></i>
+                                        </div>
+                                        <h3 className="font-medium m-0 mb-3 z-1 text-center text-600">{c.className}</h3>
+                                        <div className="flex align-items-center gap-2 z-1 mb-3">
+                                            <i className="pi pi-star-fill text-4xl drop-shadow-md text-blue-400"></i>
+                                            <span className="text-5xl font-black text-900">{praiseCount}</span>
+                                            <span className="text-lg text-600 font-bold mt-2">개</span>
+                                        </div>
+                                        {rank > 0 ? (
+                                            <Tag
+                                                value={`${rank}위`}
+                                                severity={rank <= 3 ? 'warning' : 'info'}
+                                                className={`px-3 py-1 text-sm border-round-xl ${
+                                                    rank <= 3 ? 'bg-yellow-500 text-white' : ''
+                                                }`}
+                                            />
+                                        ) : (
+                                            <Tag
+                                                value="순위 없음"
+                                                severity="info"
+                                                className="px-3 py-1 text-sm border-round-xl"
+                                            />
+                                        )}
                                     </div>
-                                    <h3 className="font-medium m-0 mb-3 z-1 text-center text-600">{c.className}</h3>
-                                    <div className="flex align-items-center gap-2 z-1 mb-3">
-                                        <i className="pi pi-star-fill text-4xl drop-shadow-md text-blue-400"></i>
-                                        <span className="text-5xl font-black text-900">{praiseCount}</span>
-                                        <span className="text-lg text-600 font-bold mt-2">개</span>
-                                    </div>
-                                    {rank > 0 ? (
-                                        <Tag
-                                            value={`${rank}위`}
-                                            severity={rank <= 3 ? 'warning' : 'info'}
-                                            className={`px-3 py-1 text-sm border-round-xl ${
-                                                rank <= 3 ? 'bg-yellow-500 text-white' : ''
-                                            }`}
-                                        />
-                                    ) : (
-                                        <Tag
-                                            value="순위 없음"
-                                            severity="info"
-                                            className="px-3 py-1 text-sm border-round-xl"
-                                        />
-                                    )}
-                                </div>
+                                </Card>
                             </div>
                         );
                     })}
 
                     {/* 마지막에 총합 카드 표출 */}
                     <div className="col-12 sm:col-6 md:col lg:col flex-1 p-0">
-                        <div
-                            className="bg-white p-4 border-round-2xl shadow-1 h-full flex flex-column justify-content-center align-items-center relative overflow-hidden border-2 border-yellow-400"
-                            style={{ minHeight: '160px' }}
-                        >
-                            <div className="absolute top-0 right-0 p-3" style={{ opacity: 0.1 }}>
-                                <i className="pi pi-star-fill text-7xl text-yellow-500"></i>
+                        <Card className="shadow-1 border-round-2xl h-full relative overflow-hidden border-2 border-yellow-400">
+                            <div
+                                className="flex flex-column justify-content-center align-items-center"
+                                style={{ minHeight: '130px' }}
+                            >
+                                <div className="absolute top-0 right-0 p-3" style={{ opacity: 0.1 }}>
+                                    <i className="pi pi-star-fill text-7xl text-yellow-500"></i>
+                                </div>
+                                <h3 className="font-medium m-0 mb-3 z-1 text-center text-800 text-xl">총 칭찬 배지</h3>
+                                <div className="flex align-items-center gap-2 z-1 mb-3">
+                                    <i className="pi pi-star-fill text-5xl mr-2 drop-shadow-md text-yellow-500"></i>
+                                    <span className="text-6xl font-black text-900">{stats.totalPraiseCnt || 0}</span>
+                                    <span className="text-lg text-600 font-bold mt-2">개</span>
+                                </div>
+                                <Tag
+                                    value={`종합 ${globalRank}위`}
+                                    severity={globalRank <= 3 ? 'warning' : 'info'}
+                                    className={`px-3 py-1 text-sm border-round-xl ${
+                                        globalRank <= 3 ? 'bg-yellow-500 text-white' : ''
+                                    }`}
+                                />
                             </div>
-                            <h3 className="font-medium m-0 mb-3 z-1 text-center text-800 text-xl">총 칭찬 배지</h3>
-                            <div className="flex align-items-center gap-2 z-1 mb-3">
-                                <i className="pi pi-star-fill text-5xl mr-2 drop-shadow-md text-yellow-500"></i>
-                                <span className="text-6xl font-black text-900">{stats.totalPraiseCnt || 0}</span>
-                                <span className="text-lg text-600 font-bold mt-2">개</span>
-                            </div>
-                            <Tag
-                                value={`종합 ${globalRank}위`}
-                                severity={globalRank <= 3 ? 'warning' : 'info'}
-                                className={`px-3 py-1 text-sm border-round-xl ${
-                                    globalRank <= 3 ? 'bg-yellow-500 text-white' : ''
-                                }`}
-                            />
-                        </div>
+                        </Card>
                     </div>
                 </div>
 
