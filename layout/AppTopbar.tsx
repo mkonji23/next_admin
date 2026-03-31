@@ -20,6 +20,8 @@ import { AppMenuModel } from '@/constants/menu';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/ko';
+import { useToast } from '@/hooks/useToast';
+import { useConfirm } from '@/hooks/useConfirm';
 
 dayjs.extend(relativeTime);
 dayjs.locale('ko');
@@ -111,10 +113,6 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
         addTab(tab);
         setActiveTab(tab.id);
         router.push(tab.path);
-    };
-
-    const handleGoToStudentStatus = () => {
-        router.push('/student-status');
     };
 
     const handleNotificationClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -246,16 +244,6 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
                         </i>
                     </button>
                 )}
-
-                <Button
-                    className="p-link layout-topbar-button"
-                    tooltip="학생용 칭찬 현황"
-                    tooltipOptions={{ position: 'bottom' }}
-                    onClick={handleGoToStudentStatus}
-                >
-                    <i className="pi pi-trophy"></i>
-                    <span>학생 칭찬 현황</span>
-                </Button>
 
                 <Button
                     className="p-link layout-topbar-button"
