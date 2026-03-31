@@ -8,7 +8,7 @@
   "theme_color": "#fff",
   "icons": [
           {
-              "src": "/icons/icon-mac-1024x1024.png",
+              "src": "/icons/icon-ios-1024x1024.png",
               "sizes": "512x512",
               "type": "image/png"
           }
