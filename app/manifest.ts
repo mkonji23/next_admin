@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
     return {
-        name: 'Academy Management System',
+        name: '출석부',
         short_name: '출석부',
         description: '출석부',
         start_url: '/manual',
