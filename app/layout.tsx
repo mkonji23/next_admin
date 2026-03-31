@@ -13,7 +13,29 @@ import KakaoScript from '@/components/KakaoScript';
 import { GlobalLoading } from '@/layout/GlobalLoading';
 import NotificationListener from '@/components/chat/NotificationListener';
 import PwaInstallPrompt from '@/components/PwaInstallPrompt';
+import { Metadata, Viewport } from 'next';
 import DynamicManifest from '@/components/DynamicManifest';
+
+export const viewport: Viewport = {
+    themeColor: '#ffffff',
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false
+};
+
+export const metadata: Metadata = {
+    title: 'AMS',
+    description: '학원 관리 시스템',
+    appleWebApp: {
+        capable: true,
+        title: 'AMS',
+        statusBarStyle: 'default'
+    },
+    formatDetection: {
+        telephone: false
+    }
+};
 
 interface RootLayoutProps {
     children: React.ReactNode;
