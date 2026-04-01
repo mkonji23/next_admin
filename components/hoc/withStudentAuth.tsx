@@ -197,7 +197,7 @@ const withStudentAuth = <P extends object>(
                         </span>
                         <InputText
                             id="nameInput"
-                            placeholder="ex) 이름을 입력하세요"
+                            placeholder="이름을 입력하세요"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleVerify()}
@@ -343,11 +343,17 @@ const withStudentAuth = <P extends object>(
                     className="border-none"
                 >
                     <div className="text-center mb-5 mt-3">
-                        <i
-                            className={`pi ${
-                                authState === 'INITIAL' ? 'pi-user' : 'pi-lock'
-                            } text-primary text-5xl mb-3`}
-                        ></i>
+                        {/* 자물쇠 */}
+                        {authState !== 'INITIAL' && <i className={`pi pi-lock text-primary text-5xl mb-3`}></i>}
+                        {/* 로고 */}
+                        {authState === 'INITIAL' && (
+                            <img
+                                src={`/layout/images/logo-dark.svg`}
+                                alt="chocho"
+                                height="50"
+                                className="mr-0 lg:mr-2"
+                            />
+                        )}
                         <h2 className="text-2xl font-bold mb-2 text-900">
                             {authState === 'INITIAL' && '본인 확인'}
                             {authState === 'PASSWORD_VERIFY' && '비밀번호 확인'}

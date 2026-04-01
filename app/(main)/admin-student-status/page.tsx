@@ -7,10 +7,26 @@ import { StudentStatusContent } from '@/components/studentStatus/StudentStatusCo
 import { Student } from '@/types/class';
 import { useToast } from '@/hooks/useToast';
 import { Button } from 'primereact/button';
+import useKakaoShare from '@/hooks/useKakaoShare';
+import { ShareItem } from '../kakao-share/types';
 
 const AdminStudentStatusPage = () => {
     const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+    const { shareDefault } = useKakaoShare();
     const { showToast } = useToast();
+
+    const handleShare = () => {
+        const baseUri = typeof window !== 'undefined' ? window.location.origin : '';
+        const shareLink = `${baseUri}/student-status`;
+
+        shareDefault({
+            title: '나의 칭찬 현황 보기',
+            description: '칭찬,출석현황 그리고 평가메시지를 확인하세요!',
+            buttonText: '자세히 보기',
+            linkUrl: shareLink
+        });
+    };
+
     const copyLink = () => {
         const baseUri = typeof window !== 'undefined' ? window.location.origin : '';
         const shareLink = `${baseUri}/student-status`;
@@ -32,15 +48,23 @@ const AdminStudentStatusPage = () => {
     return (
         <div className="grid">
             <div className="col-12">
-                <div className="field col-4">
+                <div className="flex gap-2">
                     <Button
-                        className='pi pi-copy"'
-                        icon="pi-copy"
-                        label="학생용 칭찬 현황 링크 복사"
+                        className="p-button-warning flex-2"
+                        icon="pi pi-copy"
+                        label="링크 복사"
                         tooltipOptions={{ position: 'bottom' }}
                         onClick={copyLink}
                     ></Button>
+                    <Button
+                        className="p-button-primary flex-2"
+                        icon="pi pi-share-alt"
+                        label="공유"
+                        tooltipOptions={{ position: 'bottom' }}
+                        onClick={handleShare}
+                    ></Button>
                 </div>
+
                 <Card title="학생 현황 조회 (관리자)">
                     <div className="p-fluid formgrid grid">
                         <div className="field col-12">
