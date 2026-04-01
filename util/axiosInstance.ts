@@ -71,7 +71,7 @@ export const useHttp = (): AxiosInstance => {
                             detail: error.response?.data?.message || ''
                         });
                     } else {
-                        window.location.href = '/auth/login'; // 로그인 페이지로 이동
+                        // window.location.href = '/auth/login'; // 로그인 페이지로 이동
                     }
                 } else if (status === 403) {
                     showToast({
