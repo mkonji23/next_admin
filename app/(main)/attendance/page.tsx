@@ -135,7 +135,7 @@ const AttendancePage = () => {
         }
 
         loadAttendance();
-    }, [selectedClass]);
+    }, [selectedClass, date]);
 
     const scrollToDate = useCallback(
         (targetDate: Date, smooth = false, showSuccessToast = false) => {
