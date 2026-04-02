@@ -117,10 +117,7 @@ const StudentAttendanceStatisticsPage = () => {
 
         aggregatedStats.forEach((aggStats, classId) => {
             // Simple average for homework rate for now
-            const averageHomeworkRate =
-                aggStats.homeworkRates.length > 0
-                    ? aggStats.homeworkRates.reduce((sum, rate) => sum + rate, 0) / aggStats.homeworkRates.length
-                    : 0;
+            const averageHomeworkRate = statistics?.summary?.averageHomeworkRate || 0;
 
             // 출석 분포 Pie 차트
             const pieData: ChartData = {

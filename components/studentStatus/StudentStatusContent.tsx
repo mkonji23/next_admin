@@ -222,18 +222,18 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                 let hwCount = 0;
 
                 c.attendance?.forEach((a: any) => {
-                    if (a.status === 'class_present') {
+                    if (a.status?.includes('present')) {
                         presentCount++;
                         classPresent++;
-                    } else if (a.status === 'class_absent') {
+                    } else if (a.status?.includes('absent')) {
                         absentCount++;
                         classAbsent++;
-                    } else if (a.status === 'late') {
+                    } else if (a.status?.includes('late')) {
                         lateCount++;
                         classLate++;
                     }
 
-                    if (a.homework !== undefined && a.homework !== null) {
+                    if (a.status !== 'none' && a.homework !== undefined && a.homework !== null) {
                         hwSum += Number(a.homework);
                         hwCount++;
                         totalHwSum += Number(a.homework);
@@ -287,7 +287,7 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                             }
                         }
                     };
-                    const percentage = Math.round((classPresent / cTotalAtt) * 100);
+                    const percentage = Number(((classPresent / cTotalAtt) * 100).toFixed(1));
                     classesAttendance.push({
                         className: c.className,
                         attData: cAttData,
@@ -299,8 +299,8 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
 
                 // 각 클래스별 과제 점수 차트 생성
                 if (c.className && hwCount > 0) {
-                    const avg = Math.round(hwSum / hwCount);
-                    const remaining = 100 - avg;
+                    const avg = Number((hwSum / hwCount).toFixed(1));
+                    const remaining = 100 - Number(avg);
 
                     const hwChartData = {
                         labels: ['완료', '미완료'],
@@ -348,8 +348,8 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
 
         // 총 달성률 (마지막 차트용)
         if (totalHwCount > 0) {
-            const totalAvg = Math.round(totalHwSum / totalHwCount);
-            const totalRemaining = 100 - totalAvg;
+            const totalAvg = Number(totalHwSum / totalHwCount).toFixed(1);
+            const totalRemaining = 100 - Number(totalAvg);
 
             const totalHwChartData = {
                 labels: ['완료', '미완료'],
@@ -414,7 +414,7 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                     tooltip: { callbacks: { label: (context: any) => ` ${context.label}: ${context.raw}건` } }
                 }
             };
-            const totalPercentage = Math.round((presentCount / totalAttendance) * 100);
+            const totalPercentage = Number(((presentCount / totalAttendance) * 100).toFixed(1));
             classesAttendance.push({
                 className: '총 출석현황',
                 attData: totalAttData,

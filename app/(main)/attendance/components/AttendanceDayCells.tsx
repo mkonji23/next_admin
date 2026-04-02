@@ -58,12 +58,30 @@ const AttendanceDayCells = React.memo<AttendanceDayCellsProps>(({ user, day, onU
     const [localLateTime, setLocalLateTime] = useState<number | null>((user[lateTimeField] as number) || null);
     const [localTestScore, setLocalTestScore] = useState<number>((user[testScoreField] as number) || 0);
 
-    const debouncedAttendanceUpdate = useMemo(() => debounce((value: any) => onUpdate(user.id, attendanceField, value), 300), [user.id, attendanceField, onUpdate]);
-    const debouncedHomeworkUpdate = useMemo(() => debounce((value: any) => onUpdate(user.id, homeworkField, value), 300), [user.id, homeworkField, onUpdate]);
-    const debouncedNoteUpdate = useMemo(() => debounce((value: any) => onUpdate(user.id, noteField, value), 300), [user.id, noteField, onUpdate]);
-    const debouncedPraiseUpdate = useMemo(() => debounce((value: any) => onUpdate(user.id, praiseField, value), 300), [user.id, praiseField, onUpdate]);
-    const debouncedLateTimeUpdate = useMemo(() => debounce((value: any) => onUpdate(user.id, lateTimeField, value), 300), [user.id, lateTimeField, onUpdate]);
-    const debouncedTestScoreUpdate = useMemo(() => debounce((value: any) => onUpdate(user.id, testScoreField, value), 300), [user.id, testScoreField, onUpdate]);
+    const debouncedAttendanceUpdate = useMemo(
+        () => debounce((value: any) => onUpdate(user.id, attendanceField, value), 300),
+        [user.id, attendanceField, onUpdate]
+    );
+    const debouncedHomeworkUpdate = useMemo(
+        () => debounce((value: any) => onUpdate(user.id, homeworkField, value), 300),
+        [user.id, homeworkField, onUpdate]
+    );
+    const debouncedNoteUpdate = useMemo(
+        () => debounce((value: any) => onUpdate(user.id, noteField, value), 300),
+        [user.id, noteField, onUpdate]
+    );
+    const debouncedPraiseUpdate = useMemo(
+        () => debounce((value: any) => onUpdate(user.id, praiseField, value), 300),
+        [user.id, praiseField, onUpdate]
+    );
+    const debouncedLateTimeUpdate = useMemo(
+        () => debounce((value: any) => onUpdate(user.id, lateTimeField, value), 300),
+        [user.id, lateTimeField, onUpdate]
+    );
+    const debouncedTestScoreUpdate = useMemo(
+        () => debounce((value: any) => onUpdate(user.id, testScoreField, value), 300),
+        [user.id, testScoreField, onUpdate]
+    );
 
     const handleAttendanceChange = useCallback(
         (value: string) => {
@@ -96,11 +114,27 @@ const AttendanceDayCells = React.memo<AttendanceDayCellsProps>(({ user, day, onU
         },
         [debouncedNoteUpdate]
     );
+    const fire = (particleRatio, opts) => {
+        confetti({
+            ...opts,
+            origin: { y: 0.7 },
+            particleCount: Math.floor(200 * particleRatio)
+        });
+    };
+
+    const fullscreenConfetti = () => {
+        // 왼쪽에서 발사
+        fire(0.25, { spread: 26, startVelocity: 55, origin: { x: 0 } });
+        // 오른쪽에서 발사
+        fire(0.25, { spread: 26, startVelocity: 55, origin: { x: 1 } });
+        // 중앙에서 화려하게
+        fire(0.2, { spread: 60 });
+    };
 
     const handlePraiseToggle = useCallback(() => {
         setLocalPraise((prev) => {
             const newValue = !prev;
-            if (newValue) confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+            if (newValue) fullscreenConfetti();
             debouncedPraiseUpdate(newValue);
             return newValue;
         });
