@@ -243,7 +243,8 @@ const AttendancePage = () => {
 
     const handleAllPresent = () => {
         if (!users) return;
-        const today = dayjs().format('DD');
+        // console.log('users', users);
+        const today = dayjs().format('D');
         const dayAttendance = `day_${today}_attendance`;
         setUsers(users.map((item) => ({ ...item, [dayAttendance]: 'class_present', statusTime: new Date() })));
         handleMoveToday();
