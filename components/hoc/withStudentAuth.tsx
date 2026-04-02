@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
 import { Card } from 'primereact/card';
@@ -37,6 +37,10 @@ const withStudentAuth = <P extends object>(
         const [error, setError] = useState('');
         const [loading, setLoading] = useState(false);
 
+        const nameInputRef = useRef<HTMLInputElement>(null);
+        const phoneInputRef = useRef<HTMLInputElement>(null);
+        const passwordInputRef = useRef<HTMLInputElement>(null);
+
         useEffect(() => {
             const authId = sessionStorage.getItem('student_auth_id');
             const authName = sessionStorage.getItem('student_auth_name');
@@ -59,10 +63,12 @@ const withStudentAuth = <P extends object>(
         const handleVerify = async () => {
             if (!name.trim()) {
                 setError('이름을 입력해주세요.');
+                nameInputRef.current?.focus();
                 return;
             }
             if (!phone.trim()) {
                 setError('전화번호를 입력해주세요.');
+                phoneInputRef.current?.focus();
                 return;
             }
 
@@ -105,6 +111,7 @@ const withStudentAuth = <P extends object>(
         const handlePasswordSubmit = async () => {
             if (!password) {
                 setError('비밀번호를 입력해주세요.');
+                passwordInputRef.current?.focus();
                 return;
             }
             if (!foundStudent) {
@@ -195,10 +202,12 @@ const withStudentAuth = <P extends object>(
                         </span>
                         <InputText
                             id="nameInput"
+                            ref={nameInputRef}
                             placeholder="이름을 입력하세요"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleVerify()}
+                            onKeyDown={(e) => e.key === 'Enter' && phoneInputRef.current?.focus()}
+                            enterKeyHint="next"
                             className={`border-blue-100 focus:border-blue-400 ${error ? 'p-invalid' : ''}`}
                             disabled={loading}
                         />
@@ -214,6 +223,7 @@ const withStudentAuth = <P extends object>(
                         </span>
                         <InputText
                             id="phoneInput"
+                            ref={phoneInputRef}
                             placeholder="ex) 01012345678"
                             value={phone}
                             onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
@@ -221,6 +231,7 @@ const withStudentAuth = <P extends object>(
                             keyfilter="num"
                             inputMode="numeric"
                             pattern="[0-9]*"
+                            enterKeyHint="search"
                             className={`border-blue-100 focus:border-blue-400 ${error ? 'p-invalid' : ''}`}
                             disabled={loading}
                         />
@@ -251,11 +262,14 @@ const withStudentAuth = <P extends object>(
                         </span>
                         <InputText
                             id="passwordInput"
+                            ref={passwordInputRef}
                             type="password"
                             placeholder="비밀번호를 입력하세요"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handlePasswordSubmit()}
+                            enterKeyHint="go"
+                            inputMode="numeric"
                             className={`border-blue-100 focus:border-blue-400 ${error ? 'p-invalid' : ''}`}
                             disabled={loading}
                         />
@@ -287,6 +301,7 @@ const withStudentAuth = <P extends object>(
                         </span>
                         <Password
                             id="newPasswordInput"
+                            ref={newPasswordInputRef}
                             type="password"
                             toggleMask
                             maxLength={4}
@@ -297,6 +312,7 @@ const withStudentAuth = <P extends object>(
                             keyfilter="num"
                             inputMode="numeric"
                             pattern="[0-9]*"
+                            enterKeyHint="done"
                             className={`border-green-100 focus:border-green-400 ${error ? 'p-invalid' : ''}`}
                             disabled={loading}
                             feedback={false}
