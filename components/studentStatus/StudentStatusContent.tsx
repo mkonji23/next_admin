@@ -461,12 +461,14 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                     <Column
                         field="date"
                         header="날짜"
+                        headerStyle={{ minWidth: '120px' }}
                         sortable
                         body={(rowData: any) => dayjs(rowData?.date).format('YYYY-MM-DD')}
                     />
                     <Column
                         field="status"
                         header="출석상태"
+                        headerStyle={{ minWidth: '100px' }}
                         sortable
                         body={(rowData: any) => (
                             <Tag
@@ -481,6 +483,7 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                     <Column
                         sortable
                         field="homework"
+                        headerStyle={{ minWidth: '80px' }}
                         header="숙제"
                         body={(rowData: any) => `${rowData?.homework || 0}%`}
                     />
@@ -488,6 +491,8 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                         sortable
                         field="praise"
                         header="칭찬여부"
+                        align={'center'}
+                        headerStyle={{ minWidth: '100px' }}
                         body={(rowData: any) =>
                             rowData.praise ? (
                                 <i className="pi pi-face-smile text-green-500 text-2xl" />
