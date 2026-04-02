@@ -301,7 +301,6 @@ const withStudentAuth = <P extends object>(
                         </span>
                         <Password
                             id="newPasswordInput"
-                            ref={newPasswordInputRef}
                             type="password"
                             toggleMask
                             maxLength={4}
