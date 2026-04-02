@@ -137,11 +137,9 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
 
             const [praiseRes, studentRes] = await Promise.all([
                 http.get('/choiMath/attendance/getPraiseStatistics', { params }),
-                http.get('/choiMath/student/getStudentList', {
-                    params: {
-                        name: finalName,
-                        phoneNumber: finalPhone
-                    }
+                http.post('/choiMath/student/verifyStudent', {
+                    name: finalName,
+                    phoneNumber: finalPhone
                 })
             ]);
 
@@ -150,7 +148,7 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
             const myData = allData.find((s: any) => s.studentId === finalStudentId);
 
             // 학생 상세 정보 찾기 (학교, 학년)
-            const matchedStudent = studentRes.data?.find((s: any) => s.studentId === finalStudentId);
+            const matchedStudent = studentRes.data;
             if (matchedStudent) {
                 setStudentInfo({ school: matchedStudent.school, grade: matchedStudent.grade });
             }

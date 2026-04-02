@@ -72,17 +72,15 @@ const withStudentAuth = <P extends object>(
             try {
                 const cleanPhone = phone.trim().replace(/[^\d]/g, '');
 
-                const res = await http.get('/choiMath/student/getStudentList', {
-                    params: {
-                        name: name.trim(),
-                        phoneNumber: cleanPhone
-                    }
+                const res = await http.post('/choiMath/student/verifyStudent', {
+                    name: name.trim(),
+                    phoneNumber: cleanPhone
                 });
-                const students = res.data || [];
-                if (students && students.length > 0 && students[0]?.studentId) {
-                    setFoundStudent(students[0]);
+                const students = res.data || {};
+                if (students && students.studentId) {
+                    setFoundStudent(students);
                     setPassword('');
-                    if (students[0]?.hasSimplePassword) {
+                    if (students?.hasSimplePassword) {
                         // 비밀번호 존재여부체크
                         setAuthState('PASSWORD_VERIFY'); // Transition to password verification
                     } else {
@@ -161,7 +159,7 @@ const withStudentAuth = <P extends object>(
             setError('');
 
             try {
-                await http.post('/choiMath/student/updateStudent', {
+                await http.post('/choiMath/student/updatePassword', {
                     studentId: foundStudent.studentId,
                     simplePassword: password
                 });
