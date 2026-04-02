@@ -453,11 +453,11 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
     };
 
     const rowExpansionTemplate = (data: any) => {
-        const filterAttendance = data?.attendance?.filter((item: any) => item.praise);
+        const filterAttendance = data?.attendance?.filter((item: any) => item.status !== 'none' || item.praise);
 
         return (
             <div className="p-3">
-                <DataTable value={filterAttendance} emptyMessage="칭찬 내역이 없습니다.">
+                <DataTable value={filterAttendance} emptyMessage="칭찬,출석 내역이 없습니다.">
                     <Column
                         field="date"
                         header="날짜"
@@ -467,6 +467,7 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                     <Column
                         field="status"
                         header="출석상태"
+                        sortable
                         body={(rowData: any) => (
                             <Tag
                                 value={
@@ -477,8 +478,14 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                             />
                         )}
                     />
-                    <Column field="homework" header="숙제" body={(rowData: any) => `${rowData?.homework || 0}%`} />
                     <Column
+                        sortable
+                        field="homework"
+                        header="숙제"
+                        body={(rowData: any) => `${rowData?.homework || 0}%`}
+                    />
+                    <Column
+                        sortable
                         field="praise"
                         header="칭찬여부"
                         body={(rowData: any) =>
@@ -556,36 +563,40 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                             </div>
                         </div>
                         <div className="flex flex-column align-items-end gap-2">
-                            <div className="flex align-items-center gap-2">
-                                {(studentInfo.grade || finalGrade) &&
-                                    (() => {
-                                        const gradeVal = String(studentInfo.grade || finalGrade);
-                                        const displayGrade = gradeVal.includes('학년') ? gradeVal : `${gradeVal}학년`;
-                                        return (
-                                            <Tag
-                                                style={{
-                                                    minWidth: '70px',
-                                                    display: 'inline-flex',
-                                                    justifyContent: 'center'
-                                                }}
-                                                value={displayGrade}
-                                                severity="info"
-                                                className="text-sm px-3 py-2 border-round-xl shadow-1 font-bold bg-indigo-500"
-                                            />
-                                        );
-                                    })()}
-                                {(studentInfo.school || finalSchool) && (
-                                    <Tag
-                                        style={{
-                                            minWidth: '70px',
-                                            display: 'inline-flex',
-                                            justifyContent: 'center'
-                                        }}
-                                        value={studentInfo.school || finalSchool}
-                                        severity="info"
-                                        className="text-sm px-3 py-2 border-round-xl shadow-1 font-bold bg-blue-500"
-                                    />
-                                )}
+                            <div className="flex align-items-center gap-3">
+                                <div className="flex flex-column align-items-end gap-2">
+                                    {(studentInfo.grade || finalGrade) &&
+                                        (() => {
+                                            const gradeVal = String(studentInfo.grade || finalGrade);
+                                            const displayGrade = gradeVal.includes('학년')
+                                                ? gradeVal
+                                                : `${gradeVal}학년`;
+                                            return (
+                                                <Tag
+                                                    style={{
+                                                        minWidth: '70px',
+                                                        display: 'inline-flex',
+                                                        justifyContent: 'center'
+                                                    }}
+                                                    value={displayGrade}
+                                                    severity="info"
+                                                    className="text-sm px-3 py-2 border-round-xl shadow-1 font-bold bg-indigo-500"
+                                                />
+                                            );
+                                        })()}
+                                    {(studentInfo.school || finalSchool) && (
+                                        <Tag
+                                            style={{
+                                                minWidth: '70px',
+                                                display: 'inline-flex',
+                                                justifyContent: 'center'
+                                            }}
+                                            value={studentInfo.school || finalSchool}
+                                            severity="info"
+                                            className="text-sm px-3 py-2 border-round-xl shadow-1 font-bold bg-blue-500"
+                                        />
+                                    )}
+                                </div>
                                 <Button
                                     icon="pi pi-sign-out"
                                     severity="secondary"
@@ -595,7 +606,7 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                                     tooltip="로그아웃"
                                     tooltipOptions={{ position: 'bottom' }}
                                     onClick={handleLogout}
-                                    className="ml-2 hover:bg-gray-200"
+                                    className="hover:bg-gray-200"
                                 />
                             </div>
                         </div>
@@ -879,7 +890,7 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                         <div className="grid mt-2">
                             <div className="col-12">
                                 <Card
-                                    title="클래스별 칭찬 내역 상세"
+                                    title="클래스별 칭찬 및 출석 내역"
                                     className="border-none shadow-1 border-round-2xl overflow-hidden"
                                 >
                                     <DataTable
