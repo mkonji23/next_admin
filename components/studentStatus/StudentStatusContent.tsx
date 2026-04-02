@@ -348,7 +348,7 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
 
         // 총 달성률 (마지막 차트용)
         if (totalHwCount > 0) {
-            const totalAvg = Number(totalHwSum / totalHwCount).toFixed(1);
+            const totalAvg = Number((totalHwSum / totalHwCount).toFixed(1));
             const totalRemaining = 100 - Number(totalAvg);
 
             const totalHwChartData = {
