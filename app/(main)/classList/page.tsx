@@ -105,11 +105,7 @@ const ClassListPage = () => {
     };
 
     const isClosedBodyTemplate = (rowData: Class) => {
-        return rowData.isClosed ? (
-            <Tag severity="danger" value="종강" />
-        ) : (
-            <Tag severity="success" value="진행중" />
-        );
+        return rowData.isClosed ? <Tag severity="danger" value="종강" /> : <Tag severity="success" value="진행중" />;
     };
 
     const handleCloseClass = async (classData: Class) => {
@@ -132,8 +128,7 @@ const ClassListPage = () => {
                 fetchClasses();
             } catch (error: any) {
                 console.error('Error closing class:', error);
-                const errorMessage =
-                    error.response?.data?.message || error.message || '종강 처리에 실패했습니다.';
+                const errorMessage = error.response?.data?.message || error.message || '종강 처리에 실패했습니다.';
                 showToast({ severity: 'error', summary: '종강 처리 실패', detail: errorMessage });
             }
         }
@@ -159,8 +154,7 @@ const ClassListPage = () => {
                 fetchClasses();
             } catch (error: any) {
                 console.error('Error opening class:', error);
-                const errorMessage =
-                    error.response?.data?.message || error.message || '개강 처리에 실패했습니다.';
+                const errorMessage = error.response?.data?.message || error.message || '개강 처리에 실패했습니다.';
                 showToast({ severity: 'error', summary: '개강 처리 실패', detail: errorMessage });
             }
         }
@@ -296,9 +290,7 @@ const ClassListPage = () => {
                                 <div className="surface-card border-round p-3 shadow-1">
                                     <div className="flex align-items-center gap-2 mb-2">
                                         <i className="pi pi-user text-primary"></i>
-                                        <span className="font-semibold text-lg">
-                                            {student.name || '이름 없음'}
-                                        </span>
+                                        <span className="font-semibold text-lg">{student.name || '이름 없음'}</span>
                                     </div>
                                     <div className="flex flex-column gap-1">
                                         {student.grade && (
@@ -396,10 +388,16 @@ const ClassListPage = () => {
                 rowExpansionTemplate={rowExpansionTemplate}
             >
                 <Column expander style={{ width: '3rem' }} />
-                <Column selectionMode="multiple" headerStyle={{ width: '3rem' }} ></Column>
+                <Column selectionMode="multiple" headerStyle={{ width: '3rem' }}></Column>
                 <Column field="classId" header="ID" sortable hidden filter></Column>
-                <Column field="className" header="클래스명" sortable filter></Column>
-                <Column field="teacher" header="선생님" sortable filter></Column>
+                <Column
+                    field="className"
+                    header="클래스명"
+                    sortable
+                    filter
+                    headerStyle={{ minWidth: '150px' }}
+                ></Column>
+                <Column field="teacher" header="선생님" sortable filter headerStyle={{ minWidth: '100px' }}></Column>
                 <Column field="description" header="설명" filter></Column>
                 <Column field="startDate" header="개강일시" sortable filter body={startDateBodyTemplate}></Column>
                 <Column field="endDate" header="종강일시" sortable filter body={endDateBodyTemplate}></Column>

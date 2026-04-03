@@ -47,7 +47,7 @@ const ToDoDetailModal: React.FC<ToDoDetailModalProps> = ({ visible, onClose, pDa
             header="업무 상세 조회"
             visible={visible}
             className="w-full md:w-9"
-            contentStyle={{ maxHeight: '70vh' }}
+            contentStyle={{ minHeight: '65vh' }}
             footer={footer}
             onHide={() => onClose()}
             breakpoints={{ '960px': '75vw', '641px': '90vw' }}
@@ -91,7 +91,12 @@ const ToDoDetailModal: React.FC<ToDoDetailModalProps> = ({ visible, onClose, pDa
                     </div>
                     <div className="col-12">
                         <label className="block text-1200 font-bold mb-1">업무 내용</label>
-                        <CustomEditor value={todo.content} delta={todo.delta} readOnly={true} />
+                        <CustomEditor
+                            value={todo.content}
+                            delta={todo.delta}
+                            readOnly={true}
+                            style={{ minHeight: '600px', maxHeight: '1000px' }}
+                        />
                     </div>
                 </div>
             </div>

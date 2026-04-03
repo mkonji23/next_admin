@@ -82,19 +82,26 @@ const StudentListPage = () => {
                 const ws = wb.Sheets[wsname];
                 const data = XLSX.utils.sheet_to_json(ws) as any[];
 
-                const studentsToSave = data.map((item) => ({
-                    name: item['이름']?.toString() || '',
-                    grade: item['학년']?.toString() || '',
-                    school: item['학교']?.toString() || '',
-                    phoneNumber: item['학생전화번호']?.toString() || '',
-                    parentPhoneNumber: item['학부모전화번호']?.toString() || '',
-                    description: item['설명']?.toString() || '',
-                    registDate: item['등록일자(YYYYMMDD)']?.toString() || new Date().toISOString().split('T')[0].replace(/-/g, ''),
-                    isWithdrawn: false
-                })).filter((s) => s.name && s.grade && s.school);
+                const studentsToSave = data
+                    .map((item) => ({
+                        name: item['이름']?.toString() || '',
+                        grade: item['학년']?.toString() || '',
+                        school: item['학교']?.toString() || '',
+                        phoneNumber: item['학생전화번호']?.toString() || '',
+                        parentPhoneNumber: item['학부모전화번호']?.toString() || '',
+                        description: item['설명']?.toString() || '',
+                        registDate:
+                            item['등록일자(YYYYMMDD)']?.toString() ||
+                            new Date().toISOString().split('T')[0].replace(/-/g, ''),
+                        isWithdrawn: false
+                    }))
+                    .filter((s) => s.name && s.grade && s.school);
 
                 if (studentsToSave.length > 0) {
-                    const res = await showConfirm({ header: '엑셀 업로드', message: `${studentsToSave.length}명의 학생을 등록하시겠습니까?` });
+                    const res = await showConfirm({
+                        header: '엑셀 업로드',
+                        message: `${studentsToSave.length}명의 학생을 등록하시겠습니까?`
+                    });
                     if (res) {
                         await http.post('/choiMath/student/saveStudent', { data: studentsToSave });
                         showToast({ severity: 'success', summary: '성공', detail: '등록되었습니다.' });
@@ -174,20 +181,54 @@ const StudentListPage = () => {
         </span>
     );
 
-    const isWithdrawnBodyTemplate = (rowData: Student) => (
-        rowData.isWithdrawn ? <Tag severity="danger" value="퇴원" /> : <Tag severity="success" value="재학" />
-    );
+    const isWithdrawnBodyTemplate = (rowData: Student) =>
+        rowData.isWithdrawn ? <Tag severity="danger" value="퇴원" /> : <Tag severity="success" value="재학" />;
 
     const actionBodyTemplate = (rowData: Student) => (
         <div className="flex gap-2">
-            <Button icon="pi pi-pencil" rounded outlined severity="warning" onClick={() => openEditDialog(rowData)} tooltip="수정" />
-            <Button icon="pi pi-key" rounded outlined severity="help" onClick={() => handleResetPassword(rowData)} tooltip="비밀번호 초기화" />
+            <Button
+                icon="pi pi-pencil"
+                rounded
+                outlined
+                severity="warning"
+                onClick={() => openEditDialog(rowData)}
+                tooltip="수정"
+            />
+            <Button
+                icon="pi pi-key"
+                rounded
+                outlined
+                severity="help"
+                onClick={() => handleResetPassword(rowData)}
+                tooltip="비밀번호 초기화"
+            />
             {rowData.isWithdrawn ? (
-                <Button icon="pi pi-sign-in" rounded outlined severity="success" onClick={() => handleEnrollStudent(rowData)} tooltip="입원" />
+                <Button
+                    icon="pi pi-sign-in"
+                    rounded
+                    outlined
+                    severity="success"
+                    onClick={() => handleEnrollStudent(rowData)}
+                    tooltip="입원"
+                />
             ) : (
-                <Button icon="pi pi-sign-out" rounded outlined severity="warning" onClick={() => handleWithdrawStudent(rowData)} tooltip="퇴원" />
+                <Button
+                    icon="pi pi-sign-out"
+                    rounded
+                    outlined
+                    severity="warning"
+                    onClick={() => handleWithdrawStudent(rowData)}
+                    tooltip="퇴원"
+                />
             )}
-            <Button icon="pi pi-trash" rounded outlined severity="danger" onClick={() => handleDeleteStudent(rowData.studentId!, rowData.name)} tooltip="삭제" />
+            <Button
+                icon="pi pi-trash"
+                rounded
+                outlined
+                severity="danger"
+                onClick={() => handleDeleteStudent(rowData.studentId!, rowData.name)}
+                tooltip="삭제"
+            />
         </div>
     );
 
@@ -197,15 +238,54 @@ const StudentListPage = () => {
                 <span className="text-xl text-900 font-bold">학생 목록 ({students.length}명)</span>
                 <span className="p-input-icon-left">
                     <i className="pi pi-search" />
-                    <InputText value={globalFilterValue} onChange={onGlobalFilterChange} placeholder="검색어를 입력하세요" className="p-inputtext-sm" />
+                    <InputText
+                        value={globalFilterValue}
+                        onChange={onGlobalFilterChange}
+                        placeholder="검색어를 입력하세요"
+                        className="p-inputtext-sm"
+                    />
                 </span>
             </div>
             <div className="flex gap-2">
-                <input type="file" ref={fileInputRef} style={{ display: 'none' }} accept=".xlsx, .xls" onChange={handleImportExcel} />
-                <Button icon="pi pi-file-excel" rounded raised label="업로드" onClick={() => fileInputRef.current?.click()} className="p-button-help" />
-                <Button icon="pi pi-download" rounded raised label="다운로드" onClick={exportToExcel} className="p-button-secondary" />
-                <Button icon="pi pi-plus" rounded raised label="신규" onClick={openNewStudentDialog} className="p-button-info" />
-                <Button icon="pi pi-search" rounded raised label="조회" onClick={fetchStudents} className="p-button-success" />
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    style={{ display: 'none' }}
+                    accept=".xlsx, .xls"
+                    onChange={handleImportExcel}
+                />
+                <Button
+                    icon="pi pi-file-excel"
+                    rounded
+                    raised
+                    label="업로드"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="p-button-help"
+                />
+                <Button
+                    icon="pi pi-download"
+                    rounded
+                    raised
+                    label="다운로드"
+                    onClick={exportToExcel}
+                    className="p-button-secondary"
+                />
+                <Button
+                    icon="pi pi-plus"
+                    rounded
+                    raised
+                    label="신규"
+                    onClick={openNewStudentDialog}
+                    className="p-button-info"
+                />
+                <Button
+                    icon="pi pi-search"
+                    rounded
+                    raised
+                    label="조회"
+                    onClick={fetchStudents}
+                    className="p-button-success"
+                />
             </div>
         </div>
     );
@@ -214,10 +294,17 @@ const StudentListPage = () => {
         <div className="card">
             <h1>학생 목록</h1>
             <DataTable
-                showGridlines value={students} header={header} paginator rows={10} filters={filters}
+                showGridlines
+                value={students}
+                header={header}
+                paginator
+                rows={10}
+                filters={filters}
                 globalFilterFields={['name', 'grade', 'school', 'phoneNumber', 'parentPhoneNumber']}
-                emptyMessage="학생을 찾을 수 없습니다." dataKey="studentId"
-                expandedRows={expandedRows} onRowToggle={(e) => setExpandedRows(e.data)}
+                emptyMessage="학생을 찾을 수 없습니다."
+                dataKey="studentId"
+                expandedRows={expandedRows}
+                onRowToggle={(e) => setExpandedRows(e.data)}
                 rowExpansionTemplate={(rowData) => (
                     <div className="p-3">
                         <h5 className="m-0 mb-3">수강 중인 수업 ({rowData.classes?.length || 0})</h5>
@@ -226,18 +313,29 @@ const StudentListPage = () => {
                                 {rowData.classes.map((c, i) => (
                                     <div key={i} className="col-12 md:col-6 lg:col-4">
                                         <div className="surface-card border-round p-3 shadow-1">
-                                            <div className="font-semibold mb-2"><i className="pi pi-book mr-2" />{c.className}</div>
+                                            <div className="font-semibold mb-2">
+                                                <i className="pi pi-book mr-2" />
+                                                {c.className}
+                                            </div>
                                             <div className="text-sm text-600">선생님: {c.teacher}</div>
                                         </div>
                                     </div>
                                 ))}
                             </div>
-                        ) : <div className="text-500">수업 정보가 없습니다.</div>}
+                        ) : (
+                            <div className="text-500">수업 정보가 없습니다.</div>
+                        )}
                     </div>
                 )}
             >
                 <Column expander style={{ width: '3rem' }} />
-                <Column field="name" header="이름" sortable body={nameBodyTemplate} />
+                <Column
+                    field="name"
+                    header="이름"
+                    headerStyle={{ minWidth: '100px' }}
+                    sortable
+                    body={nameBodyTemplate}
+                />
                 <Column field="grade" header="학년" sortable />
                 <Column field="school" header="학교" sortable />
                 <Column field="phoneNumber" header="Tel." sortable />

@@ -6,6 +6,7 @@ import dayjs from 'dayjs';
 import { Todo, TodoUser } from '@/types/todo';
 import { getUserTagColor } from '@/util/userTagColors';
 import { CustomEditor } from '@/components/editor/CustomEditor';
+import { Card } from 'primereact/card'; // Import Card component
 
 interface TodoDetailProps {
     selectedTodo: Todo | null;
@@ -16,7 +17,7 @@ interface TodoDetailProps {
 
 const TodoDetail: React.FC<TodoDetailProps> = ({ selectedTodo, onEdit, onToggleComplete, onDelete }) => {
     return (
-        <div className="card h-screen">
+        <Card className="h-screen">
             <div className="flex justify-content-between align-items-center mb-4">
                 <h5 className="m-0">업무 상세 내용</h5>
                 {selectedTodo && (
@@ -76,7 +77,12 @@ const TodoDetail: React.FC<TodoDetailProps> = ({ selectedTodo, onEdit, onToggleC
                     </div>
                     <div className="mb-3">
                         <label className="block text-900 font-bold mb-1">업무 내용</label>
-                        <CustomEditor value={selectedTodo.content} delta={selectedTodo.delta} readOnly={true} />
+                        <CustomEditor
+                            value={selectedTodo.content}
+                            delta={selectedTodo.delta}
+                            readOnly={true}
+                            style={{ height: '500px' }}
+                        />
                     </div>
                     <div>
                         <label className="block text-900 font-bold mb-1">상태</label>
@@ -93,7 +99,7 @@ const TodoDetail: React.FC<TodoDetailProps> = ({ selectedTodo, onEdit, onToggleC
                     <small className="mt-2">(더블 클릭 시 수정 팝업)</small>
                 </div>
             )}
-        </div>
+        </Card>
     );
 };
 
