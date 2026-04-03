@@ -607,7 +607,7 @@ const AttendanceListPage = () => {
                                             headerStyle={{ minWidth: '100px' }}
                                         />
                                         <Column field="grade" header="학년" sortable />
-                                        <Column field="school" header="학교" sortable />
+                                        <Column field="school" header="학교" sortable headerStyle={{ minWidth: '150px' }} />
                                         <Column
                                             field="statistics.present"
                                             header="출석"
@@ -685,7 +685,7 @@ const AttendanceListPage = () => {
                                 />
                                 <Column field="name" header="학생명" sortable headerStyle={{ minWidth: '100px' }} />
                                 <Column field="grade" header="학년" sortable />
-                                <Column field="school" header="학교" sortable />
+                                <Column field="school" header="학교" sortable headerStyle={{ minWidth: '150px' }} />
                                 <Column field="statistics.present" header="출석" sortable body={presentBodyTemplate} />
                                 <Column field="statistics.absent" header="결석" sortable body={absentBodyTemplate} />
                                 {statistics.student[0]?.statistics?.late !== undefined && (

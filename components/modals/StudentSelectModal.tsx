@@ -140,8 +140,8 @@ const StudentSelectModal = ({ visible, pData, onClose }: StudentSelectModalProps
                 <Column selectionMode="multiple" headerStyle={{ width: '3rem' }}></Column>
                 <Column field="name" headerStyle={{ width: '6rem' }} header="이름" sortable></Column>
                 <Column field="grade" header="학년" sortable></Column>
-                <Column field="school" header="학교" sortable></Column>
-                <Column field="description" header="설명" sortable></Column>
+                <Column field="school" header="학교" sortable headerStyle={{ minWidth: '150px' }}></Column>
+                <Column field="description" header="설명" sortable headerStyle={{ minWidth: '250px' }}></Column>
             </DataTable>
         </Dialog>
     );

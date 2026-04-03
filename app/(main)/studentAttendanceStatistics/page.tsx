@@ -306,7 +306,7 @@ const StudentAttendanceStatisticsPage = () => {
                         }}
                         sortable
                     />
-                    <Column field="note" header="비고" />
+                    <Column field="note" header="비고" headerStyle={{ minWidth: '250px' }} />
                 </DataTable>
             </div>
         );

@@ -398,9 +398,9 @@ const ClassListPage = () => {
                     headerStyle={{ minWidth: '150px' }}
                 ></Column>
                 <Column field="teacher" header="선생님" sortable filter headerStyle={{ minWidth: '100px' }}></Column>
-                <Column field="description" header="설명" filter></Column>
-                <Column field="startDate" header="개강일시" sortable filter body={startDateBodyTemplate}></Column>
-                <Column field="endDate" header="종강일시" sortable filter body={endDateBodyTemplate}></Column>
+                <Column field="description" header="설명" filter headerStyle={{ minWidth: '250px' }}></Column>
+                <Column field="startDate" header="개강일시" sortable filter body={startDateBodyTemplate} headerStyle={{ minWidth: '150px' }}></Column>
+                <Column field="endDate" header="종강일시" sortable filter body={endDateBodyTemplate} headerStyle={{ minWidth: '150px' }}></Column>
                 <Column field="isClosed" header="상태" sortable filter body={isClosedBodyTemplate}></Column>
                 <Column body={actionBodyTemplate} header="작업" headerStyle={{ minWidth: '10rem' }}></Column>
             </DataTable>

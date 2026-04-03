@@ -337,9 +337,9 @@ const StudentListPage = () => {
                     body={nameBodyTemplate}
                 />
                 <Column field="grade" header="학년" sortable />
-                <Column field="school" header="학교" sortable />
-                <Column field="phoneNumber" header="Tel." sortable />
-                <Column field="parentPhoneNumber" header="P_Tel." sortable />
+                <Column field="school" header="학교" sortable headerStyle={{ minWidth: '150px' }} />
+                <Column field="phoneNumber" header="Tel." sortable headerStyle={{ minWidth: '150px' }} />
+                <Column field="parentPhoneNumber" header="P_Tel." sortable headerStyle={{ minWidth: '150px' }} />
                 <Column field="isWithdrawn" header="상태" sortable body={isWithdrawnBodyTemplate} />
                 <Column body={actionBodyTemplate} header="작업" headerStyle={{ minWidth: '12rem' }} />
             </DataTable>

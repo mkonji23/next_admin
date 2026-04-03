@@ -209,15 +209,16 @@ const UserListPage = () => {
                     bodyClassName={'field-highlight'}
                     sortable
                     filter
+                    headerStyle={{ minWidth: '150px' }}
                     body={(rowData) => (
                         <div className="truncate-cell" onClick={() => openEditDialog(rowData)}>
                             {rowData.userId}
                         </div>
                     )}
                 ></Column>
-                <Column field="userName" header="이름" sortable filter></Column>
-                <Column field="email" header="이메일" sortable filter></Column>
-                <Column field="auth" header="권한" sortable filter body={authBodyTemplate}></Column>
+                <Column field="userName" header="이름" sortable filter headerStyle={{ minWidth: '150px' }}></Column>
+                <Column field="email" header="이메일" sortable filter headerStyle={{ minWidth: '150px' }}></Column>
+                <Column field="auth" header="권한" sortable filter body={authBodyTemplate} headerStyle={{ minWidth: '150px' }}></Column>
                 <Column
                     body={actionBodyTemplate}
                     header="작업"

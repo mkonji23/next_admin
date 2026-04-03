@@ -148,6 +148,7 @@ const PraiseStatisticsPage = () => {
                         header="클래스명"
                         sortable
                         body={(rowData: PraiseClass) => rowData.className}
+                        headerStyle={{ minWidth: '150px' }}
                     />
                 </DataTable>
             </div>
@@ -307,7 +308,7 @@ const PraiseStatisticsPage = () => {
                         sortOrder={-1}
                     >
                         <Column expander style={{ width: '3em' }} />
-                        <Column field="name" header="학생 이름" sortable />
+                        <Column field="name" header="학생 이름" sortable headerStyle={{ minWidth: '150px' }} />
                         <Column
                             header="순위"
                             body={(rowData) => {
