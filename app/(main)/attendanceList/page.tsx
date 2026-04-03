@@ -470,6 +470,7 @@ const AttendanceListPage = () => {
                         view="month"
                         dateFormat="yy/mm"
                         locale="ko"
+                        appendTo={'self'}
                     />
                 </div>
 
@@ -607,7 +608,12 @@ const AttendanceListPage = () => {
                                             headerStyle={{ minWidth: '100px' }}
                                         />
                                         <Column field="grade" header="학년" sortable />
-                                        <Column field="school" header="학교" sortable headerStyle={{ minWidth: '150px' }} />
+                                        <Column
+                                            field="school"
+                                            header="학교"
+                                            sortable
+                                            headerStyle={{ minWidth: '150px' }}
+                                        />
                                         <Column
                                             field="statistics.present"
                                             header="출석"

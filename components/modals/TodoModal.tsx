@@ -177,6 +177,7 @@ const TodoModal = ({ visible, pData, onClose }: TodoModalProps) => {
                     dateFormat="yy-mm-dd"
                     className={submitted && !todo.date ? 'p-invalid' : ''}
                     locale="ko"
+                    appendTo={'self'}
                 />
             </div>
             <div className="field">

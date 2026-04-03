@@ -124,7 +124,7 @@ const ClassModal = ({ visible, pData, onClose }: ClassModalProps) => {
         try {
             const formattedStartDate = formatDate(startDateValue);
             const formattedEndDate = formatDate(endDateValue);
-            
+
             if (mode === 'new') {
                 const payload = {
                     className: classData.className,
@@ -169,7 +169,6 @@ const ClassModal = ({ visible, pData, onClose }: ClassModalProps) => {
             <Button label={saveButtonLabel} icon="pi pi-check" onClick={handleSave} />
         </div>
     );
-
 
     return (
         <Dialog
@@ -228,9 +227,7 @@ const ClassModal = ({ visible, pData, onClose }: ClassModalProps) => {
                             ))}
                         </div>
                     )}
-                    {classData.students.length === 0 && (
-                        <small className="text-500">선택된 학생이 없습니다.</small>
-                    )}
+                    {classData.students.length === 0 && <small className="text-500">선택된 학생이 없습니다.</small>}
                 </div>
             </div>
             <div className="field">
@@ -261,6 +258,7 @@ const ClassModal = ({ visible, pData, onClose }: ClassModalProps) => {
                     showIcon
                     showButtonBar
                     locale="ko"
+                    appendTo={'self'}
                 />
             </div>
             <div className="field">
@@ -276,6 +274,7 @@ const ClassModal = ({ visible, pData, onClose }: ClassModalProps) => {
                     showIcon
                     showButtonBar
                     locale="ko"
+                    appendTo={'self'}
                 />
             </div>
             <div className="field">

@@ -146,7 +146,10 @@ const StudentModal = ({ visible, pData, onClose }: StudentModalProps) => {
             const formattedRegistDate = formatDate(registDateValue);
 
             if (mode === 'new') {
-                const names = student.name.split(',').map((name) => name.trim()).filter((name) => name.length > 0);
+                const names = student.name
+                    .split(',')
+                    .map((name) => name.trim())
+                    .filter((name) => name.length > 0);
                 if (names.length === 0) {
                     showToast({ severity: 'error', summary: '입력 오류', detail: '이름을 입력해주세요.' });
                     return;
@@ -163,7 +166,9 @@ const StudentModal = ({ visible, pData, onClose }: StudentModalProps) => {
                     isWithdrawn: false
                 }));
 
-                await http.post('/choiMath/student/saveStudent', { data: studentsData.length === 1 ? studentsData[0] : studentsData });
+                await http.post('/choiMath/student/saveStudent', {
+                    data: studentsData.length === 1 ? studentsData[0] : studentsData
+                });
                 showToast({ severity: 'success', summary: '등록 성공', detail: '등록되었습니다.' });
             } else {
                 const payload: Student = {
@@ -198,48 +203,122 @@ const StudentModal = ({ visible, pData, onClose }: StudentModalProps) => {
     );
 
     return (
-        <Dialog visible={visible} style={{ width: '550px' }} header={header} modal className="p-fluid" footer={dialogFooter} onHide={handleCancel}>
+        <Dialog
+            visible={visible}
+            style={{ width: '550px' }}
+            header={header}
+            modal
+            className="p-fluid"
+            footer={dialogFooter}
+            onHide={handleCancel}
+        >
             <div className="field">
-                <label htmlFor="name">이름 <span className="text-red-500">*</span>{!isEditMode && <small className="text-500 ml-2">(쉼표 구분 가능)</small>}</label>
-                <InputText id="name" value={student.name} onChange={(e) => setStudent({ ...student, name: e.target.value })} required className={submitted && !student.name ? 'p-invalid' : ''} />
+                <label htmlFor="name">
+                    이름 <span className="text-red-500">*</span>
+                    {!isEditMode && <small className="text-500 ml-2">(쉼표 구분 가능)</small>}
+                </label>
+                <InputText
+                    id="name"
+                    value={student.name}
+                    onChange={(e) => setStudent({ ...student, name: e.target.value })}
+                    required
+                    className={submitted && !student.name ? 'p-invalid' : ''}
+                />
             </div>
             <div className="field">
-                <label htmlFor="grade">학년 <span className="text-red-500">*</span></label>
-                <Dropdown id="grade" value={student.grade} options={gradeOptions} onChange={(e) => setStudent({ ...student, grade: e.value })} placeholder="학년 선택" className={submitted && !student.grade ? 'p-invalid' : ''} />
+                <label htmlFor="grade">
+                    학년 <span className="text-red-500">*</span>
+                </label>
+                <Dropdown
+                    id="grade"
+                    value={student.grade}
+                    options={gradeOptions}
+                    onChange={(e) => setStudent({ ...student, grade: e.value })}
+                    placeholder="학년 선택"
+                    className={submitted && !student.grade ? 'p-invalid' : ''}
+                />
             </div>
             <div className="field">
-                <label htmlFor="school">학교 <span className="text-red-500">*</span></label>
-                <InputText id="school" value={student.school} onChange={(e) => setStudent({ ...student, school: e.target.value })} required className={submitted && !student.school ? 'p-invalid' : ''} />
+                <label htmlFor="school">
+                    학교 <span className="text-red-500">*</span>
+                </label>
+                <InputText
+                    id="school"
+                    value={student.school}
+                    onChange={(e) => setStudent({ ...student, school: e.target.value })}
+                    required
+                    className={submitted && !student.school ? 'p-invalid' : ''}
+                />
             </div>
             <div className="field">
                 <label htmlFor="phoneNumber">학생 전화번호</label>
-                <InputText id="phoneNumber" value={student.phoneNumber || ''} onChange={(e) => setStudent({ ...student, phoneNumber: e.target.value })} placeholder="010-0000-0000" />
+                <InputText
+                    id="phoneNumber"
+                    value={student.phoneNumber || ''}
+                    onChange={(e) => setStudent({ ...student, phoneNumber: e.target.value })}
+                    placeholder="010-0000-0000"
+                />
             </div>
             <div className="field">
                 <label htmlFor="parentPhoneNumber">학부모 전화번호</label>
-                <InputText id="parentPhoneNumber" value={student.parentPhoneNumber || ''} onChange={(e) => setStudent({ ...student, parentPhoneNumber: e.target.value })} placeholder="010-0000-0000" />
+                <InputText
+                    id="parentPhoneNumber"
+                    value={student.parentPhoneNumber || ''}
+                    onChange={(e) => setStudent({ ...student, parentPhoneNumber: e.target.value })}
+                    placeholder="010-0000-0000"
+                />
             </div>
             {isEditMode && (
                 <div className="field">
                     <label>간편 비밀번호</label>
                     <div>
-                        <Button type="button" label="비밀번호 초기화" icon="pi pi-key" className="p-button-outlined p-button-help" onClick={handleResetPassword} />
+                        <Button
+                            type="button"
+                            label="비밀번호 초기화"
+                            icon="pi pi-key"
+                            className="p-button-outlined p-button-help"
+                            onClick={handleResetPassword}
+                        />
                     </div>
                 </div>
             )}
             <div className="field">
                 <label htmlFor="description">설명</label>
-                <InputTextarea id="description" value={student.description || ''} onChange={(e) => setStudent({ ...student, description: e.target.value })} rows={5} autoResize />
+                <InputTextarea
+                    id="description"
+                    value={student.description || ''}
+                    onChange={(e) => setStudent({ ...student, description: e.target.value })}
+                    rows={5}
+                    autoResize
+                />
             </div>
             <div className="field">
                 <label htmlFor="registDate">등록일자</label>
-                <Calendar id="registDate" value={registDateValue} onChange={(e) => { setRegistDateValue(e.value as Date); setStudent({ ...student, registDate: formatDate(e.value as Date) }); }} dateFormat="yy-mm-dd" showIcon showButtonBar locale="ko" />
+                <Calendar
+                    id="registDate"
+                    value={registDateValue}
+                    onChange={(e) => {
+                        setRegistDateValue(e.value as Date);
+                        setStudent({ ...student, registDate: formatDate(e.value as Date) });
+                    }}
+                    dateFormat="yy-mm-dd"
+                    showIcon
+                    showButtonBar
+                    locale="ko"
+                    appendTo={'self'}
+                />
             </div>
             {isEditMode && (
                 <div className="field">
                     <div className="flex align-items-center">
-                        <Checkbox inputId="isWithdrawn" checked={student.isWithdrawn || false} onChange={(e) => setStudent({ ...student, isWithdrawn: e.checked ?? false })} />
-                        <label htmlFor="isWithdrawn" className="ml-2">퇴원 여부</label>
+                        <Checkbox
+                            inputId="isWithdrawn"
+                            checked={student.isWithdrawn || false}
+                            onChange={(e) => setStudent({ ...student, isWithdrawn: e.checked ?? false })}
+                        />
+                        <label htmlFor="isWithdrawn" className="ml-2">
+                            퇴원 여부
+                        </label>
                     </div>
                 </div>
             )}
