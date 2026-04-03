@@ -537,6 +537,7 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                             style={{ width: '150px' }}
                             readOnlyInput
                             locale="ko"
+                            appendTo={'self'}
                         />
                     </div>
                     <Button
