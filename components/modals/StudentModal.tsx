@@ -233,7 +233,7 @@ const StudentModal = ({ visible, pData, onClose }: StudentModalProps) => {
             </div>
             <div className="field">
                 <label htmlFor="registDate">등록일자</label>
-                <Calendar id="registDate" value={registDateValue} onChange={(e) => { setRegistDateValue(e.value as Date); setStudent({ ...student, registDate: formatDate(e.value as Date) }); }} dateFormat="yy-mm-dd" showIcon showButtonBar />
+                <Calendar id="registDate" value={registDateValue} onChange={(e) => { setRegistDateValue(e.value as Date); setStudent({ ...student, registDate: formatDate(e.value as Date) }); }} dateFormat="yy-mm-dd" showIcon showButtonBar locale="ko" />
             </div>
             {isEditMode && (
                 <div className="field">

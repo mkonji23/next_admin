@@ -586,7 +586,7 @@ const StudentAttendanceStatisticsPage = () => {
                         showIcon
                         showButtonBar
                         placeholder="월 선택"
-                        appendTo="self"
+                        locale="ko"
                     />
                 </div>
                 <div className="field col-6 md:col-2 flex align-items-end">

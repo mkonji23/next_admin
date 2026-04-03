@@ -453,6 +453,7 @@ const AttendancePage = () => {
                                             inline
                                             icon="pi pi-calendar"
                                             placeholder="날짜 선택"
+                                            locale="ko"
                                         />
                                     </div>
                                 </OverlayPanel>

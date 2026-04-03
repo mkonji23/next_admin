@@ -67,7 +67,7 @@ const TodoList: React.FC<TodoListProps> = ({
                     header="날짜"
                     sortable
                     body={(rowData) => dayjs(rowData.date).format('YYYY-MM-DD')}
-                    headerStyle={{ minWidth: '120px' }}
+                    headerStyle={{ minWidth: '150px' }}
                 />
                 <Column
                     field="content"
@@ -112,7 +112,7 @@ const TodoList: React.FC<TodoListProps> = ({
                 <Column field="workingHours" header="근무시간" headerStyle={{ minWidth: '100px' }} />
                 <Column
                     field="isCompleted"
-                    headerStyle={{ minWidth: '120px' }}
+                    headerStyle={{ minWidth: '150px' }}
                     header="상태"
                     sortable
                     body={(rowData) => (
@@ -124,7 +124,6 @@ const TodoList: React.FC<TodoListProps> = ({
                             />
                         </div>
                     )}
-                    style={{ width: '15%' }}
                 />
             </DataTable>
         </div>

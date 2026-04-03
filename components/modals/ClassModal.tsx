@@ -260,6 +260,7 @@ const ClassModal = ({ visible, pData, onClose }: ClassModalProps) => {
                     dateFormat="yy-mm-dd"
                     showIcon
                     showButtonBar
+                    locale="ko"
                 />
             </div>
             <div className="field">
@@ -274,6 +275,7 @@ const ClassModal = ({ visible, pData, onClose }: ClassModalProps) => {
                     dateFormat="yy-mm-dd"
                     showIcon
                     showButtonBar
+                    locale="ko"
                 />
             </div>
             <div className="field">

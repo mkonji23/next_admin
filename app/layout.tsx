@@ -1,3 +1,4 @@
+import { PrimeReactLocaleSetup } from '@/layout/context/PrimeReactLocaleSetup';
 import { LayoutProvider } from '../layout/context/layoutcontext';
 import { PrimeReactProvider } from 'primereact/api';
 import 'primereact/resources/primereact.css';
@@ -51,6 +52,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
                 <DynamicManifest />
                 <KakaoScript />
                 <PrimeReactProvider>
+                    <PrimeReactLocaleSetup />
                     <LayoutProvider>
                         <ToastProvider>
                             <LoadingProvider>

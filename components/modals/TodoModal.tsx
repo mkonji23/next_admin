@@ -176,6 +176,7 @@ const TodoModal = ({ visible, pData, onClose }: TodoModalProps) => {
                     showIcon
                     dateFormat="yy-mm-dd"
                     className={submitted && !todo.date ? 'p-invalid' : ''}
+                    locale="ko"
                 />
             </div>
             <div className="field">

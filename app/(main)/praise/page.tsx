@@ -17,8 +17,7 @@ import { ATTENDANCE_STATUS_OPTIONS } from '@/constants/attendance';
 
 const PraiseStatisticsPage = () => {
     const [statistics, setStatistics] = useState<PraiseStatistics[]>([]);
-    const [dateFrom, setDateFrom] = useState<Date>(dayjs().startOf('month').toDate());
-    const [dateTo, setDateTo] = useState<Date>(dayjs().endOf('month').toDate());
+    const [selectedMonth, setSelectedMonth] = useState<Date>(dayjs().startOf('month').toDate());
     const [students, setStudents] = useState<any[]>([]);
     const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
     const [classes, setClasses] = useState<any[]>([]);
@@ -37,8 +36,13 @@ const PraiseStatisticsPage = () => {
     useEffect(() => {
         fetchStudents();
         fetchClasses();
-        fetchPraiseStatistics();
     }, []);
+
+    useEffect(() => {
+        if (selectedMonth) {
+            fetchPraiseStatistics();
+        }
+    }, [selectedMonth]);
 
     const fetchStudents = async () => {
         try {
@@ -69,9 +73,12 @@ const PraiseStatisticsPage = () => {
     const fetchPraiseStatistics = async () => {
         setLoading(true);
         try {
+            const dateFrom = dayjs(selectedMonth).startOf('month').format('YYYYMMDD');
+            const dateTo = dayjs(selectedMonth).endOf('month').format('YYYYMMDD');
+
             const params: any = {
-                dateFrom: dayjs(dateFrom).format('YYYYMMDD'),
-                dateTo: dayjs(dateTo).format('YYYYMMDD')
+                dateFrom,
+                dateTo
             };
 
             if (selectedStudent) {
@@ -223,29 +230,20 @@ const PraiseStatisticsPage = () => {
                     <h5>조회 조건</h5>
                     <div className="flex flex-wrap gap-3 align-items-end">
                         <div className="flex flex-column gap-2">
-                            <label htmlFor="dateFrom" className="font-bold text-sm">
-                                시작일
+                            <label htmlFor="monthPicker" className="font-bold text-sm">
+                                조회월
                             </label>
                             <Calendar
-                                id="dateFrom"
-                                value={dateFrom}
-                                onChange={(e) => setDateFrom(e.value as Date)}
-                                dateFormat="yy-mm-dd"
-                                placeholder="시작일"
+                                id="monthPicker"
+                                value={selectedMonth}
+                                onChange={(e) => setSelectedMonth(e.value as Date)}
+                                view="month"
+                                dateFormat="yy-mm"
+                                placeholder="조회월"
                                 showIcon
-                            />
-                        </div>
-                        <div className="flex flex-column gap-2">
-                            <label htmlFor="dateTo" className="font-bold text-sm">
-                                종료일
-                            </label>
-                            <Calendar
-                                id="dateTo"
-                                value={dateTo}
-                                onChange={(e) => setDateTo(e.value as Date)}
-                                dateFormat="yy-mm-dd"
-                                placeholder="종료일"
-                                showIcon
+                                locale="ko"
+                                appendTo="self"
+                                showButtonBar
                             />
                         </div>
                         <div className="flex flex-column gap-2">
