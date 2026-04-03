@@ -16,11 +16,27 @@
 /* 버튼별 한글 툴팁 (title 속성 활용 시) */
 .ql-bold::after { content: '굵게'; display: none; } /* 필요시 커스텀 툴팁 구현용 */
 
-/* 3. 시스템 폰트 적용 (에디터 내 가독성) */
-.ql-container {
-//   font-family: "Pretendard", "Malgun Gothic", sans-serif !important;
-  font-size: 14px;
+/* 1. 기본(Normal) 사이즈 자체를 키우기 */
+.ql-editor {
+    font-size: 18px; /* 원래 기본이 보통 13~14px인데 18px로 격상 */
+    line-height: 1.6;
 }
+
+/* 2. small 클래스 (기존보다 크게) */
+.ql-editor .ql-size-small {
+    font-size: 15px !important; 
+}
+
+/* 3. large 클래스 (기존보다 크게) */
+.ql-editor .ql-size-large {
+    font-size: 24px !important;
+}
+
+/* 4. huge 클래스 (기존보다 크게) */
+.ql-editor .ql-size-huge {
+    font-size: 36px !important;
+}
+
 /* 1. 툴바 완전히 제거 */
 .hide-toolbar .ql-toolbar.ql-snow {
     display: none !important;
