@@ -11,9 +11,10 @@ import { Button } from 'primereact/button';
 import { Calendar } from 'primereact/calendar';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
-import dayjs from 'dayjs';
+import dayjs, { Dayjs } from 'dayjs';
 import { ATTENDANCE_STATUS_OPTIONS } from '@/constants/attendance';
 import { AI_PROGRESS_MESSAGES, AI_STUDENT_COMMENTS } from '@/constants/aiComments';
+import AchievementCard from './AchievementCard';
 
 interface StudentStatusContentProps {
     studentAuthData?: StudentAuthData;
@@ -23,15 +24,16 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
     const http = useHttp();
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState<any>(null);
-    const [currentDate, setCurrentDate] = useState(dayjs());
+    const [currentDate, setCurrentDate] = useState<Dayjs>(dayjs());
     const [chartData, setChartData] = useState<any>({});
-    const [chartOptions, setChartOptions] = useState<any>({});
     const [expandedRows, setExpandedRows] = useState<any>({});
     const [globalRank, setGlobalRank] = useState<number>(0);
     const [classRanks, setClassRanks] = useState<Record<string, number>>({});
     const [studentInfo, setStudentInfo] = useState<{ school?: string; grade?: string }>({});
     const [aiAnalyzing, setAiAnalyzing] = useState(true);
     const [aiProgress, setAiProgress] = useState(0);
+    const [praiseTopRankers, setPraiseTopRankers] = useState<any[]>([]);
+    const [totalHomeworkAvg, setTotalHomeworkAvg] = useState<number>(0);
 
     const finalStudentId = studentAuthData?.studentId;
     const finalName = studentAuthData?.name;
@@ -52,7 +54,6 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
         if (stats) {
             setAiAnalyzing(true);
             setAiProgress(0);
-            // 5초(5000ms) ~ 7초(7000ms) 사이의 랜덤 딜레이 생성
             const totalTime = Math.floor(Math.random() * (7000 - 5000 + 1)) + 5000;
             const startTime = Date.now();
 
@@ -64,7 +65,7 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                     newProgress = 100;
                     clearInterval(timer);
                     setAiProgress(newProgress);
-                    setTimeout(() => setAiAnalyzing(false), 400); // 100% 찍고 0.4초 대기 후 전환
+                    setTimeout(() => setAiAnalyzing(false), 400);
                 } else {
                     setAiProgress(newProgress);
                 }
@@ -73,6 +74,21 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
             return () => clearInterval(timer);
         }
     }, [stats]);
+
+    const attendanceRate = useMemo(() => {
+        if (!chartData.classesAttendance || chartData.classesAttendance.length === 0) return 0;
+
+        const totalAtt =
+            chartData.classesAttendance.find((h: any) => h.className === '총 출석현황') ||
+            chartData.classesAttendance[0];
+
+        if (totalAtt) {
+            const [present, absent, late] = totalAtt.attData.datasets[0].data;
+            const total = present + absent + late;
+            return total > 0 ? Math.round((present / total) * 100) : 0;
+        }
+        return 0;
+    }, [chartData]);
 
     const aiComment = useMemo(() => {
         if (!stats) return '학습 데이터를 분석 중입니다...';
@@ -84,47 +100,32 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
             hwAvg = totalHw?.avgScore || 0;
         }
 
-        let present = 0,
-            absent = 0,
-            late = 0;
-        if (chartData.classesAttendance && chartData.classesAttendance.length > 0) {
-            const totalAtt =
-                chartData.classesAttendance.find((h: any) => h.className === '총 출석현황') ||
-                chartData.classesAttendance[0];
-            if (totalAtt?.attData?.datasets?.[0]) {
-                [present, absent, late] = totalAtt.attData.datasets[0].data;
-            }
-        }
-        const totalAttend = present + absent + late;
-        const attendRate = totalAttend > 0 ? present / totalAttend : 0;
+        const rate = attendanceRate / 100;
         const praise = stats.totalPraiseCnt || 0;
 
-        if (totalAttend === 0 && hwAvg === 0 && praise === 0) {
+        if (rate === 0 && hwAvg === 0 && praise === 0) {
             return '아직 분석할 학업 데이터가 충분하지 않습니다. 앞으로의 활약을 기대합니다! 🌱';
         }
 
         const getRandom = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
         let comments: string[] = [];
 
-        // 1. 출석 코멘트
         const { attendance, homework, praise: praiseComments } = AI_STUDENT_COMMENTS;
 
-        if (attendRate >= 0.95) comments.push(getRandom(attendance.high));
-        else if (attendRate >= 0.8) comments.push(getRandom(attendance.mid));
+        if (rate >= 0.95) comments.push(getRandom(attendance.high));
+        else if (rate >= 0.8) comments.push(getRandom(attendance.mid));
         else comments.push(getRandom(attendance.low));
 
-        // 2. 과제 코멘트
         if (hwAvg >= 90) comments.push(getRandom(homework.high));
         else if (hwAvg >= 70) comments.push(getRandom(homework.mid));
         else comments.push(getRandom(homework.low));
 
-        // 3. 칭찬 코멘트
         if (praise >= 10) comments.push(getRandom(praiseComments.high));
         else if (praise >= 3) comments.push(getRandom(praiseComments.mid));
         else comments.push(getRandom(praiseComments.low));
 
         return comments.join(' ');
-    }, [stats, chartData]);
+    }, [stats, chartData, attendanceRate]);
 
     const fetchStudentStats = async () => {
         setLoading(true);
@@ -132,7 +133,6 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
             const params = {
                 dateFrom: currentDate.startOf('month').format('YYYYMMDD'),
                 dateTo: currentDate.endOf('month').format('YYYYMMDD')
-                // 전체를 가져오기 위해 studentId 제외
             };
 
             const [praiseRes, studentRes] = await Promise.all([
@@ -145,9 +145,34 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
 
             const allData = praiseRes.data || [];
 
+            // 1. 점수가 1개 이상인 학생만 먼저 걸러냅니다.
+            const activeData = allData.filter((item: any) => (item.totalPraiseCnt || 0) > 0);
+
+            // 2. 점수 내림차순 정렬
+            const sortedData = [...activeData].sort(
+                (a: any, b: any) => (b.totalPraiseCnt || 0) - (a.totalPraiseCnt || 0)
+            );
+
+            // 3. 공동 순위 부여 (1, 2, 2, 4...)
+            let currentRank = 0;
+            let lastPraiseCnt = -1;
+
+            const rankedData = sortedData.map((item: any, index: number) => {
+                if (item.totalPraiseCnt !== lastPraiseCnt) {
+                    currentRank = index + 1;
+                }
+                lastPraiseCnt = item.totalPraiseCnt;
+
+                return { ...item, rank: currentRank };
+            });
+
+            // 4. 최종적으로 3등 이내인 학생들만 추출
+            const topRankers = rankedData.filter((item) => item.rank <= 3);
+
+            setPraiseTopRankers(topRankers);
+
             const myData = allData.find((s: any) => s.studentId === finalStudentId);
 
-            // 학생 상세 정보 찾기 (학교, 학년)
             const matchedStudent = studentRes.data;
             if (matchedStudent) {
                 setStudentInfo({ school: matchedStudent.school, grade: matchedStudent.grade });
@@ -156,30 +181,38 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
             if (myData) {
                 setStats(myData);
 
-                // 총 칭찬 순위 계산
-                const sortedUniqueCounts = Array.from(new Set(allData.map((s: any) => s.totalPraiseCnt || 0))).sort(
-                    (a: any, b: any) => b - a
-                );
-                const gRank = sortedUniqueCounts.indexOf(myData.totalPraiseCnt || 0) + 1;
+                // --- 전체 순위 계산 (0점 제외) ---
+                const myGlobalScore = myData.totalPraiseCnt || 0;
+                let gRank = 0; // 0점은 순위 없음
+                if (myGlobalScore > 0) {
+                    const allGlobalCounts = allData
+                        .map((s: any) => s.totalPraiseCnt || 0)
+                        .filter((score: number) => score > 0) // 0점 제외
+                        .sort((a: number, b: number) => b - a);
+                    gRank = allGlobalCounts.indexOf(myGlobalScore) + 1;
+                }
                 setGlobalRank(gRank);
 
-                // 클래스별 순위 계산
+                // --- 클래스별 순위 계산 (0점 제외) ---
                 let cRanks: Record<string, number> = {};
                 if (myData.classes && myData.classes.length > 0) {
                     myData.classes.forEach((myClass: any) => {
                         const classId = myClass.classId;
-                        const myCount = myClass.attendance?.filter((a: any) => a.praise).length || 0;
+                        const myClassScore = myClass.attendance?.filter((a: any) => a.praise).length || 0;
 
-                        // 이 클래스가 포함된 모든 학생의 해당 클래스 칭찬 횟수 추출
-                        const allStudentsClassPraiseCounts = allData.map((s: any) => {
-                            const c = s.classes?.find((cls: any) => cls.classId === classId);
-                            return c?.attendance?.filter((a: any) => a.praise).length || 0;
-                        });
+                        let classRank = 0; // 0점은 순위 없음
+                        if (myClassScore > 0) {
+                            const allClassCounts = allData
+                                .map((s: any) => {
+                                    const c = s.classes?.find((cls: any) => cls.classId === classId);
+                                    return c?.attendance?.filter((a: any) => a.praise).length || 0;
+                                })
+                                .filter((score: number) => score > 0) // 0점 제외
+                                .sort((a: number, b: number) => b - a);
 
-                        const sortedClassUniqueCounts = Array.from(new Set(allStudentsClassPraiseCounts)).sort(
-                            (a: any, b: any) => b - a
-                        );
-                        cRanks[classId] = sortedClassUniqueCounts.indexOf(myCount) + 1;
+                            classRank = allClassCounts.indexOf(myClassScore) + 1;
+                        }
+                        cRanks[classId] = classRank;
                     });
                 }
                 setClassRanks(cRanks);
@@ -187,6 +220,7 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                 prepareChartData(myData);
             } else {
                 setStats(null);
+                setGlobalRank(0);
             }
         } catch (error) {
             console.error('Error fetching student stats:', error);
@@ -197,10 +231,6 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
     };
 
     const prepareChartData = (data: any) => {
-        const documentStyle = getComputedStyle(document.documentElement);
-        const textColor = documentStyle.getPropertyValue('--text-color') || '#495057';
-
-        // 1. 출석, 과제 통계 집계 데이터 배열 선언
         const classesHomework: { className: string; hwData: any; hwOptions: any; avgScore: number }[] = [];
         const classesAttendance: {
             className: string;
@@ -218,11 +248,11 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
 
         if (data.classes && data.classes.length > 0) {
             data.classes.forEach((c: any) => {
-                let classPresent = 0;
-                let classAbsent = 0;
-                let classLate = 0;
-                let hwSum = 0;
-                let hwCount = 0;
+                let classPresent = 0,
+                    classAbsent = 0,
+                    classLate = 0,
+                    hwSum = 0,
+                    hwCount = 0;
 
                 c.attendance?.forEach((a: any) => {
                     if (a.status?.includes('present')) {
@@ -244,186 +274,120 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                     }
                 });
 
-                // 각 클래스별 출석 차트 생성
                 const cTotalAtt = classPresent + classAbsent + classLate;
                 if (c.className && cTotalAtt > 0) {
-                    const cAttData = {
-                        labels: ['출석', '결석', '지각'],
-                        datasets: [
-                            {
-                                data: [classPresent, classAbsent, classLate],
-                                backgroundColor: [
-                                    documentStyle.getPropertyValue('--green-400') || '#4ade80',
-                                    documentStyle.getPropertyValue('--red-400') || '#f87171',
-                                    documentStyle.getPropertyValue('--yellow-400') || '#facc15'
-                                ],
-                                borderWidth: 0
-                            }
-                        ]
-                    };
-                    const cAttOptions = {
-                        cutout: '70%',
-                        // 1. 패딩을 최소화하거나 제거해서 차트 크기를 회복합니다.
-                        layout: {
-                            padding: 0
-                        },
-                        // 2. 차트가 캔버스 끝까지 꽉 차게 그립니다.
-                        maintainAspectRatio: false,
-
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                // 3. 핵심: 툴팁 위치를 'nearest'가 아닌 'center' 근처에서 '바깥쪽'으로 유도
-                                position: 'nearest',
-
-                                // 4. 화살표 방향을 '바깥쪽'으로 고정 (도넛 위/아래에 따라 자동 조절됨)
-                                // 고정하고 싶다면 'bottom'을 쓰되, 패딩이 없으므로 잘릴 위험이 있습니다.
-                                yAlign: 'bottom',
-
-                                // 5. 간격을 너무 크게 잡으면 캔버스 밖으로 나가서 잘립니다. 적당히 조절!
-                                caretPadding: 10,
-
-                                displayColors: true,
-                                callbacks: {
-                                    label: (context: any) => ` ${context.label}: ${context.raw}건`
-                                }
-                            }
-                        }
-                    };
-                    const percentage = Number(((classPresent / cTotalAtt) * 100).toFixed(1));
                     classesAttendance.push({
                         className: c.className,
-                        attData: cAttData,
-                        attOptions: cAttOptions,
+                        attData: {
+                            labels: ['출석', '결석', '지각'],
+                            datasets: [
+                                {
+                                    data: [classPresent, classAbsent, classLate],
+                                    backgroundColor: ['#4ade80', '#f87171', '#facc15'],
+                                    borderWidth: 0
+                                }
+                            ]
+                        },
+                        attOptions: {
+                            cutout: '70%',
+                            layout: { padding: 0 },
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    position: 'nearest',
+                                    yAlign: 'bottom',
+                                    caretPadding: 10,
+                                    displayColors: true,
+                                    callbacks: { label: (ctx: any) => ` ${ctx.label}: ${ctx.raw}건` }
+                                }
+                            }
+                        },
                         total: cTotalAtt,
-                        percentage
+                        percentage: Number(((classPresent / cTotalAtt) * 100).toFixed(1))
                     });
                 }
 
-                // 각 클래스별 과제 점수 차트 생성
                 if (c.className && hwCount > 0) {
                     const avg = Number((hwSum / hwCount).toFixed(1));
-                    const remaining = 100 - Number(avg);
-
-                    const hwChartData = {
-                        labels: ['완료', '미완료'],
-                        datasets: [
-                            {
-                                data: [avg, remaining],
-                                backgroundColor: [
-                                    documentStyle.getPropertyValue('--blue-500') || '#3b82f6',
-                                    documentStyle.getPropertyValue('--surface-200') || '#e2e8f0'
-                                ],
-                                hoverBackgroundColor: [
-                                    documentStyle.getPropertyValue('--blue-400') || '#60a5fa',
-                                    documentStyle.getPropertyValue('--surface-300') || '#cbd5e1'
-                                ],
-                                borderWidth: 0
-                            }
-                        ]
-                    };
-
-                    const hwChartOptions = {
-                        cutout: '70%',
-                        plugins: {
-                            legend: {
-                                display: false
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: (context: any) => {
-                                        return ` ${context.label}: ${context.raw}%`;
-                                    }
-                                }
-                            }
-                        }
-                    };
-
                     classesHomework.push({
                         className: c.className,
-                        hwData: hwChartData,
-                        hwOptions: hwChartOptions,
+                        hwData: {
+                            labels: ['완료', '미완료'],
+                            datasets: [
+                                {
+                                    data: [avg, 100 - avg],
+                                    backgroundColor: ['#3b82f6', '#e2e8f0'],
+                                    hoverBackgroundColor: ['#60a5fa', '#cbd5e1'],
+                                    borderWidth: 0
+                                }
+                            ]
+                        },
+                        hwOptions: {
+                            cutout: '70%',
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: { callbacks: { label: (ctx: any) => ` ${ctx.label}: ${ctx.raw}%` } }
+                            }
+                        },
                         avgScore: avg
                     });
                 }
             });
         }
 
-        // 총 달성률 (마지막 차트용)
         if (totalHwCount > 0) {
             const totalAvg = Number((totalHwSum / totalHwCount).toFixed(1));
-            const totalRemaining = 100 - Number(totalAvg);
-
-            const totalHwChartData = {
-                labels: ['완료', '미완료'],
-                datasets: [
-                    {
-                        data: [totalAvg, totalRemaining],
-                        backgroundColor: [
-                            documentStyle.getPropertyValue('--indigo-500') || '#6366f1',
-                            documentStyle.getPropertyValue('--surface-200') || '#e2e8f0'
-                        ],
-                        hoverBackgroundColor: [
-                            documentStyle.getPropertyValue('--indigo-400') || '#818cf8',
-                            documentStyle.getPropertyValue('--surface-300') || '#cbd5e1'
-                        ],
-                        borderWidth: 0
-                    }
-                ]
-            };
-
-            const totalHwChartOptions = {
-                cutout: '70%',
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: (context: any) => ` ${context.label}: ${context.raw}%`
-                        }
-                    }
-                }
-            };
-
+            setTotalHomeworkAvg(totalAvg);
             classesHomework.push({
                 className: '총 달성률',
-                hwData: totalHwChartData,
-                hwOptions: totalHwChartOptions,
+                hwData: {
+                    labels: ['완료', '미완료'],
+                    datasets: [
+                        {
+                            data: [totalAvg, 100 - totalAvg],
+                            backgroundColor: ['#6366f1', '#e2e8f0'],
+                            hoverBackgroundColor: ['#818cf8', '#cbd5e1'],
+                            borderWidth: 0
+                        }
+                    ]
+                },
+                hwOptions: {
+                    cutout: '70%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: (ctx: any) => ` ${ctx.label}: ${ctx.raw}%` } }
+                    }
+                },
                 avgScore: totalAvg
             });
+        } else {
+            setTotalHomeworkAvg(0);
         }
 
         const totalAttendance = presentCount + absentCount + lateCount;
         if (totalAttendance > 0) {
-            const totalAttData = {
-                labels: ['출석', '결석', '지각'],
-                datasets: [
-                    {
-                        data: [presentCount, absentCount, lateCount],
-                        backgroundColor: [
-                            documentStyle.getPropertyValue('--teal-500') || '#14b8a6',
-                            documentStyle.getPropertyValue('--red-500') || '#ef4444',
-                            documentStyle.getPropertyValue('--yellow-500') || '#eab308'
-                        ],
-                        borderWidth: 0
-                    }
-                ]
-            };
-            const totalAttOptions = {
-                cutout: '70%',
-                plugins: {
-                    legend: { display: false },
-                    tooltip: { callbacks: { label: (context: any) => ` ${context.label}: ${context.raw}건` } }
-                }
-            };
-            const totalPercentage = Number(((presentCount / totalAttendance) * 100).toFixed(1));
             classesAttendance.push({
                 className: '총 출석현황',
-                attData: totalAttData,
-                attOptions: totalAttOptions,
+                attData: {
+                    labels: ['출석', '결석', '지각'],
+                    datasets: [
+                        {
+                            data: [presentCount, absentCount, lateCount],
+                            backgroundColor: ['#14b8a6', '#ef4444', '#eab308'],
+                            borderWidth: 0
+                        }
+                    ]
+                },
+                attOptions: {
+                    cutout: '70%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: (ctx: any) => ` ${ctx.label}: ${ctx.raw}건` } }
+                    }
+                },
                 total: totalAttendance,
-                percentage: totalPercentage
+                percentage: Number(((presentCount / totalAttendance) * 100).toFixed(1))
             });
         }
 
@@ -506,6 +470,20 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
         );
     };
 
+    const getTrophy = (rank: number) => {
+        const rankInfo = {
+            1: { color: 'text-yellow-500', tooltip: '1위' },
+            2: { color: 'text-gray-400', tooltip: '2위' },
+            3: { color: 'text-orange-500', tooltip: '3위' }
+        };
+
+        if (rank >= 1 && rank <= 3) {
+            const info = rankInfo[rank as 1 | 2 | 3];
+            return <i className={`pi pi-trophy ${info.color} text-2xl trophy-icon`} data-pr-tooltip={info.tooltip} />;
+        }
+        return null;
+    };
+
     if (loading) {
         return (
             <div className="flex justify-content-center align-items-center min-h-screen">
@@ -534,7 +512,7 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                             view="month"
                             dateFormat="yy년 mm월"
                             inputClassName="border-none font-bold text-xl md:text-2xl text-900 bg-transparent text-center cursor-pointer p-2 w-full"
-                            style={{ width: '150px' }}
+                            style={{ width: '170px' }}
                             readOnlyInput
                             locale="ko"
                             appendTo={'self'}
@@ -564,7 +542,11 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                                 <i className="pi pi-user text-blue-500 text-3xl"></i>
                             </div>
                             <div>
-                                <h1 className="text-xl md:text-3xl font-bold m-0 text-900">{finalName} 학생</h1>
+                                <div className="flex align-items-center gap-2 flex-wrap">
+                                    <h1 className="text-xl md:text-3xl font-bold m-0 text-900">{finalName} 학생</h1>
+                                    {getTrophy(globalRank)}
+                                </div>
+
                                 <p className="text-500 m-0 mt-1">칭찬 현황을 확인해보세요!</p>
                             </div>
                         </div>
@@ -618,6 +600,16 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                         </div>
                     </div>
                 </Card>
+
+                {stats && (
+                    <AchievementCard
+                        praiseTopRankers={praiseTopRankers}
+                        totalPraiseCnt={stats.totalPraiseCnt || 0}
+                        attendanceRate={attendanceRate}
+                        totalHomeworkAvg={totalHomeworkAvg}
+                        currentMonth={currentDate}
+                    />
+                )}
 
                 {!stats ? (
                     <Card className="shadow-1 border-round-2xl">

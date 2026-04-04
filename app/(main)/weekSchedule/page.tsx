@@ -128,7 +128,13 @@ const WeekSchedulePage = () => {
     };
 
     // 엔터 키 누를 때 아래 행으로 이동 (Alt+Enter는 줄바꿈)
-    const handleKeyDown = (e: React.KeyboardEvent, studentId: string, index: number, field: string, totalRows: number) => {
+    const handleKeyDown = (
+        e: React.KeyboardEvent,
+        studentId: string,
+        index: number,
+        field: string,
+        totalRows: number
+    ) => {
         if (e.key === 'Enter') {
             if (e.altKey) {
                 // Alt + Enter: 줄바꿈 수동 삽입
@@ -147,7 +153,7 @@ const WeekSchedulePage = () => {
                 }, 0);
                 return;
             }
-            
+
             // 일반 Enter: 다음 행으로 이동
             e.preventDefault();
             const nextIndex = index + 1;
@@ -222,7 +228,7 @@ const WeekSchedulePage = () => {
                 
                 .schedule-table {
                     display: grid;
-                    grid-template-columns: 120px 80px 120px 100px 100px 100px 100px repeat(7, 150px);
+                    grid-template-columns: 120px 80px 120px 150px 150px 100px 100px repeat(7, 150px);
                     width: max-content;
                     min-width: 100%;
                 }
@@ -381,7 +387,9 @@ const WeekSchedulePage = () => {
                                     학교 <i className={getSortIcon('school')}></i>
                                 </div>
                                 <div className="schedule-header-cell">상담(학생)</div>
-                                <div className="schedule-header-cell">상담(부모님)</div>
+                                <div className="schedule-header-cell">
+                                    상담(부모님)
+                                </div>
                                 <div className="schedule-header-cell">교재비</div>
                                 <div className="schedule-header-cell">클리닉</div>
                                 <div className="schedule-header-cell day-header">월</div>
@@ -439,7 +447,13 @@ const WeekSchedulePage = () => {
                                                 value={s.bookFee || ''}
                                                 onChange={(e) => handleUpdate(s.studentId, 'bookFee', e.target.value)}
                                                 onKeyDown={(e) =>
-                                                    handleKeyDown(e, s.studentId, index, 'bookFee', processedSchedules.length)
+                                                    handleKeyDown(
+                                                        e,
+                                                        s.studentId,
+                                                        index,
+                                                        'bookFee',
+                                                        processedSchedules.length
+                                                    )
                                                 }
                                             />
                                         </div>
@@ -450,7 +464,13 @@ const WeekSchedulePage = () => {
                                                 value={s.clinic || ''}
                                                 onChange={(e) => handleUpdate(s.studentId, 'clinic', e.target.value)}
                                                 onKeyDown={(e) =>
-                                                    handleKeyDown(e, s.studentId, index, 'clinic', processedSchedules.length)
+                                                    handleKeyDown(
+                                                        e,
+                                                        s.studentId,
+                                                        index,
+                                                        'clinic',
+                                                        processedSchedules.length
+                                                    )
                                                 }
                                             />
                                         </div>
@@ -461,7 +481,13 @@ const WeekSchedulePage = () => {
                                                 value={s.mon || ''}
                                                 onChange={(e) => handleUpdate(s.studentId, 'mon', e.target.value)}
                                                 onKeyDown={(e) =>
-                                                    handleKeyDown(e, s.studentId, index, 'mon', processedSchedules.length)
+                                                    handleKeyDown(
+                                                        e,
+                                                        s.studentId,
+                                                        index,
+                                                        'mon',
+                                                        processedSchedules.length
+                                                    )
                                                 }
                                             />
                                         </div>
@@ -472,7 +498,13 @@ const WeekSchedulePage = () => {
                                                 value={s.tue || ''}
                                                 onChange={(e) => handleUpdate(s.studentId, 'tue', e.target.value)}
                                                 onKeyDown={(e) =>
-                                                    handleKeyDown(e, s.studentId, index, 'tue', processedSchedules.length)
+                                                    handleKeyDown(
+                                                        e,
+                                                        s.studentId,
+                                                        index,
+                                                        'tue',
+                                                        processedSchedules.length
+                                                    )
                                                 }
                                             />
                                         </div>
@@ -483,7 +515,13 @@ const WeekSchedulePage = () => {
                                                 value={s.wed || ''}
                                                 onChange={(e) => handleUpdate(s.studentId, 'wed', e.target.value)}
                                                 onKeyDown={(e) =>
-                                                    handleKeyDown(e, s.studentId, index, 'wed', processedSchedules.length)
+                                                    handleKeyDown(
+                                                        e,
+                                                        s.studentId,
+                                                        index,
+                                                        'wed',
+                                                        processedSchedules.length
+                                                    )
                                                 }
                                             />
                                         </div>
@@ -494,7 +532,13 @@ const WeekSchedulePage = () => {
                                                 value={s.thu || ''}
                                                 onChange={(e) => handleUpdate(s.studentId, 'thu', e.target.value)}
                                                 onKeyDown={(e) =>
-                                                    handleKeyDown(e, s.studentId, index, 'thu', processedSchedules.length)
+                                                    handleKeyDown(
+                                                        e,
+                                                        s.studentId,
+                                                        index,
+                                                        'thu',
+                                                        processedSchedules.length
+                                                    )
                                                 }
                                             />
                                         </div>
@@ -505,7 +549,13 @@ const WeekSchedulePage = () => {
                                                 value={s.fri || ''}
                                                 onChange={(e) => handleUpdate(s.studentId, 'fri', e.target.value)}
                                                 onKeyDown={(e) =>
-                                                    handleKeyDown(e, s.studentId, index, 'fri', processedSchedules.length)
+                                                    handleKeyDown(
+                                                        e,
+                                                        s.studentId,
+                                                        index,
+                                                        'fri',
+                                                        processedSchedules.length
+                                                    )
                                                 }
                                             />
                                         </div>
@@ -516,7 +566,13 @@ const WeekSchedulePage = () => {
                                                 value={s.sat || ''}
                                                 onChange={(e) => handleUpdate(s.studentId, 'sat', e.target.value)}
                                                 onKeyDown={(e) =>
-                                                    handleKeyDown(e, s.studentId, index, 'sat', processedSchedules.length)
+                                                    handleKeyDown(
+                                                        e,
+                                                        s.studentId,
+                                                        index,
+                                                        'sat',
+                                                        processedSchedules.length
+                                                    )
                                                 }
                                             />
                                         </div>
@@ -527,7 +583,13 @@ const WeekSchedulePage = () => {
                                                 value={s.sun || ''}
                                                 onChange={(e) => handleUpdate(s.studentId, 'sun', e.target.value)}
                                                 onKeyDown={(e) =>
-                                                    handleKeyDown(e, s.studentId, index, 'sun', processedSchedules.length)
+                                                    handleKeyDown(
+                                                        e,
+                                                        s.studentId,
+                                                        index,
+                                                        'sun',
+                                                        processedSchedules.length
+                                                    )
                                                 }
                                             />
                                         </div>

@@ -109,3 +109,53 @@ export const generateFullComment = (attLvl, hwLvl, prsLvl) => {
 
     return `${att} ${hw} ${prs}`;
 };
+
+/**
+ * 학생 달성 과제 (호칭)
+ */
+export const ACHIEVEMENT_TITLES = [
+    // 칭찬 관련 (순위 기준, 낮을수록 좋음)
+    {
+        category: 'praise',
+        title: 'TOP 10',
+        description: '칭찬 랭킹 10위 이내 달성',
+        threshold: 10,
+        icon: 'pi-star'
+    },
+    {
+        category: 'praise',
+        title: 'TOP 3',
+        description: '칭찬 랭킹 3위 이내 달성',
+        threshold: 3,
+        icon: 'pi-bolt'
+    },
+    {
+        category: 'praise',
+        title: '전체 1위',
+        description: '칭찬 랭킹 전체 1위 달성',
+        threshold: 1,
+        icon: 'pi-crown'
+    },
+    // 출석 관련 (출석률 기준, 높을수록 좋음)
+    {
+        category: 'attendance',
+        title: '성실 멤버',
+        description: '출석률 80% 이상 달성',
+        threshold: 80,
+        icon: 'pi-calendar'
+    },
+    {
+        category: 'attendance',
+        title: '프로 출석러',
+        description: '출석률 95% 이상 달성',
+        threshold: 95,
+        icon: 'pi-check-circle'
+    },
+    {
+        category: 'attendance',
+        title: '퍼펙트 출석',
+        description: '출석률 100% 달성',
+        threshold: 100,
+        icon: 'pi-server'
+    }
+];
