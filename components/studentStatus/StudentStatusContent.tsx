@@ -15,6 +15,7 @@ import dayjs, { Dayjs } from 'dayjs';
 import { ATTENDANCE_STATUS_OPTIONS } from '@/constants/attendance';
 import { AI_PROGRESS_MESSAGES, AI_STUDENT_COMMENTS } from '@/constants/aiComments';
 import AchievementCard from './AchievementCard';
+import useStudentAuthStore from '@/store/useStudentAuthStore';
 
 interface StudentStatusContentProps {
     studentAuthData?: StudentAuthData;
@@ -22,6 +23,7 @@ interface StudentStatusContentProps {
 
 const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) => {
     const http = useHttp();
+    const { clearStudentAuth } = useStudentAuthStore();
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState<any>(null);
     const [currentDate, setCurrentDate] = useState<Dayjs>(dayjs());
@@ -223,8 +225,12 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                 setGlobalRank(0);
             }
         } catch (error) {
-            console.error('Error fetching student stats:', error);
             setStats(null);
+            if (error === 'jwt expired') {
+                //토큰 만료
+                handleLogout();
+            }
+            console.error('Error fetching student stats:', error);
         } finally {
             setLoading(false);
         }
@@ -408,11 +414,7 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
     };
 
     const handleLogout = () => {
-        sessionStorage.removeItem('student_auth_id');
-        sessionStorage.removeItem('student_auth_name');
-        sessionStorage.removeItem('student_auth_school');
-        sessionStorage.removeItem('student_auth_grade');
-        sessionStorage.removeItem('student_auth_phone');
+        clearStudentAuth();
         window.location.reload();
     };
 
@@ -561,14 +563,21 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                                                 : `${gradeVal}학년`;
                                             return (
                                                 <Tag
+                                                    value={displayGrade}
+                                                    className={`text-sm px-3 py-2 border-round-xl shadow-1 font-bold ${
+                                                        displayGrade === '1학년'
+                                                            ? 'bg-green-500'
+                                                            : displayGrade === '2학년'
+                                                            ? 'bg-indigo-500'
+                                                            : displayGrade === '3학년'
+                                                            ? 'bg-orange-500'
+                                                            : 'bg-gray-500'
+                                                    }`}
                                                     style={{
                                                         minWidth: '70px',
                                                         display: 'inline-flex',
                                                         justifyContent: 'center'
                                                     }}
-                                                    value={displayGrade}
-                                                    severity="info"
-                                                    className="text-sm px-3 py-2 border-round-xl shadow-1 font-bold bg-indigo-500"
                                                 />
                                             );
                                         })()}

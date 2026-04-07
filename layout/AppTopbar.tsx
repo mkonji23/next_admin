@@ -163,17 +163,30 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
     const formatNotificationContent = (content: string) => {
         if (!content) return '';
         const index = content.indexOf('님');
-        if (index === -1) return content;
+        const workIndex = content.indexOf(']');
+        if (index === -1 && workIndex === -1) return content;
 
-        const before = content.substring(0, index);
-        const after = content.substring(index);
+        if (index > -1) {
+            const before = content.substring(0, index);
+            const after = content.substring(index);
+            return (
+                <>
+                    <strong style={{ textDecoration: 'underline' }}>{before}</strong>
+                    {after}
+                </>
+            );
+        } else if (workIndex > -1) {
+            const before = content.substring(0, workIndex + 1);
+            const after = content.substring(workIndex + 1);
+            return (
+                <>
+                    <strong style={{ color: 'blue' }}>{before}</strong>
+                    {after}
+                </>
+            );
+        }
 
-        return (
-            <>
-                <strong style={{ textDecoration: 'underline' }}>{before}</strong>
-                {after}
-            </>
-        );
+        return content;
     };
 
     return (

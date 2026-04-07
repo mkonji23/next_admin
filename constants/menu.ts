@@ -34,6 +34,10 @@ export const AppMenuModel: AppMenuItem[] = [
         ]
     },
     {
+        label: 'Support',
+        items: [{ label: '피드백 게시판', icon: 'pi pi-fw pi-comments', to: '/feedback' }]
+    },
+    {
         label: 'HELP',
         items: [
             { label: '사용 매뉴얼', icon: 'pi pi-fw pi-book', to: '/manual' }

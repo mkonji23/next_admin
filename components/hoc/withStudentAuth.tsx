@@ -8,6 +8,7 @@ import { useHttp } from '@/util/axiosInstance';
 import { Student } from '../modals/StudentModal';
 import { useToast } from '@/hooks/useToast';
 import { Password } from 'primereact/password';
+import useStudentAuthStore from '@/store/useStudentAuthStore';
 
 export interface StudentAuthData {
     studentId?: string;
@@ -23,6 +24,7 @@ const withStudentAuth = <P extends object>(
     const StudentAuthProtectedComponent = (props: P) => {
         const http = useHttp();
         const { showToast } = useToast();
+        const { setStudentAuth, studentAuthData: storedStudentAuthData, studentToken } = useStudentAuthStore();
 
         const [isAuthorized, setIsAuthorized] = useState(false);
         const [studentAuthData, setStudentAuthData] = useState<StudentAuthData | null>(null);
@@ -42,23 +44,14 @@ const withStudentAuth = <P extends object>(
         const passwordInputRef = useRef<HTMLInputElement>(null);
 
         useEffect(() => {
-            const authId = sessionStorage.getItem('student_auth_id');
-            const authName = sessionStorage.getItem('student_auth_name');
-            const authSchool = sessionStorage.getItem('student_auth_school') || undefined;
-            const authGrade = sessionStorage.getItem('student_auth_grade') || undefined;
-            const authPhone = sessionStorage.getItem('student_auth_phone') || undefined;
-
-            if (authId && authName) {
-                setStudentAuthData({
-                    studentId: authId,
-                    name: authName,
-                    school: authSchool,
-                    grade: authGrade,
-                    phoneNumber: authPhone
-                });
+            if (studentToken && storedStudentAuthData) {
+                setStudentAuthData(storedStudentAuthData);
                 setIsAuthorized(true);
+            } else {
+                setIsAuthorized(false);
+                setStudentAuthData(null);
             }
-        }, []);
+        }, [studentToken, storedStudentAuthData]);
 
         const handleVerify = async () => {
             if (!name.trim()) {
@@ -131,14 +124,9 @@ const withStudentAuth = <P extends object>(
 
                 if (res.data.isValid) {
                     const studentData = res.data.student;
+                    setStudentAuth(res.data.studentToken, studentData);
                     setStudentAuthData(studentData);
                     setIsAuthorized(true);
-
-                    sessionStorage.setItem('student_auth_id', studentData.studentId);
-                    sessionStorage.setItem('student_auth_name', studentData.name);
-                    sessionStorage.setItem('student_auth_phone', studentData.phoneNumber);
-                    if (studentData.school) sessionStorage.setItem('student_auth_school', studentData.school);
-                    if (studentData.grade) sessionStorage.setItem('student_auth_grade', studentData.grade);
                 }
             } catch (err: any) {
                 if (err === 'Invalid password') {

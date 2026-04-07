@@ -30,10 +30,18 @@ export const useHttp = (): AxiosInstance => {
             if (!config.disableLoading) {
                 setLoading(true);
             }
+
+            // Admin Token
             const token = Cookies.get('token');
             if (token) {
                 config.headers.Authorization = `Bearer ${token}`; // 헤더에 토큰 추가
             }
+
+            const sToken = Cookies.get('x-student-log');
+            if (sToken) {
+                config.headers['x-student-log'] = `Bearer ${sToken}`; // 헤더에 토큰 추가
+            }
+
             return config;
         },
         (error) => {
