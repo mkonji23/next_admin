@@ -226,10 +226,6 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
             }
         } catch (error) {
             setStats(null);
-            if (error === 'jwt expired') {
-                //토큰 만료
-                handleLogout();
-            }
             console.error('Error fetching student stats:', error);
         } finally {
             setLoading(false);

@@ -5,6 +5,7 @@ import Cookies from 'js-cookie';
 import axios, { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { useToast } from '@/hooks/useToast';
 import { useRouter } from 'next/navigation';
+import useStudentAuthStore from '@/store/useStudentAuthStore';
 
 export const useHttp = (): AxiosInstance => {
     const { showToast } = useToast();
@@ -63,11 +64,49 @@ export const useHttp = (): AxiosInstance => {
             }
             return response;
         },
-        (error) => {
+        async (error) => {
             const config = error.config;
             if (!config?.disableLoading) {
                 setLoading(false);
             }
+
+            const originalRequest = error.config;
+            const isStudentRequest = !!originalRequest?.headers['x-student-log'];
+            const isTokenExpired =
+                error.response?.status === 401 ||
+                error.response?.data?.message === 'jwt expired' ||
+                error.response?.data?.error === 'jwt expired';
+
+            // 학생용 토큰 만료 처리
+            if (isTokenExpired && isStudentRequest && !originalRequest._retry) {
+                originalRequest._retry = true;
+                try {
+                    // Refresh Token으로 새 Access Token 요청
+                    const res = await axios.post(
+                        `${axiosInstance.defaults.baseURL}/choiMath/student/refreshToken`,
+                        {},
+                        { withCredentials: true }
+                    );
+
+                    if (res.data && res.data.studentToken) {
+                        const { studentToken, student } = res.data;
+
+                        // 스토어 업데이트 (Zustand & Cookie)
+                        const { setStudentAuth } = useStudentAuthStore.getState();
+                        setStudentAuth(studentToken, student);
+
+                        // 실패했던 원래 요청 재시도
+                        originalRequest.headers['x-student-log'] = `Bearer ${studentToken}`;
+                        return axiosInstance(originalRequest);
+                    }
+                } catch (refreshError) {
+                    // Refresh도 실패 시 세션 종료
+                    const { clearStudentAuth } = useStudentAuthStore.getState();
+                    clearStudentAuth();
+                    return Promise.reject('student session expired');
+                }
+            }
+
             if (error.response && axios.isAxiosError(error)) {
                 const { status } = error.response;
                 const exceptUrl = ['/choiMath/share/detail-with-auth'];
@@ -78,8 +117,9 @@ export const useHttp = (): AxiosInstance => {
                             summary: error.response?.data?.error || 'error',
                             detail: error.response?.data?.message || ''
                         });
-                    } else {
-                        // window.location.href = '/auth/login'; // 로그인 페이지로 이동
+                    } else if (!isStudentRequest) {
+                        // 관리자용 로그인 만료 처리 (필요시 주석 해제)
+                        // window.location.href = '/auth/login';
                     }
                 } else if (status === 403) {
                     showToast({

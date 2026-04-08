@@ -123,8 +123,8 @@ const withStudentAuth = <P extends object>(
                 });
 
                 if (res.data.isValid) {
-                    const studentData = res.data.student;
-                    setStudentAuth(res.data.studentToken, studentData);
+                    const { studentToken, student: studentData } = res.data;
+                    setStudentAuth(studentToken, studentData);
                     setStudentAuthData(studentData);
                     setIsAuthorized(true);
                 }
