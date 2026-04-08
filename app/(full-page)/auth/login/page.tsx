@@ -24,21 +24,6 @@ const LoginPage = () => {
     );
 
     const signIn = async () => {
-        if (email === '김은영') {
-            showToast({ severity: 'info', summary: 'ID 변경', detail: 'ID가 김은영->  key070428 가 변경되었습니다.' });
-            const res = await login({ userId: 'key070428', password: password });
-            if (res) {
-                router.push('/');
-            }
-        }
-        if (email === '김지안') {
-            showToast({ severity: 'info', summary: 'ID 변경', detail: 'ID가 김지안 -> jianjio22 가 변경되었습니다.' });
-            const res = await login({ userId: 'jianjio22', password: password });
-            if (res) {
-                router.push('/');
-            }
-        }
-
         const res = await login({ userId: email, password: password });
         if (res) {
             router.push('/');
