@@ -85,10 +85,12 @@ const StudentDropDown = ({
             onChange={handleChange}
             value={value}
             disabled={disabled}
-            appendTo="body" // 화면 위치 계산 안정화
+            appendTo="self" // 화면 위치 계산 안정화
             scrollHeight="250px" // 모바일 뷰포트 대응
             virtualScrollerOptions={{ itemSize: 38 }} // 성능 및 안정성 향상
-            filterInputProps={{ autoComplete: 'off' }} // 모바일 키보드 간섭 방지
+            pt={{
+                filterInput: { autoComplete: 'off' }
+            }} // 모바일 키보드 간섭 방지
             filterPlaceholder="이름으로 검색"
             emptyFilterMessage="검색 결과가 없습니다"
         />
