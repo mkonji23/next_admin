@@ -26,8 +26,7 @@ const mockPosts: Feedback[] = [
         author: '홍길동',
         createdAt: '2024-05-01',
         content: '에디터에 더 다양한 폰트 사이즈를 추가해주시면 좋겠습니다.',
-        delta: { ops: [{ insert: '에디터에 더 다양한 폰트 사이즈를 추가해주시면 좋겠습니다.
-' }] }
+        delta: { ops: [{ insert: '에디터에 더 다양한 폰트 사이즈를 추가해주시면 좋겠습니다.' }] }
     },
     {
         id: 2,
@@ -36,8 +35,7 @@ const mockPosts: Feedback[] = [
         author: '이순신',
         createdAt: '2024-04-30',
         content: '특정 조건에서 로그인을 시도하면 500 서버 에러가 발생합니다. 확인 부탁드립니다.',
-        delta: { ops: [{ insert: '특정 조건에서 로그인을 시도하면 500 서버 에러가 발생합니다. 확인 부탁드립니다.
-' }] }
+        delta: { ops: [{ insert: '특정 조건에서 로그인을 시도하면 500 서버 에러가 발생합니다. 확인 부탁드립니다.' }] }
     },
     {
         id: 3,
@@ -46,14 +44,23 @@ const mockPosts: Feedback[] = [
         author: '유관순',
         createdAt: '2024-04-29',
         content: '개발팀과의 원활한 소통을 위해 피드백 게시판이 있으면 좋겠습니다.',
-        delta: { ops: [{ insert: '개발팀과의 원활한 소통을 위해 피드백 게시판이 있으면 좋겠습니다.
-' }] }
+        delta: { ops: [{ insert: '개발팀과의 원활한 소통을 위해 피드백 게시판이 있으면 좋겠습니다.' }] }
     }
 ];
 
 const mockComments = [
-    { id: 1, author: '관리자', content: '좋은 의견 감사합니다. 폰트 사이즈 추가 검토하겠습니다.', createdAt: '2024-05-01' },
-    { id: 2, author: '개발팀', content: '로그인 오류는 현재 수정 중이며, 다음 업데이트에 반영될 예정입니다.', createdAt: '2024-05-01' }
+    {
+        id: 1,
+        author: '관리자',
+        content: '좋은 의견 감사합니다. 폰트 사이즈 추가 검토하겠습니다.',
+        createdAt: '2024-05-01'
+    },
+    {
+        id: 2,
+        author: '개발팀',
+        content: '로그인 오류는 현재 수정 중이며, 다음 업데이트에 반영될 예정입니다.',
+        createdAt: '2024-05-01'
+    }
 ];
 
 const FeedbackDetailPage = () => {
@@ -72,14 +79,15 @@ const FeedbackDetailPage = () => {
     if (!post) {
         return <div className="card">게시물을 찾을 수 없습니다.</div>;
     }
-    
+
     const categoryBodyTemplate = (rowData: Feedback) => {
-        const severity = {
-            '신규': 'info',
-            '개선': 'success',
-            '오류': 'danger',
-            '기타': 'warning'
-        }[rowData.category] || 'primary';
+        const severity =
+            {
+                신규: 'info',
+                개선: 'success',
+                오류: 'danger',
+                기타: 'warning'
+            }[rowData.category] || 'primary';
 
         return <Tag value={rowData.category} severity={severity as any} />;
     };
@@ -88,7 +96,7 @@ const FeedbackDetailPage = () => {
         <div className="card">
             {/* Post Header */}
             <div className="border-bottom-1 surface-border pb-3 mb-3">
-                <div className='flex align-items-center mb-2'>
+                <div className="flex align-items-center mb-2">
                     {categoryBodyTemplate(post)}
                     <h2 className="text-3xl font-bold ml-3 mb-0">{post.title}</h2>
                 </div>
@@ -114,7 +122,9 @@ const FeedbackDetailPage = () => {
                         <div key={comment.id} className="surface-100 p-3 border-round">
                             <div className="flex align-items-center justify-content-between mb-2">
                                 <span className="font-semibold">{comment.author}</span>
-                                <span className="text-xs text-color-secondary">{dayjs(comment.createdAt).format('YYYY-MM-DD HH:mm')}</span>
+                                <span className="text-xs text-color-secondary">
+                                    {dayjs(comment.createdAt).format('YYYY-MM-DD HH:mm')}
+                                </span>
                             </div>
                             <p className="m-0">{comment.content}</p>
                         </div>
