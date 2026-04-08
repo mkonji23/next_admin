@@ -11,6 +11,7 @@ interface AchievementCardProps {
     attendanceRate: number;
     totalHomeworkAvg: number;
     currentMonth: Dayjs;
+    collapsed?: boolean;
 }
 
 const AchievementCard = ({
@@ -18,12 +19,13 @@ const AchievementCard = ({
     totalPraiseCnt,
     attendanceRate,
     totalHomeworkAvg,
-    currentMonth
+    currentMonth,
+    collapsed = false
 }: AchievementCardProps) => {
     const headerTemplate = (options: any) => {
         const toggleIcon = options.collapsed ? 'pi pi-chevron-down' : 'pi pi-chevron-up';
         return (
-            <div {...options.props} className="flex align-items-center justify-content-between p-3">
+            <div className="flex align-items-center justify-content-between p-3 bg-white border-bottom-1 border-gray-200">
                 <div className="flex align-items-center gap-2">
                     <i className="pi pi-trophy text-yellow-500 text-xl"></i>
                     <span className="font-bold text-lg">{currentMonth.format('M월')}의 명예의 전당</span>
@@ -55,7 +57,7 @@ const AchievementCard = ({
             <Panel
                 headerTemplate={headerTemplate}
                 toggleable
-                collapsed={false}
+                collapsed={collapsed}
                 className="shadow-1 border-round-2xl overflow-hidden"
             >
                 <div className="grid p-3">

@@ -226,6 +226,9 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
             }
         } catch (error) {
             setStats(null);
+            if (error === 'jwt must be provided' || error === 'student session expired') {
+                handleLogout();
+            }
             console.error('Error fetching student stats:', error);
         } finally {
             setLoading(false);
@@ -608,6 +611,7 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
 
                 {stats && (
                     <AchievementCard
+                        collapsed={true}
                         praiseTopRankers={praiseTopRankers}
                         totalPraiseCnt={stats.totalPraiseCnt || 0}
                         attendanceRate={attendanceRate}
