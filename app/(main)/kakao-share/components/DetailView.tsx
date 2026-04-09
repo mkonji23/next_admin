@@ -89,6 +89,12 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete, onCopyTo
                     </div>
                     <div className="flex gap-2">
                         <Button
+                            label="카카오톡 공유"
+                            icon="pi pi-share-alt"
+                            className="p-button-primary flex-2"
+                            onClick={() => onShare(selectedShare)}
+                        />
+                        <Button
                             label="복사"
                             icon="pi pi-clone"
                             className="p-button-outlined p-button-secondary"

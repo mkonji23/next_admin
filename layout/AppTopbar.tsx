@@ -89,7 +89,7 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
         };
 
         fetchNotifications();
-    }, [initializeFromStorage]);
+    }, [initializeFromStorage, notifications]);
 
     useEffect(() => {
         if (notifications) {
@@ -296,9 +296,9 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
                         {notifications?.filter((item) => !item.isRead).length > 0 ? (
                             notifications
                                 ?.filter((item) => !item.isRead)
-                                ?.map((notification) => (
+                                ?.map((notification, index) => (
                                     <li
-                                        key={notification?._id}
+                                        key={notification?._id || `notif-${index}`}
                                         className={`flex align-items-start p-2 border-round cursor-pointer hover:surface-100 ${
                                             !notification.isRead ? 'bg-blue-50' : ''
                                         }`}

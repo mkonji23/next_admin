@@ -272,6 +272,7 @@ const ListView = ({
                 <Column field="pTelNo" header="학부모 연락처" headerStyle={{ minWidth: '150px' }} sortable />
                 <Column
                     field="shareCount"
+                    headerTooltip="카카오공유하기로 공유되었는지 여부"
                     header="공유상태"
                     body={statusBodyTemplate}
                     sortable
