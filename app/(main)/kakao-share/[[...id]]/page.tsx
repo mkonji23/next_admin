@@ -33,9 +33,9 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
     const http = useHttp();
     const { shareDefault } = useKakaoShare();
 
-    const fetchShares = async () => {
+    const fetchShares = async (first = 0) => {
         try {
-            setFirst(0);
+            !first && setFirst(0);
             const res = await http.get('/choiMath/share/list');
             const data = (res.data || []).map((item: ShareItem) => ({
                 ...item,
@@ -83,8 +83,6 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
 
     // 3. 게시글 저장 (생성 및 수정)
     const handleSave = async (formData: any, files: File[]) => {
-        console.log('formData', formData);
-        console.log('files', files);
         try {
             let detailId = selectedShare?._id;
             if (selectedShare && selectedShare._id) {
@@ -223,7 +221,7 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
         }
     };
 
-    const handleShare = async (item: ShareItem) => {
+    const handleShare = (item: ShareItem) => {
         const firstImageUrl = item.shareImageUrls?.[0];
         const imageUrl = typeof firstImageUrl === 'string' ? firstImageUrl : firstImageUrl?.url;
         const baseUri =
@@ -231,7 +229,7 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
 
         const shareLink = `${baseUri}/kakao-share/public-view/${item?.publicUrl}`;
 
-        await shareDefault({
+        shareDefault({
             title: item?.shareTitle || '',
             description: item?.shareContent || '',
             buttonText: '자세히 보기',
@@ -247,8 +245,6 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
                 userName: userInfo.userName
             }
         });
-
-        fetchShares();
     };
 
     const handleEdit = (item: ShareItem) => {
