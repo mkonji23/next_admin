@@ -89,7 +89,7 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
         };
 
         fetchNotifications();
-    }, [initializeFromStorage, notifications]);
+    }, [initializeFromStorage]);
 
     useEffect(() => {
         if (notifications) {
