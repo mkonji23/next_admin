@@ -39,10 +39,10 @@ const useKakaoShare = () => {
                 link: {
                     mobileWebUrl: linkUrl,
                     webUrl: linkUrl
-                },
-                // 서버 콜백 설정 시 함께 전달될 파라미터
-                serverCallbackArgs: serverCallbackArgs
+                }
             },
+            // 서버 콜백 설정 시 함께 전달될 파라미터
+            serverCallbackArgs: serverCallbackArgs,
             buttons: [
                 {
                     title: buttonText,
