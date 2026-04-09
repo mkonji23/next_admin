@@ -21,4 +21,7 @@ export interface ShareItem {
     pTelNo?: string;
     createdDate?: string;
     updatedDate?: string;
+    shareCount?: number;
+    // 가공데이터 실제 db에는 존재하지않음
+    shareStatus?: string;
 }

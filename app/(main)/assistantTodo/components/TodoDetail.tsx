@@ -17,7 +17,7 @@ interface TodoDetailProps {
 
 const TodoDetail: React.FC<TodoDetailProps> = ({ selectedTodo, onEdit, onToggleComplete, onDelete }) => {
     return (
-        <Card className="h-screen">
+        <Card className="shadow-1 border-round-2xl">
             <div className="flex justify-content-between align-items-center mb-4">
                 <h5 className="m-0">업무 상세 내용</h5>
                 {selectedTodo && (
@@ -81,7 +81,7 @@ const TodoDetail: React.FC<TodoDetailProps> = ({ selectedTodo, onEdit, onToggleC
                             value={selectedTodo.content}
                             delta={selectedTodo.delta}
                             readOnly={true}
-                            style={{ height: '500px' }}
+                            style={{ height: 'auto', minHeight: '100px' }}
                         />
                     </div>
                     <div>

@@ -9,6 +9,7 @@ import dayjs from 'dayjs';
 import { Todo, TodoUser } from '@/types/todo';
 import { getUserTagColor } from '@/util/userTagColors';
 import { CustomEditor } from '../editor/CustomEditor';
+import { useCustomModal } from '@/hooks/useCustomModal';
 
 interface ToDoDetailModalProps {
     visible: boolean;
@@ -20,8 +21,16 @@ interface ToDoDetailModalProps {
 }
 
 const ToDoDetailModal: React.FC<ToDoDetailModalProps> = ({ visible, onClose, pData }) => {
+    const { openModal } = useCustomModal();
     const todo = pData?.todo;
     const onToggleComplete = pData?.onToggleComplete;
+    const showTodoModal = async () => {
+        onClose();
+        const result = await openModal<any, Todo | null>({
+            id: 'todo',
+            pData: { mode: 'edit', todo }
+        });
+    };
 
     if (!todo) return null;
 
@@ -30,14 +39,18 @@ const ToDoDetailModal: React.FC<ToDoDetailModalProps> = ({ visible, onClose, pDa
             {!todo.isCompleted && (
                 <Button
                     label="완료 처리"
-                    icon="pi pi-check"
+                    icon="pi pi-check-circle"
                     className="p-button-success"
                     onClick={() => {
                         onToggleComplete?.(todo);
                         onClose();
                     }}
+                    style={{ marginRight: 'auto' }} // 인라인 스타일로 강제 적용
                 />
             )}
+
+            <Button label="수정" icon="pi pi-pencil" onClick={() => showTodoModal()} className="p-button-warning" />
+
             <Button label="닫기" icon="pi pi-times" className="p-button-text" onClick={() => onClose()} />
         </div>
     );

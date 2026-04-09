@@ -77,7 +77,9 @@ const TodoList: React.FC<TodoListProps> = ({
                     bodyClassName={'field-highlight'}
                     body={(rowData) => (
                         <div
-                            className="truncate-cell cursor-pointer text-blue-500 font-semibold hover:underline"
+                            className={`truncate-cell cursor-pointer ${
+                                !rowData.isCompleted ? 'text-blue-500' : 'text-green-500'
+                            } font-semibold hover:underline`}
                             onClick={() => handleContentClick(rowData)}
                             onDoubleClick={() => onEdit(rowData)}
                         >

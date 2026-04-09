@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Dropdown } from 'primereact/dropdown';
 import { useHttp } from '@/util/axiosInstance';
 import { Student } from '@/types/class';
+import { useMobile } from '@/hooks/useMobile';
 
 // Define the component's props interface
 interface StudentDropDownProps {
@@ -30,6 +31,7 @@ const StudentDropDown = ({
 }: StudentDropDownProps) => {
     const http = useHttp();
     const [internalStudents, setInternalStudents] = useState<Student[]>([]);
+    const isMobile = useMobile();
 
     useEffect(() => {
         if (options && options.length !== 0) {
@@ -79,20 +81,18 @@ const StudentDropDown = ({
             {...props}
             className={className}
             options={studentOptionsForDropdown}
-            filter={filter}
+            filter={!isMobile}
             showClear={showClear}
             placeholder={placeholder}
             onChange={handleChange}
             value={value}
             disabled={disabled}
-            appendTo="self" // 화면 위치 계산 안정화
-            scrollHeight="250px" // 모바일 뷰포트 대응
+            appendTo="self" // 화면 위치 계산 안정화 (모바일 뷰포트 변화에 유연)
+            scrollHeight={'300px'} // 모바일 뷰포트 대응
             virtualScrollerOptions={{ itemSize: 38 }} // 성능 및 안정성 향상
-            pt={{
-                filterInput: { autoComplete: 'off' }
-            }} // 모바일 키보드 간섭 방지
             filterPlaceholder="이름으로 검색"
             emptyFilterMessage="검색 결과가 없습니다"
+            resetFilterOnHide // 닫힐 때 검색어 초기화 (다음 검색 시 편리)
         />
     );
 };

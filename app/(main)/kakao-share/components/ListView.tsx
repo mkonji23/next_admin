@@ -5,6 +5,7 @@ import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
 import { InputText } from 'primereact/inputtext';
+import { Tag } from 'primereact/tag';
 import { FilterMatchMode } from 'primereact/api';
 import { useToast } from '@/hooks/useToast';
 import { ShareItem } from '../types';
@@ -127,11 +128,21 @@ const ListView = ({
                 className="truncate-cell-300 text-primary font-bold cursor-pointer hover:underline"
                 onClick={(e) => {
                     e.stopPropagation();
-                    onRowSelect(rowData._id);
+                    onRowSelect(rowData._id || '');
                 }}
             >
                 {rowData.shareTitle}
             </span>
+        );
+    };
+
+    const statusBodyTemplate = (rowData: ShareItem) => {
+        const hasShared = rowData.shareStatus === '공유';
+        return (
+            <div className="flex align-items-center gap-2">
+                <Tag value={rowData.shareStatus} severity={hasShared ? 'success' : null} style={{ minWidth: '60px' }} />
+                <span className="text-sm text-500">({rowData.shareCount || 0}회)</span>
+            </div>
         );
     };
 
@@ -239,7 +250,7 @@ const ListView = ({
                 emptyMessage="검색 결과가 없습니다."
                 dataKey="_id"
                 filters={filters}
-                globalFilterFields={['shareTitle', 'actualTitle', 'studentName', 'telNo', 'pTelNo']}
+                globalFilterFields={['shareTitle', 'actualTitle', 'studentName', 'telNo', 'pTelNo', 'shareStatus']}
                 header={header}
                 rows={10}
                 paginator
@@ -255,10 +266,17 @@ const ListView = ({
                 <Column selectionMode="multiple" headerStyle={{ width: '1rem' }}></Column>
                 <Column field="shareTitle" header="공유 제목 (카카오)" body={titleBodyTemplate} sortable />
                 {/* <Column field="actualTitle" header="게시글 제목" sortable /> */}
-                <Column field="studentName" header="학생" headerStyle={{ minWidth: '80px' }} sortable />
-                <Column field="className" header="클래스" headerStyle={{ minWidth: '100px' }} sortable />
+                <Column field="studentName" header="학생" headerStyle={{ minWidth: '100px' }} sortable />
+                <Column field="className" header="클래스" headerStyle={{ minWidth: '120px' }} sortable />
                 <Column field="telNo" header="학생 연락처" headerStyle={{ minWidth: '100px' }} sortable />
                 <Column field="pTelNo" header="학부모 연락처" headerStyle={{ minWidth: '150px' }} sortable />
+                <Column
+                    field="shareCount"
+                    header="공유상태"
+                    body={statusBodyTemplate}
+                    sortable
+                    headerStyle={{ minWidth: '150px' }}
+                />
 
                 <Column header="공유" body={shareBodyTemplate} />
                 <Column header="작업" body={actionBodyTemplate} />

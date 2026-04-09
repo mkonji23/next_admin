@@ -693,14 +693,14 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                         </div>
 
                         {/* Stats Cards Row */}
-                        <div className="grid gap-4 mb-4" style={{ margin: 0 }}>
+                        <div className="grid gap-4 mb-4 force-horizontal pb-2" style={{ margin: 0 }}>
                             {stats.classes?.map((c: any) => {
                                 const praiseCount = c.attendance?.filter((a: any) => a.praise).length || 0;
                                 const rank = classRanks[c.classId] || 0;
                                 return (
                                     <div
                                         key={c.classId || c.className}
-                                        className="col-12 sm:col-6 md:col lg:col flex-1 p-0"
+                                        className="col-12 sm:col-6 md:col lg:col flex-1 p-0 no-shrink min-w-300"
                                     >
                                         <Card className="shadow-1 border-round-2xl h-full relative overflow-hidden">
                                             <div
@@ -778,11 +778,11 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                                     className="h-full border-none shadow-1 border-round-2xl"
                                 >
                                     {chartData.classesAttendance && chartData.classesAttendance.length > 0 ? (
-                                        <div className="grid justify-content-center">
+                                        <div className="grid justify-content-center force-horizontal pb-2">
                                             {chartData.classesAttendance.map((ca: any, idx: number) => {
                                                 const isTotal = ca.className === '총 출석현황';
                                                 return (
-                                                    <div key={idx} className="col-12 sm:col-6 md:col-4 mb-4">
+                                                    <div key={idx} className="col-12 sm:col-6 md:col-4 mb-4 no-shrink min-w-300">
                                                         <div className="text-center flex flex-column align-items-center p-2">
                                                             <span
                                                                 className={`font-bold mb-3 text-overflow-ellipsis overflow-hidden white-space-nowrap w-full ${
@@ -837,11 +837,11 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                                     className="h-full border-none shadow-1 border-round-2xl"
                                 >
                                     {chartData.classesHomework && chartData.classesHomework.length > 0 ? (
-                                        <div className="grid justify-content-center">
+                                        <div className="grid justify-content-center force-horizontal pb-2">
                                             {chartData.classesHomework.map((hc: any, idx: number) => {
                                                 const isTotal = hc.className === '총 달성률';
                                                 return (
-                                                    <div key={idx} className="col-12 sm:col-6 md:col-4 mb-4">
+                                                    <div key={idx} className="col-12 sm:col-6 md:col-4 mb-4 no-shrink min-w-300">
                                                         <div className="text-center flex flex-column align-items-center p-2">
                                                             <span
                                                                 className={`font-bold mb-3 text-overflow-ellipsis overflow-hidden white-space-nowrap w-full ${

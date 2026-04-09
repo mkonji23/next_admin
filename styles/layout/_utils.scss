@@ -69,3 +69,35 @@
 .field-highlight:hover {
   color: #0d47a1;
 }
+
+/* Force horizontal layout with scroll instead of wrapping on small screens */
+.force-horizontal {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    
+    /* Hide scrollbar but keep functionality if desired, or just standard scroll */
+    &::-webkit-scrollbar {
+        height: 6px;
+    }
+    &::-webkit-scrollbar-thumb {
+        background: var(--surface-border);
+        border-radius: 10px;
+    }
+}
+
+/* Utility to prevent children from shrinking in force-horizontal */
+.no-shrink {
+    flex-shrink: 0 !important;
+}
+
+/* Minimum width utilities for horizontal items */
+.min-w-300 { min-width: 300px !important; }
+.min-w-400 { min-width: 400px !important; }
+.min-w-500 { min-width: 500px !important; }
+.min-w-600 { min-width: 600px !important; }
+.min-w-100 { min-width: 100px !important; }
+.min-w-150 { min-width: 150px !important; }
+.min-w-200 { min-width: 200px !important; }

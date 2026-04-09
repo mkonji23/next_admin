@@ -81,7 +81,7 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete, onCopyTo
 
     return (
         <>
-            <div className="card">
+            <Card>
                 <div className="flex justify-content-between align-items-center mb-4">
                     <div className="flex align-items-center">
                         <Button icon="pi pi-arrow-left" className="p-button-text mr-2" onClick={onBack} />
@@ -148,11 +148,12 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete, onCopyTo
                                     </div>
                                 </div>
 
-                                <div className="p-3 surface-50 border-round" style={{ minHeight: '150px' }}>
+                                <div className="p-3 surface-50 border-round overflow-hidden">
                                     <CustomEditor
                                         value={selectedShare?.actualContent}
                                         delta={selectedShare.delta}
                                         readOnly={true}
+                                        style={{ height: 'auto', minHeight: 'unset' }}
                                     />
                                 </div>
                             </div>
@@ -259,7 +260,7 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete, onCopyTo
                         </Card>
                     </div>
                 </div>
-            </div>
+            </Card>
 
             <Lightbox
                 open={open}

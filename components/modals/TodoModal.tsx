@@ -137,20 +137,21 @@ const TodoModal = ({ visible, pData, onClose }: TodoModalProps) => {
                             icon="pi pi-check-circle"
                             onClick={() => handleSave('complete')}
                             className="p-button-success"
+                            style={{ marginRight: 'auto' }} // 인라인 스타일로 강제 적용
                         />
                     )}
-                    <Button label="취소" icon="pi pi-times" onClick={() => onClose()} className="p-button-text" />
                     <Button
-                        label="수정"
-                        icon="pi pi-check"
+                        label="저장"
+                        icon="pi pi-save"
                         onClick={() => handleSave('save')}
                         className="p-button-warning"
                     />
+                    <Button label="취소" icon="pi pi-times" onClick={() => onClose()} className="p-button-text" />
                 </>
             ) : (
                 <>
-                    <Button label="취소" icon="pi pi-times" onClick={() => onClose(null)} className="p-button-text" />
                     <Button label="저장" icon="pi pi-save" onClick={() => handleSave('save')} />
+                    <Button label="취소" icon="pi pi-times" onClick={() => onClose(null)} className="p-button-text" />
                 </>
             )}
         </div>

@@ -118,13 +118,24 @@ const AssistantTodoPage = () => {
         }
     };
 
+    // 상세
+    const handleDetail = async (todo) => {
+        openModal({
+            id: 'todoDetailModal',
+            pData: {
+                todo
+            }
+        });
+    };
+
+    // 캘린다 내용 클릭
     const handleEventClick = (clickInfo: any) => {
         const todo = todos.find((t) => t.id === clickInfo.event.id);
         if (!todo) return;
 
         // 더블클릭시
         if (clickInfo.jsEvent.detail === 2) {
-            handleEdit(todo);
+            handleDetail(todo);
         } else {
             // openDetailModal(todo);
             setSelectedTodo(todo);
@@ -179,7 +190,11 @@ const AssistantTodoPage = () => {
                     allDay: true,
                     backgroundColor: backgroundColor,
                     borderColor: borderColor,
-                    textColor: '#ffffff'
+                    textColor: '#ffffff',
+                    extendedProps: {
+                        description: todo.content,
+                        assignees: todo?.assignees
+                    }
                 };
             }),
         [todos, currentUserId]
@@ -247,6 +262,15 @@ const AssistantTodoPage = () => {
                 }
                 .fc-daygrid-event-dot {
                     display: none;
+                }
+                /* 에디터가 내용에 따라 늘어나도록 내부 스크롤 방지 */
+                .hide-toolbar .ql-container {
+                    border: none !important;
+                }
+                .hide-toolbar .ql-editor {
+                    overflow-y: visible !important;
+                    height: auto !important;
+                    padding: 0 !important;
                 }
                 /* 요일 및 날짜 색상 처리 */
                 /* 일요일 (Red) */

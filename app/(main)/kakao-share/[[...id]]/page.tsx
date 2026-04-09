@@ -11,8 +11,10 @@ import DetailView from '../components/DetailView';
 import ListView from '../components/ListView';
 import WriteView from '../components/WriteView';
 import { ShareItem } from '../types';
+import useAuthStore from '@/store/useAuthStore';
 
 const KakaoSharePage = ({ path }: { path?: string }) => {
+    const { userInfo } = useAuthStore();
     const [isCopy, setIsCopy] = useState<boolean>(false);
     const [view, setView] = useState<'LIST' | 'DETAIL' | 'WRITE'>('LIST');
     const [shares, setShares] = useState<ShareItem[]>([]);
@@ -35,7 +37,11 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
         try {
             setFirst(0);
             const res = await http.get('/choiMath/share/list');
-            setShares(res.data || []);
+            const data = (res.data || []).map((item: ShareItem) => ({
+                ...item,
+                shareStatus: (item.shareCount || 0) > 0 ? '공유' : '미공유'
+            }));
+            setShares(data);
         } catch (error) {
             console.error('Fetch error:', error);
             showToast({ severity: 'error', summary: '오류', detail: '목록을 불러오지 못했습니다.' });
@@ -46,8 +52,11 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
     const fetchDetail = async (id: string) => {
         try {
             const res = await http.get(`/choiMath/share/detail/${id}`);
-            console.log('res', res);
-            setSelectedShare(res.data || {});
+            const data = res.data || {};
+            if (data._id) {
+                data.shareStatus = (data.shareCount || 0) > 0 ? '공유' : '미공유';
+            }
+            setSelectedShare(data);
             setView('DETAIL');
         } catch (error) {
             console.error('Detail error:', error);
@@ -226,7 +235,17 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
             title: item?.shareTitle || '',
             description: item?.shareContent || '',
             buttonText: '자세히 보기',
-            linkUrl: shareLink
+            linkUrl: shareLink,
+            serverCallbackArgs: {
+                menuType: 'kakao-share',
+                id: item?._id,
+                studentId: item?.studentId,
+                studentName: item?.studentName,
+                shareTitle: item?.shareTitle,
+                shareContent: item?.shareTitle,
+                userId: userInfo.userId,
+                userName: userInfo.userName
+            }
         });
     };
 

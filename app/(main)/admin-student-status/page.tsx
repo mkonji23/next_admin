@@ -46,7 +46,7 @@ const AdminStudentStatusPage = () => {
             });
     };
     return (
-        <div className="grid">
+        <div className="grid" style={{ minHeight: '500px' }}>
             <div className="col-12">
                 <div className="flex gap-2">
                     <Button
@@ -78,12 +78,9 @@ const AdminStudentStatusPage = () => {
                     </div>
                 </Card>
             </div>
-
-            {selectedStudent && (
-                <div className="col-12 mt-4">
-                    <StudentStatusContent studentAuthData={selectedStudent} />
-                </div>
-            )}
+            <div className="col-12 mt-4">
+                {selectedStudent && <StudentStatusContent studentAuthData={selectedStudent} />}
+            </div>
         </div>
     );
 };

@@ -4,6 +4,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { Button } from 'primereact/button';
 import { Checkbox } from 'primereact/checkbox';
+import { Tooltip } from 'primereact/tooltip';
 
 interface TodoCalendarProps {
     events: any[];
@@ -32,6 +33,7 @@ const TodoCalendar: React.FC<TodoCalendarProps> = ({
     };
     return (
         <div className="card">
+            <Tooltip target=".todo-tooltip" position="top" appendTo="self" />
             <div className="flex justify-content-between align-items-center mb-4">
                 {/* 왼쪽: 제목 */}
                 <h5 className="m-0">조교쌤 일자별 업무(캘린더)</h5>
@@ -69,6 +71,35 @@ const TodoCalendar: React.FC<TodoCalendarProps> = ({
                     eventDrop={onEventChange}
                     eventResize={onEventChange}
                     datesSet={onDatesSet}
+                    eventContent={(eventInfo) => {
+                        const eventId = `event-${eventInfo.event.id}`; // 고유 ID 생성
+                        const description = eventInfo.event.extendedProps?.description || '';
+                        // Safety 처리: 데이터가 없을 경우 빈 값 처리
+                        const assigneesList = eventInfo.event.extendedProps?.assignees || [];
+                        const assigneesNames = assigneesList.map((item: any) => item.userName).join(', ');
+
+                        const truncate1 = (str: string, n: number) => {
+                            return str.length > n ? str.slice(0, n) + '...' : str;
+                        };
+
+                        // 툴팁에 표시될 문자열
+                        const tooltipMsg = `${truncate1(description, 200)}${
+                            assigneesNames ? ` \r\n\r\n담당자: ${assigneesNames}` : ''
+                        }`;
+                        return (
+                            <>
+                                {/* 개별 이벤트마다 전용 툴팁 타겟 지정 */}
+                                <Tooltip target={`#${eventId}`} content={tooltipMsg} position="top" />
+                                <div
+                                    id={eventId}
+                                    className="w-full h-full p-1"
+                                    style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}
+                                >
+                                    {eventInfo.event.title}
+                                </div>
+                            </>
+                        );
+                    }}
                     locale="ko"
                     height="auto"
                     editable={true}
