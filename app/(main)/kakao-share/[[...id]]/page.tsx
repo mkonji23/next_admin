@@ -223,7 +223,7 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
         }
     };
 
-    const handleShare = (item: ShareItem) => {
+    const handleShare = async (item: ShareItem) => {
         const firstImageUrl = item.shareImageUrls?.[0];
         const imageUrl = typeof firstImageUrl === 'string' ? firstImageUrl : firstImageUrl?.url;
         const baseUri =
@@ -231,7 +231,7 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
 
         const shareLink = `${baseUri}/kakao-share/public-view/${item?.publicUrl}`;
 
-        shareDefault({
+        await shareDefault({
             title: item?.shareTitle || '',
             description: item?.shareContent || '',
             buttonText: '자세히 보기',
@@ -247,6 +247,8 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
                 userName: userInfo.userName
             }
         });
+
+        fetchShares();
     };
 
     const handleEdit = (item: ShareItem) => {

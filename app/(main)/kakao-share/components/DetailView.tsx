@@ -16,6 +16,7 @@ import 'yet-another-react-lightbox/styles.css';
 import 'yet-another-react-lightbox/plugins/thumbnails.css';
 import { CustomEditor } from '@/components/editor/CustomEditor';
 import { useLightboxHistory } from '@/hooks/useLightboxHistory';
+import { Tooltip } from 'primereact/tooltip';
 
 interface DetailViewProps {
     selectedShare: ShareItem | null;
@@ -125,7 +126,30 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete, onCopyTo
                         <Card className="shadow-2">
                             <div className="mb-4">
                                 <div className="flex align-items-center gap-2 mb-3">
-                                    <Tag value="게시용" severity="info" />
+                                    <Tag
+                                        value={
+                                            selectedShare.shareCount && selectedShare?.shareCount > 0
+                                                ? '공유완료'
+                                                : '미공유'
+                                        }
+                                        severity={
+                                            selectedShare.shareCount && selectedShare?.shareCount > 0 ? 'success' : null
+                                        }
+                                    />
+                                    {selectedShare.shareCount && selectedShare?.shareCount > 0 && (
+                                        <>
+                                            <Tooltip target="#tooltipShare" /> {/* 타겟 클래스 지정 */}
+                                            <Tag
+                                                id="tooltipShare"
+                                                icon="pi pi-share-alt"
+                                                value={selectedShare.shareCount}
+                                                data-pr-tooltip={`${selectedShare.shareCount} 회 공유되었습니다.`} // 표시할 내용
+                                                data-pr-position="top"
+                                                severity={'warning'}
+                                            />
+                                        </>
+                                    )}
+
                                     <h4 className="m-0 font-bold">{selectedShare.actualTitle}</h4>
                                 </div>
 

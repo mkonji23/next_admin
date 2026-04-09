@@ -12,11 +12,15 @@ export const useNotificationStore = create<NotificationStore>((set) => ({
     notifications: [],
     setNotifications: (notifications) => set({ notifications }),
     addNotification: (notification) =>
-        set((state) => ({ notifications: [notification, ...state.notifications] })),
+        set((state) => {
+            // 들어온 값이 배열이면 펼쳐서 넣고, 객체면 그냥 넣음
+            const newItems = Array.isArray(notification) ? notification : [notification];
+            return {
+                notifications: [...newItems, ...state.notifications]
+            };
+        }),
     markAsRead: (id) =>
         set((state) => ({
-            notifications: state.notifications.map((n) =>
-                n._id === id ? { ...n, isRead: true } : n
-            ),
-        })),
+            notifications: state.notifications.map((n) => (n._id === id ? { ...n, isRead: true } : n))
+        }))
 }));

@@ -137,7 +137,7 @@ const ListView = ({
     };
 
     const statusBodyTemplate = (rowData: ShareItem) => {
-        const hasShared = rowData.shareStatus === '공유';
+        const hasShared = rowData.shareStatus === '공유완료';
         return (
             <div className="flex align-items-center gap-2">
                 <Tag value={rowData.shareStatus} severity={hasShared ? 'success' : null} style={{ minWidth: '60px' }} />

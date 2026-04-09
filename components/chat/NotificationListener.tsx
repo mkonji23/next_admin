@@ -12,7 +12,7 @@ import { useHttp } from '@/util/axiosInstance'; // Import useHttp
 export default function NotificationListener() {
     const { showToast } = useToast();
     const { userInfo } = useAuthStore();
-    const { addNotification, setNotifications } = useNotificationStore();
+    const { addNotification } = useNotificationStore();
     const http = useHttp(); // Initialize useHttp
 
     useEffect(() => {
