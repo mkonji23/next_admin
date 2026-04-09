@@ -39,7 +39,7 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
             const res = await http.get('/choiMath/share/list');
             const data = (res.data || []).map((item: ShareItem) => ({
                 ...item,
-                shareStatus: (item.shareCount || 0) > 0 ? '공유' : '미공유'
+                shareStatus: (item.shareCount || 0) > 0 ? '공유완료' : '미공유'
             }));
             setShares(data);
         } catch (error) {
@@ -54,7 +54,7 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
             const res = await http.get(`/choiMath/share/detail/${id}`);
             const data = res.data || {};
             if (data._id) {
-                data.shareStatus = (data.shareCount || 0) > 0 ? '공유' : '미공유';
+                data.shareStatus = (data.shareCount || 0) > 0 ? '공유완료' : '미공유';
             }
             setSelectedShare(data);
             setView('DETAIL');
