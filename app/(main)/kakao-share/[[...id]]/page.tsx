@@ -12,9 +12,11 @@ import ListView from '../components/ListView';
 import WriteView from '../components/WriteView';
 import { ShareItem } from '../types';
 import useAuthStore from '@/store/useAuthStore';
+import { useRefreshStore } from '@/store/useRefreshStore';
 
 const KakaoSharePage = ({ path }: { path?: string }) => {
     const { userInfo } = useAuthStore();
+    const { refreshSignal, initRefresh } = useRefreshStore();
     const [isCopy, setIsCopy] = useState<boolean>(false);
     const [view, setView] = useState<'LIST' | 'DETAIL' | 'WRITE'>('LIST');
     const [shares, setShares] = useState<ShareItem[]>([]);
@@ -64,22 +66,6 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
             setView('LIST');
         }
     };
-
-    // 초기화 및 경로 감지
-    useEffect(() => {
-        if (path && path.startsWith('/kakao-share/')) {
-            const id = path.split('/')[2];
-            if (id) {
-                fetchDetail(id);
-            } else {
-                fetchShares();
-                setView('LIST');
-            }
-        } else {
-            fetchShares();
-            setView('LIST');
-        }
-    }, [path]);
 
     // 3. 게시글 저장 (생성 및 수정)
     const handleSave = async (formData: any, files: File[]) => {
@@ -229,6 +215,19 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
 
         const shareLink = `${baseUri}/kakao-share/public-view/${item?.publicUrl}`;
 
+        // NOTE - 테스트용 코드
+        // http.post('/choiMath/kakao/share/webhook', {
+        //     menuType: 'kakao-share',
+        //     id: item?._id,
+        //     studentId: item?.studentId,
+        //     studentName: item?.studentName,
+        //     shareTitle: item?.shareTitle,
+        //     shareContent: item?.shareTitle,
+        //     userId: userInfo.userId,
+        //     userName: userInfo.userName
+        // });
+
+        // 카카오공유하기
         shareDefault({
             title: item?.shareTitle || '',
             description: item?.shareContent || '',
@@ -283,6 +282,35 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
     useEffect(() => {
         if (view !== 'WRITE') setIsCopy(false);
     }, [view]);
+
+    // 초기화 및 경로 감지
+    useEffect(() => {
+        if (path && path.startsWith('/kakao-share/')) {
+            const id = path.split('/')[2];
+            if (id) {
+                fetchDetail(id);
+            } else {
+                fetchShares();
+                setView('LIST');
+            }
+        } else {
+            fetchShares();
+            setView('LIST');
+        }
+    }, [path]);
+
+    useEffect(() => {
+        if (refreshSignal && view === 'LIST') fetchShares();
+        if (refreshSignal && selectedShare?._id && view === 'DETAIL') fetchDetail(selectedShare._id);
+    }, [refreshSignal]);
+
+    useEffect(() => {
+        // 컴포넌트 언마운트(화면 빠져나갈 때) 시 리프레시 신호 초기화
+        return () => {
+            console.log('initRefresh');
+            initRefresh();
+        };
+    }, []);
 
     return (
         <div className="kakao-share-page">

@@ -6,6 +6,7 @@ import Pusher from 'pusher-js';
 import { useToast } from '@/hooks/useToast';
 import useAuthStore from '@/store/useAuthStore';
 import { useNotificationStore } from '@/store/useNotificationStore';
+import { useRefreshStore } from '@/store/useRefreshStore';
 import { Notification, PusherMessage } from '@/types/notification';
 import { useHttp } from '@/util/axiosInstance'; // Import useHttp
 
@@ -13,6 +14,7 @@ export default function NotificationListener() {
     const { showToast } = useToast();
     const { userInfo } = useAuthStore();
     const { addNotification } = useNotificationStore();
+    const { triggerRefresh } = useRefreshStore();
     const http = useHttp(); // Initialize useHttp
 
     useEffect(() => {
@@ -44,6 +46,14 @@ export default function NotificationListener() {
             fetchNotifications();
             // Optionally, show a toast
             showToast({ severity: 'info', summary: '새 알림', detail: data.message });
+        });
+
+        // 3. 이벤트 바인딩 (Express 서버에서 지정한 이벤트명)
+        channel.bind('refresh', (data: PusherMessage) => {
+            // Refresh notifications and trigger global refresh signal
+            // fetchNotifications();
+            console.log('refresh발생');
+            triggerRefresh();
         });
 
         // 4. 컴포넌트 언마운트 시 구독 해제 (중요: 메모리 누수 방지)

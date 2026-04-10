@@ -13,10 +13,25 @@ export const useNotificationStore = create<NotificationStore>((set) => ({
     setNotifications: (notifications) => set({ notifications }),
     addNotification: (notification) =>
         set((state) => {
-            // 들어온 값이 배열이면 펼쳐서 넣고, 객체면 그냥 넣음
-            const newItems = Array.isArray(notification) ? notification : [notification];
+            const incoming = Array.isArray(notification) ? notification : [notification];
+            const combined = [...incoming, ...state.notifications];
+
+            // Map에 [Key타입, Value타입]을 명시해줍니다.
+            // 예: Key는 string(_id), Value는 Notification 객체
+            const uniqueNotifications = Array.from(
+                combined
+                    .reduce((map, item) => {
+                        const id = item._id; // 고유 ID 필드
+                        if (id && !map.has(id)) {
+                            map.set(id, item);
+                        }
+                        return map;
+                    }, new Map<string, any>())
+                    .values() // <string, any> 또는 <string, Notification>
+            );
+
             return {
-                notifications: [...newItems, ...state.notifications]
+                notifications: uniqueNotifications as Notification[] // 최종 타입을 확정해줍니다.
             };
         }),
     markAsRead: (id) =>
