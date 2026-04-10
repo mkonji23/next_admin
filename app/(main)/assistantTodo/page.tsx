@@ -38,8 +38,8 @@ const AssistantTodoPage = () => {
             const response = await get('/choiMath/todo/getTodoList', {
                 params: {
                     userId: idChk ? currentUserId : '',
-                    startDate: currentDate.start,
-                    endDate: currentDate.end,
+                    // startDate: currentDate.start,
+                    // endDate: currentDate.end,
                     ...(isCompleted !== 'all' && { isCompleted: isCompleted })
                 }
             });

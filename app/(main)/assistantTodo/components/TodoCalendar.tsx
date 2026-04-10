@@ -128,7 +128,7 @@ const TodoCalendar: React.FC<TodoCalendarProps> = ({
                         eventClick={onEventClick}
                         eventDrop={onEventChange}
                         eventResize={onEventChange}
-                        datesSet={onDatesSet}
+                        // datesSet={onDatesSet}
                         eventContent={(eventInfo) => {
                             const eventId = `event-${eventInfo.event.id}`;
                             const description = eventInfo.event.extendedProps?.description || '';
