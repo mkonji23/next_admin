@@ -147,15 +147,37 @@ const ListView = ({
     };
 
     const openStatusBodyTemplate = (rowData: ShareItem) => {
-        const hasOpened = (rowData.kakaoOpenCount || 0) > 0;
+        const shareCount = rowData.shareCount || 0;
+        const openCount = rowData.kakaoOpenCount || 0;
+
+        let status = { label: '미열람', severity: 'danger' };
+
+        if (shareCount > 0) {
+            if (openCount >= shareCount) {
+                status = { label: '열람', severity: 'success' };
+            } else if (openCount > 0) {
+                status = { label: '부분 열람', severity: 'warning' };
+            }
+        } else if (openCount > 0) {
+            // 공유 횟수는 0인데 열람이 있는 경우 (링크 직접 전달 등)
+            status = { label: '열람', severity: 'success' };
+        }
+
         return (
             <div className="flex align-items-center gap-2">
-                <Tag
-                    value={hasOpened ? '열람' : '미열람'}
-                    severity={hasOpened ? 'success' : 'info'}
-                    style={{ minWidth: '60px' }}
-                />
-                <span className="text-sm text-500">({rowData.kakaoOpenCount || 0}회)</span>
+                <Tag value={status.label} severity={status.severity as any} style={{ minWidth: '80px' }} />
+                <span className="text-sm text-500">
+                    ({openCount}/{shareCount})
+                </span>
+            </div>
+        );
+    };
+
+    const visitCountBodyTemplate = (rowData: ShareItem) => {
+        return (
+            <div className="flex align-items-center gap-2">
+                <i className="pi pi-eye text-500" />
+                <span>{rowData.totalOpenCount || 0}회</span>
             </div>
         );
     };
@@ -299,6 +321,14 @@ const ListView = ({
                     body={openStatusBodyTemplate}
                     sortable
                     headerStyle={{ minWidth: '150px' }}
+                />
+                <Column
+                    field="totalOpenCount"
+                    headerTooltip="사용자가 페이지를 방문한 총 횟수"
+                    header="방문횟수"
+                    body={visitCountBodyTemplate}
+                    sortable
+                    headerStyle={{ minWidth: '120px' }}
                 />
 
                 <Column header="공유" body={shareBodyTemplate} />

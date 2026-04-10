@@ -223,7 +223,7 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
         const kakaoId = generateSecureId();
         const shareLink = `${baseUri}/kakao-share/public-view/${item?.publicUrl}/?kakaoId=${kakaoId}&utm_custom=kakaoshare`;
 
-        // NOTE - 테스트용 코드
+        // // NOTE - 테스트용 코드
         // http.post('/choiMath/kakao/share/webhookTest', {
         //     menuType: 'kakao-share',
         //     id: item?._id,

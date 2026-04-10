@@ -80,6 +80,22 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete, onCopyTo
         };
     });
 
+    const shareCount = selectedShare.shareCount || 0;
+    const openCount = selectedShare.kakaoOpenCount || 0;
+    const totalVisitCount = selectedShare.totalOpenCount || 0;
+
+    const getOpenStatus = () => {
+        if (shareCount > 0) {
+            if (openCount >= shareCount) return { label: '열람', severity: 'success' };
+            if (openCount > 0) return { label: '부분 열람', severity: 'warning' };
+            return { label: '미열람', severity: 'danger' };
+        }
+        if (openCount > 0) return { label: '열람', severity: 'success' };
+        return { label: '미열람', severity: 'danger' };
+    };
+
+    const openStatus = getOpenStatus();
+
     return (
         <>
             <Card>
@@ -126,43 +142,38 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete, onCopyTo
                         <Card className="shadow-2">
                             <div className="mb-4">
                                 <div className="flex align-items-center gap-2 mb-3">
+                                    <Tooltip target="#tooltipShare" />
                                     <Tag
-                                        value={
-                                            selectedShare.shareCount && selectedShare?.shareCount > 0
-                                                ? '공유완료'
-                                                : '미공유'
-                                        }
-                                        severity={
-                                            selectedShare.shareCount && selectedShare?.shareCount > 0 ? 'success' : null
-                                        }
+                                        id="tooltipShare"
+                                        icon="pi pi-share-alt"
+                                        value={shareCount > 0 ? `공유완료(${shareCount})` : '미공유'}
+                                        severity={shareCount > 0 ? 'success' : null}
+                                        data-pr-tooltip={`${shareCount} 회 공유되었습니다.`}
+                                        data-pr-position="top"
                                     />
-                                    {selectedShare.shareCount && selectedShare?.shareCount > 0 && (
-                                        <>
-                                            <Tooltip target="#tooltipShare" /> {/* 타겟 클래스 지정 */}
-                                            <Tag
-                                                id="tooltipShare"
-                                                icon="pi pi-share-alt"
-                                                value={selectedShare.shareCount}
-                                                data-pr-tooltip={`${selectedShare.shareCount} 회 공유되었습니다.`} // 표시할 내용
-                                                data-pr-position="top"
-                                                severity={'warning'}
-                                            />
-                                        </>
-                                    )}
-
-                                    {selectedShare.kakaoOpenCount && selectedShare?.kakaoOpenCount > 0 && (
+                                    {openCount > 0 && (
                                         <>
                                             <Tooltip target="#tooltipOpen" />
                                             <Tag
                                                 id="tooltipOpen"
                                                 icon="pi pi-eye"
-                                                value={selectedShare.kakaoOpenCount}
-                                                data-pr-tooltip={`${selectedShare.kakaoOpenCount} 회 열람되었습니다.`}
+                                                value={`${openStatus.label}(${openCount}/${shareCount})`}
+                                                data-pr-tooltip={`공유된 링크 중 ${openCount} 개가 열람되었습니다.`}
                                                 data-pr-position="top"
-                                                severity={'info'}
+                                                severity={openStatus.severity as any}
                                             />
                                         </>
                                     )}
+
+                                    <Tooltip target="#tooltipVisit" />
+                                    <Tag
+                                        id="tooltipVisit"
+                                        icon="pi pi-eye"
+                                        value={totalVisitCount}
+                                        data-pr-tooltip={`총 ${totalVisitCount} 회 방문(페이지 로드)되었습니다.`}
+                                        data-pr-position="top"
+                                        style={{ background: '#607D8B', color: '#ffffff' }}
+                                    />
 
                                     <h4 className="m-0 font-bold">{selectedShare.actualTitle}</h4>
                                 </div>
