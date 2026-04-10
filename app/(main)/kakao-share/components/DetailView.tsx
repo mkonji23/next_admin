@@ -150,6 +150,20 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete, onCopyTo
                                         </>
                                     )}
 
+                                    {selectedShare.kakaoOpenCount && selectedShare?.kakaoOpenCount > 0 && (
+                                        <>
+                                            <Tooltip target="#tooltipOpen" />
+                                            <Tag
+                                                id="tooltipOpen"
+                                                icon="pi pi-eye"
+                                                value={selectedShare.kakaoOpenCount}
+                                                data-pr-tooltip={`${selectedShare.kakaoOpenCount} 회 열람되었습니다.`}
+                                                data-pr-position="top"
+                                                severity={'info'}
+                                            />
+                                        </>
+                                    )}
+
                                     <h4 className="m-0 font-bold">{selectedShare.actualTitle}</h4>
                                 </div>
 

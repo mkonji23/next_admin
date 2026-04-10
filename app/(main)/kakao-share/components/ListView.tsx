@@ -146,6 +146,20 @@ const ListView = ({
         );
     };
 
+    const openStatusBodyTemplate = (rowData: ShareItem) => {
+        const hasOpened = (rowData.kakaoOpenCount || 0) > 0;
+        return (
+            <div className="flex align-items-center gap-2">
+                <Tag
+                    value={hasOpened ? '열람' : '미열람'}
+                    severity={hasOpened ? 'success' : 'info'}
+                    style={{ minWidth: '60px' }}
+                />
+                <span className="text-sm text-500">({rowData.kakaoOpenCount || 0}회)</span>
+            </div>
+        );
+    };
+
     const shareBodyTemplate = (rowData: ShareItem) => {
         return (
             <div className="flex gap-2">
@@ -275,6 +289,14 @@ const ListView = ({
                     headerTooltip="카카오공유하기로 공유되었는지 여부"
                     header="공유상태"
                     body={statusBodyTemplate}
+                    sortable
+                    headerStyle={{ minWidth: '150px' }}
+                />
+                <Column
+                    field="kakaoOpenCount"
+                    headerTooltip="공유된 링크를 사용자가 열람한 횟수"
+                    header="열람상태"
+                    body={openStatusBodyTemplate}
                     sortable
                     headerStyle={{ minWidth: '150px' }}
                 />

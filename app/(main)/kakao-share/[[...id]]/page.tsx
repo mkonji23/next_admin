@@ -33,7 +33,7 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
     const { showToast } = useToast();
     const { showConfirm } = useConfirm();
     const http = useHttp();
-    const { shareDefault } = useKakaoShare();
+    const { sendDefault } = useKakaoShare();
 
     const fetchShares = async (first = 0) => {
         try {
@@ -206,17 +206,25 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
             showToast({ severity: 'error', summary: '오류', detail: '일부 또는 전체 게시글 삭제에 실패했습니다.' });
         }
     };
+    const generateSecureId = () => {
+        const array = new Uint32Array(1);
+        window.crypto.getRandomValues(array);
+        const randomPart = array[0].toString(36);
+        const ms = Date.now().toString(36);
+
+        return `kakao_${ms}${randomPart}`;
+    };
 
     const handleShare = (item: ShareItem) => {
         const firstImageUrl = item.shareImageUrls?.[0];
         const imageUrl = typeof firstImageUrl === 'string' ? firstImageUrl : firstImageUrl?.url;
         const baseUri =
             process.env.NEXT_PUBLIC_KAKAO_SHARED_URI || (typeof window !== 'undefined' ? window.location.origin : '');
-
-        const shareLink = `${baseUri}/kakao-share/public-view/${item?.publicUrl}`;
+        const kakaoId = generateSecureId();
+        const shareLink = `${baseUri}/kakao-share/public-view/${item?.publicUrl}/?kakaoId=${kakaoId}&utm_custom=kakaoshare`;
 
         // NOTE - 테스트용 코드
-        // http.post('/choiMath/kakao/share/webhook', {
+        // http.post('/choiMath/kakao/share/webhookTest', {
         //     menuType: 'kakao-share',
         //     id: item?._id,
         //     studentId: item?.studentId,
@@ -224,11 +232,13 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
         //     shareTitle: item?.shareTitle,
         //     shareContent: item?.shareTitle,
         //     userId: userInfo.userId,
-        //     userName: userInfo.userName
+        //     userName: userInfo.userName,
+        //     shareLink: shareLink,
+        //     kakaoId: kakaoId
         // });
 
         // 카카오공유하기
-        shareDefault({
+        sendDefault({
             title: item?.shareTitle || '',
             description: item?.shareContent || '',
             buttonText: '자세히 보기',
@@ -241,7 +251,8 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
                 shareTitle: item?.shareTitle,
                 shareContent: item?.shareTitle,
                 userId: userInfo.userId,
-                userName: userInfo.userName
+                userName: userInfo.userName,
+                kakaoId: kakaoId
             }
         });
     };

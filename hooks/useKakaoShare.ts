@@ -16,7 +16,7 @@ interface KakaoShareParams {
 // OpenMultiChat: 그룹 오픈채팅방
 
 const useKakaoShare = () => {
-    const shareDefault = (params: KakaoShareParams) => {
+    const sendDefault = (params: KakaoShareParams) => {
         if (!window.Kakao || !window.Kakao.isInitialized()) {
             console.error('Kakao SDK not initialized');
             return;
@@ -75,7 +75,7 @@ const useKakaoShare = () => {
             });
     };
 
-    return { shareDefault, unLink };
+    return { sendDefault, unLink };
 };
 
 export default useKakaoShare;

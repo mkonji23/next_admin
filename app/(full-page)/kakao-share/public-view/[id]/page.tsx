@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useHttp } from '@/util/axiosInstance';
 import { Card } from 'primereact/card';
 import { ProgressSpinner } from 'primereact/progressspinner';
@@ -11,14 +11,15 @@ import KakaoShareViewContent from '@/components/kakaoShare/KakaoShareViewContent
 
 const PublicShareViewPage: React.FC = () => {
     const params = useParams();
-    const id = params.id as string;
-
+    const searchParams = useSearchParams();
+    const publicUrl = params.id as string;
+    const kakaoId = searchParams.get('kakaoId');
+    const utm_custom = searchParams.get('utm_custom');
     const http = useHttp();
     const [shareData, setShareData] = useState<ShareItem | null>(null);
     const { loading } = useLoading();
     const [images, setImages] = useState<any[]>([]);
     const [isFetched, setIsFetched] = useState(false);
-
     const downloadImage = async (url: string, index: number) => {
         try {
             const response = await fetch(url);
@@ -55,7 +56,7 @@ const PublicShareViewPage: React.FC = () => {
     useEffect(() => {
         const fetchDetail = async () => {
             try {
-                const res = await http.get(`/choiMath/share/detail/${id}`);
+                const res = await http.get(`/choiMath/share/detail/${publicUrl}`);
                 const data = res.data;
                 setShareData(data);
                 setIsFetched(true);
@@ -77,18 +78,26 @@ const PublicShareViewPage: React.FC = () => {
             }
         };
 
-        if (id) {
+        if (publicUrl) {
             fetchDetail();
         } else {
             setIsFetched(true); // If no ID, it's 'fetched' in the sense that we can't fetch anything
         }
-    }, [id]);
+    }, [publicUrl]);
+
+    // 공유열람 여부체크
+    useEffect(() => {
+        if (utm_custom && publicUrl && kakaoId) {
+            http.post(`/choiMath/kakao/share/open/${publicUrl}/${kakaoId}`, { disableLoading: true });
+        }
+    }, [utm_custom, publicUrl, kakaoId]);
 
     if (loading) {
         return loadingTemplate;
     }
 
-    if (!shareData && isFetched) { // Render noDataTemplate only after fetching attempt
+    if (!shareData && isFetched) {
+        // Render noDataTemplate only after fetching attempt
         return noDataTempate;
     }
 
