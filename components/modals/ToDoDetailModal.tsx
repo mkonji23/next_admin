@@ -64,6 +64,7 @@ const ToDoDetailModal: React.FC<ToDoDetailModalProps> = ({ visible, onClose, pDa
             footer={footer}
             onHide={() => onClose()}
             breakpoints={{ '960px': '75vw', '641px': '90vw' }}
+            maximizable
             modal
         >
             <div className="p-3 surface-ground border-round">
