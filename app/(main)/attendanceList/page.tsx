@@ -605,9 +605,14 @@ const AttendanceListPage = () => {
                                             field="name"
                                             header="학생명"
                                             sortable
+                                            headerStyle={{ minWidth: '120px' }}
+                                        />
+                                        <Column
+                                            field="grade"
+                                            header="학년"
+                                            sortable
                                             headerStyle={{ minWidth: '100px' }}
                                         />
-                                        <Column field="grade" header="학년" sortable />
                                         <Column
                                             field="school"
                                             header="학교"
@@ -619,12 +624,14 @@ const AttendanceListPage = () => {
                                             header="출석"
                                             sortable
                                             body={presentBodyTemplate}
+                                            headerStyle={{ minWidth: '100px' }}
                                         />
                                         <Column
                                             field="statistics.absent"
                                             header="결석"
                                             sortable
                                             body={absentBodyTemplate}
+                                            headerStyle={{ minWidth: '100px' }}
                                         />
                                         {classItem.students[0]?.statistics?.late !== undefined && (
                                             <Column
@@ -632,6 +639,7 @@ const AttendanceListPage = () => {
                                                 header="지각"
                                                 sortable
                                                 body={lateBodyTemplate}
+                                                headerStyle={{ minWidth: '100px' }}
                                             />
                                         )}
                                         <Column
@@ -639,12 +647,14 @@ const AttendanceListPage = () => {
                                             header="수업일수"
                                             sortable
                                             body={(rowData) => rowData.statistics?.totalDays || 0}
+                                            headerStyle={{ minWidth: '120px' }}
                                         />
                                         <Column
                                             field="statistics.attendanceRate"
                                             header="출석률"
                                             sortable
                                             body={attendanceRateBodyTemplate}
+                                            headerStyle={{ minWidth: '120px' }}
                                         />
                                         {classItem.students[0]?.statistics?.lateRate !== undefined && (
                                             <Column
@@ -652,6 +662,7 @@ const AttendanceListPage = () => {
                                                 header="지각률"
                                                 sortable
                                                 body={lateRateBodyTemplate}
+                                                headerStyle={{ minWidth: '150px' }}
                                             />
                                         )}
                                         <Column
@@ -659,12 +670,7 @@ const AttendanceListPage = () => {
                                             header="과제 달성률"
                                             sortable
                                             body={homeworkRateBodyTemplate}
-                                        />
-                                        <Column
-                                            field="statistics.homeworkCount"
-                                            header="과제 완료 수"
-                                            sortable
-                                            body={(rowData) => rowData.statistics?.homeworkCount || 0}
+                                            headerStyle={{ minWidth: '150px' }}
                                         />
                                     </DataTable>
                                 </div>
