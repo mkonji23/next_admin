@@ -309,18 +309,61 @@ const StudentListPage = () => {
                     <div className="p-3">
                         <h5 className="m-0 mb-3">수강 중인 수업 ({rowData.classes?.length || 0})</h5>
                         {rowData.classes && rowData.classes.length > 0 ? (
-                            <div className="grid">
-                                {rowData.classes.map((c, i) => (
-                                    <div key={i} className="col-12 md:col-6 lg:col-4">
-                                        <div className="surface-card border-round p-3 shadow-1">
-                                            <div className="font-semibold mb-2">
-                                                <i className="pi pi-book mr-2" />
-                                                {c.className}
-                                            </div>
-                                            <div className="text-sm text-600">선생님: {c.teacher}</div>
-                                        </div>
+                            <div className="p-4 bg-bluegray-50 border-round-bottom-xl">
+                                {/* 1. 특이 사항(Description) 섹션 */}
+                                <div className="surface-card p-3 mb-4 shadow-1 border-round border-left-3 border-blue-500">
+                                    <div className="flex align-items-center mb-2">
+                                        <i className="pi pi-info-circle text-blue-500 mr-2 font-bold" />
+                                        <span className="font-bold text-900">특이 사항</span>
                                     </div>
-                                ))}
+                                    <div className="text-700 line-height-3 pl-1">
+                                        {rowData?.description ? (
+                                            rowData?.description
+                                        ) : (
+                                            <span className="text-400 italic">등록된 특이 사항이 없습니다.</span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* 2. 수업 목록 섹션 */}
+                                <div className="mb-2 flex align-items-center justify-content-between">
+                                    <h5 className="m-0 font-bold text-800">
+                                        <i className="pi pi-calendar-plus mr-2" />
+                                        수강 중인 수업 ({rowData.classes?.length || 0})
+                                    </h5>
+                                </div>
+
+                                {rowData.classes && rowData.classes.length > 0 ? (
+                                    <div className="grid">
+                                        {rowData.classes.map((c, i) => (
+                                            <div key={i} className="col-12 md:col-6 lg:col-4">
+                                                <div className="surface-card border-round-xl p-3 shadow-1 border-1 border-50 hover:shadow-3 transition-duration-200">
+                                                    <div className="flex justify-content-between align-items-start mb-2">
+                                                        <div className="flex align-items-center">
+                                                            <div className="bg-blue-100 border-round p-2 mr-2">
+                                                                <i className="pi pi-book text-blue-700" />
+                                                            </div>
+                                                            <span className="font-semibold text-900">
+                                                                {c.className}
+                                                            </span>
+                                                        </div>
+                                                        {/* 필요 시 우측 상단에 배지 등 추가 가능 */}
+                                                    </div>
+                                                    <div className="text-sm text-600 ml-1">
+                                                        <i className="pi pi-user text-xs mr-1" />
+                                                        선생님:{' '}
+                                                        <span className="text-800 font-medium">{c.teacher}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="surface-ground border-round p-4 text-center">
+                                        <i className="pi pi-folder-open text-300 text-3xl mb-2" />
+                                        <div className="text-500">수업 정보가 없습니다.</div>
+                                    </div>
+                                )}
                             </div>
                         ) : (
                             <div className="text-500">수업 정보가 없습니다.</div>
@@ -336,7 +379,14 @@ const StudentListPage = () => {
                     sortable
                     body={nameBodyTemplate}
                 />
-                <Column field="grade" header="학년" sortable />
+                <Column
+                    field="grade"
+                    header="학년"
+                    sortable
+                    headerStyle={{ minWidth: '100px' }}
+                    alignHeader={'center'}
+                    align={'center'}
+                />
                 <Column field="school" header="학교" sortable headerStyle={{ minWidth: '150px' }} />
                 <Column field="phoneNumber" header="Tel." sortable headerStyle={{ minWidth: '150px' }} />
                 <Column field="parentPhoneNumber" header="P_Tel." sortable headerStyle={{ minWidth: '150px' }} />

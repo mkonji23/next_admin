@@ -6,6 +6,8 @@ import { InputText } from 'primereact/inputtext';
 import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
 import { useConfirm } from '@/hooks/useConfirm';
+import { ClassificationInfo } from 'typescript';
+import { Class } from '@/types/class';
 
 interface WeekSchedule {
     studentId: string;
@@ -15,7 +17,7 @@ interface WeekSchedule {
     counselingStudent: string;
     counselingParent: string;
     bookFee: string;
-    clinic: string;
+    consultation: string;
     mon: string;
     tue: string;
     wed: string;
@@ -23,7 +25,9 @@ interface WeekSchedule {
     fri: string;
     sat: string;
     sun: string;
-    [key: string]: string;
+    class?: Class[];
+    description?: string;
+    [key: string]: any;
 }
 
 const WeekSchedulePage = () => {
@@ -82,7 +86,7 @@ const WeekSchedulePage = () => {
                     counselingStudent: '미완료',
                     counselingParent: '미완료',
                     bookFee: '',
-                    clinic: '',
+                    consultation: '',
                     mon: '',
                     tue: '',
                     wed: '',
@@ -211,6 +215,12 @@ const WeekSchedulePage = () => {
         return result;
     }, [schedules, globalFilterValue, sortConfig]);
 
+    const getToolTipInfo = (studentId) => {
+        const sInfo = processedSchedules.find((item) => item.studentId === studentId);
+        const leng = sInfo && sInfo!.class ? sInfo!.class.length : 0;
+        const classNames = sInfo?.class?.map((item) => item.className)?.join('\r\n') || '';
+        return `수강클래스(${leng}개) \r\n ${classNames}`;
+    };
     useEffect(() => {
         fetchSchedules();
     }, []);
@@ -228,7 +238,7 @@ const WeekSchedulePage = () => {
                 
                 .schedule-table {
                     display: grid;
-                    grid-template-columns: 120px 80px 120px 150px 150px 100px 100px repeat(7, 150px);
+                    grid-template-columns: 120px 80px 120px 150px 150px 100px 225px  repeat(7, 150px);
                     width: max-content;
                     min-width: 100%;
                 }
@@ -340,28 +350,44 @@ const WeekSchedulePage = () => {
                             </div>
                         </div>
 
-                        <div className="flex flex-wrap gap-3 mb-4 p-3 surface-ground border-round">
-                            <div className="flex flex-column gap-2">
-                                <label className="text-sm font-bold">통합 검색</label>
-                                <span className="p-input-icon-left">
-                                    <i className="pi pi-search" />
-                                    <InputText
-                                        value={globalFilterValue}
-                                        onChange={(e) => setGlobalFilterValue(e.target.value)}
-                                        placeholder="이름, 학교, 학년, 내용 등 전체 검색"
-                                        style={{ width: '350px' }}
+                        <div className="flex flex-wrap gap-3 mb-4 p-3 surface-ground border-round align-items-center justify-content-between">
+                            <div className="flex flex-wrap gap-3">
+                                <div className="flex flex-column gap-2">
+                                    <label className="text-sm font-bold">통합 검색</label>
+                                    <span className="p-input-icon-left">
+                                        <i className="pi pi-search" />
+                                        <InputText
+                                            value={globalFilterValue}
+                                            onChange={(e) => setGlobalFilterValue(e.target.value)}
+                                            placeholder="이름, 학교, 학년, 내용 등 전체 검색"
+                                            style={{ width: '350px' }}
+                                        />
+                                    </span>
+                                </div>
+                                <div className="flex align-items-end">
+                                    <Button
+                                        icon="pi pi-filter-slash"
+                                        label="검색 초기화"
+                                        className="p-button-text"
+                                        onClick={() => {
+                                            setGlobalFilterValue('');
+                                        }}
                                     />
-                                </span>
+                                </div>
                             </div>
-                            <div className="flex align-items-end">
-                                <Button
-                                    icon="pi pi-filter-slash"
-                                    label="검색 초기화"
-                                    className="p-button-text"
-                                    onClick={() => {
-                                        setGlobalFilterValue('');
-                                    }}
-                                />
+                            <div className="text-sm text-600 bg-white p-2 border-round border-1 border-200">
+                                <i className="pi pi-info-circle mr-2"></i>
+                                <span className="mr-3">
+                                    <kbd className="font-bold surface-200 px-1 border-round">Enter</kbd> 다음 행
+                                    이동(세로)
+                                </span>
+                                <span>
+                                    <kbd className="font-bold surface-200 px-1 border-round">Tab</kbd> 다음 열
+                                    이동(가로)
+                                </span>
+                                <span>
+                                    <kbd className="font-bold surface-200 px-1 border-round">Alt + Enter</kbd> 줄바꿈
+                                </span>
                             </div>
                         </div>
 
@@ -387,11 +413,9 @@ const WeekSchedulePage = () => {
                                     학교 <i className={getSortIcon('school')}></i>
                                 </div>
                                 <div className="schedule-header-cell">상담(학생)</div>
-                                <div className="schedule-header-cell">
-                                    상담(부모님)
-                                </div>
+                                <div className="schedule-header-cell">상담(부모님)</div>
                                 <div className="schedule-header-cell">교재비</div>
-                                <div className="schedule-header-cell">클리닉</div>
+                                <div className="schedule-header-cell">상담내용(특이사항)</div>
                                 <div className="schedule-header-cell day-header">월</div>
                                 <div className="schedule-header-cell day-header">화</div>
                                 <div className="schedule-header-cell day-header">수</div>
@@ -403,7 +427,29 @@ const WeekSchedulePage = () => {
                                 {/* 바디 */}
                                 {processedSchedules.map((s, index) => (
                                     <React.Fragment key={s.studentId}>
-                                        <div className="schedule-cell sticky-cell-1">{s.studentName}</div>
+                                        <div className="schedule-cell sticky-cell-1">
+                                            {s.studentName}
+                                            <Button
+                                                icon="pi pi-exclamation-circle"
+                                                rounded
+                                                text
+                                                severity="info"
+                                                tooltip={getToolTipInfo(s.studentId)}
+                                                tooltipOptions={{ position: 'top' }}
+                                                style={{ width: '20px', height: '20px', marginLeft: '4px' }}
+                                            />
+                                            {s.description && (
+                                                <Button
+                                                    icon="pi pi-exclamation-circle"
+                                                    rounded
+                                                    text
+                                                    severity="danger"
+                                                    tooltip={s.description}
+                                                    tooltipOptions={{ position: 'top' }}
+                                                    style={{ width: '20px', height: '20px', marginLeft: '4px' }}
+                                                />
+                                            )}
+                                        </div>
                                         <div className="schedule-cell sticky-cell-2 text-center">{s.grade}</div>
                                         <div className="schedule-cell sticky-cell-3">{s.school}</div>
                                         <div className="schedule-cell">
@@ -459,16 +505,18 @@ const WeekSchedulePage = () => {
                                         </div>
                                         <div className="schedule-cell">
                                             <textarea
-                                                id={`input-${index}-clinic`}
+                                                id={`input-${index}-consultation`}
                                                 className="schedule-input"
-                                                value={s.clinic || ''}
-                                                onChange={(e) => handleUpdate(s.studentId, 'clinic', e.target.value)}
+                                                value={s.consultation || ''}
+                                                onChange={(e) =>
+                                                    handleUpdate(s.studentId, 'consultation', e.target.value)
+                                                }
                                                 onKeyDown={(e) =>
                                                     handleKeyDown(
                                                         e,
                                                         s.studentId,
                                                         index,
-                                                        'clinic',
+                                                        'consultation',
                                                         processedSchedules.length
                                                     )
                                                 }

@@ -9,7 +9,7 @@ export type ToastContextType = {
     showToast: (toastProp: ToastParam) => void;
 };
 
-type ToastParam = Pick<ToastMessage, 'severity' | 'summary' | 'detail'>;
+type ToastParam = Pick<ToastMessage, 'severity' | 'summary' | 'detail' | 'life'>;
 
 const ToastContext = createContext<ToastContextType | null>(null);
 export const ToastProvider = ({ children }: { children: ReactNode }) => {
@@ -20,7 +20,7 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
             severity: props.severity || 'info',
             summary: props.summary || 'Confirmed',
             detail: props.detail || '',
-            life: 3000,
+            life: props.life || 3000,
             className: 'custom-toast' // 클래스 지정
         });
     };

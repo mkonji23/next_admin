@@ -45,6 +45,7 @@ const AttendanceDayCells = React.memo<AttendanceDayCellsProps>(({ user, day, onU
     const attendanceField = `day_${day}_attendance`;
     const homeworkField = `day_${day}_homework`;
     const noteField = `day_${day}_note`;
+    const specialNoteField = `day_${day}_specialNote`;
     const praiseField = `day_${day}_praise`;
     const lateTimeField = `day_${day}_lateTime`;
     const testScoreField = `day_${day}_testScore`;
@@ -54,6 +55,7 @@ const AttendanceDayCells = React.memo<AttendanceDayCellsProps>(({ user, day, onU
     const [localAttendance, setLocalAttendance] = useState<string>((user[attendanceField] as string) || 'none');
     const [localHomework, setLocalHomework] = useState<number>((user[homeworkField] as number) || 0);
     const [localNote, setLocalNote] = useState<string>((user[noteField] as string) || '');
+    const [localSpecialNote, setLocalSpecialNote] = useState<string>((user[specialNoteField] as string) || '');
     const [localPraise, setLocalPraise] = useState<boolean>(!!user[praiseField]);
     const [localLateTime, setLocalLateTime] = useState<number | null>((user[lateTimeField] as number) || null);
     const [localTestScore, setLocalTestScore] = useState<number>((user[testScoreField] as number) || 0);
@@ -69,6 +71,10 @@ const AttendanceDayCells = React.memo<AttendanceDayCellsProps>(({ user, day, onU
     const debouncedNoteUpdate = useMemo(
         () => debounce((value: any) => onUpdate(user.id, noteField, value), 300),
         [user.id, noteField, onUpdate]
+    );
+    const debouncedSpecialNoteUpdate = useMemo(
+        () => debounce((value: any) => onUpdate(user.id, specialNoteField, value), 300),
+        [user.id, specialNoteField, onUpdate]
     );
     const debouncedPraiseUpdate = useMemo(
         () => debounce((value: any) => onUpdate(user.id, praiseField, value), 300),
@@ -113,6 +119,14 @@ const AttendanceDayCells = React.memo<AttendanceDayCellsProps>(({ user, day, onU
             debouncedNoteUpdate(value);
         },
         [debouncedNoteUpdate]
+    );
+
+    const handleSpecialNoteChange = useCallback(
+        (value: string) => {
+            setLocalSpecialNote(value);
+            debouncedSpecialNoteUpdate(value);
+        },
+        [debouncedSpecialNoteUpdate]
     );
     const fire = (particleRatio, opts) => {
         confetti({
@@ -179,10 +193,11 @@ const AttendanceDayCells = React.memo<AttendanceDayCellsProps>(({ user, day, onU
         setLocalAttendance((user[attendanceField] as string) || 'none');
         setLocalHomework((user[homeworkField] as number) || 0);
         setLocalNote((user[noteField] as string) || '');
+        setLocalSpecialNote((user[specialNoteField] as string) || '');
         setLocalPraise(!!user[praiseField]);
         setLocalTestScore((user[testScoreField] as number) || 0);
         setLocalLateTime((user[lateTimeField] as number) || null);
-    }, [user, attendanceField, homeworkField, noteField, praiseField, testScoreField, lateTimeField]);
+    }, [user, attendanceField, homeworkField, noteField, specialNoteField, praiseField, testScoreField, lateTimeField]);
 
     return (
         <div className="attendance-day-group" role="group" aria-label={`${day}일 출석 정보`}>
@@ -279,6 +294,14 @@ const AttendanceDayCells = React.memo<AttendanceDayCellsProps>(({ user, day, onU
                     className="w-full"
                     value={localNote || ''}
                     onChange={(e) => handleNoteChange(e.target.value)}
+                    placeholder=""
+                />
+            </div>
+            <div className="attendance-cell" role="cell">
+                <InputText
+                    className="w-full"
+                    value={localSpecialNote || ''}
+                    onChange={(e) => handleSpecialNoteChange(e.target.value)}
                     placeholder=""
                 />
             </div>

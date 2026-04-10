@@ -8,11 +8,13 @@ import { InputText } from 'primereact/inputtext';
 import { OverlayPanel } from 'primereact/overlaypanel';
 import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
+import { useConfirm } from '@/hooks/useConfirm';
 import { Class } from '@/types/class';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import dayjs from 'dayjs';
 import AttendanceRow from './components/AttendanceRow';
 import AttendanceTableHeader from './components/AttendanceTableHeader';
+import { useCustomModal } from '@/hooks/useCustomModal';
 
 export interface ClassOption {
     label: string;
@@ -32,6 +34,7 @@ interface User {
 const VIRTUAL_SCROLL_THRESHOLD = 50;
 
 const AttendancePage = () => {
+    const { showConfirm } = useConfirm();
     const [date, setDate] = useState<Date | null>(null);
     const [users, setUsers] = useState<User[]>([]);
     const [selectedClass, setSelectedClass] = useState<string | null>(null);
@@ -91,6 +94,7 @@ const AttendancePage = () => {
                     userData[`day_${i}_attendance`] = dayData?.status || 'none';
                     userData[`day_${i}_homework`] = dayData?.homework || 0;
                     userData[`day_${i}_note`] = dayData?.note || '';
+                    userData[`day_${i}_specialNote`] = dayData?.specialNote || '';
                     userData[`day_${i}_praise`] = !!dayData?.praise;
                     userData[`day_${i}_lateTime`] = typeof dayData?.lateTime === 'number' ? dayData.lateTime : null;
                     userData[`day_${i}_testScore`] = dayData?.testScore || '';
@@ -144,8 +148,11 @@ const AttendancePage = () => {
             if (targetDate.getFullYear() === date.getFullYear() && targetDate.getMonth() === date.getMonth()) {
                 const day = targetDate.getDate();
 
-                // 너비 계산: 기본 140px * 3개, 좁은 것 70px * 2개
-                const dayWidth = 140 * 3 + 70 * 2;
+                const totalWidth = widthPx
+                    .split(' ') // 1. 공백을 기준으로 쪼개서 배열로 만듦
+                    .map((item) => parseInt(item)) // 2. 각 요소에서 숫자만 추출 (parseInt는 'px'를 무시하고 숫자만 남깁니다)
+                    .reduce((acc, cur) => acc + cur, 0); // 3. 배열의 모든 숫자를 합산
+                const dayWidth = totalWidth;
                 const scrollPos = (day - 1) * dayWidth;
 
                 requestAnimationFrame(() => {
@@ -222,6 +229,7 @@ const AttendancePage = () => {
                             status: user[key],
                             homework: user[`day_${day}_homework`],
                             note: user[`day_${day}_note`],
+                            specialNote: user[`day_${day}_specialNote`],
                             praise: user[`day_${day}_praise`],
                             lateTime: user[`day_${day}_lateTime`],
                             testScore: user[`day_${day}_testScore`],
@@ -261,6 +269,7 @@ const AttendancePage = () => {
             showToast({ severity: 'warn', summary: '저장 불가', detail: '클래스와 월을 선택해주세요.' });
             return;
         }
+
         try {
             await http.post('/choiMath/attendance/saveAttendance', dataToSave);
             showToast({ severity: 'success', summary: '저장 성공', detail: '출석부가 저장되었습니다.' });
@@ -286,9 +295,9 @@ const AttendancePage = () => {
     const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
     const year = date.getFullYear();
     const month = date.getMonth();
-    // 컬럼 width적용
-    const dayColumnTemplates = Array.from({ length: daysInMonth }, () => `140px 120px 70px 70px 160px`).join(' ');
-
+    const widthPx = '140px 120px 70px 70px 160px 160px';
+    // 컬럼 width적용 (출석, 숙제, 칭찬, 점수, 비고(칭찬), 비고(특이사항))
+    const dayColumnTemplates = Array.from({ length: daysInMonth }, () => widthPx).join(' ');
     return (
         <>
             <style>{`
@@ -308,7 +317,7 @@ const AttendancePage = () => {
                     text-align: center; font-weight: bold; grid-row: span 2;
                 }
                 .attendance-header-day-group {
-                    grid-column: span 5;
+                    grid-column: span 6;
                     padding: 8px; border: 1px solid #dee2e6; border-bottom: 1px solid #dee2e6;
                     text-align: center; font-weight: bold;
                 }
@@ -378,7 +387,7 @@ const AttendancePage = () => {
                                     onChange={(e) => setDate(e.value as Date)}
                                     view="month"
                                     dateFormat="yy/mm"
-                                    appendTo={'self'}
+                                    appendTo={typeof window !== 'undefined' ? document.body : undefined}
                                 />
                             </div>
                             <div className="field col-12 md:col-2 no-shrink min-w-150">
@@ -397,13 +406,26 @@ const AttendancePage = () => {
 
                         <div className="flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                             <span className="text-xl text-900 font-bold">출석부</span>
-                            <div className="flex align-items-center gap-2">
-                                <span className="p-input-icon-left">
+                            <div
+                                className="attendance-toolbar"
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    overflowX: 'auto',
+                                    whiteSpace: 'nowrap',
+                                    paddingBottom: '8px',
+                                    maxWidth: '100%',
+                                    WebkitOverflowScrolling: 'touch'
+                                }}
+                            >
+                                <span className="p-input-icon-left no-shrink" style={{ display: 'inline-block' }}>
                                     <i className="pi pi-search" />
                                     <InputText
                                         value={globalFilterValue}
                                         onChange={onGlobalFilterChange}
                                         placeholder="학생 검색"
+                                        style={{ width: '200px' }}
                                     />
                                 </span>
                                 <Button
@@ -412,15 +434,18 @@ const AttendancePage = () => {
                                     raised
                                     label="오늘 전체 출석"
                                     onClick={handleAllPresent}
-                                    className="p-button-success"
+                                    className="p-button-success no-shrink"
+                                    style={{ width: 'auto', whiteSpace: 'nowrap' }}
                                 />
                                 <Button
                                     icon="pi pi-save"
+                                    severity="warning"
                                     rounded
                                     raised
                                     label="출석부 저장"
                                     onClick={handleSave}
-                                    className="p-button-success"
+                                    className="p-button-success no-shrink"
+                                    style={{ width: 'auto', whiteSpace: 'nowrap' }}
                                 />
                                 <Button
                                     icon="pi pi-refresh"
@@ -431,6 +456,8 @@ const AttendancePage = () => {
                                         scrolled.current = false;
                                         handleMoveToday();
                                     }}
+                                    className="no-shrink"
+                                    style={{ width: 'auto', whiteSpace: 'nowrap' }}
                                 />
                                 <Button
                                     icon="pi pi-calendar"
@@ -438,6 +465,8 @@ const AttendancePage = () => {
                                     raised
                                     label="날짜 이동"
                                     onClick={(e) => datePickerOverlayRef.current?.toggle(e)}
+                                    className="no-shrink"
+                                    style={{ width: 'auto', whiteSpace: 'nowrap' }}
                                 />
                                 <OverlayPanel ref={datePickerOverlayRef} dismissable>
                                     <div className="flex flex-column gap-3" style={{ minWidth: '300px' }}>
@@ -461,6 +490,29 @@ const AttendancePage = () => {
                             </div>
                         </div>
 
+                        <style>{`
+                            .attendance-toolbar::-webkit-scrollbar {
+                                height: 4px;
+                            }
+                            .attendance-toolbar::-webkit-scrollbar-track {
+                                background: #f1f1f1;
+                            }
+                            .attendance-toolbar::-webkit-scrollbar-thumb {
+                                background: #c1c1c1;
+                                border-radius: 10px;
+                            }
+                            .no-shrink {
+                                flex-shrink: 0 !important;
+                            }
+                        `}</style>
+
+                        <div className="mb-2">
+                            <p className="text-red-500 font-bold">
+                                <i className="pi pi-exclamation-circle mr-2"></i>
+                                비고란에 입력된 내용은 해당 학생이 확인할 수 있습니다.
+                            </p>
+                        </div>
+
                         <div
                             className="attendance-table-wrapper"
                             ref={tableWrapperRef}
@@ -478,7 +530,8 @@ const AttendancePage = () => {
                                         homework: '숙제',
                                         praise: '칭찬',
                                         testScore: '점수',
-                                        note: '비고'
+                                        note: '비고',
+                                        specialNote: '특이사항'
                                     }}
                                 />
                                 <div className="attendance-body" role="rowgroup" ref={tableBodyRef}>

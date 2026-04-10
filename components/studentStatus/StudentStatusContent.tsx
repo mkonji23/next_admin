@@ -466,6 +466,13 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                             )
                         }
                     />
+                    <Column
+                        sortable
+                        field="note"
+                        headerStyle={{ minWidth: '120px', textAlign: 'center' }}
+                        header="비고"
+                        alignHeader={'center'}
+                    />
                 </DataTable>
             </div>
         );
@@ -782,7 +789,10 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                                             {chartData.classesAttendance.map((ca: any, idx: number) => {
                                                 const isTotal = ca.className === '총 출석현황';
                                                 return (
-                                                    <div key={idx} className="col-12 sm:col-6 md:col-4 mb-4 no-shrink min-w-300">
+                                                    <div
+                                                        key={idx}
+                                                        className="col-12 sm:col-6 md:col-4 mb-4 no-shrink min-w-300"
+                                                    >
                                                         <div className="text-center flex flex-column align-items-center p-2">
                                                             <span
                                                                 className={`font-bold mb-3 text-overflow-ellipsis overflow-hidden white-space-nowrap w-full ${
@@ -841,7 +851,10 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                                             {chartData.classesHomework.map((hc: any, idx: number) => {
                                                 const isTotal = hc.className === '총 달성률';
                                                 return (
-                                                    <div key={idx} className="col-12 sm:col-6 md:col-4 mb-4 no-shrink min-w-300">
+                                                    <div
+                                                        key={idx}
+                                                        className="col-12 sm:col-6 md:col-4 mb-4 no-shrink min-w-300"
+                                                    >
                                                         <div className="text-center flex flex-column align-items-center p-2">
                                                             <span
                                                                 className={`font-bold mb-3 text-overflow-ellipsis overflow-hidden white-space-nowrap w-full ${

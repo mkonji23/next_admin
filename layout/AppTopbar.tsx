@@ -162,31 +162,43 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
 
     const formatNotificationContent = (content: string) => {
         if (!content) return '';
-        const index = content.indexOf('님');
-        const workIndex = content.indexOf(']');
-        if (index === -1 && workIndex === -1) return content;
 
-        if (index > -1) {
-            const before = content.substring(0, index);
-            const after = content.substring(index);
-            return (
-                <>
-                    <strong style={{ textDecoration: 'underline' }}>{before}</strong>
-                    {after}
-                </>
+        let displayContent: React.ReactNode[] = [];
+        let remainingText = content;
+
+        // 1. 첫 번째 대괄호 [내용] 처리
+        const firstBracketMatch = content.match(/^(\[[^\]]+\])/);
+        if (firstBracketMatch) {
+            const bracketText = firstBracketMatch[1];
+            displayContent.push(
+                <strong key="first-bracket" style={{ color: 'blue', fontWeight: 'bold' }}>
+                    {bracketText}
+                </strong>
             );
-        } else if (workIndex > -1) {
-            const before = content.substring(0, workIndex + 1);
-            const after = content.substring(workIndex + 1);
-            return (
-                <>
-                    <strong style={{ color: 'blue' }}>{before}</strong>
-                    {after}
-                </>
-            );
+            // 대괄호 이후의 텍스트부터 다시 처리 시작
+            remainingText = content.substring(bracketText.length);
         }
 
-        return content;
+        // 2. 나머지 텍스트에서 큰따옴표(" ") 패턴 강조 처리
+        // 정규식 설명: " 로 시작해서 " 로 끝나는 모든 부분을 찾음
+        const quoteRegex = /("[^"]+")/g;
+        const parts = remainingText.split(quoteRegex);
+
+        parts.forEach((part, i) => {
+            if (quoteRegex.test(part)) {
+                // 큰따옴표로 묶인 경우 밑줄 + 강조
+                displayContent.push(
+                    <strong key={`quote-${i}`} style={{ textDecoration: 'underline' }}>
+                        {part}
+                    </strong>
+                );
+            } else {
+                // 일반 텍스트
+                displayContent.push(part);
+            }
+        });
+
+        return <>{displayContent}</>;
     };
 
     return (

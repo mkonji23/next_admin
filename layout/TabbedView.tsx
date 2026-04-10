@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useEffect, Suspense, useState } from 'react';
+import React, { useEffect, Suspense, useState, useRef } from 'react';
 import { TabMenu } from 'primereact/tabmenu';
 import { MenuItem } from 'primereact/menuitem';
+import { Button } from 'primereact/button';
 import { useTabStore } from '@/store/useTabStore';
 import { getComponentForPath } from '@/util/routeComponentMap';
 import { ProgressSpinner } from 'primereact/progressspinner';
@@ -24,6 +25,7 @@ const TabbedView = ({ initialTab }: TabbedViewProps) => {
     const router = useRouter();
     const currentPathname = usePathname();
     const { drop } = useAliveController();
+    const scrollRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         // 초기 탭 추가
@@ -38,6 +40,22 @@ const TabbedView = ({ initialTab }: TabbedViewProps) => {
         const tabIdx = tabs.findIndex((item) => item.id === activeTab);
         setActiveIndex(tabIdx);
     }, [activeTab, tabs]);
+
+    // 활성 탭으로 자동 스크롤
+    useEffect(() => {
+        if (scrollRef.current && activeIndex !== -1) {
+            const container = scrollRef.current;
+            // nth-child는 1부터 시작하므로 activeIndex + 1
+            const activeTabElement = container.querySelector(`.p-tabmenuitem:nth-child(${activeIndex + 1})`);
+            if (activeTabElement) {
+                activeTabElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'nearest',
+                    inline: 'center'
+                });
+            }
+        }
+    }, [activeIndex]);
 
     // URL 변경 (브라우저 뒤로/앞으로 가기) 감지 및 탭 활성화
     useEffect(() => {
@@ -68,6 +86,18 @@ const TabbedView = ({ initialTab }: TabbedViewProps) => {
         removeTab(tabId);
     };
 
+    const scrollTabs = (direction: 'left' | 'right') => {
+        if (scrollRef.current) {
+            const scrollAmount = 300;
+            const targetScroll =
+                scrollRef.current.scrollLeft + (direction === 'left' ? -scrollAmount : scrollAmount);
+            scrollRef.current.scrollTo({
+                left: targetScroll,
+                behavior: 'smooth'
+            });
+        }
+    };
+
     const menuItems: MenuItem[] = tabs.map((tab, index) => ({
         id: tab.id,
         label: tab.label,
@@ -76,7 +106,14 @@ const TabbedView = ({ initialTab }: TabbedViewProps) => {
             <div
                 className={options.className}
                 onClick={options.onClick}
-                style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    minWidth: 'max-content',
+                    height: '100%'
+                }}
             >
                 {item.label}
                 <i
@@ -90,7 +127,72 @@ const TabbedView = ({ initialTab }: TabbedViewProps) => {
 
     return (
         <div>
-            {tabs.length > 0 && <TabMenu model={menuItems} activeIndex={activeIndex} onTabChange={onTabChange} />}
+            {tabs.length > 0 && (
+                <div
+                    className="flex align-items-center"
+                    style={{
+                        width: '100%',
+                        borderBottom: '1px solid #dee2e6',
+                        backgroundColor: '#ffffff',
+                        position: 'relative'
+                    }}
+                >
+                    <Button
+                        icon="pi pi-chevron-left"
+                        onClick={() => scrollTabs('left')}
+                        className="p-button-text p-button-secondary no-shrink"
+                        style={{ height: '45px', width: '40px', borderRadius: 0, padding: 0, zIndex: 2 }}
+                    />
+                    <div
+                        className="tab-menu-container"
+                        ref={scrollRef}
+                        style={{
+                            flex: 1,
+                            overflowX: 'auto',
+                            overflowY: 'hidden',
+                            WebkitOverflowScrolling: 'touch'
+                        }}
+                    >
+                        <TabMenu model={menuItems} activeIndex={activeIndex} onTabChange={onTabChange} />
+                        <style>{`
+                            .tab-menu-container::-webkit-scrollbar {
+                                height: 4px;
+                            }
+                            .tab-menu-container::-webkit-scrollbar-track {
+                                background: #f1f1f1;
+                            }
+                            .tab-menu-container::-webkit-scrollbar-thumb {
+                                background: #c1c1c1;
+                                border-radius: 10px;
+                            }
+                            /* PrimeReact 내부 스타일 강제 오버라이드 */
+                            .tab-menu-container .p-tabmenu {
+                                overflow: visible !important;
+                            }
+                            .tab-menu-container .p-tabmenu-nav {
+                                display: flex !important;
+                                flex-wrap: nowrap !important;
+                                width: max-content !important;
+                                min-width: 100% !important;
+                                border-bottom: none !important;
+                                background: transparent !important;
+                            }
+                            .tab-menu-container .p-tabmenuitem {
+                                flex-shrink: 0 !important;
+                            }
+                            .no-shrink {
+                                flex-shrink: 0 !important;
+                            }
+                        `}</style>
+                    </div>
+                    <Button
+                        icon="pi pi-chevron-right"
+                        onClick={() => scrollTabs('right')}
+                        className="p-button-text p-button-secondary no-shrink"
+                        style={{ height: '45px', width: '40px', borderRadius: 0, padding: 0, zIndex: 2 }}
+                    />
+                </div>
+            )}
             <div className="p-0 md:p-4">
                 {tabs.map((tab) => {
                     return (
