@@ -31,6 +31,7 @@ const AssistantTodoPage = () => {
     const { userInfo } = useAuthStore(); // Get userInfo from useAuthStore
     const currentUserId = userInfo.userId; // Get current user's ID
     const [idChk, setIdCheck] = useState(false);
+    const [isCompleted, setIsCompleted] = useState<any>();
 
     const fetchTodos = useCallback(async () => {
         try {
@@ -38,23 +39,28 @@ const AssistantTodoPage = () => {
                 params: {
                     userId: idChk ? currentUserId : '',
                     startDate: currentDate.start,
-                    endDate: currentDate.end
+                    endDate: currentDate.end,
+                    ...(isCompleted !== 'all' && { isCompleted: isCompleted })
                 }
             });
             setTodos(response.data);
         } catch (error) {
             showToast({ severity: 'error', summary: '조회 실패', detail: '목록을 불러오지 못했습니다.' });
         }
-    }, [idChk]);
+    }, [idChk, isCompleted]);
 
     const handleFetchCheck = (check) => {
-        console.log('check', check);
         setIdCheck(check);
+    };
+    const handleSelect = (value) => {
+        if (value === 'completed') setIsCompleted(true);
+        if (value === 'pending') setIsCompleted(false);
+        if (value === 'all') setIsCompleted('all');
     };
 
     useEffect(() => {
         fetchTodos();
-    }, [idChk]);
+    }, [idChk, isCompleted]);
 
     const handleToggleComplete = async (todo: Todo) => {
         try {
@@ -211,6 +217,7 @@ const AssistantTodoPage = () => {
                     onDatesSet={handleDatesSet}
                     onAddTodo={() => handleAdd()}
                     onChangeCheck={(check) => handleFetchCheck(check)}
+                    onStatusChange={(value) => handleSelect(value)}
                 />
 
                 <TodoList
