@@ -119,7 +119,7 @@ export const useHttp = (): AxiosInstance => {
                         });
                     } else if (!isStudentRequest) {
                         // 관리자용 로그인 만료 처리 (필요시 주석 해제)
-                        window.location.href = '/auth/login';
+                        // window.location.href = '/auth/login';
                     }
                 } else if (status === 403) {
                     showToast({
