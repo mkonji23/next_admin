@@ -25,11 +25,13 @@ const ToDoDetailModal: React.FC<ToDoDetailModalProps> = ({ visible, onClose, pDa
     const todo = pData?.todo;
     const onToggleComplete = pData?.onToggleComplete;
     const showTodoModal = async () => {
-        onClose();
         const result = await openModal<any, Todo | null>({
             id: 'todo',
             pData: { mode: 'edit', todo }
         });
+        if (result) {
+            onClose(true);
+        }
     };
 
     if (!todo) return null;

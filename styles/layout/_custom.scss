@@ -4,10 +4,10 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(0, 0, 0, 0.3);
+  background-color: rgba(0, 0, 0, 0.35);
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  z-index: 9999;
-  pointer-events: auto; /* 클릭 막기 */
+  z-index: 100000; /* 최상위 레이어 보장 */
+  pointer-events: auto; /* 모든 인터랙션 차단 */
 }

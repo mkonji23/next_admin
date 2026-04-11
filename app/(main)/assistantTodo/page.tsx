@@ -44,6 +44,10 @@ const AssistantTodoPage = () => {
                 }
             });
             setTodos(response.data);
+            const rTodo = response.data?.find((item) => item.id === selectedTodo?.id);
+            if (rTodo) {
+                setSelectedTodo(rTodo);
+            }
         } catch (error) {
             showToast({ severity: 'error', summary: '조회 실패', detail: '목록을 불러오지 못했습니다.' });
         }
@@ -126,12 +130,15 @@ const AssistantTodoPage = () => {
 
     // 상세
     const handleDetail = async (todo) => {
-        openModal({
+        const result = await openModal({
             id: 'todoDetailModal',
             pData: {
                 todo
             }
         });
+        if (result) {
+            fetchTodos();
+        }
     };
 
     // 캘린다 내용 클릭
@@ -227,6 +234,7 @@ const AssistantTodoPage = () => {
                     onEdit={handleEdit}
                     onToggleComplete={handleToggleComplete}
                     currentUserId={currentUserId}
+                    onRefresh={fetchTodos}
                 />
             </div>
 

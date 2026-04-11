@@ -15,6 +15,7 @@ interface TodoListProps {
     onEdit: (todo: Todo) => void;
     onToggleComplete: (todo: Todo) => void;
     currentUserId?: string;
+    onRefresh?: () => void;
 }
 
 const TodoList: React.FC<TodoListProps> = ({
@@ -23,19 +24,23 @@ const TodoList: React.FC<TodoListProps> = ({
     onSelectionChange,
     onEdit,
     onToggleComplete,
+    onRefresh,
     currentUserId
 }) => {
     const { openModal } = useCustomModal();
 
-    const handleContentClick = (todo: Todo) => {
+    const handleContentClick = async (todo: Todo) => {
         onSelectionChange(todo);
-        openModal({
+        const res = await openModal({
             id: 'todoDetailModal',
             pData: {
                 todo,
                 onToggleComplete
             }
         });
+        if (res) {
+            onRefresh && onRefresh();
+        }
     };
 
     return (
