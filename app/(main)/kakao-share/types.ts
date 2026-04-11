@@ -26,4 +26,8 @@ export interface ShareItem {
     totalOpenCount?: number;
     // 가공데이터 실제 db에는 존재하지않음
     shareStatus?: string;
+    isAuto?: boolean;
+    autoYear?: string;
+    autoMonth?: string;
+    autoWeek: string;
 }

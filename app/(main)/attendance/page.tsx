@@ -75,6 +75,8 @@ const AttendancePage = () => {
                 return;
             }
 
+            console.log('attendanceData', attendanceData);
+
             const year = date.getFullYear();
             const month = date.getMonth();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -85,7 +87,8 @@ const AttendancePage = () => {
                     studentId: student.studentId,
                     name: student.name || '이름 없음',
                     grade: student.grade || '',
-                    school: student.school || ''
+                    school: student.school || '',
+                    specialNote: student.specialNote || ''
                 };
 
                 for (let i = 1; i <= daysInMonth; i++) {
@@ -94,7 +97,7 @@ const AttendancePage = () => {
                     userData[`day_${i}_attendance`] = dayData?.status || 'none';
                     userData[`day_${i}_homework`] = dayData?.homework || 0;
                     userData[`day_${i}_note`] = dayData?.note || '';
-                    userData[`day_${i}_specialNote`] = dayData?.specialNote || '';
+                    userData[`specialNote`] = student?.specialNote || '';
                     userData[`day_${i}_praise`] = !!dayData?.praise;
                     userData[`day_${i}_lateTime`] = typeof dayData?.lateTime === 'number' ? dayData.lateTime : null;
                     userData[`day_${i}_testScore`] = dayData?.testScore || '';
@@ -229,7 +232,7 @@ const AttendancePage = () => {
                             status: user[key],
                             homework: user[`day_${day}_homework`],
                             note: user[`day_${day}_note`],
-                            specialNote: user[`day_${day}_specialNote`],
+                            // specialNote: user[`specialNote`],
                             praise: user[`day_${day}_praise`],
                             lateTime: user[`day_${day}_lateTime`],
                             testScore: user[`day_${day}_testScore`],
@@ -243,6 +246,7 @@ const AttendancePage = () => {
                     name: user.name,
                     grade: user.grade,
                     school: user.school,
+                    specialNote: user.specialNote,
                     attendance
                 };
             })

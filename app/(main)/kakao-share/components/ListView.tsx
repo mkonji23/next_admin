@@ -6,15 +6,19 @@ import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
 import { InputText } from 'primereact/inputtext';
 import { Tag } from 'primereact/tag';
+import { Tooltip } from 'primereact/tooltip';
 import { FilterMatchMode } from 'primereact/api';
 import { useToast } from '@/hooks/useToast';
+import { useCustomModal } from '@/hooks/useCustomModal';
 import { ShareItem } from '../types';
 import dayjs from 'dayjs';
+import useAuthStore from '@/store/useAuthStore';
 
 interface ListViewProps {
     shares: ShareItem[];
     onRowSelect: (id: string) => void;
     onNewPost: () => void;
+    onTemplateApply: (template: any) => void;
     onShare: (item: ShareItem) => void;
     onSearch: () => void;
     onDelete: (id: string) => void;
@@ -34,6 +38,7 @@ const ListView = ({
     shares,
     onRowSelect,
     onNewPost,
+    onTemplateApply,
     onShare,
     onDelete,
     onDeleteMultiple,
@@ -49,7 +54,8 @@ const ListView = ({
     setSelectedItems
 }: ListViewProps) => {
     const { showToast } = useToast();
-
+    const { openModal } = useCustomModal();
+    const { userInfo } = useAuthStore();
     const initFilters = () => {
         return {
             global: { value: null, matchMode: FilterMatchMode.CONTAINS }
@@ -70,9 +76,15 @@ const ListView = ({
         setGlobalFilterValue(value);
     };
 
-    const copyLink = (item: ShareItem, type: 'student' | 'parent' = 'student') => {
+    const copyLink = (item: ShareItem, type: 'student' | 'parent' | 'public' = 'student') => {
         const baseUri = typeof window !== 'undefined' ? window.location.origin : '';
-        const shareLink = `${baseUri}/kakao-share/view/${type}/${item._id}`;
+        let shareLink = '';
+
+        if (type === 'public') {
+            shareLink = `${baseUri}/kakao-share/public-view/${item.publicUrl}`;
+        } else {
+            shareLink = `${baseUri}/kakao-share/view/${type}/${item._id}`;
+        }
 
         navigator.clipboard
             .writeText(shareLink)
@@ -89,6 +101,21 @@ const ListView = ({
             });
     };
 
+    const handleTemplateClick = async () => {
+        const result = await openModal({ id: 'shareTemplate' });
+        if (result) {
+            onSearch();
+        }
+    };
+
+    const handleDeleteTemplateClick = async () => {
+        const result = await openModal({ id: 'deleteTemplate' });
+        if (result) {
+            // 삭제 성공 시 목록 갱신
+            onSearch();
+        }
+    };
+
     const formatDate = (dateStr?: string) => {
         if (!dateStr) return '';
         const date = new Date(dateStr);
@@ -97,19 +124,20 @@ const ListView = ({
 
     const renderHeader = () => {
         return (
-            <div className="flex flex-wrap gap-2 justify-content-between align-items-center">
+            <div className="flex flex-column md:flex-row gap-3 justify-content-between align-items-start md:align-items-center">
                 <h5 className="m-0">공유 게시판 목록</h5>
-                <div className="flex flex-wrap gap-2 align-items-center">
+                <div className="flex flex-wrap gap-2 align-items-center w-full md:w-auto">
                     <Button
                         type="button"
                         icon="pi pi-filter-slash"
                         label="초기화"
-                        className="p-button-outlined"
+                        className="p-button-outlined white-space-nowrap"
                         onClick={clearFilter}
                     />
-                    <span className="p-input-icon-left">
+                    <span className="p-input-icon-left flex-1 md:flex-none">
                         <i className="pi pi-search" />
                         <InputText
+                            className="w-full"
                             value={globalFilterValue}
                             onChange={onGlobalFilterChange}
                             placeholder="전체 내용 검색"
@@ -123,16 +151,48 @@ const ListView = ({
     const header = renderHeader();
 
     const titleBodyTemplate = (rowData: ShareItem) => {
+        const isToday = dayjs(rowData.createdDate).isSame(dayjs(), 'day');
+        const isAuto = rowData.isAuto === true;
+        const rowId = rowData._id?.toString().replace(/\W/g, '') || Math.random().toString(36).substring(7);
+
         return (
-            <span
-                className="truncate-cell-300 text-primary font-bold cursor-pointer hover:underline"
-                onClick={(e) => {
-                    e.stopPropagation();
-                    onRowSelect(rowData._id || '');
-                }}
-            >
-                {rowData.shareTitle}
-            </span>
+            <div className="flex align-items-center gap-2">
+                <div className="flex gap-1 flex-shrink-0">
+                    {isToday && (
+                        <>
+                            <div
+                                id={`new-tag-${rowId}`}
+                                className="flex align-items-center justify-content-center border-circle bg-blue-500 text-white font-bold"
+                                style={{ width: '18px', height: '18px', fontSize: '10px', cursor: 'help' }}
+                            >
+                                N
+                            </div>
+                            <Tooltip target={`#new-tag-${rowId}`} content="오늘 등록된 새 게시글" position="top" />
+                        </>
+                    )}
+                    {isAuto && (
+                        <>
+                            <div
+                                id={`auto-tag-${rowId}`}
+                                className="flex align-items-center justify-content-center border-circle bg-orange-500 text-white font-bold"
+                                style={{ width: '18px', height: '18px', fontSize: '10px', cursor: 'help' }}
+                            >
+                                A
+                            </div>
+                            <Tooltip target={`#auto-tag-${rowId}`} content="자동 생성 데이터" position="top" />
+                        </>
+                    )}
+                </div>
+                <span
+                    className="truncate-cell-300 text-primary font-bold cursor-pointer hover:underline"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onRowSelect(rowData._id || '');
+                    }}
+                >
+                    {rowData.shareTitle}
+                </span>
+            </div>
         );
     };
 
@@ -185,6 +245,16 @@ const ListView = ({
     const shareBodyTemplate = (rowData: ShareItem) => {
         return (
             <div className="flex gap-2">
+                <Button
+                    icon="pi pi-link"
+                    className="p-button-rounded p-button-info p-button-text"
+                    tooltip="일반 링크 복사"
+                    tooltipOptions={{ position: 'bottom' }}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        copyLink(rowData, 'public');
+                    }}
+                />
                 <Button
                     icon="pi pi-copy"
                     className="p-button-rounded p-button-warning p-button-text"
@@ -239,7 +309,9 @@ const ListView = ({
                     tooltipOptions={{ position: 'bottom' }}
                     onClick={(e) => {
                         e.stopPropagation();
-                        onDelete(rowData._id);
+                        if (rowData._id) {
+                            onDelete(rowData._id);
+                        }
                     }}
                 />
             </div>
@@ -248,34 +320,65 @@ const ListView = ({
 
     return (
         <div className="card">
-            <div className="flex justify-content-between align-items-center mb-4">
-                <div className="flex gap-2">
-                    <Button severity="success" label="글쓰기" icon="pi pi-pencil" onClick={onNewPost} />
+            <div className="flex flex-column gap-3 mb-4">
+                <div className="flex gap-2 overflow-x-auto pb-1">
                     <Button
-                        label={'복사'}
+                        severity="success"
+                        label="글쓰기"
+                        icon="pi pi-pencil"
+                        className="white-space-nowrap flex-1 sm:flex-none"
+                        onClick={onNewPost}
+                    />
+                    <Button
+                        label="복사"
                         icon="pi pi-copy"
-                        className="p-button-info p-button-outlined"
+                        className="p-button-info p-button-outlined white-space-nowrap flex-1 sm:flex-none"
                         onClick={() => {
                             if (selectedItems.length !== 1) return;
                             onCopyToNew(selectedItems[0]);
                         }}
                         disabled={selectedItems.length !== 1}
                     />
-
                     <Button
                         label={selectedItems.length > 0 ? `삭제 (${selectedItems.length})` : '삭제'}
                         icon="pi pi-trash"
-                        className="p-button-danger p-button-outlined"
+                        className="p-button-danger p-button-outlined white-space-nowrap flex-1 sm:flex-none"
                         onClick={() => {
                             if (selectedItems.length === 0) return;
                             onDeleteMultiple(selectedItems);
                         }}
                         disabled={selectedItems.length === 0}
                     />
-                    <Button label="조회" icon="pi pi-search" onClick={onSearch} />
+                    <Button
+                        label="조회"
+                        icon="pi pi-search"
+                        className="white-space-nowrap flex-1 sm:flex-none"
+                        onClick={onSearch}
+                    />
+                </div>
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                    <Button
+                        severity="info"
+                        tooltipOptions={{ position: 'bottom' }}
+                        tooltip={userInfo.auth === 'admin' ? '최하죵화이팅💘' : (null as any)}
+                        label="자동 템플릿 생성"
+                        icon="pi pi-clone"
+                        className="white-space-nowrap flex-1 sm:flex-none"
+                        onClick={handleTemplateClick}
+                    />
+                    <Button
+                        severity="danger"
+                        label="자동 템플릿 삭제"
+                        tooltipOptions={{ position: 'bottom' }}
+                        tooltip={userInfo.auth === 'admin' ? '최하죵화이팅💘💘' : (null as any)}
+                        icon="pi pi-trash"
+                        className="white-space-nowrap flex-1 sm:flex-none"
+                        onClick={handleDeleteTemplateClick}
+                    />
                 </div>
             </div>
             <DataTable
+                scrollable
                 showGridlines
                 value={shares}
                 selectionMode="checkbox"

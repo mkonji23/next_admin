@@ -273,6 +273,20 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
         setView('WRITE');
     };
 
+    const handleTemplateNew = (template: any) => {
+        const newItemData: Partial<ShareItem> = {
+            ...template,
+            classId: '',
+            studentId: '',
+            studentName: '',
+            actualContent: '',
+            shareImageUrls: []
+        };
+        setSelectedShare(newItemData as ShareItem);
+        setIsCopy(false);
+        setView('WRITE');
+    };
+
     const handleCopyToNew = (item: ShareItem) => {
         const { _id, createdDate, updatedDate, shareImageUrls, ...rest } = item;
 
@@ -331,6 +345,7 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
                     onSearch={fetchShares}
                     onRowSelect={(id) => fetchDetail(id)}
                     onNewPost={handleNewPost}
+                    onTemplateApply={handleTemplateNew}
                     onShare={handleShare}
                     onDelete={handleDelete}
                     onDeleteMultiple={handleDeleteMultiple}

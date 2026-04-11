@@ -63,6 +63,31 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
         initialData && setEditData(initialData);
     }, [initialData]);
 
+    useEffect(() => {
+        const handlePopState = () => {
+            onBack();
+        };
+
+        // 상세 뷰 진입 시 히스토리 상태 추가
+        window.history.pushState({ detailView: true }, '');
+        window.addEventListener('popstate', handlePopState);
+
+        return () => {
+            window.removeEventListener('popstate', handlePopState);
+            // 컴포넌트가 언마운트될 때 (onBack이 아닌 다른 이유로 unmount 시)
+            // 만약 히스토리에 여전히 detailView 상태가 있다면 정리해주는 것이 좋으나,
+            // 단순 뷰 전환 구조에서는 popstate가 onBack을 호출하므로 자연스럽게 처리됩니다.
+        };
+    }, [onBack]);
+
+    const handleBackClick = () => {
+        if (window.history.state?.detailView) {
+            window.history.back();
+        } else {
+            onBack();
+        }
+    };
+
     const handleDownload = async (url: string, fileName: string) => {
         try {
             const response = await fetch(url);
@@ -186,8 +211,13 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
     return (
         <div className="card">
             <div className="flex align-items-center mb-4">
-                <Button type="button" icon="pi pi-arrow-left" className="p-button-text mr-2" onClick={onBack} />
-                <h5>{editData && !isCopy ? '게시글 수정' : '새 게시글 작성'}</h5>
+                <Button
+                    type="button"
+                    icon="pi pi-arrow-left"
+                    className="p-button-text mr-2"
+                    onClick={handleBackClick}
+                />
+                <h5 className="m-0">{editData && !isCopy ? '게시글 수정' : '새 게시글 작성'}</h5>
             </div>
             <Form
                 onSubmit={onSubmit}
@@ -464,7 +494,9 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
                                 type="submit"
                                 label={editData && !isCopy ? '수정 내용 저장' : '새 게시글 등록'}
                                 icon={editData && !isCopy ? 'pi pi-save' : 'pi pi-check'}
-                                className={editData && !isCopy ? 'p-button-info' : 'p-button-primary'}
+                                className={`${
+                                    editData && !isCopy ? 'p-button-info' : 'p-button-primary'
+                                } white-space-nowrap`}
                                 disabled={submitting || isOptimizing}
                                 loading={isOptimizing}
                             />

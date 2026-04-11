@@ -33,6 +33,31 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete, onCopyTo
     const [index, setIndex] = useState(0);
     const { handleClose } = useLightboxHistory(open, setOpen);
 
+    useEffect(() => {
+        const handlePopState = () => {
+            onBack();
+        };
+
+        // 상세 뷰 진입 시 히스토리 상태 추가
+        window.history.pushState({ detailView: true }, '');
+        window.addEventListener('popstate', handlePopState);
+
+        return () => {
+            window.removeEventListener('popstate', handlePopState);
+            // 컴포넌트가 언마운트될 때 (onBack이 아닌 다른 이유로 unmount 시) 
+            // 만약 히스토리에 여전히 detailView 상태가 있다면 정리해주는 것이 좋으나, 
+            // 단순 뷰 전환 구조에서는 popstate가 onBack을 호출하므로 자연스럽게 처리됩니다.
+        };
+    }, [onBack]);
+
+    const handleBackClick = () => {
+        if (window.history.state?.detailView) {
+            window.history.back();
+        } else {
+            onBack();
+        }
+    };
+
     if (!selectedShare) return null;
 
     const handleDownload = async (url: string, fileName: string) => {
@@ -95,38 +120,40 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete, onCopyTo
     };
 
     const openStatus = getOpenStatus();
+    const isToday = dayjs(selectedShare.createdDate).isSame(dayjs(), 'day');
+    const isAuto = selectedShare.isAuto === true;
 
     return (
         <>
             <Card>
-                <div className="flex justify-content-between align-items-center mb-4">
+                <div className="flex flex-column md:flex-row justify-content-between align-items-start md:align-items-center mb-4 gap-3">
                     <div className="flex align-items-center">
-                        <Button icon="pi pi-arrow-left" className="p-button-text mr-2" onClick={onBack} />
-                        <h5>상세 정보</h5>
+                        <Button icon="pi pi-arrow-left" className="p-button-text mr-2" onClick={handleBackClick} />
+                        <h5 className="m-0">상세 정보</h5>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-column sm:flex-row gap-2 w-full md:w-auto">
                         <Button
                             label="카카오톡 공유"
                             icon="pi pi-share-alt"
-                            className="p-button-primary flex-2"
+                            className="p-button-primary flex-1 min-w-150  white-space-nowrap"
                             onClick={() => onShare(selectedShare)}
                         />
                         <Button
                             label="복사"
                             icon="pi pi-clone"
-                            className="p-button-outlined p-button-secondary"
+                            className="p-button-outlined p-button-secondary flex-1 white-space-nowrap"
                             onClick={() => onCopyToNew(selectedShare)}
                         />
                         <Button
                             label="수정"
                             icon="pi pi-pencil"
-                            className="p-button-outlined p-button-info"
+                            className="p-button-outlined p-button-info flex-1 white-space-nowrap"
                             onClick={() => onEdit(selectedShare)}
                         />
                         <Button
                             label="삭제"
                             icon="pi pi-trash"
-                            className="p-button-outlined p-button-danger"
+                            className="p-button-outlined p-button-danger flex-1 white-space-nowrap"
                             onClick={() => {
                                 if (selectedShare._id) {
                                     onDelete(selectedShare._id);
@@ -141,41 +168,72 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete, onCopyTo
                     <div className="col-12 md:col-8">
                         <Card className="shadow-2">
                             <div className="mb-4">
-                                <div className="flex align-items-center gap-2 mb-3">
-                                    <Tooltip target="#tooltipShare" />
-                                    <Tag
-                                        id="tooltipShare"
-                                        icon="pi pi-share-alt"
-                                        value={shareCount > 0 ? `공유완료(${shareCount})` : '미공유'}
-                                        severity={shareCount > 0 ? 'success' : null}
-                                        data-pr-tooltip={`${shareCount} 회 공유되었습니다.`}
-                                        data-pr-position="top"
-                                    />
-                                    {openCount > 0 && (
-                                        <>
-                                            <Tooltip target="#tooltipOpen" />
-                                            <Tag
-                                                id="tooltipOpen"
-                                                icon="pi pi-eye"
-                                                value={`${openStatus.label}(${openCount}/${shareCount})`}
-                                                data-pr-tooltip={`공유된 링크 중 ${openCount} 개가 열람되었습니다.`}
-                                                data-pr-position="top"
-                                                severity={openStatus.severity as any}
-                                            />
-                                        </>
-                                    )}
+                                <div className="flex flex-column gap-3 mb-3">
+                                    <div className="flex align-items-center flex-wrap gap-2">
+                                        {/* N, A 뱃지 추가 */}
+                                        <div className="flex gap-1 mr-1">
+                                            {isToday && (
+                                                <>
+                                                    <div
+                                                        id="detail-new-tag"
+                                                        className="flex align-items-center justify-content-center border-circle bg-blue-500 text-white font-bold"
+                                                        style={{ width: '22px', height: '22px', fontSize: '12px', cursor: 'help' }}
+                                                    >
+                                                        N
+                                                    </div>
+                                                    <Tooltip target="#detail-new-tag" content="오늘 등록된 새 게시글" position="top" />
+                                                </>
+                                            )}
+                                            {isAuto && (
+                                                <>
+                                                    <div
+                                                        id="detail-auto-tag"
+                                                        className="flex align-items-center justify-content-center border-circle bg-orange-500 text-white font-bold"
+                                                        style={{ width: '22px', height: '22px', fontSize: '12px', cursor: 'help' }}
+                                                    >
+                                                        A
+                                                    </div>
+                                                    <Tooltip target="#detail-auto-tag" content="자동 생성 데이터" position="top" />
+                                                </>
+                                            )}
+                                        </div>
 
-                                    <Tooltip target="#tooltipVisit" />
-                                    <Tag
-                                        id="tooltipVisit"
-                                        icon="pi pi-eye"
-                                        value={totalVisitCount}
-                                        data-pr-tooltip={`총 ${totalVisitCount} 회 방문(페이지 로드)되었습니다.`}
-                                        data-pr-position="top"
-                                        style={{ background: '#607D8B', color: '#ffffff' }}
-                                    />
+                                        <Tooltip target="#tooltipShare" />
+                                        <Tag
+                                            id="tooltipShare"
+                                            style={{ minWidth: '80px' }}
+                                            icon="pi pi-share-alt"
+                                            value={shareCount > 0 ? `공유완료(${shareCount})` : '미공유'}
+                                            severity={shareCount > 0 ? 'success' : null}
+                                            data-pr-tooltip={`${shareCount} 회 공유되었습니다.`}
+                                            data-pr-position="top"
+                                        />
+                                        {openCount > 0 && (
+                                            <>
+                                                <Tooltip target="#tooltipOpen" />
+                                                <Tag
+                                                    id="tooltipOpen"
+                                                    icon="pi pi-eye"
+                                                    value={`${openStatus.label}(${openCount}/${shareCount})`}
+                                                    data-pr-tooltip={`공유된 링크 중 ${openCount} 개가 열람되었습니다.`}
+                                                    data-pr-position="top"
+                                                    severity={openStatus.severity as any}
+                                                />
+                                            </>
+                                        )}
 
-                                    <h4 className="m-0 font-bold">{selectedShare.actualTitle}</h4>
+                                        <Tooltip target="#tooltipVisit" />
+                                        <Tag
+                                            id="tooltipVisit"
+                                            icon="pi pi-eye"
+                                            value={totalVisitCount}
+                                            data-pr-tooltip={`총 ${totalVisitCount} 회 방문(페이지 로드)되었습니다.`}
+                                            data-pr-position="top"
+                                            style={{ background: '#607D8B', color: '#ffffff' }}
+                                        />
+                                    </div>
+
+                                    <h4 className="m-0 font-bold text-2xl">{selectedShare.actualTitle}</h4>
                                 </div>
 
                                 <div className="flex flex-wrap gap-4 mb-3 p-3 surface-100 border-round text-sm">
@@ -228,11 +286,11 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete, onCopyTo
                                         <div className="text-700">{selectedShare.shareContent}</div>
                                     </div>
                                 </div>
-                                <div className="flex gap-2">
+                                <div className="flex flex-column sm:flex-row gap-2">
                                     <Button
                                         icon="pi pi-copy"
                                         label="링크 복사(학생용)"
-                                        className="p-button-warning flex-2"
+                                        className="p-button-warning flex-1 min-w-180 white-space-normal"
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             copyLink('student');
@@ -241,7 +299,7 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete, onCopyTo
                                     <Button
                                         icon="pi pi-copy"
                                         label="링크 복사(학부모용)"
-                                        className="p-button-success flex-2"
+                                        className="p-button-success flex-1 min-w-180 white-space-normal"
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             copyLink('parent');
@@ -250,7 +308,7 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete, onCopyTo
                                     <Button
                                         label="카카오톡 공유"
                                         icon="pi pi-share-alt"
-                                        className="p-button-primary flex-2"
+                                        className="p-button-primary flex-1 min-w-150 white-space-nowrap"
                                         onClick={() => onShare(selectedShare)}
                                     />
                                 </div>

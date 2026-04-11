@@ -8,6 +8,8 @@ import TodoDetail from '@/app/(main)/assistantTodo/components/TodoDetail';
 import ToDoDetailModal from '@/components/modals/ToDoDetailModal';
 import { ModalConfig, ModalContextType, ModalProviderProps, ModalState, OpenModalParams } from '@/types/modal';
 import StudentSelectModal from '@/components/modals/StudentSelectModal';
+import ShareTemplateModal from '@/components/modals/ShareTemplateModal';
+import DeleteTemplateModal from '@/components/modals/DeleteTemplateModal';
 
 export type { ModalConfig } from '@/types/modal';
 
@@ -41,6 +43,8 @@ export const ModalProvider = ({ children }: ModalProviderProps) => {
         registerModal({ id: 'studentSelect', component: StudentSelectModal });
         registerModal({ id: 'todo', component: TodoModal });
         registerModal({ id: 'todoDetailModal', component: ToDoDetailModal });
+        registerModal({ id: 'shareTemplate', component: ShareTemplateModal });
+        registerModal({ id: 'deleteTemplate', component: DeleteTemplateModal });
 
         // 여기에 다른 모달들을 추가할 수 있습니다
     }, [registerModal]);
