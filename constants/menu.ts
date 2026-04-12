@@ -33,10 +33,10 @@ export const AppMenuModel: AppMenuItem[] = [
             { label: '사용자 목록', icon: 'pi pi-fw pi-users', to: '/userList' }
         ]
     },
-    {
-        label: 'Support',
-        items: [{ label: '피드백 게시판', icon: 'pi pi-fw pi-comments', to: '/feedback' }]
-    },
+    // {
+    //     label: 'Support',
+    //     items: [{ label: '피드백 게시판', icon: 'pi pi-fw pi-comments', to: '/feedback' }]
+    // },
     {
         label: 'HELP',
         items: [
