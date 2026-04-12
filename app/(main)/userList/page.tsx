@@ -2,16 +2,18 @@
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
+import { Tag } from 'primereact/tag';
 import { useEffect, useState } from 'react';
 import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
-import { User } from '@/components/modals/UserModal';
 import { useCustomModal } from '@/hooks/useCustomModal';
 import { useConfirm } from '@/hooks/useConfirm';
 import { getCommonLabel } from '@/util/common';
 import { USER_AUTH_OPTIONS } from '@/constants/user';
 import useAuth from '@/hooks/useAuth';
 import useAuthStore from '@/store/useAuthStore';
+import { User } from '@/components/modals/UserModal';
+import dayjs from 'dayjs';
 
 const UserListPage = () => {
     const { userInfo } = useAuthStore();
@@ -124,6 +126,16 @@ const UserListPage = () => {
         return getCommonLabel(USER_AUTH_OPTIONS, rowData.auth);
     };
 
+    const useYnBodyTemplate = (rowData: User) => {
+        const useYn = rowData.useYn !== false; // undefined나 true면 사용으로 간주
+        return <Tag value={useYn ? '사용' : '미사용'} severity={useYn ? 'success' : 'danger'} />;
+    };
+
+    const expiryDateBodyTemplate = (rowData: User) => {
+        if (!rowData.expiryDate) return '-';
+        return dayjs(rowData.expiryDate).format('YYYY-MM-DD');
+    };
+
     const actionBodyTemplate = (rowData: User) => {
         return (
             <div className="flex gap-2">
@@ -151,7 +163,7 @@ const UserListPage = () => {
 
     const header = (
         <div className="flex flex-wrap align-items-center justify-content-between gap-2">
-            <span className="text-xl text-900 font-bold">출석부</span>
+            <span className="text-xl text-900 font-bold">사용자 관리</span>
             <div className="flex gap-2">
                 <Button
                     icon="pi pi-plus"
@@ -216,16 +228,34 @@ const UserListPage = () => {
                         </div>
                     )}
                 ></Column>
-                <Column field="userName" header="이름" sortable filter headerStyle={{ minWidth: '150px' }}></Column>
+                <Column field="userName" header="이름" sortable filter headerStyle={{ minWidth: '120px' }}></Column>
                 <Column field="email" header="이메일" sortable filter headerStyle={{ minWidth: '150px' }}></Column>
-                <Column field="auth" header="권한" sortable filter body={authBodyTemplate} headerStyle={{ minWidth: '150px' }}></Column>
                 <Column
-                    body={actionBodyTemplate}
-                    header="작업"
-                    headerStyle={{ minWidth: '4rem' }}
+                    field="auth"
+                    header="권한"
                     sortable
                     filter
+                    body={authBodyTemplate}
+                    headerStyle={{ minWidth: '120px' }}
                 ></Column>
+                <Column
+                    field="useYn"
+                    header="사용"
+                    sortable
+                    filter
+                    body={useYnBodyTemplate}
+                    headerStyle={{ minWidth: '100px', textAlign: 'center' }}
+                    bodyStyle={{ textAlign: 'center' }}
+                ></Column>
+                <Column
+                    field="expiryDate"
+                    header="만료일"
+                    sortable
+                    filter
+                    body={expiryDateBodyTemplate}
+                    headerStyle={{ minWidth: '120px' }}
+                ></Column>
+                <Column body={actionBodyTemplate} header="작업" headerStyle={{ minWidth: '8rem' }}></Column>
             </DataTable>
         </div>
     );

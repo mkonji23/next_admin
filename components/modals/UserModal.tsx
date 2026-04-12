@@ -5,12 +5,15 @@ import { Dropdown } from 'primereact/dropdown';
 import { TreeSelect } from 'primereact/treeselect';
 import { Password } from 'primereact/password';
 import { Button } from 'primereact/button';
+import { Calendar } from 'primereact/calendar';
+import { Checkbox } from 'primereact/checkbox';
 import { useState, useEffect, useMemo } from 'react';
 import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
 import { USER_AUTH_OPTIONS } from '@/constants/user';
 import { AppMenuModel } from '@/constants/menu';
 import { TreeNode } from 'primereact/treenode';
+import dayjs from 'dayjs';
 
 export interface User {
     userId: string;
@@ -19,6 +22,8 @@ export interface User {
     auth: string | null;
     password?: string;
     menuPermissions?: string[];
+    expiryDate?: Date | null;
+    useYn?: boolean;
 }
 
 interface UserModalProps {
@@ -73,7 +78,9 @@ const UserModal = ({ visible, pData, onClose }: UserModalProps) => {
         email: '',
         password: '',
         auth: null,
-        menuPermissions: []
+        menuPermissions: [],
+        expiryDate: null,
+        useYn: true
     });
     const [submitted, setSubmitted] = useState(false);
 
@@ -124,7 +131,12 @@ const UserModal = ({ visible, pData, onClose }: UserModalProps) => {
     useEffect(() => {
         if (visible) {
             if (mode === 'edit' && initialUser) {
-                setUser({ ...initialUser, menuPermissions: initialUser.menuPermissions || [] });
+                setUser({
+                    ...initialUser,
+                    menuPermissions: initialUser.menuPermissions || [],
+                    expiryDate: initialUser.expiryDate ? new Date(initialUser.expiryDate) : null,
+                    useYn: initialUser.useYn !== undefined ? initialUser.useYn : true
+                });
             } else {
                 setUser({
                     userId: '',
@@ -132,18 +144,20 @@ const UserModal = ({ visible, pData, onClose }: UserModalProps) => {
                     email: '',
                     password: '',
                     auth: null,
-                    menuPermissions: []
+                    menuPermissions: [],
+                    expiryDate: dayjs().add(1, 'year').toDate(),
+                    useYn: true
                 });
             }
             setSubmitted(false);
         }
-    }, [visible]);
+    }, [visible, mode, initialUser]);
 
     useEffect(() => {
-        if (user.auth && user.auth !== 'admin') {
+        if (user.auth && user.auth !== 'admin' && mode === 'new') {
             setUser((prev) => ({ ...prev, menuPermissions: defaultAuth }));
         }
-    }, [user.auth]);
+    }, [user.auth, mode]);
 
     const isEditMode = mode === 'edit';
     const header = isEditMode ? '사용자 수정' : '사용자 등록';
@@ -168,12 +182,7 @@ const UserModal = ({ visible, pData, onClose }: UserModalProps) => {
         try {
             if (mode === 'new') {
                 const payload = {
-                    userId: user.userId,
-                    userName: user.userName,
-                    email: user.email,
-                    auth: user.auth,
-                    password: user.password,
-                    menuPermissions: user.menuPermissions || [],
+                    ...user,
                     createdDate: new Date()
                 };
 
@@ -303,6 +312,32 @@ const UserModal = ({ visible, pData, onClose }: UserModalProps) => {
                         className="w-full"
                         metaKeySelection={false}
                     />
+                </div>
+            )}
+            {user.auth !== 'admin' && (
+                <div className="field">
+                    <label htmlFor="expiryDate">만료일</label>
+                    <Calendar
+                        id="expiryDate"
+                        value={user.expiryDate}
+                        onChange={(e) => setUser({ ...user, expiryDate: e.value as Date })}
+                        showIcon
+                        placeholder="만료일을 선택하세요"
+                        dateFormat="yy-mm-dd"
+                        locale="ko"
+                    />
+                </div>
+            )}
+            {user.auth !== 'admin' && (
+                <div className="field">
+                    <Checkbox
+                        id="useYn"
+                        onChange={(e) => setUser({ ...user, useYn: e.checked ?? false })}
+                        checked={user.useYn || false}
+                    />
+                    <label htmlFor="useYn" className="ml-2">
+                        사용 여부
+                    </label>
                 </div>
             )}
         </Dialog>

@@ -23,6 +23,34 @@ const LoginPage = () => {
         { 'p-input-filled': layoutConfig.inputStyle === 'filled' }
     );
 
+    // 한글 자판 위치를 영문 자판 위치로 매핑하는 함수
+    const korToEng = (text: string) => {
+        const cho = ['r', 'R', 's', 'e', 'E', 'f', 'a', 'q', 'Q', 't', 'T', 'd', 'w', 'W', 'c', 'z', 'x', 'v', 'g'];
+        const jung = ['k', 'o', 'i', 'O', 'j', 'p', 'u', 'P', 'h', 'hk', 'ho', 'hl', 'y', 'n', 'nj', 'np', 'nl', 'b', 'm', 'ml', 'l'];
+        const jong = ['', 'r', 'R', 'rt', 's', 'sw', 'sg', 'e', 'f', 'fr', 'fa', 'fq', 'ft', 'fx', 'fv', 'fg', 'a', 'q', 'qt', 't', 'T', 'd', 'w', 'c', 'z', 'x', 'v', 'g'];
+        const singleJamo: { [key: string]: string } = {
+            'ㄱ': 'r', 'ㄲ': 'R', 'ㄴ': 's', 'ㄷ': 'e', 'ㄸ': 'E', 'ㄹ': 'f', 'ㅁ': 'a', 'ㅂ': 'q', 'ㅃ': 'Q', 'ㅅ': 't', 'ㅆ': 'T', 'ㅇ': 'd', 'ㅈ': 'w', 'ㅉ': 'W', 'ㅊ': 'c', 'ㅋ': 'z', 'ㅌ': 'x', 'ㅍ': 'v', 'ㅎ': 'g',
+            'ㅏ': 'k', 'ㅐ': 'o', 'ㅑ': 'i', 'ㅒ': 'O', 'ㅓ': 'j', 'ㅔ': 'p', 'ㅕ': 'u', 'ㅖ': 'P', 'ㅗ': 'h', 'ㅘ': 'hk', 'ㅙ': 'ho', 'ㅚ': 'hl', 'ㅛ': 'y', 'ㅜ': 'n', 'ㅝ': 'nj', 'ㅞ': 'np', 'ㅟ': 'nl', 'ㅠ': 'b', 'ㅡ': 'm', 'ㅢ': 'ml', 'ㅣ': 'l'
+        };
+
+        let result = '';
+        for (let i = 0; i < text.length; i++) {
+            const code = text.charCodeAt(i);
+            if (code >= 0xac00 && code <= 0xd7a3) {
+                const base = code - 0xac00;
+                const c = Math.floor(base / 28 / 21);
+                const ju = Math.floor((base / 28) % 21);
+                const jo = base % 28;
+                result += cho[c] + jung[ju] + jong[jo];
+            } else if (singleJamo[text[i]]) {
+                result += singleJamo[text[i]];
+            } else {
+                result += text[i];
+            }
+        }
+        return result;
+    };
+
     const signIn = async () => {
         const res = await login({ userId: email, password: password });
         if (res) {
@@ -59,10 +87,11 @@ const LoginPage = () => {
                                 value={email}
                                 id="email1"
                                 type="text"
+                                inputMode="latin"
                                 placeholder="아이디"
                                 className="w-full md:w-30rem mb-5"
                                 style={{ padding: '1rem' }}
-                                onChange={(e) => setEmail(e.target.value)}
+                                onChange={(e) => setEmail(korToEng(e.target.value).replace(/[^a-zA-Z0-9_-]/g, ''))}
                             />
 
                             <label htmlFor="password1" className="block text-900 font-medium text-xl mb-2">
@@ -71,7 +100,10 @@ const LoginPage = () => {
                             <Password
                                 inputId="password1"
                                 value={password}
-                                onChange={(e) => setPassword(e.target.value)}
+                                onChange={(e) => setPassword(korToEng(e.target.value))}
+                                pt={{
+                                    input: { inputMode: 'latin' }
+                                }}
                                 placeholder="비밀번호"
                                 toggleMask
                                 feedback={false}
