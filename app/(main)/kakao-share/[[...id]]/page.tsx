@@ -24,7 +24,11 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
 
     // List view state to be maintained
     const [filters, setFilters] = useState({
-        global: { value: null, matchMode: FilterMatchMode.CONTAINS }
+        global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        autoYear: { value: String(new Date().getFullYear()), matchMode: FilterMatchMode.EQUALS },
+        autoMonth: { value: null, matchMode: FilterMatchMode.EQUALS },
+        autoWeek: { value: null, matchMode: FilterMatchMode.EQUALS },
+        shareStatus: { value: null, matchMode: FilterMatchMode.EQUALS }
     });
     const [globalFilterValue, setGlobalFilterValue] = useState('');
     const [first, setFirst] = useState(0);

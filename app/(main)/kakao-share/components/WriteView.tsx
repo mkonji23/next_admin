@@ -36,6 +36,24 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
     const [isOptimizing, setIsOptimizing] = useState(false);
     const [classes, setClasses] = useState<Class[]>([]);
 
+    // Helper to get current week of month
+    const getWeekOfMonth = (date: Date) => {
+        const day = date.getDate();
+        return Math.ceil(day / 7);
+    };
+
+    // Dropdown options & Default values
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+    const currentWeek = getWeekOfMonth(now);
+
+    const years = [currentYear - 1, currentYear, currentYear + 1].map((y) => ({ label: `${y}년`, value: String(y) }));
+    const months = Array.from({ length: 12 }, (_, i) => ({ label: `${i + 1}월`, value: String(i + 1) }));
+    const weeks = Array.from({ length: 5 }, (_, i) => ({ label: `${i + 1}주차`, value: String(i + 1) }));
+
+    const defaultTitle = `[${currentMonth}월 ${currentWeek}주차: 학림 최하정T 주간REPORT '◡'✿]`;
+
     // Lightbox state
     const [lightboxOpen, setLightboxOpen] = useState(false);
     const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -63,6 +81,14 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
         initialData && setEditData(initialData);
     }, [initialData]);
 
+    const handleAutoTitle = (form: any, month: string, week: string) => {
+        if (month && week) {
+            const autoTitle = `[${month}월 ${week}주차: 학림 최하정T 주간REPORT '◡'✿]`;
+            form.change('shareTitle', autoTitle);
+            form.change('actualTitle', autoTitle);
+        }
+    };
+
     useEffect(() => {
         const handlePopState = () => {
             onBack();
@@ -74,9 +100,6 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
 
         return () => {
             window.removeEventListener('popstate', handlePopState);
-            // 컴포넌트가 언마운트될 때 (onBack이 아닌 다른 이유로 unmount 시)
-            // 만약 히스토리에 여전히 detailView 상태가 있다면 정리해주는 것이 좋으나,
-            // 단순 뷰 전환 구조에서는 popstate가 onBack을 호출하므로 자연스럽게 처리됩니다.
         };
     }, [onBack]);
 
@@ -119,12 +142,11 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
                 })
             };
             if (selectedFiles) {
-                // 이미지 최적화
                 const optimizedFiles = await compressImages(selectedFiles, {
                     maxWidth: 1200,
                     maxHeight: 1200,
                     quality: 0.7,
-                    maxTotalSize: 4 * 1024 * 1024 // 4MB 제한
+                    maxTotalSize: 4 * 1024 * 1024
                 });
 
                 setIsOptimizing(false);
@@ -146,6 +168,9 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
         if (!values.studentId) errors.studentId = '필수 입력 항목입니다.';
         if (!values.actualTitle) errors.actualTitle = '필수 입력 항목입니다.';
         if (!values.shareTitle) errors.shareTitle = '필수 입력 항목입니다.';
+        if (!values.autoYear) errors.autoYear = '필수 선택 항목입니다.';
+        if (!values.autoMonth) errors.autoMonth = '필수 선택 항목입니다.';
+        if (!values.autoWeek) errors.autoWeek = '필수 선택 항목입니다.';
         return errors;
     };
 
@@ -194,7 +219,6 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
         src: typeof item === 'string' ? item : item.url
     }));
 
-    // 이미지 삭제
     const deleteImages = (url) => {
         const delShareImageUrls = editData?.shareImageUrls?.map((item) => {
             if (item.url === url) {
@@ -233,13 +257,84 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
                               studentId: !isCopy ? editData.studentId : '',
                               studentName: !isCopy ? editData.studentName : '',
                               telNo: !isCopy ? editData.telNo : '',
-                              pTelNo: !isCopy ? editData.pTelNo : ''
+                              pTelNo: !isCopy ? editData.pTelNo : '',
+                              autoYear: editData.autoYear || String(currentYear),
+                              autoMonth: editData.autoMonth || String(currentMonth),
+                              autoWeek: editData.autoWeek || String(currentWeek)
                           }
-                        : {}
+                        : {
+                              autoYear: String(currentYear),
+                              autoMonth: String(currentMonth),
+                              autoWeek: String(currentWeek),
+                              shareTitle: defaultTitle
+                          }
                 }
                 validate={validate}
-                render={({ handleSubmit, submitting, form, errors }) => (
+                render={({ handleSubmit, submitting, form, errors, values }) => (
                     <form onSubmit={(e) => handleFinalSubmit(e, handleSubmit, errors)} className="p-fluid grid">
+                        <div className="field col-12 md:col-4">
+                            <label className="font-bold text-primary">
+                                년도 <span className="text-red-500">*</span>
+                            </label>
+                            <Field name="autoYear">
+                                {({ input, meta }) => (
+                                    <>
+                                        <Dropdown
+                                            {...input}
+                                            options={years}
+                                            placeholder="년도 선택"
+                                            className={meta.touched && meta.error ? 'p-invalid' : ''}
+                                        />
+                                        {meta.touched && meta.error && <small className="p-error">{meta.error}</small>}
+                                    </>
+                                )}
+                            </Field>
+                        </div>
+                        <div className="field col-12 md:col-4">
+                            <label className="font-bold text-primary">
+                                월 <span className="text-red-500">*</span>
+                            </label>
+                            <Field name="autoMonth">
+                                {({ input, meta }) => (
+                                    <>
+                                        <Dropdown
+                                            {...input}
+                                            options={months}
+                                            placeholder="월 선택"
+                                            className={meta.touched && meta.error ? 'p-invalid' : ''}
+                                            onChange={(e) => {
+                                                input.onChange(e.value);
+                                                handleAutoTitle(form, e.value, values.autoWeek);
+                                            }}
+                                        />
+                                        {meta.touched && meta.error && <small className="p-error">{meta.error}</small>}
+                                    </>
+                                )}
+                            </Field>
+                        </div>
+                        <div className="field col-12 md:col-4">
+                            <label className="font-bold text-primary">
+                                주차 <span className="text-red-500">*</span>
+                            </label>
+                            <Field name="autoWeek">
+                                {({ input, meta }) => (
+                                    <>
+                                        <Dropdown
+                                            {...input}
+                                            options={weeks}
+                                            placeholder="주차 선택"
+                                            className={meta.touched && meta.error ? 'p-invalid' : ''}
+                                            onChange={(e) => {
+                                                input.onChange(e.value);
+                                                handleAutoTitle(form, values.autoMonth, e.value);
+                                            }}
+                                        />
+                                        {meta.touched && meta.error && <small className="p-error">{meta.error}</small>}
+                                    </>
+                                )}
+                            </Field>
+                        </div>
+
                         <div className="field col-12">
                             <label className="font-bold text-primary">
                                 클래스 선택 <span className="text-red-500">*</span>
@@ -302,7 +397,9 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
                                                 }
                                             }}
                                             value={form.getState().values.studentId}
-                                            disabled={students.length === 0 || editData?.classId ? true : false}
+                                            disabled={
+                                                students.length === 0 || (editData?.classId && !isCopy) ? true : false
+                                            }
                                         />
                                         {meta.touched && meta.error && <small className="p-error">{meta.error}</small>}
                                     </>

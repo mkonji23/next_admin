@@ -5,6 +5,7 @@ import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
 import { InputText } from 'primereact/inputtext';
+import { Dropdown } from 'primereact/dropdown';
 import { Tag } from 'primereact/tag';
 import { Tooltip } from 'primereact/tooltip';
 import { FilterMatchMode } from 'primereact/api';
@@ -56,9 +57,31 @@ const ListView = ({
     const { showToast } = useToast();
     const { openModal } = useCustomModal();
     const { userInfo } = useAuthStore();
+
+    const yearOptions = Array.from(new Set(shares.map((s) => s.autoYear).filter(Boolean)))
+        .sort()
+        .map((y) => ({ label: `${y}년`, value: y }));
+
+    const monthOptions = Array.from(new Set(shares.map((s) => s.autoMonth).filter(Boolean)))
+        .sort((a, b) => Number(a) - Number(b))
+        .map((m) => ({ label: `${m}월`, value: m }));
+
+    const weekOptions = Array.from(new Set(shares.map((s) => s.autoWeek).filter(Boolean)))
+        .sort((a, b) => Number(a) - Number(b))
+        .map((w) => ({ label: `${w}주차`, value: w }));
+
+    const statusOptions = [
+        { label: '공유완료', value: '공유완료' },
+        { label: '미공유', value: '미공유' }
+    ];
+
     const initFilters = () => {
         return {
-            global: { value: null, matchMode: FilterMatchMode.CONTAINS }
+            global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+            autoYear: { value: String(new Date().getFullYear()), matchMode: FilterMatchMode.EQUALS },
+            autoMonth: { value: null, matchMode: FilterMatchMode.EQUALS },
+            autoWeek: { value: null, matchMode: FilterMatchMode.EQUALS },
+            shareStatus: { value: null, matchMode: FilterMatchMode.EQUALS }
         };
     };
 
@@ -74,6 +97,15 @@ const ListView = ({
 
         setFilters(_filters);
         setGlobalFilterValue(value);
+    };
+
+    const onFilterChange = (field: string, value: any) => {
+        let _filters = { ...filters };
+        if (!_filters[field]) {
+            _filters[field] = { value: null, matchMode: FilterMatchMode.EQUALS };
+        }
+        _filters[field].value = value;
+        setFilters(_filters);
     };
 
     const copyLink = (item: ShareItem, type: 'student' | 'parent' | 'public' = 'student') => {
@@ -124,25 +156,59 @@ const ListView = ({
 
     const renderHeader = () => {
         return (
-            <div className="flex flex-column md:flex-row gap-3 justify-content-between align-items-start md:align-items-center">
-                <h5 className="m-0">공유 게시판 목록</h5>
-                <div className="flex flex-wrap gap-2 align-items-center w-full md:w-auto">
-                    <Button
-                        type="button"
-                        icon="pi pi-filter-slash"
-                        label="초기화"
-                        className="p-button-outlined white-space-nowrap"
-                        onClick={clearFilter}
-                    />
-                    <span className="p-input-icon-left flex-1 md:flex-none">
-                        <i className="pi pi-search" />
-                        <InputText
-                            className="w-full"
-                            value={globalFilterValue}
-                            onChange={onGlobalFilterChange}
-                            placeholder="전체 내용 검색"
+            <div className="flex flex-column gap-3">
+                <div className="flex flex-column md:flex-row gap-3 justify-content-between align-items-start md:align-items-center">
+                    <h5 className="m-0">공유 게시판 목록</h5>
+                    <div className="flex flex-wrap gap-2 align-items-center w-full md:w-auto">
+                        <Dropdown
+                            value={filters.autoYear?.value}
+                            options={yearOptions}
+                            onChange={(e) => onFilterChange('autoYear', e.value)}
+                            placeholder="년도 선택"
+                            showClear
+                            className="w-full md:w-10rem"
                         />
-                    </span>
+                        <Dropdown
+                            value={filters.autoMonth?.value}
+                            options={monthOptions}
+                            onChange={(e) => onFilterChange('autoMonth', e.value)}
+                            placeholder="월 선택"
+                            showClear
+                            className="w-full md:w-8rem"
+                        />
+                        <Dropdown
+                            value={filters.autoWeek?.value}
+                            options={weekOptions}
+                            onChange={(e) => onFilterChange('autoWeek', e.value)}
+                            placeholder="주차 선택"
+                            showClear
+                            className="w-full md:w-10rem"
+                        />
+                        <Dropdown
+                            value={filters.shareStatus?.value}
+                            options={statusOptions}
+                            onChange={(e) => onFilterChange('shareStatus', e.value)}
+                            placeholder="공유 상태"
+                            showClear
+                            className="w-full md:w-10rem"
+                        />
+                        <span className="p-input-icon-left flex-1 md:flex-none">
+                            <i className="pi pi-search" />
+                            <InputText
+                                className="w-full"
+                                value={globalFilterValue}
+                                onChange={onGlobalFilterChange}
+                                placeholder="전체 내용 검색"
+                            />
+                        </span>
+                        <Button
+                            type="button"
+                            icon="pi pi-filter-slash"
+                            label="필터 초기화"
+                            className="p-button-outlined white-space-nowrap"
+                            onClick={clearFilter}
+                        />
+                    </div>
                 </div>
             </div>
         );

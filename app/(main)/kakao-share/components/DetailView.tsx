@@ -238,6 +238,14 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete, onCopyTo
 
                                 <div className="flex flex-wrap gap-4 mb-3 p-3 surface-100 border-round text-sm">
                                     <div>
+                                        <span className="text-500 mr-2">리포트 기간:</span>
+                                        <span className="text-900 font-bold">
+                                            {selectedShare.autoYear ? `${selectedShare.autoYear}년 ` : ''}
+                                            {selectedShare.autoMonth ? `${selectedShare.autoMonth}월 ` : ''}
+                                            {selectedShare.autoWeek ? `${selectedShare.autoWeek}주차` : ''}
+                                        </span>
+                                    </div>
+                                    <div>
                                         <span className="text-500 mr-2">클래스:</span>
                                         <span className="text-900 font-bold">{selectedShare?.className || ''}</span>
                                     </div>
