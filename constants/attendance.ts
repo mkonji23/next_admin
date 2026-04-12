@@ -63,17 +63,17 @@ export const getAttendanceSeverity = (
         case 'class_absent':
             return 'danger';
         case 'makeup_present':
-            return 'info';
+            return 'success';
         case 'makeup_absent':
-            return 'warning';
+            return 'danger';
         case 'clinic_present':
-            return 'primary';
+            return 'success';
         case 'clinic_absent':
             return 'danger';
         case 'late':
             return 'warning';
         case 'etc':
-            return 'danger';
+            return 'warning';
         default:
             return 'secondary';
     }

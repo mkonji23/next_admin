@@ -83,6 +83,7 @@ const AttendancePage = () => {
 
             const attendanceUsers: User[] = (attendanceData.students || []).map((student: any, index: number) => {
                 const userData: User = {
+                    ...student,
                     id: index + 1,
                     studentId: student.studentId,
                     name: student.name || '이름 없음',
@@ -513,7 +514,8 @@ const AttendancePage = () => {
                         <div className="mb-2">
                             <p className="text-red-500 font-bold">
                                 <i className="pi pi-exclamation-circle mr-2"></i>
-                                비고란에 입력된 내용은 해당 학생이 확인할 수 있습니다.
+                                비고란에 입력된 내용은 해당 학생이 확인할 수 있습니다. 민감한 내용이나 부적절한 내용을
+                                삼가해주세요.
                             </p>
                         </div>
 

@@ -1,7 +1,9 @@
 'use client';
 
 import React from 'react';
+import { Button } from 'primereact/button';
 import { DAY_NAMES, HOLIDAYS } from '@/constants/attendance';
+import { Tooltip } from 'primereact/tooltip';
 
 interface AttendanceTableHeaderProps {
     daysInMonth: number;
@@ -30,6 +32,7 @@ const AttendanceTableHeader: React.FC<AttendanceTableHeaderProps> = ({
 
     return (
         <div className="attendance-header" role="rowgroup">
+            <Tooltip target=".note-tooltip-icon" position="top" />
             <div className="attendance-header-row" role="row">
                 <div className="attendance-header-cell-name" role="columnheader">
                     <div className="flex justify-content-between align-items-center">
@@ -78,12 +81,12 @@ const AttendanceTableHeader: React.FC<AttendanceTableHeaderProps> = ({
                                 ? day < daysInMonth
                                     ? '2px solid #007ad9'
                                     : 'none'
-                                : '1px solid #dee2e6'
+                                : '1px solid #dee2e6',
+
+                            color: fieldNames[fieldKey] === '비고' ? 'red' : ''
                         };
 
-                        // Note: Width is now controlled by the grid-template-columns in page.tsx
-                        // No inline style for width is needed here anymore, but keeping it won't hurt
-                        // as grid template takes precedence.
+                        const isNote = fieldNames[fieldKey] === '비고';
 
                         return (
                             <div
@@ -92,7 +95,16 @@ const AttendanceTableHeader: React.FC<AttendanceTableHeaderProps> = ({
                                 role="columnheader"
                                 style={subCellStyle}
                             >
-                                {fieldNames[fieldKey]}
+                                <div className="flex align-items-center justify-content-center gap-1">
+                                    {fieldNames[fieldKey]}
+                                    {isNote && (
+                                        <i
+                                            className="note-tooltip-icon pi pi-exclamation-circle text-red-500 cursor-pointer"
+                                            style={{ fontSize: '1.2rem' }}
+                                            data-pr-tooltip="학생이 확인 가능한 필드입니다"
+                                        ></i>
+                                    )}
+                                </div>
                             </div>
                         );
                     })

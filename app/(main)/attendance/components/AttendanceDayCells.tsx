@@ -276,7 +276,6 @@ const AttendanceDayCells = React.memo<AttendanceDayCellsProps>(({ user, day, onU
                     icon="pi pi-face-smile"
                     className={`${localPraise ? 'p-button-success' : 'p-button-secondary'}`}
                     onClick={handlePraiseToggle}
-                    tooltip="칭찬하기"
                 />
             </div>
             <div className="attendance-cell test-score-cell" role="cell">
