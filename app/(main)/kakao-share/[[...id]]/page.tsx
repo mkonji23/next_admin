@@ -256,6 +256,7 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
                 shareContent: item?.shareTitle,
                 userId: userInfo.userId,
                 userName: userInfo.userName,
+                shareLink: shareLink,
                 kakaoId: kakaoId
             }
         });
