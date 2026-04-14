@@ -20,6 +20,7 @@ const PublicShareViewPage: React.FC = () => {
     const { loading } = useLoading();
     const [images, setImages] = useState<any[]>([]);
     const [isFetched, setIsFetched] = useState(false);
+
     const downloadImage = async (url: string, index: number) => {
         try {
             const response = await fetch(url);
@@ -89,6 +90,8 @@ const PublicShareViewPage: React.FC = () => {
     useEffect(() => {
         if (utm_custom && publicUrl && kakaoId) {
             http.post(`/choiMath/kakao/share/open/${publicUrl}/${kakaoId}`, { disableLoading: true });
+        } else if (!utm_custom && publicUrl && !kakaoId) {
+            http.post(`/choiMath/share/mark-read/${publicUrl}`, { disableLoading: true });
         }
     }, [utm_custom, publicUrl, kakaoId]);
 
@@ -103,14 +106,7 @@ const PublicShareViewPage: React.FC = () => {
 
     // Render the shared content component
     if (shareData) {
-        return (
-            <KakaoShareViewContent
-                shareData={shareData}
-                images={images}
-                downloadImageFn={downloadImage}
-                // pageType is undefined for public view
-            />
-        );
+        return <KakaoShareViewContent shareData={shareData} images={images} downloadImageFn={downloadImage} />;
     }
 
     return null; // Should not reach here if logic is correct, but good for safety

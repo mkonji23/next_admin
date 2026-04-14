@@ -15,6 +15,7 @@ import dayjs, { Dayjs } from 'dayjs';
 import { ATTENDANCE_STATUS_OPTIONS } from '@/constants/attendance';
 import { AI_PROGRESS_MESSAGES, AI_STUDENT_COMMENTS } from '@/constants/aiComments';
 import AchievementCard from './AchievementCard';
+import WeeklyReportList from './WeeklyReportList';
 import useStudentAuthStore from '@/store/useStudentAuthStore';
 
 interface StudentStatusContentProps {
@@ -173,8 +174,12 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
 
             setPraiseTopRankers(topRankers);
 
-            const myData = allData.find((s: any) => s.studentId === finalStudentId);
+            const resDetail = await http.get('/choiMath/attendance/getPraiseStatistics', {
+                params: { ...params, studentId: finalStudentId },
+                disableLoading: true
+            });
 
+            const myData = resDetail.data[0] || {};
             const matchedStudent = studentRes.data;
             if (matchedStudent) {
                 setStudentInfo({ school: matchedStudent.school, grade: matchedStudent.grade });
@@ -972,6 +977,9 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                                 </Card>
                             </div>
                         </div>
+
+                        {/* Weekly Report List */}
+                        <WeeklyReportList studentId={finalStudentId} />
                     </>
                 )}
             </div>
