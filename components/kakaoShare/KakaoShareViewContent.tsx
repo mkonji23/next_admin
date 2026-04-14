@@ -68,7 +68,12 @@ const KakaoShareViewContent: React.FC<KakaoShareViewContentProps> = ({
                     </div>
 
                     <div className="mb-6 surface-50 p-3 border-round">
-                        <CustomEditor value={shareData.actualContent || ''} delta={shareData.delta} readOnly={true} />
+                        <CustomEditor
+                            value={shareData.actualContent || ''}
+                            delta={shareData.delta}
+                            readOnly={true}
+                            style={{ height: 'auto' }}
+                        />
                     </div>
 
                     {images && images.length > 0 && (
