@@ -217,10 +217,11 @@ const WeekSchedulePage = () => {
 
     const getToolTipInfo = (studentId) => {
         const sInfo = processedSchedules.find((item) => item.studentId === studentId);
-        const leng = sInfo && sInfo!.class ? sInfo!.class.length : 0;
-        const classNames = sInfo?.class?.map((item) => item.className)?.join('\r\n') || '';
+        const leng = sInfo?.classNames && sInfo!.classNames.length;
+        const classNames = sInfo?.classNames?.join('\r\n') || '';
         return `수강클래스(${leng}개) \r\n ${classNames}`;
     };
+
     useEffect(() => {
         fetchSchedules();
     }, []);
