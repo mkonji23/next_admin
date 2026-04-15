@@ -70,7 +70,7 @@ const AchievementCard = ({
                             <ul className="list-none p-0 m-0">
                                 {praiseTopRankers.map((ranker, index) => (
                                     <li
-                                        key={ranker.studentId}
+                                        key={`${ranker.name}_${index}`}
                                         className="flex align-items-center justify-content-between p-3 mb-2 bg-white border-round-lg shadow-1"
                                     >
                                         <div className="flex align-items-center">
