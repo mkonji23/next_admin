@@ -222,6 +222,17 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete, onCopyTo
                                             </>
                                         )}
 
+                                        <Tooltip target="#tooltipIsRead" />
+                                        <Tag
+                                            id="tooltipIsRead"
+                                            icon={selectedShare.isRead ? 'pi pi-check-circle' : 'pi pi-times-circle'}
+                                            value={selectedShare.isRead ? '본인확인' : '미확인'}
+                                            severity={selectedShare.isRead ? 'success' : 'danger'}
+                                            data-pr-tooltip="학생칭찬현황에서 확인했는지 여부"
+                                            data-pr-position="top"
+                                            style={{ minWidth: '90px' }}
+                                        />
+
                                         <Tooltip target="#tooltipVisit" />
                                         <Tag
                                             id="tooltipVisit"

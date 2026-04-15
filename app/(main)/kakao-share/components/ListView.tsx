@@ -299,6 +299,16 @@ const ListView = ({
         );
     };
 
+    const isReadBodyTemplate = (rowData: ShareItem) => {
+        return (
+            <Tag
+                value={rowData.isRead ? '확인' : '미확인'}
+                severity={rowData.isRead ? 'success' : 'danger'}
+                style={{ minWidth: '70px' }}
+            />
+        );
+    };
+
     const visitCountBodyTemplate = (rowData: ShareItem) => {
         return (
             <div className="flex align-items-center gap-2">
@@ -490,6 +500,14 @@ const ListView = ({
                     body={openStatusBodyTemplate}
                     sortable
                     headerStyle={{ minWidth: '150px' }}
+                />
+                <Column
+                    field="isRead"
+                    headerTooltip="학생칭찬현황에서 확인했는지 여부"
+                    header="본인확인여부"
+                    body={isReadBodyTemplate}
+                    sortable
+                    headerStyle={{ minWidth: '130px' }}
                 />
                 <Column
                     field="totalOpenCount"
