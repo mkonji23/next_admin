@@ -87,6 +87,9 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
                     if (formData.delta) multipartData.append('delta', JSON.stringify(formData.delta));
 
                     // 학생 정보 추가
+                    multipartData.append('autoYear', formData.autoYear || '');
+                    multipartData.append('autoMonth', formData.autoMonth || '');
+                    multipartData.append('autoWeek', formData.autoWeek || '');
                     multipartData.append('classId', formData.classId);
                     multipartData.append('studentId', formData.studentId);
                     multipartData.append('shareImageUrls', JSON.stringify(formData.shareImageUrls));
@@ -114,7 +117,10 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
                         studentName: formData.studentName,
                         telNo: formData.telNo,
                         pTelNo: formData.pTelNo,
-                        shareImageUrls: JSON.stringify(formData.shareImageUrls)
+                        shareImageUrls: JSON.stringify(formData.shareImageUrls),
+                        autoYear: formData.autoYear || '',
+                        autoMonth: formData.autoMonth || '',
+                        autoWeek: formData.autoWeek || ''
                     };
 
                     await http.post(`/choiMath/share/update/${selectedShare._id}`, updateData);
