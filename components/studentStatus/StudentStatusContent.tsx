@@ -38,33 +38,42 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
     const [aiProgress, setAiProgress] = useState(0);
     const [praiseTopRankers, setPraiseTopRankers] = useState<any[]>([]);
     const [totalHomeworkAvg, setTotalHomeworkAvg] = useState<number>(0);
-    const [profileImage, setProfileImage] = useState<string>('');
+    const [profileImage, setProfileImage] = useState<string>(studentAuthData?.profile || '');
     const [showProfileDialog, setShowProfileDialog] = useState(false);
 
-    // 사용 가능한 프로필 아이콘 목록 (public/icons/profiles/ 폴더에 png 파일들이 있다고 가정)
+    // 사용 가능한 프로필 아이콘 목록 (public/icons/profiles/ 폴더에 JPG 파일들이 있다고 가정)
     const profileIcons = [
-        { name: '기본', value: '/icons/profiles/default.png' },
-        { name: '아이콘 1', value: '/icons/profiles/profile1.png' },
-        { name: '아이콘 2', value: '/icons/profiles/profile2.png' },
-        { name: '아이콘 3', value: '/icons/profiles/profile3.png' },
-        { name: '아이콘 4', value: '/icons/profiles/profile4.png' },
-        { name: '아이콘 5', value: '/icons/profiles/profile5.png' },
-        { name: '아이콘 6', value: '/icons/profiles/profile6.png' },
-        { name: '아이콘 7', value: '/icons/profiles/profile7.png' }
+        { name: '아이콘 1', value: '/icons/profiles/profile1.JPG' },
+        { name: '아이콘 2', value: '/icons/profiles/profile2.JPG' },
+        { name: '아이콘 3', value: '/icons/profiles/profile3.JPG' },
+        { name: '아이콘 4', value: '/icons/profiles/profile4.JPG' },
+        { name: '아이콘 5', value: '/icons/profiles/profile5.JPG' },
+        { name: '아이콘 6', value: '/icons/profiles/profile6.JPG' },
+        { name: '아이콘 7', value: '/icons/profiles/profile7.JPG' },
+        { name: '아이콘 8', value: '/icons/profiles/profile8.JPG' },
+        { name: '아이콘 9', value: '/icons/profiles/profile9.JPG' },
+        { name: '아이콘 10', value: '/icons/profiles/profile10.JPG' },
+        { name: '아이콘 11', value: '/icons/profiles/profile11.JPG' },
+        { name: '아이콘 12', value: '/icons/profiles/profile12.JPG' },
+        { name: '아이콘 13', value: '/icons/profiles/profile13.JPG' },
+        { name: '아이콘 14', value: '/icons/profiles/profile14.JPG' },
+        { name: '아이콘 15', value: '/icons/profiles/profile15.JPG' },
+        { name: '아이콘 16', value: '/icons/profiles/profile16.JPG' },
+        { name: '아이콘 17', value: '/icons/profiles/profile17.JPG' }
     ];
     const finalStudentId = studentAuthData?.studentId;
 
     useEffect(() => {
-        // 로컬 스토리지에서 저장된 프로필 이미지 불러오기
-        const savedProfile = localStorage.getItem(`profile_${finalStudentId}`);
-        if (savedProfile) {
-            setProfileImage(savedProfile);
-        }
+        setProfileImage(studentAuthData?.profile || '/icons/profiles/profile16.JPG');
     }, [finalStudentId]);
 
     const handleProfileChange = (imgUrl: string) => {
         setProfileImage(imgUrl);
-        localStorage.setItem(`profile_${finalStudentId}`, imgUrl);
+        http.post(
+            '/choiMath/student/updateStudent',
+            { studentId: finalStudentId, profile: imgUrl },
+            { disableLoading: true }
+        );
         setShowProfileDialog(false);
     };
 

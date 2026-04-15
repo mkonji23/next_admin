@@ -16,6 +16,7 @@ export interface StudentAuthData {
     school?: string;
     grade?: string;
     phoneNumber?: string;
+    profile?: string;
 }
 
 const withStudentAuth = <P extends object>(
