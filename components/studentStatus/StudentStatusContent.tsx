@@ -581,7 +581,7 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                     <div className="flex align-items-center justify-content-between">
                         <div className="flex align-items-center gap-3">
                             <div
-                                className="w-4rem h-4rem border-circle bg-blue-100 flex align-items-center justify-content-center cursor-pointer hover:shadow-2 transition-duration-200 overflow-hidden"
+                                className="w-4rem h-4rem flex-shrink-0 border-circle bg-blue-100 flex align-items-center justify-content-center cursor-pointer hover:shadow-2 transition-duration-200 overflow-hidden"
                                 onClick={() => setShowProfileDialog(true)}
                                 title="프로필 변경"
                             >
