@@ -43,12 +43,14 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
 
     // 사용 가능한 프로필 아이콘 목록 (public/icons/profiles/ 폴더에 png 파일들이 있다고 가정)
     const profileIcons = [
-        { name: '기본', value: '' },
+        { name: '기본', value: '/icons/profiles/default.png' },
         { name: '아이콘 1', value: '/icons/profiles/profile1.png' },
         { name: '아이콘 2', value: '/icons/profiles/profile2.png' },
         { name: '아이콘 3', value: '/icons/profiles/profile3.png' },
         { name: '아이콘 4', value: '/icons/profiles/profile4.png' },
-        { name: '아이콘 5', value: '/icons/profiles/profile5.png' }
+        { name: '아이콘 5', value: '/icons/profiles/profile5.png' },
+        { name: '아이콘 6', value: '/icons/profiles/profile6.png' },
+        { name: '아이콘 7', value: '/icons/profiles/profile7.png' }
     ];
     const finalStudentId = studentAuthData?.studentId;
 
