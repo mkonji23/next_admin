@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { Card } from 'primereact/card';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
-import { Button } from 'primereact/button';
 import { useHttp } from '@/util/axiosInstance';
 import dayjs from 'dayjs';
 
@@ -26,11 +25,7 @@ const WeeklyReportList = ({ studentId }: WeeklyReportListProps) => {
     const fetchReports = async () => {
         setLoading(true);
         try {
-            const res = await http.get('/choiMath/share/list', {
-                params: {
-                    shareCount: { $gt: 0 }
-                }
-            });
+            const res = await http.get('/choiMath/share/list');
             const allShares = res.data || [];
 
             // 학생 본인의 리포트만 필터링
@@ -47,24 +42,21 @@ const WeeklyReportList = ({ studentId }: WeeklyReportListProps) => {
         }
     };
 
-    const viewReport = (id: string) => {
+    const viewReport = (publicUrl: string) => {
+        if (!publicUrl) return;
         // 학생/학부모 뷰 페이지로 이동
-        window.open(`/kakao-share/public-view/${id}`, '_blank');
+        window.open(`/kakao-share/public-view/${publicUrl}`, '_blank');
     };
 
-    const actionTemplate = (rowData: any) => {
+    const titleTemplate = (rowData: any) => {
         return (
-            <Button
-                icon="pi pi-external-link"
-                label="보기"
-                className="p-button-text p-button-sm"
+            <span
+                className="text-blue-500 font-bold cursor-pointer hover:underline"
                 onClick={() => viewReport(rowData.publicUrl)}
-            />
+            >
+                {rowData.shareTitle}
+            </span>
         );
-    };
-
-    const dateTemplate = (rowData: any) => {
-        return dayjs(rowData.createdDate).format('YYYY-MM-DD');
     };
 
     return (
@@ -78,9 +70,7 @@ const WeeklyReportList = ({ studentId }: WeeklyReportListProps) => {
                     paginator
                     rows={5}
                 >
-                    <Column field="shareTitle" header="제목" />
-                    <Column field="createdDate" header="등록일" body={dateTemplate} style={{ width: '120px' }} />
-                    <Column body={actionTemplate} style={{ width: '120px', textAlign: 'center' }} />
+                    <Column field="shareTitle" header="제목" body={titleTemplate} />
                 </DataTable>
             </Card>
         </div>
