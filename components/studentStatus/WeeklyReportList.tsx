@@ -25,7 +25,7 @@ const WeeklyReportList = ({ studentId }: WeeklyReportListProps) => {
     const fetchReports = async () => {
         setLoading(true);
         try {
-            const res = await http.get('/choiMath/share/list');
+            const res = await http.get('/choiMath/share/list', { disableLoading: true });
             const allShares = res.data || [];
 
             // 학생 본인의 리포트만 필터링
