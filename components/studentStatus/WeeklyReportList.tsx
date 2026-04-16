@@ -25,7 +25,10 @@ const WeeklyReportList = ({ studentId }: WeeklyReportListProps) => {
     const fetchReports = async () => {
         setLoading(true);
         try {
-            const res = await http.get('/choiMath/share/list', { disableLoading: true });
+            const res = await http.get('/choiMath/share/list', {
+                params: { shareCount: { $gt: 0 }, studentId: studentId },
+                disableLoading: true
+            });
             const allShares = res.data || [];
 
             // 학생 본인의 리포트만 필터링
@@ -49,13 +52,31 @@ const WeeklyReportList = ({ studentId }: WeeklyReportListProps) => {
     };
 
     const titleTemplate = (rowData: any) => {
+        console.log('rowData', !rowData.isRead);
+        console.log('rowData', rowData.isRead === false);
         return (
-            <span
-                className="text-blue-500 font-bold cursor-pointer hover:underline"
-                onClick={() => viewReport(rowData.publicUrl)}
-            >
-                {rowData.shareTitle}
-            </span>
+            <div className="flex align-items-center gap-2">
+                <span
+                    className="text-blue-500 font-bold cursor-pointer hover:underline"
+                    onClick={() => viewReport(rowData.publicUrl)}
+                >
+                    {rowData.shareTitle}
+                </span>
+                {!rowData?.isRead && (
+                    <span
+                        className="bg-red-500 text-white flex align-items-center justify-content-center font-bold"
+                        style={{
+                            borderRadius: '50%',
+                            width: '1.2rem',
+                            height: '1.2rem',
+                            fontSize: '0.7rem',
+                            flexShrink: 0
+                        }}
+                    >
+                        N
+                    </span>
+                )}
+            </div>
         );
     };
 

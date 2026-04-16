@@ -148,6 +148,10 @@ const ListView = ({
         }
     };
 
+    const handleEditAutoTemplateClick = async () => {
+        await openModal({ id: 'editAutoTemplate' });
+    };
+
     const formatDate = (dateStr?: string) => {
         if (!dateStr) return '';
         const date = new Date(dateStr);
@@ -450,6 +454,15 @@ const ListView = ({
                         icon="pi pi-trash"
                         className="white-space-nowrap flex-1 sm:flex-none"
                         onClick={handleDeleteTemplateClick}
+                    />
+                    <Button
+                        severity="warning"
+                        label="마스터 템플릿 수정"
+                        tooltipOptions={{ position: 'bottom' }}
+                        tooltip="자동 생성 시 적용될 기본 내용을 수정합니다."
+                        icon="pi pi-cog"
+                        className="white-space-nowrap flex-1 sm:flex-none"
+                        onClick={handleEditAutoTemplateClick}
                     />
                 </div>
             </div>

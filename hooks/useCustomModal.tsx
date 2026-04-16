@@ -10,6 +10,7 @@ import { ModalConfig, ModalContextType, ModalProviderProps, ModalState, OpenModa
 import StudentSelectModal from '@/components/modals/StudentSelectModal';
 import ShareTemplateModal from '@/components/modals/ShareTemplateModal';
 import DeleteTemplateModal from '@/components/modals/DeleteTemplateModal';
+import EditAutoTemplateModal from '@/components/modals/EditAutoTemplateModal';
 
 export type { ModalConfig } from '@/types/modal';
 
@@ -45,6 +46,7 @@ export const ModalProvider = ({ children }: ModalProviderProps) => {
         registerModal({ id: 'todoDetailModal', component: ToDoDetailModal });
         registerModal({ id: 'shareTemplate', component: ShareTemplateModal });
         registerModal({ id: 'deleteTemplate', component: DeleteTemplateModal });
+        registerModal({ id: 'editAutoTemplate', component: EditAutoTemplateModal });
 
         // 여기에 다른 모달들을 추가할 수 있습니다
     }, [registerModal]);
