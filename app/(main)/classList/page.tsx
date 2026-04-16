@@ -317,56 +317,58 @@ const ClassListPage = () => {
         );
     };
 
-    const header = (
-        <div className="flex flex-wrap align-items-center justify-content-between gap-2">
-            <span className="text-xl text-900 font-bold">클래스 목록</span>
-            <div className="flex gap-2">
-                <Button
-                    icon="pi pi-plus"
-                    rounded
-                    raised
-                    label="신규"
-                    onClick={openNewClassDialog}
-                    className="p-button-info"
-                />
-                <Button
-                    icon="pi pi-play"
-                    rounded
-                    raised
-                    label="개강"
-                    onClick={handleOpenClasses}
-                    className="p-button-success"
-                    disabled={selectedClasses.length === 0}
-                />
-                <Button
-                    icon="pi pi-stop"
-                    rounded
-                    raised
-                    label="종강"
-                    onClick={handleCloseClasses}
-                    className="p-button-warning"
-                    disabled={selectedClasses.length === 0}
-                />
-                <Button
-                    icon="pi pi-trash"
-                    rounded
-                    raised
-                    label="삭제"
-                    onClick={handleDeleteClasses}
-                    className="p-button-danger"
-                    disabled={selectedClasses.length === 0}
-                />
-                <Button
-                    icon="pi pi-search"
-                    rounded
-                    raised
-                    label="조회"
-                    onClick={fetchClasses}
-                    className="p-button-success"
-                />
+    const header = (rowData) => {
+        return (
+            <div className="flex flex-wrap align-items-center justify-content-between gap-2">
+                <span className="text-xl text-900 font-bold">클래스 목록({rowData?.props?.value?.length}개)</span>
+                <div className="flex gap-2">
+                    <Button
+                        icon="pi pi-plus"
+                        rounded
+                        raised
+                        label="신규"
+                        onClick={openNewClassDialog}
+                        className="p-button-info"
+                    />
+                    <Button
+                        icon="pi pi-play"
+                        rounded
+                        raised
+                        label="개강"
+                        onClick={handleOpenClasses}
+                        className="p-button-success"
+                        disabled={selectedClasses.length === 0}
+                    />
+                    <Button
+                        icon="pi pi-stop"
+                        rounded
+                        raised
+                        label="종강"
+                        onClick={handleCloseClasses}
+                        className="p-button-warning"
+                        disabled={selectedClasses.length === 0}
+                    />
+                    <Button
+                        icon="pi pi-trash"
+                        rounded
+                        raised
+                        label="삭제"
+                        onClick={handleDeleteClasses}
+                        className="p-button-danger"
+                        disabled={selectedClasses.length === 0}
+                    />
+                    <Button
+                        icon="pi pi-search"
+                        rounded
+                        raised
+                        label="조회"
+                        onClick={fetchClasses}
+                        className="p-button-success"
+                    />
+                </div>
             </div>
-        </div>
-    );
+        );
+    };
 
     return (
         <div className="card">
@@ -399,8 +401,22 @@ const ClassListPage = () => {
                 ></Column>
                 <Column field="teacher" header="선생님" sortable filter headerStyle={{ minWidth: '100px' }}></Column>
                 <Column field="description" header="설명" filter headerStyle={{ minWidth: '250px' }}></Column>
-                <Column field="startDate" header="개강일시" sortable filter body={startDateBodyTemplate} headerStyle={{ minWidth: '150px' }}></Column>
-                <Column field="endDate" header="종강일시" sortable filter body={endDateBodyTemplate} headerStyle={{ minWidth: '150px' }}></Column>
+                <Column
+                    field="startDate"
+                    header="개강일시"
+                    sortable
+                    filter
+                    body={startDateBodyTemplate}
+                    headerStyle={{ minWidth: '150px' }}
+                ></Column>
+                <Column
+                    field="endDate"
+                    header="종강일시"
+                    sortable
+                    filter
+                    body={endDateBodyTemplate}
+                    headerStyle={{ minWidth: '150px' }}
+                ></Column>
                 <Column field="isClosed" header="상태" sortable filter body={isClosedBodyTemplate}></Column>
                 <Column body={actionBodyTemplate} header="작업" headerStyle={{ minWidth: '10rem' }}></Column>
             </DataTable>
