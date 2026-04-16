@@ -371,7 +371,9 @@ const AttendancePage = () => {
                         <h5>출석부</h5>
                         <div className="grid formgrid p-fluid mb-3 force-horizontal pb-2">
                             <div className="field col-12 md:col-4 no-shrink min-w-300">
-                                <label htmlFor="class-selector">수업클래스 선택</label>
+                                <label htmlFor="class-selector">
+                                    수업클래스 선택 <span className="text-red-500 ml-1">*</span>
+                                </label>
                                 <Dropdown
                                     id="class-selector"
                                     value={selectedClass}
@@ -385,7 +387,9 @@ const AttendancePage = () => {
                                 />
                             </div>
                             <div className="field col-12 md:col-3 no-shrink min-w-200">
-                                <label htmlFor="monthpicker">월 선택</label>
+                                <label htmlFor="monthpicker">
+                                    월 선택 <span className="text-red-500 ml-1">*</span>
+                                </label>
                                 <Calendar
                                     id="monthpicker"
                                     value={date}
