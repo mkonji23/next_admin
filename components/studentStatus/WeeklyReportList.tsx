@@ -52,8 +52,6 @@ const WeeklyReportList = ({ studentId }: WeeklyReportListProps) => {
     };
 
     const titleTemplate = (rowData: any) => {
-        console.log('rowData', !rowData.isRead);
-        console.log('rowData', rowData.isRead === false);
         return (
             <div className="flex align-items-center gap-2">
                 <span

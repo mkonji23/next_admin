@@ -679,6 +679,7 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                     style={{ width: '90vw', maxWidth: '400px' }}
                     draggable={false}
                     resizable={false}
+                    dismissableMask
                 >
                     <div className="grid justify-content-center gap-3 py-3">
                         {profileIcons.map((icon, idx) => (
