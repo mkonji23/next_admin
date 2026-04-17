@@ -21,7 +21,6 @@ export const CustomEditor = forwardRef<CustomEditorRef, CustomEditorProps>(
     ({ value, delta, onChange, style, placeholder, readOnly }, ref) => {
         const contentRef = useRef<Editor>(null);
         const editorLoad = useRef(false);
-        const [source, setSource] = useState('');
 
         // 부모 컴포넌트에 메서드 노출
         useImperativeHandle(ref, () => ({
@@ -66,7 +65,6 @@ export const CustomEditor = forwardRef<CustomEditorRef, CustomEditorProps>(
                         textValue: e.textValue || '',
                         delta: fullDelta
                     });
-                setSource(e.source);
             }
         };
 
@@ -109,21 +107,25 @@ export const CustomEditor = forwardRef<CustomEditorRef, CustomEditorProps>(
         useEffect(() => {
             if (contentRef.current && editorLoad.current) {
                 const quill = contentRef.current.getQuill();
-                if (quill && source !== 'user') {
+                if (quill) {
                     let parsedDelta = delta;
-                    if (typeof delta === 'string') {
+                    if (typeof delta === 'string' && delta.trim() !== '') {
                         try {
                             parsedDelta = JSON.parse(delta);
                         } catch (e) {
-                            console.error('Failed to parse delta', e);
+                            // JSON 형식이 아니면 일반 텍스트로 처리될 것이므로 무시
                         }
                     }
-                    const ops = parsedDelta?.ops ? parsedDelta.ops : [{ insert: value || '' }];
-                    // 현재 에디터 내용과 새로 들어온 내용이 다를 때만 업데이트 (무한 루프 방지)
-                    quill.setContents(ops, 'api');
+                    const newOps = parsedDelta?.ops ? parsedDelta.ops : [{ insert: value || '' }];
+                    const currentContents = quill.getContents();
+
+                    // 현재 에디터 내용과 새로 들어온 내용이 다를 때만 업데이트 (무한 루프 및 커서 튐 방지)
+                    if (JSON.stringify(currentContents.ops) !== JSON.stringify(newOps)) {
+                        quill.setContents(newOps, 'api');
+                    }
                 }
             }
-        }, [value, delta, editorLoad.current, contentRef.current]);
+        }, [value, delta, editorLoad.current]);
 
         return (
             <Editor

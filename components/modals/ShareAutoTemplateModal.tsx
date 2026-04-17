@@ -108,6 +108,13 @@ const ShareAutoTemplateModal = ({ visible, onClose }: ShareAutoTemplateModalProp
                     templateId: templateId
                 }));
             }
+        } else {
+            setTemplate((prev) => ({
+                ...prev,
+                postContent: '',
+                postContentDelta: null,
+                templateId: null
+            }));
         }
     };
 
@@ -295,13 +302,15 @@ const ShareAutoTemplateModal = ({ visible, onClose }: ShareAutoTemplateModalProp
                     ref={editorRef}
                     value={template.postContent}
                     delta={template.postContentDelta}
-                    onChange={(data) =>
+                    onChange={(data) => {
                         setTemplate((prev) => ({
                             ...prev,
                             postContent: data.textValue,
                             postContentDelta: data.delta
-                        }))
-                    }
+                        }));
+                        // 사용자가 직접 수정하면 템플릿 선택 초기화
+                        setSelectedTemplateId(null);
+                    }}
                     style={{ height: '300px' }}
                 />
             </div>
