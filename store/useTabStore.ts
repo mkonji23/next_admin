@@ -13,6 +13,8 @@ interface TabState {
     addTab: (tab: Tab) => void;
     removeTab: (tabId: string) => void;
     setActiveTab: (tabId: string) => void;
+    clearTabs: () => void;
+    reorderTabs: (startIndex: number, endIndex: number) => void;
 }
 
 export const useTabStore = create<TabState>((set) => ({
@@ -50,5 +52,13 @@ export const useTabStore = create<TabState>((set) => ({
                 activeTab: newActiveTab
             };
         }),
-    setActiveTab: (tabId) => set({ activeTab: tabId })
+    setActiveTab: (tabId) => set({ activeTab: tabId }),
+    clearTabs: () => set({ tabs: [], activeTab: null }),
+    reorderTabs: (startIndex, endIndex) =>
+        set((state) => {
+            const newTabs = [...state.tabs];
+            const [removed] = newTabs.splice(startIndex, 1);
+            newTabs.splice(endIndex, 0, removed);
+            return { tabs: newTabs };
+        })
 }));

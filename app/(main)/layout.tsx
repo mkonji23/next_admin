@@ -34,10 +34,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
     };
 
     return (
-        <Layout>
-            <AliveScope>
+        <AliveScope>
+            <Layout>
                 <TabbedView initialTab={initialTab} />
-            </AliveScope>
-        </Layout>
+            </Layout>
+        </AliveScope>
     );
 }

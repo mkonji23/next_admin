@@ -457,7 +457,7 @@ const ListView = ({
                     />
                     <Button
                         severity="warning"
-                        label="마스터 템플릿 수정"
+                        label="자동 템플릿 수정"
                         tooltipOptions={{ position: 'bottom' }}
                         tooltip="자동 생성 시 적용될 기본 내용을 수정합니다."
                         icon="pi pi-cog"

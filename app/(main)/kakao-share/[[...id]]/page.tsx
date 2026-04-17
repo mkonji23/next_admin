@@ -135,6 +135,9 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
                 multipartData.append('shareContent', formData.shareContent || '');
                 multipartData.append('actualTitle', formData.actualTitle);
                 multipartData.append('actualContent', formData.actualContent || '');
+                multipartData.append('autoYear', formData.autoYear || '');
+                multipartData.append('autoMonth', formData.autoMonth || '');
+                multipartData.append('autoWeek', formData.autoWeek || '');
                 multipartData.append('delta', JSON.stringify(formData.delta || null));
 
                 // 학생 정보 추가

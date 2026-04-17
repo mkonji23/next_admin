@@ -21,7 +21,8 @@ export const AppMenuModel: AppMenuItem[] = [
     {
         label: 'Share',
         items: [
-            { label: '카카오 공유 게시판', icon: 'pi pi-fw pi-share-alt', to: '/kakao-share' }
+            { label: '카카오 공유 게시판', icon: 'pi pi-fw pi-share-alt', to: '/kakao-share' },
+            { label: '공유 템플릿 관리', icon: 'pi pi-fw pi-copy', to: '/kakao-share-template' }
             // { label: '토큰 발급(X)', icon: 'pi pi-fw pi-key', to: '/settings/kakao' }
         ]
     },

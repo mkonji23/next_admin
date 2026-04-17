@@ -34,8 +34,12 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete, onCopyTo
     const { handleClose } = useLightboxHistory(open, setOpen);
 
     useEffect(() => {
-        const handlePopState = () => {
-            onBack();
+        const handlePopState = (event: PopStateEvent) => {
+            // 만약 현재 lightbox가 열려있는 상태라면 useLightboxHistory가 처리하도록 둠
+            // lightbox 상태가 pop되면서 detailView 상태로 돌아오는 것인지 확인
+            if (!event.state || !event.state.detailView) {
+                onBack();
+            }
         };
 
         // 상세 뷰 진입 시 히스토리 상태 추가
@@ -44,18 +48,11 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete, onCopyTo
 
         return () => {
             window.removeEventListener('popstate', handlePopState);
-            // 컴포넌트가 언마운트될 때 (onBack이 아닌 다른 이유로 unmount 시) 
-            // 만약 히스토리에 여전히 detailView 상태가 있다면 정리해주는 것이 좋으나, 
-            // 단순 뷰 전환 구조에서는 popstate가 onBack을 호출하므로 자연스럽게 처리됩니다.
         };
     }, [onBack]);
 
     const handleBackClick = () => {
-        if (window.history.state?.detailView) {
-            window.history.back();
-        } else {
-            onBack();
-        }
+        onBack();
     };
 
     if (!selectedShare) return null;
@@ -177,11 +174,20 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete, onCopyTo
                                                     <div
                                                         id="detail-new-tag"
                                                         className="flex align-items-center justify-content-center border-circle bg-blue-500 text-white font-bold"
-                                                        style={{ width: '22px', height: '22px', fontSize: '12px', cursor: 'help' }}
+                                                        style={{
+                                                            width: '22px',
+                                                            height: '22px',
+                                                            fontSize: '12px',
+                                                            cursor: 'help'
+                                                        }}
                                                     >
                                                         N
                                                     </div>
-                                                    <Tooltip target="#detail-new-tag" content="오늘 등록된 새 게시글" position="top" />
+                                                    <Tooltip
+                                                        target="#detail-new-tag"
+                                                        content="오늘 등록된 새 게시글"
+                                                        position="top"
+                                                    />
                                                 </>
                                             )}
                                             {isAuto && (
@@ -189,11 +195,20 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete, onCopyTo
                                                     <div
                                                         id="detail-auto-tag"
                                                         className="flex align-items-center justify-content-center border-circle bg-orange-500 text-white font-bold"
-                                                        style={{ width: '22px', height: '22px', fontSize: '12px', cursor: 'help' }}
+                                                        style={{
+                                                            width: '22px',
+                                                            height: '22px',
+                                                            fontSize: '12px',
+                                                            cursor: 'help'
+                                                        }}
                                                     >
                                                         A
                                                     </div>
-                                                    <Tooltip target="#detail-auto-tag" content="자동 생성 데이터" position="top" />
+                                                    <Tooltip
+                                                        target="#detail-auto-tag"
+                                                        content="자동 생성 데이터"
+                                                        position="top"
+                                                    />
                                                 </>
                                             )}
                                         </div>

@@ -296,7 +296,7 @@ const PraiseStatisticsPage = () => {
                         expandedRows={expandedRows}
                         onRowToggle={(e) => setExpandedRows(e.data)}
                         rowExpansionTemplate={rowExpansionTemplate}
-                        dataKey="studentId"
+                        dataKey="studentName"
                         emptyMessage="조회된 데이터가 없습니다."
                         header={header}
                         paginator

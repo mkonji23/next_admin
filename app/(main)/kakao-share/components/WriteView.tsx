@@ -284,6 +284,9 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
                                             options={years}
                                             placeholder="년도 선택"
                                             className={meta.touched && meta.error ? 'p-invalid' : ''}
+                                            onChange={(e) => {
+                                                input.onChange(e.value);
+                                            }}
                                         />
                                         {meta.touched && meta.error && <small className="p-error">{meta.error}</small>}
                                     </>
@@ -384,7 +387,6 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
                                             }
                                             onChange={(selectedStudent) => {
                                                 if (selectedStudent) {
-                                                    console.log('selectedStudent', selectedStudent);
                                                     form.change('studentId', selectedStudent.studentId);
                                                     form.change('studentName', selectedStudent.name);
                                                     form.change('telNo', selectedStudent.phoneNumber || '');

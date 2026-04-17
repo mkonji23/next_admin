@@ -20,8 +20,9 @@ interface TabbedViewProps {
 
 const TabbedView = ({ initialTab }: TabbedViewProps) => {
     // children prop 제거
-    const { tabs, activeTab, addTab, removeTab, setActiveTab } = useTabStore();
+    const { tabs, activeTab, addTab, removeTab, setActiveTab, reorderTabs, clearTabs } = useTabStore();
     const [activeIndex, setActiveIndex] = useState(0);
+    const [draggedTabIndex, setDraggedTabIndex] = useState<number | null>(null);
     const router = useRouter();
     const currentPathname = usePathname();
     const { drop } = useAliveController();
@@ -89,13 +90,34 @@ const TabbedView = ({ initialTab }: TabbedViewProps) => {
     const scrollTabs = (direction: 'left' | 'right') => {
         if (scrollRef.current) {
             const scrollAmount = 300;
-            const targetScroll =
-                scrollRef.current.scrollLeft + (direction === 'left' ? -scrollAmount : scrollAmount);
+            const targetScroll = scrollRef.current.scrollLeft + (direction === 'left' ? -scrollAmount : scrollAmount);
             scrollRef.current.scrollTo({
                 left: targetScroll,
                 behavior: 'smooth'
             });
         }
+    };
+
+    const handleDragStart = (index: number) => {
+        setDraggedTabIndex(index);
+    };
+
+    const handleDragOver = (e: React.DragEvent, index: number) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    };
+
+    const handleDrop = (index: number) => {
+        if (draggedTabIndex !== null && draggedTabIndex !== index) {
+            reorderTabs(draggedTabIndex, index);
+        }
+        setDraggedTabIndex(null);
+    };
+
+    const closeAllTabs = () => {
+        tabs.forEach((tab) => drop(tab.id));
+        clearTabs();
+        addTab(initialTab);
     };
 
     const menuItems: MenuItem[] = tabs.map((tab, index) => ({
@@ -106,13 +128,20 @@ const TabbedView = ({ initialTab }: TabbedViewProps) => {
             <div
                 className={options.className}
                 onClick={options.onClick}
+                draggable
+                onDragStart={() => handleDragStart(index)}
+                onDragOver={(e) => handleDragOver(e, index)}
+                onDrop={() => handleDrop(index)}
+                onDragEnd={() => setDraggedTabIndex(null)}
                 style={{
                     display: 'flex',
                     alignItems: 'center',
-                    cursor: 'pointer',
+                    cursor: 'move',
                     whiteSpace: 'nowrap',
                     minWidth: 'max-content',
-                    height: '100%'
+                    height: '100%',
+                    opacity: draggedTabIndex === index ? 0.5 : 1,
+                    transition: 'opacity 0.2s'
                 }}
             >
                 {item.label}
@@ -189,6 +218,13 @@ const TabbedView = ({ initialTab }: TabbedViewProps) => {
                         icon="pi pi-chevron-right"
                         onClick={() => scrollTabs('right')}
                         className="p-button-text p-button-secondary no-shrink"
+                        style={{ height: '45px', width: '40px', borderRadius: 0, padding: 0, zIndex: 2 }}
+                    />
+                    <Button
+                        icon="pi pi-trash"
+                        onClick={closeAllTabs}
+                        title="모든 탭 닫기"
+                        className="p-button-text p-button-danger no-shrink"
                         style={{ height: '45px', width: '40px', borderRadius: 0, padding: 0, zIndex: 2 }}
                     />
                 </div>

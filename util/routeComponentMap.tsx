@@ -14,6 +14,7 @@ const routeMap: { [key: string]: React.LazyExoticComponent<React.ComponentType<a
     '/studentList': React.lazy(() => import('@/app/(main)/studentList/page')),
     '/classList': React.lazy(() => import('@/app/(main)/classList/page')),
     '/kakao-share': React.lazy(() => import('@/app/(main)/kakao-share/[[...id]]/page')),
+    '/kakao-share-template': React.lazy(() => import('@/app/(main)/kakao-share-template/page')),
     '/manual': React.lazy(() => import('@/app/(main)/manual/page')),
     '/dash': React.lazy(() => import('@/app/(main)/dash/page')),
     '/profile': React.lazy(() => import('@/app/(main)/profile/page')),
