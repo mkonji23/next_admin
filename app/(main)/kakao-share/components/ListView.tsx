@@ -455,7 +455,7 @@ const ListView = ({
                         className="white-space-nowrap flex-1 sm:flex-none"
                         onClick={handleDeleteTemplateClick}
                     />
-                    <Button
+                    {/* <Button
                         severity="warning"
                         label="자동 템플릿 수정"
                         tooltipOptions={{ position: 'bottom' }}
@@ -463,7 +463,7 @@ const ListView = ({
                         icon="pi pi-cog"
                         className="white-space-nowrap flex-1 sm:flex-none"
                         onClick={handleEditAutoTemplateClick}
-                    />
+                    /> */}
                 </div>
             </div>
             <DataTable
