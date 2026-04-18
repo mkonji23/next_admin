@@ -151,9 +151,10 @@ const EditAutoTemplateModal = ({ visible, onClose }: EditAutoTemplateModalProps)
             await http.post('/choiMath/share/update-auto', payload);
             showToast({ severity: 'success', summary: '성공', detail: '자동 공유 데이터가 대량 업데이트되었습니다.' });
             onClose(true);
-        } catch (error) {
-            console.error(error);
-            showToast({ severity: 'error', summary: '오류', detail: '저장에 실패했습니다.' });
+        } catch (error: any) {
+            console.error('Save error:', error);
+            const errMsg = error.response?.data?.message || error.message || '저장에 실패했습니다.';
+            showToast({ severity: 'error', summary: '오류', detail: errMsg });
         }
     };
 

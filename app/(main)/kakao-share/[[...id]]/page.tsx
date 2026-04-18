@@ -170,9 +170,10 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
             }
 
             fetchShares();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Save error:', error);
-            showToast({ severity: 'error', summary: '오류', detail: '저장에 실패했습니다.' });
+            const errMsg = error.response?.data?.message || error.message || '저장에 실패했습니다.';
+            showToast({ severity: 'error', summary: '오류', detail: errMsg });
         }
     };
 

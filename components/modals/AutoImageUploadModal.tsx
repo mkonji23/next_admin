@@ -183,8 +183,7 @@ const AutoImageUploadModal = ({ visible, onClose }: AutoImageUploadModalProps) =
         }
 
         setIsSaving(true);
-        let successCount = 0;
-        let failCount = 0;
+        const failedInfo: string[] = [];
 
         try {
             for (const item of changedStudents) {
@@ -209,16 +208,20 @@ const AutoImageUploadModal = ({ visible, onClose }: AutoImageUploadModalProps) =
                         headers: { 'Content-Type': 'multipart/form-data' }
                     });
                     successCount++;
-                } catch (err) {
-                    console.error(`Error saving student ${id}:`, err);
+                } catch (err: any) {
+                    console.error(`Error saving student ${item.studentName} (${id}):`, err);
+                    const errMsg = err.response?.data?.message || err.message || '알 수 없는 오류';
+                    failedInfo.push(`${item.studentName} (${errMsg})`);
                     failCount++;
                 }
             }
 
             showToast({
-                severity: successCount > 0 ? 'success' : 'error',
+                severity: failCount === 0 ? 'success' : successCount > 0 ? 'warn' : 'error',
                 summary: '저장 결과',
-                detail: `${successCount}건 저장 성공, ${failCount}건 실패`
+                detail: failCount > 0 
+                    ? `${successCount}건 성공, ${failCount}건 실패\n실패 항목: ${failedInfo.join(', ')}`
+                    : `${successCount}건 모두 성공적으로 저장되었습니다.`
             });
 
             if (successCount > 0) {
