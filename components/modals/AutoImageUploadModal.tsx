@@ -82,10 +82,12 @@ const AutoImageUploadModal = ({ visible, onClose }: AutoImageUploadModalProps) =
                     autoWeek: String(week)
                 }
             });
-            const data = (res.data || []).map((item: any) => ({
-                ...item,
-                shareStatus: (item.shareCount || 0) > 0 ? '공유완료' : '미공유'
-            }));
+            const data = (res.data || [])
+                .map((item: any) => ({
+                    ...item,
+                    shareStatus: (item.shareCount || 0) > 0 ? '공유완료' : '미공유'
+                }))
+                .sort((a: any, b: any) => a.studentName.localeCompare(b.studentName, 'ko'));
             setStudents(data);
             setOriginalStudents(JSON.parse(JSON.stringify(data)));
             setPendingFiles({});
@@ -228,10 +230,12 @@ const AutoImageUploadModal = ({ visible, onClose }: AutoImageUploadModalProps) =
                         autoWeek: String(week)
                     }
                 });
-                const data = (res.data || []).map((item: any) => ({
-                    ...item,
-                    shareStatus: (item.shareCount || 0) > 0 ? '공유완료' : '미공유'
-                }));
+                const data = (res.data || [])
+                    .map((item: any) => ({
+                        ...item,
+                        shareStatus: (item.shareCount || 0) > 0 ? '공유완료' : '미공유'
+                    }))
+                    .sort((a: any, b: any) => a.studentName.localeCompare(b.studentName, 'ko'));
                 setStudents(data);
                 setOriginalStudents(JSON.parse(JSON.stringify(data)));
                 setPendingFiles({});
@@ -414,7 +418,7 @@ const AutoImageUploadModal = ({ visible, onClose }: AutoImageUploadModalProps) =
                 slides={currentSlides}
                 plugins={[Zoom]}
                 portal={{ root: document.body }}
-                styles={{ root: { zIndex: 4000 } }}
+                styles={{ root: { zIndex: 9998 } }}
             />
         </>
     );

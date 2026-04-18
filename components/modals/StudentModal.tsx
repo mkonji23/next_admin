@@ -276,8 +276,8 @@ const StudentModal = ({ visible, pData, onClose }: StudentModalProps) => {
                 <InputText
                     id="phoneNumber"
                     value={student.phoneNumber || ''}
-                    onChange={(e) => setStudent({ ...student, phoneNumber: e.target.value })}
-                    placeholder="010-0000-0000"
+                    onChange={(e) => setStudent({ ...student, phoneNumber: e.target.value.replace(/[^0-9]/g, '') })}
+                    placeholder="01012345678"
                 />
             </div>
             <div className="field">
@@ -285,8 +285,8 @@ const StudentModal = ({ visible, pData, onClose }: StudentModalProps) => {
                 <InputText
                     id="parentPhoneNumber"
                     value={student.parentPhoneNumber || ''}
-                    onChange={(e) => setStudent({ ...student, parentPhoneNumber: e.target.value })}
-                    placeholder="010-0000-0000"
+                    onChange={(e) => setStudent({ ...student, parentPhoneNumber: e.target.value.replace(/[^0-9]/g, '') })}
+                    placeholder="01012345678"
                 />
             </div>
             {isEditMode && (

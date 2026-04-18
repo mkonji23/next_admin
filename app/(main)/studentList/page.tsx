@@ -87,8 +87,8 @@ const StudentListPage = () => {
                         name: item['이름']?.toString() || '',
                         grade: item['학년']?.toString() || '',
                         school: item['학교']?.toString() || '',
-                        phoneNumber: item['학생전화번호']?.toString() || '',
-                        parentPhoneNumber: item['학부모전화번호']?.toString() || '',
+                        phoneNumber: item['학생전화번호']?.toString().replace(/[^0-9]/g, '') || '',
+                        parentPhoneNumber: item['학부모전화번호']?.toString().replace(/[^0-9]/g, '') || '',
                         description: item['설명']?.toString() || '',
                         registDate:
                             item['등록일자(YYYYMMDD)']?.toString() ||
