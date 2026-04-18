@@ -43,6 +43,7 @@ const withStudentAuth = <P extends object>(
         const nameInputRef = useRef<HTMLInputElement>(null);
         const phoneInputRef = useRef<HTMLInputElement>(null);
         const passwordInputRef = useRef<HTMLInputElement>(null);
+        const [target, setTarget] = useState<'student' | 'parent' | ''>('');
 
         useEffect(() => {
             if (studentToken && storedStudentAuthData) {
@@ -80,16 +81,31 @@ const withStudentAuth = <P extends object>(
                 if (students && students.studentId) {
                     setFoundStudent(students);
                     setPassword('');
-                    if (students?.hasSimplePassword) {
-                        // 비밀번호 존재여부체크
-                        setAuthState('PASSWORD_VERIFY'); // Transition to password verification
-                    } else {
-                        showToast({
-                            severity: 'info',
-                            summary: '비밀번호 생성 필요',
-                            detail: '간편 비밀번호를 먼저 생성해주세요.'
-                        });
-                        setAuthState('PASSWORD_CREATE');
+                    setTarget(students.target);
+                    if (students.target === 'parent') {
+                        if (students?.hasParentSimplePassword) {
+                            // 비밀번호 존재여부체크
+                            setAuthState('PASSWORD_VERIFY'); // Transition to password verification
+                        } else {
+                            showToast({
+                                severity: 'info',
+                                summary: '비밀번호 생성 필요',
+                                detail: '간편 비밀번호를 먼저 생성해주세요.'
+                            });
+                            setAuthState('PASSWORD_CREATE');
+                        }
+                    } else if (students.target === 'student') {
+                        if (students?.hasSimplePassword) {
+                            // 비밀번호 존재여부체크
+                            setAuthState('PASSWORD_VERIFY'); // Transition to password verification
+                        } else {
+                            showToast({
+                                severity: 'info',
+                                summary: '비밀번호 생성 필요',
+                                detail: '간편 비밀번호를 먼저 생성해주세요.'
+                            });
+                            setAuthState('PASSWORD_CREATE');
+                        }
                     }
                 } else {
                     setError('일치하는 학생 정보가 없습니다. 이름과 전화번호를 다시 확인해주세요.');
@@ -120,7 +136,8 @@ const withStudentAuth = <P extends object>(
             try {
                 const res = await http.post('/choiMath/student/verifyPassword', {
                     studentId: foundStudent.studentId,
-                    password: password
+                    password: password,
+                    target: target
                 });
 
                 if (res.data.isValid) {
@@ -157,7 +174,8 @@ const withStudentAuth = <P extends object>(
             try {
                 await http.post('/choiMath/student/updatePassword', {
                     studentId: foundStudent.studentId,
-                    simplePassword: password
+                    simplePassword: password,
+                    target: target
                 });
 
                 showToast({
@@ -239,7 +257,12 @@ const withStudentAuth = <P extends object>(
         const renderPasswordVerify = () => (
             <div className="flex flex-column gap-3 mt-2">
                 <div className="text-center">
-                    <p className="text-lg font-bold text-blue-600">{foundStudent?.name}님, 안녕하세요!</p>
+                    {target === 'student' && (
+                        <p className="text-lg font-bold text-blue-600">{foundStudent?.name}님, 안녕하세요!</p>
+                    )}
+                    {target === 'parent' && (
+                        <p className="text-lg font-bold text-blue-600">{foundStudent?.name} 학부모님, 안녕하세요!</p>
+                    )}
                 </div>
                 <div className="flex flex-column gap-2">
                     <label className="text-sm font-semibold text-700" htmlFor="passwordInput">

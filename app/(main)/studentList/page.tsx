@@ -154,6 +154,26 @@ const StudentListPage = () => {
         }
     };
 
+    const handleResetParentPassword = async (student: Student) => {
+        const isConfirmed = await showConfirm({
+            header: '학부모 비밀번호 초기화',
+            message: `'${student.name}' 학생의 학부모 비밀번호를 초기화하시겠습니까?`
+        });
+
+        if (isConfirmed) {
+            try {
+                await http.post('/choiMath/student/resetPassword', {
+                    studentId: student.studentId,
+                    target: 'parent'
+                });
+                showToast({ severity: 'success', summary: '성공', detail: '학부모 비밀번호가 초기화되었습니다.' });
+                fetchStudents();
+            } catch (error) {
+                showToast({ severity: 'error', summary: '실패', detail: '초기화에 실패했습니다.' });
+            }
+        }
+    };
+
     const handleEnrollStudent = async (student: Student) => {
         const res = await showConfirm({ header: '입원', message: '입원 처리하시겠습니까?' });
         if (res) {
@@ -200,7 +220,15 @@ const StudentListPage = () => {
                 outlined
                 severity="help"
                 onClick={() => handleResetPassword(rowData)}
-                tooltip="비밀번호 초기화"
+                tooltip="학생 비밀번호 초기화"
+            />
+            <Button
+                icon="pi pi-key"
+                rounded
+                outlined
+                severity="warning"
+                onClick={() => handleResetParentPassword(rowData)}
+                tooltip="학부모 비밀번호 초기화"
             />
             {rowData.isWithdrawn ? (
                 <Button

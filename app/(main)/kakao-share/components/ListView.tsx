@@ -278,6 +278,17 @@ const ListView = ({
         return (
             <div className="flex align-items-center gap-2">
                 <Tag value={rowData.shareStatus} severity={hasShared ? 'success' : null} style={{ minWidth: '60px' }} />
+                <Button
+                    icon="pi pi-share-alt"
+                    className="p-button-rounded p-button-primary p-button-text"
+                    tooltip="카카오톡 공유"
+                    tooltipOptions={{ position: 'bottom' }}
+                    style={{ width: '2rem', height: '2rem' }}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onShare(rowData);
+                    }}
+                />
                 <span className="text-sm text-500">({rowData.shareCount || 0}회)</span>
             </div>
         );
@@ -360,16 +371,6 @@ const ListView = ({
                     onClick={(e) => {
                         e.stopPropagation();
                         copyLink(rowData, 'parent');
-                    }}
-                />
-                <Button
-                    icon="pi pi-share-alt"
-                    className="p-button-rounded p-button-primary p-button-text"
-                    tooltip="카카오톡 공유"
-                    tooltipOptions={{ position: 'bottom' }}
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onShare(rowData);
                     }}
                 />
             </div>
@@ -482,9 +483,15 @@ const ListView = ({
                     />
                 </div>
             </div>
+            <style>{`
+                .p-datatable .p-frozen-column {
+                    z-index: 100 !important;
+                }
+            `}</style>
             <DataTable
                 scrollable
                 showGridlines
+                tableStyle={{ minWidth: '2000px' }}
                 value={shares}
                 selectionMode="checkbox"
                 selection={selectedItems}
@@ -504,22 +511,37 @@ const ListView = ({
                 <Column
                     header="No."
                     body={(data, options) => options.rowIndex + 1}
-                    style={{ width: '1rem' }}
+                    style={{ width: '50px' }}
                     align={'right'}
+                    frozen
                 />
-                <Column selectionMode="multiple" headerStyle={{ width: '1rem' }}></Column>
-                <Column field="shareTitle" header="공유 제목 (카카오)" body={titleBodyTemplate} sortable />
-                <Column field="autoYear" header="년도" style={{ minWidth: '100px' }} sortable />
+                <Column
+                    selectionMode="multiple"
+                    headerStyle={{ width: '50px' }}
+                    style={{ width: '50px' }}
+                    frozen
+                ></Column>
+                <Column
+                    field="shareTitle"
+                    header="공유 제목 (카카오)"
+                    body={titleBodyTemplate}
+                    style={{ width: '250px' }}
+                    frozen
+                    sortable
+                />
+                <Column field="autoYear" header="년도" style={{ width: '100px' }} frozen sortable />
                 <Column
                     field="autoMonth"
                     header="월"
                     body={(rowData) => (rowData.autoMonth ? Number(rowData.autoMonth) : '')}
+                    style={{ width: '80px' }}
+                    frozen
                     sortable
                 />
-                <Column field="autoWeek" header="주차" style={{ minWidth: '100px' }} sortable />
+                <Column field="autoWeek" header="주차" style={{ width: '80px' }} frozen sortable />
                 {/* <Column field="actualTitle" header="게시글 제목" sortable /> */}
-                <Column field="studentName" header="학생" headerStyle={{ minWidth: '100px' }} sortable />
-                <Column field="className" header="클래스" headerStyle={{ minWidth: '120px' }} sortable />
+                <Column field="studentName" header="학생" headerStyle={{ minWidth: '120px' }} frozen sortable />
+                <Column field="className" header="클래스" headerStyle={{ minWidth: '120px' }} frozen sortable />
                 <Column field="telNo" header="학생 연락처" headerStyle={{ minWidth: '100px' }} sortable />
                 <Column field="pTelNo" header="학부모 연락처" headerStyle={{ minWidth: '150px' }} sortable />
                 <Column
@@ -528,7 +550,7 @@ const ListView = ({
                     header="공유상태"
                     body={statusBodyTemplate}
                     sortable
-                    headerStyle={{ minWidth: '150px' }}
+                    headerStyle={{ minWidth: '180px' }}
                 />
                 <Column
                     field="kakaoOpenCount"

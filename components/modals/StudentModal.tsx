@@ -134,6 +134,27 @@ const StudentModal = ({ visible, pData, onClose }: StudentModalProps) => {
         }
     };
 
+    const handleResetParentPassword = async () => {
+        if (!student.studentId) return;
+
+        const isConfirmed = await showConfirm({
+            header: '학부모 비밀번호 초기화',
+            message: `'${student.name}' 학생의 학부모 비밀번호를 초기화하시겠습니까?`
+        });
+
+        if (isConfirmed) {
+            try {
+                await http.post('/choiMath/student/resetPassword', {
+                    studentId: student.studentId,
+                    target: 'parent'
+                });
+                showToast({ severity: 'success', summary: '성공', detail: '학부모 비밀번호가 초기화되었습니다.' });
+            } catch (error) {
+                showToast({ severity: 'error', summary: '실패', detail: '초기화에 실패했습니다.' });
+            }
+        }
+    };
+
     const handleSave = async () => {
         setSubmitted(true);
 
@@ -271,13 +292,20 @@ const StudentModal = ({ visible, pData, onClose }: StudentModalProps) => {
             {isEditMode && (
                 <div className="field">
                     <label>간편 비밀번호</label>
-                    <div>
+                    <div className="flex gap-2">
                         <Button
                             type="button"
-                            label="비밀번호 초기화"
+                            label="학생 비밀번호 초기화"
                             icon="pi pi-key"
                             className="p-button-outlined p-button-help"
                             onClick={handleResetPassword}
+                        />
+                        <Button
+                            type="button"
+                            label="학부모 비밀번호 초기화"
+                            icon="pi pi-key"
+                            className="p-button-outlined p-button-warning"
+                            onClick={handleResetParentPassword}
                         />
                     </div>
                 </div>
