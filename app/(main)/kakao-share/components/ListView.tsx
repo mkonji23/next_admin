@@ -149,7 +149,14 @@ const ListView = ({
     };
 
     const handleEditAutoTemplateClick = async () => {
-        await openModal({ id: 'editAutoTemplate' });
+        const result = await openModal({ id: 'editAutoTemplate' });
+        if (result) {
+            onSearch();
+        }
+    };
+
+    const handleAutoImageUploadClick = async () => {
+        const result = await openModal({ id: 'autoImageUpload' });
     };
 
     const formatDate = (dateStr?: string) => {
@@ -447,6 +454,24 @@ const ListView = ({
                         onClick={handleTemplateClick}
                     />
                     <Button
+                        severity="warning"
+                        label="자동 템플릿 수정"
+                        tooltipOptions={{ position: 'bottom' }}
+                        tooltip="자동 생성 시 적용될 기본 내용을 수정합니다."
+                        icon="pi pi-cog"
+                        className="white-space-nowrap flex-1 sm:flex-none"
+                        onClick={handleEditAutoTemplateClick}
+                    />
+                    <Button
+                        severity="help"
+                        label="자동 템플릿 이미지"
+                        tooltipOptions={{ position: 'bottom' }}
+                        tooltip="학생별 자동 생성 게시글의 이미지를 업로드합니다."
+                        icon="pi pi-image"
+                        className="white-space-nowrap flex-1 sm:flex-none"
+                        onClick={handleAutoImageUploadClick}
+                    />
+                    <Button
                         severity="danger"
                         label="자동 템플릿 삭제"
                         tooltipOptions={{ position: 'bottom' }}
@@ -455,15 +480,6 @@ const ListView = ({
                         className="white-space-nowrap flex-1 sm:flex-none"
                         onClick={handleDeleteTemplateClick}
                     />
-                    {/* <Button
-                        severity="warning"
-                        label="자동 템플릿 수정"
-                        tooltipOptions={{ position: 'bottom' }}
-                        tooltip="자동 생성 시 적용될 기본 내용을 수정합니다."
-                        icon="pi pi-cog"
-                        className="white-space-nowrap flex-1 sm:flex-none"
-                        onClick={handleEditAutoTemplateClick}
-                    /> */}
                 </div>
             </div>
             <DataTable
@@ -493,6 +509,14 @@ const ListView = ({
                 />
                 <Column selectionMode="multiple" headerStyle={{ width: '1rem' }}></Column>
                 <Column field="shareTitle" header="공유 제목 (카카오)" body={titleBodyTemplate} sortable />
+                <Column field="autoYear" header="년도" style={{ minWidth: '100px' }} sortable />
+                <Column
+                    field="autoMonth"
+                    header="월"
+                    body={(rowData) => (rowData.autoMonth ? Number(rowData.autoMonth) : '')}
+                    sortable
+                />
+                <Column field="autoWeek" header="주차" style={{ minWidth: '100px' }} sortable />
                 {/* <Column field="actualTitle" header="게시글 제목" sortable /> */}
                 <Column field="studentName" header="학생" headerStyle={{ minWidth: '100px' }} sortable />
                 <Column field="className" header="클래스" headerStyle={{ minWidth: '120px' }} sortable />

@@ -44,10 +44,9 @@ const AttendanceTableHeader: React.FC<AttendanceTableHeaderProps> = ({
                     const dayStr: string = String(day).padStart(2, '0');
                     const currentDate: Date = new Date(year, month, day);
                     const dayOfWeek: number = currentDate.getDay();
-                    const dateStr: string = `${year}-${monthStr}-${dayStr}`;
 
                     const style: React.CSSProperties = { textAlign: 'center' };
-                    if (dayOfWeek === 0 || HOLIDAYS.includes(dateStr)) {
+                    if (dayOfWeek === 0) {
                         style.color = 'red';
                     } else if (dayOfWeek === 6) {
                         style.color = 'blue';

@@ -67,10 +67,54 @@ const EditAutoTemplateModal = ({ visible, onClose }: EditAutoTemplateModalProps)
         }
     };
 
-    // 년도, 월, 주차 선택 후 조회 버튼 클릭 시 (추후 API 연동)
+    // 년도, 월, 주차 선택 후 조회 버튼 클릭 시
     const handleSearch = async () => {
-        showToast({ severity: 'info', summary: '조회', detail: `${year}년 ${month}월 ${week}주차 데이터를 조회합니다.` });
-        // TODO: 특정 시점의 마스터 템플릿을 가져오는 API 호출
+        try {
+            const res = await http.get('/choiMath/share/get-auto-share', {
+                params: {
+                    autoYear: String(year),
+                    autoMonth: String(month).padStart(2, '0'),
+                    autoWeek: String(week)
+                }
+            });
+
+            if (res.status === 200 && res.data) {
+                const data = res.data;
+                let parsedDelta = data.postContentDelta;
+                if (typeof data.postContentDelta === 'string' && data.postContentDelta) {
+                    try {
+                        parsedDelta = JSON.parse(data.postContentDelta);
+                    } catch (e) {
+                        console.error('Delta parse error', e);
+                    }
+                }
+
+                setTemplate({
+                    shareTitle: data.shareTitle || '',
+                    shareContent: data.shareContent || '',
+                    actualTitle: data.actualTitle || '',
+                    postContent: data.postContent || '',
+                    postContentDelta: parsedDelta || null
+                });
+
+                if (data.templateId) {
+                    setSelectedTemplateId(data.templateId);
+                }
+
+                showToast({ severity: 'success', summary: '조회 성공', detail: '데이터를 불러왔습니다.' });
+            }
+        } catch (error: any) {
+            console.error('Failed to fetch auto share data:', error);
+            if (error === 'Not Found') {
+                showToast({
+                    severity: 'warn',
+                    summary: '조회 결과 없음',
+                    detail: '해당 주차에 설정된 데이터가 없습니다.'
+                });
+            } else {
+                showToast({ severity: 'error', summary: '오류', detail: '데이터 조회 중 오류가 발생했습니다.' });
+            }
+        }
     };
 
     const handleTemplateChange = (e: any) => {
@@ -78,7 +122,7 @@ const EditAutoTemplateModal = ({ visible, onClose }: EditAutoTemplateModalProps)
         setSelectedTemplateId(templateId);
 
         if (templateId) {
-            const selected = templateList.find((t) => (t._id === templateId || t.templateId === templateId));
+            const selected = templateList.find((t) => t._id === templateId || t.templateId === templateId);
             if (selected) {
                 setTemplate((prev) => ({
                     ...prev,
@@ -97,12 +141,15 @@ const EditAutoTemplateModal = ({ visible, onClose }: EditAutoTemplateModalProps)
                 autoYear: String(year),
                 autoMonth: String(month).padStart(2, '0'),
                 autoWeek: String(week),
-                postContentDelta: typeof template.postContentDelta === 'string' ? template.postContentDelta : JSON.stringify(template.postContentDelta)
+                templateId: selectedTemplateId,
+                postContentDelta:
+                    typeof template.postContentDelta === 'object'
+                        ? JSON.stringify(template.postContentDelta)
+                        : template.postContentDelta
             };
 
-            // TODO: 마스터 템플릿 저장 API 호출
-            console.log('Save Master Template:', payload);
-            showToast({ severity: 'success', summary: '성공', detail: '마스터 템플릿이 저장되었습니다.' });
+            await http.post('/choiMath/share/update-auto', payload);
+            showToast({ severity: 'success', summary: '성공', detail: '자동 공유 데이터가 대량 업데이트되었습니다.' });
             onClose(true);
         } catch (error) {
             console.error(error);
@@ -148,62 +195,111 @@ const EditAutoTemplateModal = ({ visible, onClose }: EditAutoTemplateModalProps)
                 </div>
             </div>
 
-            <div className="field">
-                <label htmlFor="templateSelect" className="font-bold">기존 게시글 내용 템플릿 불러오기</label>
-                <Dropdown
-                    id="templateSelect"
-                    value={selectedTemplateId}
-                    options={[{ label: '직접 입력', value: null }, ...templateList.map(t => ({ label: t.templateName || t.title, value: t._id || t.templateId }))]}
-                    onChange={handleTemplateChange}
-                    placeholder="템플릿을 선택하세요"
-                />
-            </div>
+            {template && (
+                <>
+                    <div className="field">
+                        <label htmlFor="templateSelect" className="font-bold">
+                            기존 게시글 내용 템플릿 불러오기
+                        </label>
+                        <Dropdown
+                            id="templateSelect"
+                            value={selectedTemplateId}
+                            options={[
+                                { label: '직접 입력', value: null },
+                                ...templateList.map((t) => ({
+                                    label: t.templateName || t.title,
+                                    value: t._id || t.templateId
+                                }))
+                            ]}
+                            onChange={handleTemplateChange}
+                            placeholder="템플릿을 선택하세요"
+                        />
+                    </div>
 
-            <div className="field">
-                <label htmlFor="shareTitle" className="font-bold">카카오 공유 제목 (기본값)</label>
-                <InputText
-                    id="shareTitle"
-                    value={template.shareTitle}
-                    onChange={(e) => setTemplate(prev => ({ ...prev, shareTitle: e.target.value }))}
-                />
-            </div>
+                    <div className="field">
+                        <label htmlFor="shareTitle" className="font-bold">
+                            카카오 공유 제목 (기본값)
+                        </label>
+                        <InputText
+                            id="shareTitle"
+                            value={template.shareTitle}
+                            onChange={(e) => setTemplate((prev) => ({ ...prev, shareTitle: e.target.value }))}
+                        />
+                    </div>
 
-            <div className="field">
-                <label htmlFor="shareContent" className="font-bold">카카오 공유 내용 (기본값)</label>
-                <InputTextarea
-                    id="shareContent"
-                    value={template.shareContent}
-                    onChange={(e) => setTemplate(prev => ({ ...prev, shareContent: e.target.value }))}
-                    rows={3}
-                />
-            </div>
+                    <div className="field">
+                        <label htmlFor="shareContent" className="font-bold">
+                            카카오 공유 내용 (기본값)
+                        </label>
+                        <InputTextarea
+                            id="shareContent"
+                            value={template.shareContent}
+                            onChange={(e) => setTemplate((prev) => ({ ...prev, shareContent: e.target.value }))}
+                            rows={3}
+                        />
+                    </div>
 
-            <div className="field">
-                <label htmlFor="actualTitle" className="font-bold">게시글 제목 (기본값)</label>
-                <InputText
-                    id="actualTitle"
-                    value={template.actualTitle}
-                    onChange={(e) => setTemplate(prev => ({ ...prev, actualTitle: e.target.value }))}
-                />
-            </div>
+                    <div className="field">
+                        <label htmlFor="actualTitle" className="font-bold">
+                            게시글 제목 (기본값)
+                        </label>
+                        <InputText
+                            id="actualTitle"
+                            value={template.actualTitle}
+                            onChange={(e) => setTemplate((prev) => ({ ...prev, actualTitle: e.target.value }))}
+                        />
+                    </div>
 
-            <div className="field">
-                <label className="font-bold">게시글 내용 (기본값)</label>
-                <div className="flex flex-wrap gap-2 mb-2">
-                    <Button label="#{년도}" className="p-button-sm p-button-outlined p-button-secondary" style={{ width: 'auto' }} onClick={() => insertVariable('#{year}')} />
-                    <Button label="#{월}" className="p-button-sm p-button-outlined p-button-secondary" style={{ width: 'auto' }} onClick={() => insertVariable('#{month}')} />
-                    <Button label="#{주차}" className="p-button-sm p-button-outlined p-button-secondary" style={{ width: 'auto' }} onClick={() => insertVariable('#{week}')} />
-                    <Button label="#{클래스명}" className="p-button-sm p-button-outlined p-button-secondary" style={{ width: 'auto' }} onClick={() => insertVariable('#{className}')} />
-                    <Button label="#{학생명}" className="p-button-sm p-button-outlined p-button-secondary" style={{ width: 'auto' }} onClick={() => insertVariable('#{studentName}')} />
-                </div>
-                <CustomEditor
-                    ref={editorRef}
-                    value={template.postContent}
-                    delta={template.postContentDelta}
-                    onChange={(data) => setTemplate(prev => ({ ...prev, postContent: data.textValue, postContentDelta: data.delta }))}
-                    style={{ height: '300px' }}
-                />
-            </div>
+                    <div className="field">
+                        <label className="font-bold">게시글 내용 (기본값)</label>
+                        <div className="flex flex-wrap gap-2 mb-2">
+                            <Button
+                                label="#{년도}"
+                                className="p-button-sm p-button-outlined p-button-secondary"
+                                style={{ width: 'auto' }}
+                                onClick={() => insertVariable('#{year}')}
+                            />
+                            <Button
+                                label="#{월}"
+                                className="p-button-sm p-button-outlined p-button-secondary"
+                                style={{ width: 'auto' }}
+                                onClick={() => insertVariable('#{month}')}
+                            />
+                            <Button
+                                label="#{주차}"
+                                className="p-button-sm p-button-outlined p-button-secondary"
+                                style={{ width: 'auto' }}
+                                onClick={() => insertVariable('#{week}')}
+                            />
+                            <Button
+                                label="#{클래스명}"
+                                className="p-button-sm p-button-outlined p-button-secondary"
+                                style={{ width: 'auto' }}
+                                onClick={() => insertVariable('#{className}')}
+                            />
+                            <Button
+                                label="#{학생명}"
+                                className="p-button-sm p-button-outlined p-button-secondary"
+                                style={{ width: 'auto' }}
+                                onClick={() => insertVariable('#{studentName}')}
+                            />
+                        </div>
+                        <CustomEditor
+                            ref={editorRef}
+                            value={template.postContent}
+                            delta={template.postContentDelta}
+                            onChange={(data) =>
+                                setTemplate((prev) => ({
+                                    ...prev,
+                                    postContent: data.textValue,
+                                    postContentDelta: data.delta
+                                }))
+                            }
+                            style={{ height: '300px' }}
+                        />
+                    </div>
+                </>
+            )}
         </Dialog>
     );
 };
