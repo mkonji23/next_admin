@@ -413,6 +413,11 @@ const AutoImageUploadModal = ({ visible, onClose }: AutoImageUploadModalProps) =
 
             <Lightbox
                 open={lightboxOpen}
+                zoom={{
+                    maxZoomPixelRatio: 3, // 최대 3배까지 확대
+                    zoomInMultiplier: 2, // 한 번 클릭 시 확대 배율
+                    doubleTapDelay: 300 // 더블 탭 인식 시간
+                }}
                 close={handleLightboxClose}
                 index={lightboxIndex}
                 slides={currentSlides}
