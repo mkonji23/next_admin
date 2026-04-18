@@ -15,6 +15,7 @@ import Lightbox from 'yet-another-react-lightbox';
 import Zoom from 'yet-another-react-lightbox/plugins/zoom';
 import 'yet-another-react-lightbox/styles.css';
 import { useLightboxHistory } from '@/hooks/useLightboxHistory';
+import { useMobile } from '@/hooks/useMobile';
 
 interface AutoImageUploadModalProps {
     visible: boolean;
@@ -45,6 +46,7 @@ const AutoImageUploadModal = ({ visible, onClose }: AutoImageUploadModalProps) =
     const [currentSlides, setCurrentSlides] = useState<{ src: string }[]>([]);
 
     const { handleClose: handleLightboxClose } = useLightboxHistory(lightboxOpen, setLightboxOpen);
+    const isMobile = useMobile();
 
     const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
 
@@ -364,7 +366,7 @@ const AutoImageUploadModal = ({ visible, onClose }: AutoImageUploadModalProps) =
             <Dialog
                 header="자동 템플릿 이미지 일괄 관리"
                 visible={visible}
-                style={{ width: '900px' }}
+                style={{ width: isMobile ? '95vw' : '900px' }}
                 footer={footer}
                 onHide={handleClose}
                 className="p-fluid"
@@ -396,6 +398,7 @@ const AutoImageUploadModal = ({ visible, onClose }: AutoImageUploadModalProps) =
                 <DataTable
                     value={students}
                     scrollable
+                    tableStyle={{ minWidth: isMobile ? '700px' : 'auto' }}
                     scrollHeight="500px"
                     paginator
                     rows={10}

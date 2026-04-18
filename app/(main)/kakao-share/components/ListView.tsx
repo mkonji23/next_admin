@@ -14,6 +14,7 @@ import { useCustomModal } from '@/hooks/useCustomModal';
 import { ShareItem } from '../types';
 import dayjs from 'dayjs';
 import useAuthStore from '@/store/useAuthStore';
+import { useMobile } from '@/hooks/useMobile';
 
 interface ListViewProps {
     shares: ShareItem[];
@@ -57,6 +58,7 @@ const ListView = ({
     const { showToast } = useToast();
     const { openModal } = useCustomModal();
     const { userInfo } = useAuthStore();
+    const isMobile = useMobile();
 
     const yearOptions = Array.from(new Set(shares.map((s) => s.autoYear).filter(Boolean)))
         .sort()
@@ -513,35 +515,35 @@ const ListView = ({
                     body={(data, options) => options.rowIndex + 1}
                     style={{ width: '50px' }}
                     align={'right'}
-                    frozen
+                    frozen={!isMobile}
                 />
                 <Column
                     selectionMode="multiple"
                     headerStyle={{ width: '50px' }}
                     style={{ width: '50px' }}
-                    frozen
+                    frozen={!isMobile}
                 ></Column>
                 <Column
                     field="shareTitle"
                     header="공유 제목 (카카오)"
                     body={titleBodyTemplate}
                     style={{ width: '250px' }}
-                    frozen
+                    frozen={!isMobile}
                     sortable
                 />
-                <Column field="autoYear" header="년도" style={{ width: '100px' }} frozen sortable />
+                <Column field="autoYear" header="년도" style={{ width: '100px' }} frozen={!isMobile} sortable />
                 <Column
                     field="autoMonth"
                     header="월"
                     body={(rowData) => (rowData.autoMonth ? Number(rowData.autoMonth) : '')}
                     style={{ width: '80px' }}
-                    frozen
+                    frozen={!isMobile}
                     sortable
                 />
-                <Column field="autoWeek" header="주차" style={{ width: '80px' }} frozen sortable />
+                <Column field="autoWeek" header="주차" style={{ width: '80px' }} frozen={!isMobile} sortable />
                 {/* <Column field="actualTitle" header="게시글 제목" sortable /> */}
-                <Column field="studentName" header="학생" headerStyle={{ minWidth: '120px' }} frozen sortable />
-                <Column field="className" header="클래스" headerStyle={{ minWidth: '120px' }} frozen sortable />
+                <Column field="studentName" header="학생" headerStyle={{ minWidth: '120px' }} frozen={!isMobile} sortable />
+                <Column field="className" header="클래스" headerStyle={{ minWidth: '120px' }} frozen={!isMobile} sortable />
                 <Column field="telNo" header="학생 연락처" headerStyle={{ minWidth: '100px' }} sortable />
                 <Column field="pTelNo" header="학부모 연락처" headerStyle={{ minWidth: '150px' }} sortable />
                 <Column

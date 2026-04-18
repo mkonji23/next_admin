@@ -63,6 +63,9 @@ export const ModalProvider = ({ children }: ModalProviderProps) => {
                     return;
                 }
 
+                // 히스토리 상태 추가
+                window.history.pushState({ modalId: params.id }, '');
+
                 setModalStates((prev) => {
                     const newMap = new Map(prev);
                     newMap.set(params.id, {
@@ -79,17 +82,46 @@ export const ModalProvider = ({ children }: ModalProviderProps) => {
         [modals]
     );
 
-    const closeModal = useCallback((id: string, result?: any) => {
+    const closeModal = useCallback((id: string, result?: any, fromPopState = false) => {
         setModalStates((prev) => {
             const newMap = new Map(prev);
             const state = newMap.get(id);
             if (state && state.resolve) {
+                // UI(버튼 등)를 통해 직접 닫는 경우에만 히스토리 백
+                if (!fromPopState) {
+                    window.history.back();
+                }
                 // result가 undefined면 null로 처리 (취소)
                 state.resolve(result !== undefined ? result : null);
                 newMap.delete(id);
             }
             return newMap;
         });
+    }, []);
+
+    // 뒤로가기 이벤트 감지
+    useEffect(() => {
+        const handlePopState = (event: PopStateEvent) => {
+            setModalStates((prev) => {
+                if (prev.size === 0) return prev;
+
+                const entries = Array.from(prev.entries());
+                const [lastId, state] = entries[entries.length - 1];
+
+                if (state && state.resolve) {
+                    state.resolve(null); // 뒤로가기 시 null 반환
+                    const newMap = new Map(prev);
+                    newMap.delete(lastId);
+                    return newMap;
+                }
+                return prev;
+            });
+        };
+
+        window.addEventListener('popstate', handlePopState);
+        return () => {
+            window.removeEventListener('popstate', handlePopState);
+        };
     }, []);
 
     const value: ModalContextType = {
