@@ -18,13 +18,16 @@ interface Notice {
     createdUser: string;
     isNotice: boolean;
     createdDate: string;
+    content?: string;
+    delta?: any;
+    imageUrls?: any[];
 }
 
 const NoticePage = () => {
     const [notices, setNotices] = useState<Notice[]>([]);
     const [selectedNotices, setSelectedNotices] = useState<Notice[]>([]);
     const [loading, setLoading] = useState(false);
-    
+
     const [currentView, setCurrentView] = useState<'list' | 'write' | 'detail' | 'edit'>('list');
     const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -59,7 +62,7 @@ const NoticePage = () => {
             rejectLabel: '아니오',
             accept: async () => {
                 try {
-                    const ids = selectedNotices.map(n => n.noticeId);
+                    const ids = selectedNotices.map((n) => n.noticeId);
                     await http.post('/choiMath/notice/delete', { ids });
                     showToast({ severity: 'success', summary: '삭제 완료', detail: '성공적으로 삭제되었습니다.' });
                     setSelectedNotices([]);
@@ -76,7 +79,13 @@ const NoticePage = () => {
         return (
             <div className="flex align-items-center gap-2">
                 {rowData.isNotice && <span className="p-tag p-tag-danger">공지</span>}
-                <span className="font-semibold cursor-pointer hover:text-primary" onClick={() => { setSelectedId(rowData.noticeId); setCurrentView('detail'); }}>
+                <span
+                    className="font-semibold cursor-pointer hover:text-primary"
+                    onClick={() => {
+                        setSelectedId(rowData.noticeId);
+                        setCurrentView('detail');
+                    }}
+                >
                     {rowData.title}
                 </span>
             </div>
@@ -88,24 +97,44 @@ const NoticePage = () => {
     };
 
     if (currentView === 'write') {
-        return <NoticeWriteView onBack={() => setCurrentView('list')} onSuccess={() => { setCurrentView('list'); fetchNotices(); }} />;
+        return (
+            <NoticeWriteView
+                onBack={() => setCurrentView('list')}
+                onSuccess={() => {
+                    setCurrentView('list');
+                    fetchNotices();
+                }}
+            />
+        );
     }
 
-    if (currentView === 'detail' && selectedId) {
-        return <NoticeDetailView 
-            id={selectedId} 
-            onBack={() => setCurrentView('list')} 
-            onEdit={() => setCurrentView('edit')} 
-            onDeleteSuccess={() => { setCurrentView('list'); fetchNotices(); }}
-        />;
+    const selectedNotice = notices.find(n => n.noticeId === selectedId);
+
+    if (currentView === 'detail' && selectedNotice) {
+        return (
+            <NoticeDetailView
+                initialData={selectedNotice}
+                onBack={() => setCurrentView('list')}
+                onEdit={() => setCurrentView('edit')}
+                onDeleteSuccess={() => {
+                    setCurrentView('list');
+                    fetchNotices();
+                }}
+            />
+        );
     }
 
-    if (currentView === 'edit' && selectedId) {
-        return <NoticeEditView 
-            id={selectedId} 
-            onBack={() => setCurrentView('detail')} 
-            onSuccess={() => setCurrentView('detail')}
-        />;
+    if (currentView === 'edit' && selectedNotice) {
+        return (
+            <NoticeEditView
+                initialData={selectedNotice}
+                onBack={() => setCurrentView('detail')}
+                onSuccess={() => {
+                    setCurrentView('detail');
+                    fetchNotices();
+                }}
+            />
+        );
     }
 
     return (
@@ -114,18 +143,18 @@ const NoticePage = () => {
                 <div className="card">
                     <div className="flex flex-column md:flex-row justify-content-between align-items-start md:align-items-center mb-4">
                         <div className="flex gap-2">
-                            <Button 
-                                label="글쓰기" 
-                                icon="pi pi-pencil" 
-                                className="p-button-primary" 
-                                onClick={() => setCurrentView('write')} 
+                            <Button
+                                label="글쓰기"
+                                icon="pi pi-pencil"
+                                className="p-button-primary"
+                                onClick={() => setCurrentView('write')}
                             />
-                            <Button 
-                                label="선택 삭제" 
-                                icon="pi pi-trash" 
-                                className="p-button-danger p-button-outlined" 
-                                onClick={handleDelete} 
-                                disabled={!selectedNotices || selectedNotices.length === 0} 
+                            <Button
+                                label="선택 삭제"
+                                icon="pi pi-trash"
+                                className="p-button-danger p-button-outlined"
+                                onClick={handleDelete}
+                                disabled={!selectedNotices || selectedNotices.length === 0}
                             />
                         </div>
                     </div>

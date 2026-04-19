@@ -8,48 +8,22 @@ import useAuthStore from '@/store/useAuthStore';
 import { CustomEditor } from '@/components/editor/CustomEditor';
 
 interface NoticeEditViewProps {
-    id: string;
+    initialData: any;
     onBack: () => void;
     onSuccess: () => void;
 }
 
-const NoticeEditView: React.FC<NoticeEditViewProps> = ({ id, onBack, onSuccess }) => {
-    const [title, setTitle] = useState('');
-    const [isNotice, setIsNotice] = useState(false);
-    const [delta, setDelta] = useState<any>(null);
-    const [content, setContent] = useState('');
-    const [imageUrls, setImageUrls] = useState<any[]>([]);
+const NoticeEditView: React.FC<NoticeEditViewProps> = ({ initialData, onBack, onSuccess }) => {
+    const [title, setTitle] = useState(initialData?.title || '');
+    const [isNotice, setIsNotice] = useState(initialData?.isNotice || false);
+    const [delta, setDelta] = useState<any>(initialData?.delta || null);
+    const [content, setContent] = useState(initialData?.content || '');
+    const [imageUrls, setImageUrls] = useState<any[]>(initialData?.imageUrls || []);
     const [loading, setLoading] = useState(false);
-    const [fetchLoading, setFetchLoading] = useState(true);
 
     const http = useHttp();
     const { showToast } = useToast();
     const { userInfo } = useAuthStore();
-
-    useEffect(() => {
-        if (id) {
-            fetchNoticeDetail();
-        }
-    }, [id]);
-
-    const fetchNoticeDetail = async () => {
-        setFetchLoading(true);
-        try {
-            const response = await http.get(`/choiMath/notice/detail/${id}`);
-            const data = response.data;
-            setTitle(data.title);
-            setIsNotice(data.isNotice || false);
-            setDelta(data.delta);
-            setContent(data.content);
-            setImageUrls(data.imageUrls || []);
-        } catch (error) {
-            console.error('Fetch notice detail error:', error);
-            showToast({ severity: 'error', summary: '조회 실패', detail: '공지사항을 불러오지 못했습니다.' });
-            onBack();
-        } finally {
-            setFetchLoading(false);
-        }
-    };
 
     const handleUpdate = async () => {
         if (!title.trim()) {
@@ -73,7 +47,7 @@ const NoticeEditView: React.FC<NoticeEditViewProps> = ({ id, onBack, onSuccess }
             formData.append('folder', '/notice');
             formData.append('imageUrls', JSON.stringify(imageUrls));
 
-            await http.post(`/choiMath/notice/update/${id}`, formData, {
+            await http.post(`/choiMath/notice/update/${initialData.noticeId}`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
 
@@ -87,9 +61,6 @@ const NoticeEditView: React.FC<NoticeEditViewProps> = ({ id, onBack, onSuccess }
         }
     };
 
-    if (fetchLoading) {
-        return <div className="flex justify-content-center p-5"><i className="pi pi-spin pi-spinner" style={{ fontSize: '2rem' }}></i></div>;
-    }
 
     return (
         <div className="card">

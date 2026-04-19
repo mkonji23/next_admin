@@ -17,38 +17,15 @@ interface NoticeDetail {
 }
 
 interface NoticeDetailViewProps {
-    id: string;
+    initialData: any;
     onBack: () => void;
     onEdit: () => void;
     onDeleteSuccess: () => void;
 }
 
-const NoticeDetailView: React.FC<NoticeDetailViewProps> = ({ id, onBack, onEdit, onDeleteSuccess }) => {
-    const [notice, setNotice] = useState<NoticeDetail | null>(null);
-    const [loading, setLoading] = useState(true);
-    
+const NoticeDetailView: React.FC<NoticeDetailViewProps> = ({ initialData, onBack, onEdit, onDeleteSuccess }) => {
     const http = useHttp();
     const { showToast } = useToast();
-
-    useEffect(() => {
-        if (id) {
-            fetchNoticeDetail();
-        }
-    }, [id]);
-
-    const fetchNoticeDetail = async () => {
-        setLoading(true);
-        try {
-            const response = await http.get(`/choiMath/notice/detail/${id}`);
-            setNotice(response.data);
-        } catch (error) {
-            console.error('Fetch notice detail error:', error);
-            showToast({ severity: 'error', summary: '조회 실패', detail: '공지사항을 불러오지 못했습니다.' });
-            onBack();
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const handleDelete = () => {
         confirmDialog({
@@ -59,7 +36,7 @@ const NoticeDetailView: React.FC<NoticeDetailViewProps> = ({ id, onBack, onEdit,
             rejectLabel: '아니오',
             accept: async () => {
                 try {
-                    await http.post('/choiMath/notice/delete', { ids: [id] });
+                    await http.post('/choiMath/notice/delete', { ids: [initialData.noticeId] });
                     showToast({ severity: 'success', summary: '삭제 완료', detail: '공지사항이 삭제되었습니다.' });
                     onDeleteSuccess();
                 } catch (error) {
@@ -70,11 +47,7 @@ const NoticeDetailView: React.FC<NoticeDetailViewProps> = ({ id, onBack, onEdit,
         });
     };
 
-    if (loading) {
-        return <div className="flex justify-content-center p-5"><i className="pi pi-spin pi-spinner" style={{ fontSize: '2rem' }}></i></div>;
-    }
-
-    if (!notice) {
+    if (!initialData) {
         return <div className="p-5 text-center">존재하지 않거나 삭제된 공지사항입니다.</div>;
     }
 
@@ -83,11 +56,11 @@ const NoticeDetailView: React.FC<NoticeDetailViewProps> = ({ id, onBack, onEdit,
             <div className="flex flex-column md:flex-row justify-content-between align-items-start md:align-items-center mb-4 border-bottom-1 surface-border pb-3">
                 <div className="flex flex-column gap-2">
                     <div className="flex align-items-center gap-2">
-                        {notice.isNotice && <span className="p-tag p-tag-danger">공지</span>}
-                        <h4 className="m-0">{notice.title}</h4>
+                        {initialData.isNotice && <span className="p-tag p-tag-danger">공지</span>}
+                        <h4 className="m-0">{initialData.title}</h4>
                     </div>
                     <span className="text-500 text-sm">
-                        작성자: {notice.createdUser} | 작성일: {dayjs(notice.createdDate).format('YYYY-MM-DD HH:mm:ss')}
+                        작성자: {initialData.createdUser} | 작성일: {dayjs(initialData.createdDate).format('YYYY-MM-DD HH:mm:ss')}
                     </span>
                 </div>
                 <div className="flex gap-2 mt-3 md:mt-0">
@@ -99,7 +72,7 @@ const NoticeDetailView: React.FC<NoticeDetailViewProps> = ({ id, onBack, onEdit,
 
             <div className="mt-4">
                 <CustomEditor 
-                    delta={notice.delta} 
+                    delta={initialData.delta} 
                     readOnly={true} 
                     style={{ minHeight: '300px', border: 'none' }} 
                 />
