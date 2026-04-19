@@ -40,6 +40,7 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
     const [totalHomeworkAvg, setTotalHomeworkAvg] = useState<number>(0);
     const [profileImage, setProfileImage] = useState<string>(studentAuthData?.profile || '');
     const [showProfileDialog, setShowProfileDialog] = useState(false);
+    const [showSpecialModal, setShowSpecialModal] = useState(false);
 
     // 사용 가능한 프로필 아이콘 목록 (public/icons/profiles/ 폴더에 JPG 파일들이 있다고 가정)
     const profileIcons = [
@@ -81,6 +82,12 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
     const finalPhone = studentAuthData?.phoneNumber;
     const finalSchool = studentAuthData?.school;
     const finalGrade = studentAuthData?.grade;
+
+    useEffect(() => {
+        if (finalName === '서현준') {
+            setShowSpecialModal(true);
+        }
+    }, [finalName]);
 
     useEffect(() => {
         if (finalStudentId) {
@@ -704,6 +711,38 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                                 <span className="text-xs text-700">{icon.name}</span>
                             </div>
                         ))}
+                    </div>
+                </Dialog>
+
+                {/* 서현준 학생 특별 팝업 */}
+                <Dialog
+                    visible={showSpecialModal}
+                    onHide={() => setShowSpecialModal(false)}
+                    showHeader={false}
+                    style={{ width: '90vw', maxWidth: '600px' }}
+                    contentStyle={{ padding: 0, borderRadius: '24px', overflow: 'hidden' }}
+                    dismissableMask
+                >
+                    <div className="relative">
+                        <img
+                            src="/images/special/hj.png"
+                            alt="Welcome"
+                            className="w-full h-auto block"
+                            style={{ maxHeight: '80vh', objectFit: 'contain' }}
+                        />
+                        <Button
+                            icon="pi pi-times"
+                            className="absolute top-0 right-0 m-3 p-button-rounded p-button-secondary p-button-text bg-white-alpha-20 hover:bg-white-alpha-40 transition-duration-200"
+                            onClick={() => setShowSpecialModal(false)}
+                            style={{ color: 'white', backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
+                        />
+                        <div
+                            className="absolute bottom-0 left-0 w-full p-4 flex flex-column align-items-center"
+                            style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent)' }}
+                        >
+                            <h2 className="text-white font-bold m-0 mb-2">반가워요, 서현준 학생! 👋</h2>
+                            <p className="text-white-alpha-80 m-0 text-sm">최선을 다하는 당신을 응원합니다.</p>
+                        </div>
                     </div>
                 </Dialog>
 

@@ -45,7 +45,9 @@ const PraiseClassDataTable = ({ data }: { data: PraiseClass }) => {
                     header="출석상태"
                     body={(rowData: PraiseDetail) => (
                         <Tag
-                            value={ATTENDANCE_STATUS_OPTIONS.find((opt) => opt.value === rowData.status)?.label || '없음'}
+                            value={
+                                ATTENDANCE_STATUS_OPTIONS.find((opt) => opt.value === rowData.status)?.label || '없음'
+                            }
                             severity={getAttendanceSeverity(rowData.status || '') as any}
                         />
                     )}
@@ -164,8 +166,13 @@ const PraiseStatisticsPage = () => {
             }
 
             const response = await http.get('/choiMath/attendance/getPraiseStatistics', { params });
-            setStatistics(response.data || []);
+            const data = (response.data || []).map((item: PraiseStatistics) => ({
+                ...item,
+                _rowId: `${item.name}_${item.school || ''}_${item.grade || ''}`
+            }));
+            setStatistics(data);
             setExpandedRows({}); // 새로운 조회 시 확장 상태 초기화
+
         } catch (error: any) {
             console.error('Error fetching praise statistics:', error);
             showToast({
@@ -302,7 +309,7 @@ const PraiseStatisticsPage = () => {
                         expandedRows={expandedRows}
                         onRowToggle={(e) => setExpandedRows(e.data)}
                         rowExpansionTemplate={(rowData) => <StudentDetailView data={rowData} />}
-                        dataKey="studentId"
+                        dataKey="_rowId"
                         emptyMessage="조회된 데이터가 없습니다."
                         header={header}
                         paginator
