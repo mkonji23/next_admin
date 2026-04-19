@@ -108,6 +108,12 @@ export const ModalProvider = ({ children }: ModalProviderProps) => {
                 const entries = Array.from(prev.entries());
                 const [lastId, state] = entries[entries.length - 1];
 
+                // 현재 활성화된 모달(lastId) 상태로 되돌아온 경우 무시
+                // 예: Lightbox 등 내부 요소가 닫히면서 뒤로가기가 발생(popstate)하여 현재 모달 상태로 돌아온 경우
+                if (event.state && event.state.modalId === lastId) {
+                    return prev;
+                }
+
                 if (state && state.resolve) {
                     state.resolve(null); // 뒤로가기 시 null 반환
                     const newMap = new Map(prev);
