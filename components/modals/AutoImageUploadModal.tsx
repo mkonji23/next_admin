@@ -16,6 +16,7 @@ import Zoom from 'yet-another-react-lightbox/plugins/zoom';
 import 'yet-another-react-lightbox/styles.css';
 import { useLightboxHistory } from '@/hooks/useLightboxHistory';
 import { useMobile } from '@/hooks/useMobile';
+import { compressImages } from '@/util/imageResizer';
 
 interface AutoImageUploadModalProps {
     visible: boolean;
@@ -115,11 +116,19 @@ const AutoImageUploadModal = ({ visible, onClose }: AutoImageUploadModalProps) =
         }
     };
 
-    const handleFileChange = (item: ShareItem, files: FileList | null) => {
+    const handleFileChange = async (item: ShareItem, files: FileList | null) => {
         if (!files || files.length === 0 || !item._id) return;
 
         const id = item._id;
-        const fileArray = Array.from(files);
+        const originalFileArray = Array.from(files);
+
+        // 이미지 압축 적용
+        let fileArray = originalFileArray;
+        try {
+            fileArray = await compressImages(originalFileArray);
+        } catch (error) {
+            console.error('이미지 압축 실패:', error);
+        }
 
         // 1. pendingFiles 업데이트
         setPendingFiles((prev) => ({
@@ -140,6 +149,11 @@ const AutoImageUploadModal = ({ visible, onClose }: AutoImageUploadModalProps) =
                 return s;
             })
         );
+        
+        // 동일한 파일 재선택을 위해 value 초기화
+        if (fileInputRefs.current[id]) {
+            fileInputRefs.current[id]!.value = '';
+        }
     };
 
     const handleDeleteImage = (item: ShareItem, imageUrl: string) => {
