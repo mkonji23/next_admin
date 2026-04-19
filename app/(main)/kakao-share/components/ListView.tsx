@@ -414,13 +414,17 @@ const ListView = ({
                 <div className="flex gap-2 overflow-x-auto pb-1">
                     <Button
                         severity="success"
-                        label="글쓰기"
+                        label={isMobile ? '' : '글쓰기'}
+                        tooltip={isMobile ? '글쓰기' : ''}
+                        tooltipOptions={{ position: 'bottom' }}
                         icon="pi pi-pencil"
                         className="white-space-nowrap flex-1 sm:flex-none"
                         onClick={onNewPost}
                     />
                     <Button
-                        label="복사"
+                        label={isMobile ? '' : '복사'}
+                        tooltip={isMobile ? '복사' : ''}
+                        tooltipOptions={{ position: 'bottom' }}
                         icon="pi pi-copy"
                         className="p-button-info p-button-outlined white-space-nowrap flex-1 sm:flex-none"
                         onClick={() => {
@@ -430,7 +434,9 @@ const ListView = ({
                         disabled={selectedItems.length !== 1}
                     />
                     <Button
-                        label={selectedItems.length > 0 ? `삭제 (${selectedItems.length})` : '삭제'}
+                        label={isMobile ? '' : selectedItems.length > 0 ? `삭제 (${selectedItems.length})` : '삭제'}
+                        tooltip={isMobile ? (selectedItems.length > 0 ? `삭제 (${selectedItems.length})` : '삭제') : ''}
+                        tooltipOptions={{ position: 'bottom' }}
                         icon="pi pi-trash"
                         className="p-button-danger p-button-outlined white-space-nowrap flex-1 sm:flex-none"
                         onClick={() => {
@@ -440,7 +446,9 @@ const ListView = ({
                         disabled={selectedItems.length === 0}
                     />
                     <Button
-                        label="조회"
+                        label={isMobile ? '' : '조회'}
+                        tooltip={isMobile ? '조회' : ''}
+                        tooltipOptions={{ position: 'bottom' }}
                         icon="pi pi-search"
                         className="white-space-nowrap flex-1 sm:flex-none"
                         onClick={onSearch}
@@ -450,35 +458,35 @@ const ListView = ({
                     <Button
                         severity="info"
                         tooltipOptions={{ position: 'bottom' }}
-                        tooltip={userInfo.auth === 'admin' ? '최하죵화이팅💘' : (null as any)}
-                        label="자동 템플릿 생성"
+                        tooltip={isMobile ? '자동 템플릿 생성' : userInfo.auth === 'admin' ? '최하죵화이팅💘' : (null as any)}
+                        label={isMobile ? '' : '자동 템플릿 생성'}
                         icon="pi pi-clone"
                         className="white-space-nowrap flex-1 sm:flex-none"
                         onClick={handleTemplateClick}
                     />
                     <Button
                         severity="warning"
-                        label="자동 템플릿 수정"
+                        label={isMobile ? '' : '자동 템플릿 수정'}
                         tooltipOptions={{ position: 'bottom' }}
-                        tooltip="자동 생성 시 적용될 기본 내용을 수정합니다."
+                        tooltip={isMobile ? '자동 템플릿 수정' : '자동 생성 시 적용될 기본 내용을 수정합니다.'}
                         icon="pi pi-cog"
                         className="white-space-nowrap flex-1 sm:flex-none"
                         onClick={handleEditAutoTemplateClick}
                     />
                     <Button
                         severity="help"
-                        label="자동 템플릿 이미지"
+                        label={isMobile ? '' : '자동 템플릿 이미지'}
                         tooltipOptions={{ position: 'bottom' }}
-                        tooltip="학생별 자동 생성 게시글의 이미지를 업로드합니다."
+                        tooltip={isMobile ? '자동 템플릿 이미지' : '학생별 자동 생성 게시글의 이미지를 업로드합니다.'}
                         icon="pi pi-image"
                         className="white-space-nowrap flex-1 sm:flex-none"
                         onClick={handleAutoImageUploadClick}
                     />
                     <Button
                         severity="danger"
-                        label="자동 템플릿 삭제"
+                        label={isMobile ? '' : '자동 템플릿 삭제'}
                         tooltipOptions={{ position: 'bottom' }}
-                        tooltip={userInfo.auth === 'admin' ? '최하죵화이팅💘💘' : (null as any)}
+                        tooltip={isMobile ? '자동 템플릿 삭제' : userInfo.auth === 'admin' ? '최하죵화이팅💘💘' : (null as any)}
                         icon="pi pi-trash"
                         className="white-space-nowrap flex-1 sm:flex-none"
                         onClick={handleDeleteTemplateClick}
