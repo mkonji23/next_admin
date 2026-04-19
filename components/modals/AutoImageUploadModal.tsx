@@ -163,13 +163,26 @@ const AutoImageUploadModal = ({ visible, onClose }: AutoImageUploadModalProps) =
         setStudents((prev) =>
             prev.map((s) => {
                 if (s._id === id) {
-                    return {
-                        ...s,
-                        shareImageUrls: (s.shareImageUrls || []).filter((img) => {
-                            const url = typeof img === 'string' ? img : img.url;
-                            return url !== imageUrl;
-                        })
-                    };
+                    if (imageUrl.startsWith('blob:')) {
+                        return {
+                            ...s,
+                            shareImageUrls: (s.shareImageUrls || []).filter((img) => {
+                                const url = typeof img === 'string' ? img : img.url;
+                                return url !== imageUrl;
+                            })
+                        };
+                    } else {
+                        return {
+                            ...s,
+                            shareImageUrls: (s.shareImageUrls || []).map((img) => {
+                                const url = typeof img === 'string' ? img : img.url;
+                                if (url === imageUrl) {
+                                    return typeof img === 'string' ? { url: img, isDelete: true } : { ...img, isDelete: true };
+                                }
+                                return img;
+                            })
+                        };
+                    }
                 }
                 return s;
             })
@@ -213,11 +226,15 @@ const AutoImageUploadModal = ({ visible, onClose }: AutoImageUploadModalProps) =
                     pendingFiles[id].forEach((file) => formData.append('files', file));
                 }
 
-                // 기존 이미지 중 유지된 것만 필터링 (로컬 미리보기 제외)
-                const currentImages = (item.shareImageUrls || []).filter((img) => {
-                    const url = typeof img === 'string' ? img : img.url;
-                    return !url.startsWith('blob:');
-                });
+                // 기존 이미지 중 유지된 것(및 삭제된 것)만 필터링 (로컬 미리보기 제외)
+                const currentImages = (item.shareImageUrls || [])
+                    .filter((img) => {
+                        const url = typeof img === 'string' ? img : img.url;
+                        return !url.startsWith('blob:');
+                    })
+                    .map((img) => {
+                        return typeof img === 'string' ? { url: img } : img;
+                    });
 
                 formData.append('shareImageUrls', JSON.stringify(currentImages));
 
@@ -284,16 +301,18 @@ const AutoImageUploadModal = ({ visible, onClose }: AutoImageUploadModalProps) =
     };
 
     const handleImageClick = (rowData: ShareItem, index: number) => {
-        const slides = (rowData.shareImageUrls || []).map((img) => ({
-            src: typeof img === 'string' ? img : img.url
-        }));
+        const slides = (rowData.shareImageUrls || [])
+            .filter((img: any) => !img.isDelete)
+            .map((img) => ({
+                src: typeof img === 'string' ? img : img.url
+            }));
         setCurrentSlides(slides);
         setLightboxIndex(index);
         setLightboxOpen(true);
     };
 
     const imageBodyTemplate = (rowData: ShareItem) => {
-        const images = rowData.shareImageUrls || [];
+        const images = (rowData.shareImageUrls || []).filter((img: any) => !img.isDelete);
         if (images.length === 0) return <span className="text-400">이미지 없음</span>;
 
         return (
