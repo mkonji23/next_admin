@@ -186,6 +186,8 @@ const AutoImageUploadModal = ({ visible, onClose }: AutoImageUploadModalProps) =
 
         setIsSaving(true);
         const failedInfo: string[] = [];
+        let successCount = 0;
+        let failCount = 0;
 
         try {
             for (const item of changedStudents) {
