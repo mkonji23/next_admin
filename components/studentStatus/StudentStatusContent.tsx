@@ -12,6 +12,7 @@ import { Calendar } from 'primereact/calendar';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Dialog } from 'primereact/dialog';
+import { Image } from 'primereact/image';
 import dayjs, { Dayjs } from 'dayjs';
 import { ATTENDANCE_STATUS_OPTIONS } from '@/constants/attendance';
 import { AI_PROGRESS_MESSAGES, AI_STUDENT_COMMENTS } from '@/constants/aiComments';
@@ -40,27 +41,56 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
     const [totalHomeworkAvg, setTotalHomeworkAvg] = useState<number>(0);
     const [profileImage, setProfileImage] = useState<string>(studentAuthData?.profile || '');
     const [showProfileDialog, setShowProfileDialog] = useState(false);
+    const [winImage, setWinImage] = useState<string>('');
+    const [showBadgePreview, setShowBadgePreview] = useState(false);
 
-    // 사용 가능한 프로필 아이콘 목록 (public/icons/profiles/ 폴더에 JPG 파일들이 있다고 가정)
-    const profileIcons = [
-        { name: '아이콘 1', value: '/icons/profiles/profile1.JPG' },
-        { name: '아이콘 2', value: '/icons/profiles/profile2.JPG' },
-        { name: '아이콘 3', value: '/icons/profiles/profile3.JPG' },
-        { name: '아이콘 4', value: '/icons/profiles/profile4.JPG' },
-        { name: '아이콘 5', value: '/icons/profiles/profile5.JPG' },
-        { name: '아이콘 6', value: '/icons/profiles/profile6.JPG' },
-        { name: '아이콘 7', value: '/icons/profiles/profile7.JPG' },
-        { name: '아이콘 8', value: '/icons/profiles/profile8.JPG' },
-        { name: '아이콘 9', value: '/icons/profiles/profile9.JPG' },
-        { name: '아이콘 10', value: '/icons/profiles/profile10.JPG' },
-        { name: '아이콘 11', value: '/icons/profiles/profile11.JPG' },
-        { name: '아이콘 12', value: '/icons/profiles/profile12.JPG' },
-        { name: '아이콘 13', value: '/icons/profiles/profile13.JPG' },
-        { name: '아이콘 14', value: '/icons/profiles/profile14.JPG' },
-        { name: '아이콘 15', value: '/icons/profiles/profile15.JPG' },
-        { name: '아이콘 16', value: '/icons/profiles/profile16.JPG' },
-        { name: '아이콘 17', value: '/icons/profiles/profile17.JPG' }
-    ];
+    // 최고 순위 계산 (1~3위)
+    const highestRank = useMemo(() => {
+        let best = 999;
+        if (globalRank > 0 && globalRank <= 3) best = Math.min(best, globalRank);
+        if (classRanks) {
+            for (const rank of Object.values(classRanks)) {
+                if (rank > 0 && rank <= 3) best = Math.min(best, rank);
+            }
+        }
+        return best === 999 ? 0 : best;
+    }, [globalRank, classRanks]);
+
+    // 사용 가능한 프로필 아이콘 목록
+    const profileIcons = useMemo(() => {
+        const baseIcons = [
+            { name: '아이콘 1', value: '/icons/profiles/profile1.JPG' },
+            { name: '아이콘 2', value: '/icons/profiles/profile2.JPG' },
+            { name: '아이콘 3', value: '/icons/profiles/profile3.JPG' },
+            { name: '아이콘 4', value: '/icons/profiles/profile4.JPG' },
+            { name: '아이콘 5', value: '/icons/profiles/profile5.JPG' },
+            { name: '아이콘 6', value: '/icons/profiles/profile6.JPG' },
+            { name: '아이콘 7', value: '/icons/profiles/profile7.JPG' },
+            { name: '아이콘 8', value: '/icons/profiles/profile8.JPG' },
+            { name: '아이콘 9', value: '/icons/profiles/profile9.JPG' },
+            { name: '아이콘 10', value: '/icons/profiles/profile10.JPG' },
+            { name: '아이콘 11', value: '/icons/profiles/profile11.JPG' },
+            { name: '아이콘 12', value: '/icons/profiles/profile12.JPG' },
+            { name: '아이콘 13', value: '/icons/profiles/profile13.JPG' },
+            { name: '아이콘 14', value: '/icons/profiles/profile14.JPG' },
+            { name: '아이콘 15', value: '/icons/profiles/profile15.JPG' },
+            { name: '아이콘 16', value: '/icons/profiles/profile16.JPG' },
+            { name: '아이콘 17', value: '/icons/profiles/profile17.JPG' }
+        ];
+
+        if (highestRank > 0) {
+            if (highestRank <= 3) {
+                baseIcons.push({ name: '스페셜(3위)', value: '/icons/profiles/profile_win.png' });
+            }
+            if (highestRank <= 2) {
+                baseIcons.push({ name: '스페셜(2위)', value: '/icons/profiles/profile_win3.png' });
+            }
+            if (highestRank === 1) {
+                baseIcons.push({ name: '스페셜(1위)', value: '/icons/profiles/profile_win2.png' });
+            }
+        }
+        return baseIcons;
+    }, [highestRank]);
     const finalStudentId = studentAuthData?.studentId;
 
     useEffect(() => {
@@ -535,6 +565,51 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
         return null;
     };
 
+    const isTopRanker = useMemo(() => {
+        if (globalRank > 0 && globalRank <= 3) return true;
+        for (const rank of Object.values(classRanks)) {
+            if (rank > 0 && rank <= 3) return true;
+        }
+        return false;
+    }, [globalRank, classRanks]);
+
+    useEffect(() => {
+        if (highestRank > 0 && highestRank <= 3) {
+            if (highestRank === 1) {
+                setWinImage('/icons/profiles/profile_win2.png');
+            } else if (highestRank === 2) {
+                setWinImage('/icons/profiles/profile_win3.png');
+            } else if (highestRank === 3) {
+                setWinImage('/icons/profiles/profile_win.png');
+            }
+        } else {
+            setWinImage('');
+        }
+    }, [highestRank]);
+
+    useEffect(() => {
+        const handlePopState = () => {
+            if (showBadgePreview) {
+                setShowBadgePreview(false);
+            }
+        };
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [showBadgePreview]);
+
+    const openBadgePreview = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        window.history.pushState({ popup: 'badgePreview' }, '');
+        setShowBadgePreview(true);
+    };
+
+    const closeBadgePreview = () => {
+        setShowBadgePreview(false);
+        if (window.history.state?.popup === 'badgePreview') {
+            window.history.back();
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex justify-content-center align-items-center min-h-screen">
@@ -589,19 +664,59 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                 <Card className="mb-5 shadow-1 border-round-2xl">
                     <div className="flex align-items-center justify-content-between">
                         <div className="flex align-items-center gap-3">
-                            <div
-                                className="w-4rem h-4rem flex-shrink-0 border-circle bg-blue-100 flex align-items-center justify-content-center cursor-pointer hover:shadow-2 transition-duration-200 overflow-hidden"
-                                onClick={() => setShowProfileDialog(true)}
-                                title="프로필 변경"
-                            >
-                                {profileImage ? (
-                                    <img
-                                        src={profileImage}
-                                        alt="프로필"
-                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                    />
-                                ) : (
-                                    <i className="pi pi-user text-blue-500 text-3xl"></i>
+                            <div className="relative">
+                                <div
+                                    className="w-4rem h-4rem flex-shrink-0 border-circle bg-blue-100 flex align-items-center justify-content-center cursor-pointer hover:shadow-2 transition-duration-200 overflow-hidden"
+                                    onClick={() => setShowProfileDialog(true)}
+                                    title="프로필 변경"
+                                >
+                                    {profileImage ? (
+                                        <img
+                                            src={profileImage}
+                                            alt="프로필"
+                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                        />
+                                    ) : (
+                                        <i className="pi pi-user text-blue-500 text-3xl"></i>
+                                    )}
+                                </div>
+                                {isTopRanker && winImage && (
+                                    <>
+                                        <div 
+                                            className="absolute flex align-items-center justify-content-center border-circle shadow-2 bg-white overflow-hidden hover:shadow-4 transition-duration-200"
+                                            style={{
+                                                width: '28px',
+                                                height: '28px',
+                                                bottom: '-4px',
+                                                right: '-4px',
+                                                zIndex: 2,
+                                                padding: '2px',
+                                                cursor: 'pointer'
+                                            }}
+                                            onClick={openBadgePreview}
+                                            title="클릭하여 배지 확대"
+                                        >
+                                            <img 
+                                                src={winImage} 
+                                                alt="Special Badge" 
+                                                style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%', display: 'block' }}
+                                            />
+                                        </div>
+                                        <Dialog 
+                                            visible={showBadgePreview} 
+                                            onHide={closeBadgePreview} 
+                                            dismissableMask 
+                                            showHeader={false}
+                                            contentStyle={{ padding: 0, backgroundColor: 'transparent', overflow: 'hidden' }}
+                                            style={{ background: 'transparent', boxShadow: 'none', border: 'none' }}
+                                        >
+                                            <img 
+                                                src={winImage} 
+                                                alt="Special Badge Preview" 
+                                                style={{ width: '80vw', maxWidth: '400px', height: 'auto', display: 'block', margin: '0 auto', filter: 'drop-shadow(0px 10px 20px rgba(0,0,0,0.5))' }}
+                                            />
+                                        </Dialog>
+                                    </>
                                 )}
                             </div>
                             <div>
