@@ -13,7 +13,7 @@ const ManualPage = () => {
                 <div className="card">
                     <div className="flex align-items-center justify-content-between mb-4">
                         <div>
-                            <h1 className="m-0 text-900 font-bold">시스템 사용 매뉴얼 v1.1</h1>
+                            <h1 className="m-0 text-900 font-bold">시스템 사용 매뉴얼 v1.2</h1>
                             <p className="text-600 mt-2">
                                 각 메뉴의 상세 기능과 조작 방법을 안내합니다. 본 매뉴얼을 통해 모든 기능을 즉시 사용하실 수 있습니다.
                             </p>
@@ -21,11 +21,11 @@ const ManualPage = () => {
                         <i className="pi pi-book text-primary" style={{ fontSize: '2.5rem' }}></i>
                     </div>
 
-                    <Accordion multiple activeIndex={[0, 1, 2]}>
+                    <Accordion multiple activeIndex={[0, 1, 2, 3]}>
                         {/* 1. Statistics (데이터 분석) */}
                         <AccordionTab header={<div className="flex align-items-center gap-2"><i className="pi pi-chart-bar text-primary"></i><span>1. Statistics (성과 및 통계 분석)</span></div>}>
                             <Accordion multiple className="mt-2">
-                                <AccordionTab header="출석 현황 통계 (전체 분석)">
+                                <AccordionTab header="출석 현황 통계">
                                     <div className="p-2 text-700">
                                         <p className="font-bold text-900 mb-2">📌 기능 개요</p>
                                         <p className="mb-3">학원 전체의 월간 출석 추이를 시각화하여 운영 상태를 점검합니다.</p>
@@ -37,7 +37,7 @@ const ManualPage = () => {
                                         </ol>
                                     </div>
                                 </AccordionTab>
-                                <AccordionTab header="학생별 출석현황 통계 (개인 분석)">
+                                <AccordionTab header="학생별 출석현황 통계">
                                     <div className="p-2 text-700">
                                         <p className="font-bold text-900 mb-2">📌 기능 개요</p>
                                         <p className="mb-3">특정 학생의 누적 데이터를 통해 학습 성실도를 정밀 분석합니다.</p>
@@ -49,14 +49,10 @@ const ManualPage = () => {
                                         </ol>
                                     </div>
                                 </AccordionTab>
-                            </Accordion>
-                        </AccordionTab>
-
-                        {/* 2. Attendance (현장 운영 관리) */}
-                        <AccordionTab header={<div className="flex align-items-center gap-2"><i className="pi pi-check-square text-primary"></i><span>2. Attendance (현장 출석 및 수업)</span></div>}>
-                            <Accordion multiple className="mt-2">
-                                <AccordionTab header="칭찬현황 (동기부여)">
+                                <AccordionTab header="칭찬 현황 통계">
                                     <div className="p-2 text-700">
+                                        <p className="font-bold text-900 mb-2">📌 기능 개요</p>
+                                        <p className="mb-3">학생들의 칭찬 내역을 관리하고 포인트를 부여하는 동기부여 기능입니다.</p>
                                         <p className="font-bold text-900 mb-2">🚀 사용 방법</p>
                                         <ol className="pl-3 mb-3 line-height-3">
                                             <li>포인트를 부여할 학생 행의 <Button icon="pi pi-heart" className="p-button-danger p-button-xs mr-1" rounded /> <strong>하트 버튼</strong>을 클릭합니다.</li>
@@ -65,7 +61,24 @@ const ManualPage = () => {
                                         </ol>
                                     </div>
                                 </AccordionTab>
-                                <AccordionTab header="출석부 (핵심 메뉴)">
+                                <AccordionTab header="학생 칭찬 현황(관리자)">
+                                    <div className="p-2 text-700">
+                                        <p className="font-bold text-900 mb-2">📌 기능 개요</p>
+                                        <p className="mb-3">관리자가 학생 본인의 현황을 어드민 메뉴 내에서 조회하는 기능입니다.</p>
+                                        <p className="font-bold text-900 mb-2">🚀 사용 방법</p>
+                                        <ol className="pl-3 mb-3 line-height-3">
+                                            <li>학생 현황 페이지와 동일한 화면을 관리자 레이아웃에서 <strong>사이드바와 함께</strong> 확인할 수 있습니다.</li>
+                                            <li>인증된 학생의 <strong>칭찬 배지, 출석/결석률, 과제 수행률</strong> 등을 종합적으로 파악합니다.</li>
+                                        </ol>
+                                    </div>
+                                </AccordionTab>
+                            </Accordion>
+                        </AccordionTab>
+
+                        {/* 2. Attendance (현장 운영 관리) */}
+                        <AccordionTab header={<div className="flex align-items-center gap-2"><i className="pi pi-check-square text-primary"></i><span>2. Attendance (현장 출석 및 일정)</span></div>}>
+                            <Accordion multiple className="mt-2">
+                                <AccordionTab header="출석부">
                                     <div className="p-2 text-700">
                                         <p className="font-bold text-900 mb-2">📌 기능 개요</p>
                                         <p className="mb-3">매일 수업 전후로 학생의 출결과 과제 수행도를 실시간으로 기록합니다.</p>
@@ -79,8 +92,10 @@ const ManualPage = () => {
                                         </ol>
                                     </div>
                                 </AccordionTab>
-                                <AccordionTab header="학생별 주간스케줄 (시간표)">
+                                <AccordionTab header="학생별 주간스케줄">
                                     <div className="p-2 text-700">
+                                        <p className="font-bold text-900 mb-2">📌 기능 개요</p>
+                                        <p className="mb-3">학생 개인별 시간표 및 주간 일정을 관리합니다.</p>
                                         <p className="font-bold text-900 mb-2">🚀 사용 방법</p>
                                         <ol className="pl-3 mb-3 line-height-3">
                                             <li>학생을 선택하여 <strong>주간 달력</strong>을 로드합니다.</li>
@@ -89,22 +104,52 @@ const ManualPage = () => {
                                         </ol>
                                     </div>
                                 </AccordionTab>
+                                <AccordionTab header="조교쌤 일자별 업무">
+                                    <div className="p-2 text-700">
+                                        <p className="font-bold text-900 mb-2">📌 기능 개요</p>
+                                        <p className="mb-3">조교 선생님들의 일별 업무 목록을 관리하고 체크합니다.</p>
+                                        <p className="font-bold text-900 mb-2">🚀 사용 방법</p>
+                                        <ol className="pl-3 mb-3 line-height-3">
+                                            <li>특정 날짜를 선택하여 당일의 <strong>할 일(To-Do) 목록</strong>을 확인합니다.</li>
+                                            <li>업무를 추가하거나 완료된 업무를 <strong>체크</strong>하여 진행 상태를 갱신합니다.</li>
+                                        </ol>
+                                    </div>
+                                </AccordionTab>
                             </Accordion>
                         </AccordionTab>
 
-                        {/* 3. Settings (기준 데이터 설정) */}
-                        <AccordionTab header={<div className="flex align-items-center gap-2"><i className="pi pi-cog text-primary"></i><span>3. Settings (인프라 및 환경 설정)</span></div>}>
+                        {/* 3. Share (공유 및 소통) */}
+                        <AccordionTab header={<div className="flex align-items-center gap-2"><i className="pi pi-share-alt text-primary"></i><span>3. Share (공유 및 소통)</span></div>}>
                             <Accordion multiple className="mt-2">
-                                <AccordionTab header="사용자 목록 (계정 관리)">
+                                <AccordionTab header="카카오 공유 게시판">
                                     <div className="p-2 text-700">
-                                        <p className="font-bold text-900 mb-2">🚀 주요 기능</p>
-                                        <ul className="pl-3 mb-3 line-height-3">
-                                            <li><Button icon="pi pi-plus" label="신규" className="p-button-info p-button-xs mr-1" /> <strong>계정 생성:</strong> 선생님, 학부모 계정을 생성하고 권한을 부여합니다.</li>
-                                            <li><Button icon="pi pi-key" className="p-button-secondary p-button-xs mr-1" rounded outlined /> <strong>초기화:</strong> 비밀번호를 'chocho1234'로 즉시 초기화합니다.</li>
-                                        </ul>
+                                        <p className="font-bold text-900 mb-2">📌 기능 개요</p>
+                                        <p className="mb-3">학부모 및 학생에게 카카오톡으로 안내 사항이나 리포트를 전송합니다.</p>
+                                        <p className="font-bold text-900 mb-2">🚀 사용 방법</p>
+                                        <ol className="pl-3 mb-3 line-height-3">
+                                            <li>공유 템플릿을 선택하거나 메시지 내용을 직접 입력합니다.</li>
+                                            <li>수신 대상(학생/학부모)을 선택하고 <strong>카카오톡 아이콘</strong> 버튼을 통해 메시지를 전송합니다.</li>
+                                        </ol>
                                     </div>
                                 </AccordionTab>
-                                <AccordionTab header="학생 목록 (CRM & 엑셀)">
+                                <AccordionTab header="공유 템플릿 관리">
+                                    <div className="p-2 text-700">
+                                        <p className="font-bold text-900 mb-2">📌 기능 개요</p>
+                                        <p className="mb-3">자주 사용하는 알림 메시지 템플릿을 사전 등록하여 관리합니다.</p>
+                                        <p className="font-bold text-900 mb-2">🚀 사용 방법</p>
+                                        <ol className="pl-3 mb-3 line-height-3">
+                                            <li>새로운 템플릿을 <strong>추가</strong>하거나 기존 템플릿을 수정합니다.</li>
+                                            <li>저장된 템플릿은 '카카오 공유 게시판' 등에서 <strong>빠르게 불러와</strong> 활용할 수 있습니다.</li>
+                                        </ol>
+                                    </div>
+                                </AccordionTab>
+                            </Accordion>
+                        </AccordionTab>
+
+                        {/* 4. Settings (기준 데이터 설정) */}
+                        <AccordionTab header={<div className="flex align-items-center gap-2"><i className="pi pi-cog text-primary"></i><span>4. Settings (인프라 및 환경 설정)</span></div>}>
+                            <Accordion multiple className="mt-2">
+                                <AccordionTab header="학생 목록">
                                     <div className="p-2 text-700">
                                         <p className="font-bold text-900 mb-2">🚀 사용 방법</p>
                                         <ol className="pl-3 mb-3 line-height-3">
@@ -116,7 +161,7 @@ const ManualPage = () => {
                                         </ol>
                                     </div>
                                 </AccordionTab>
-                                <AccordionTab header="클래스 목록 (수업 구성)">
+                                <AccordionTab header="클래스 목록">
                                     <div className="p-2 text-700">
                                         <p className="font-bold text-900 mb-2">🚀 사용 방법</p>
                                         <ol className="pl-3 mb-3 line-height-3">
@@ -126,23 +171,32 @@ const ManualPage = () => {
                                         </ol>
                                     </div>
                                 </AccordionTab>
+                                <AccordionTab header="사용자 목록">
+                                    <div className="p-2 text-700">
+                                        <p className="font-bold text-900 mb-2">🚀 주요 기능</p>
+                                        <ul className="pl-3 mb-3 line-height-3">
+                                            <li><Button icon="pi pi-plus" label="신규" className="p-button-info p-button-xs mr-1" /> <strong>계정 생성:</strong> 선생님, 학부모 계정을 생성하고 권한을 부여합니다.</li>
+                                            <li><Button icon="pi pi-key" className="p-button-secondary p-button-xs mr-1" rounded outlined /> <strong>초기화:</strong> 비밀번호를 'chocho1234'로 즉시 초기화합니다.</li>
+                                        </ul>
+                                    </div>
+                                </AccordionTab>
                             </Accordion>
                         </AccordionTab>
 
-                        {/* 4. HELP (도움말) */}
-                        <AccordionTab header={<div className="flex align-items-center gap-2"><i className="pi pi-question-circle text-primary"></i><span>4. HELP (지원 가이드)</span></div>}>
+                        {/* 5. HELP (지원 가이드) */}
+                        <AccordionTab header={<div className="flex align-items-center gap-2"><i className="pi pi-question-circle text-primary"></i><span>5. HELP (지원 가이드)</span></div>}>
                             <div className="p-3 text-700">
-                                <p><strong>사용 매뉴얼:</strong> 현재 보고 계신 페이지로, 시스템의 전반적인 운영 프로세스를 확인합니다.</p>
-                                <p className="mt-2"><strong>example (Dash):</strong> 시스템 UI 표준 구성을 확인하고 테스트하는 개발 참조용 페이지입니다.</p>
+                                <p><strong>사용 매뉴얼:</strong> 현재 보고 계신 페이지로, 시스템의 전반적인 운영 프로세스와 각 메뉴의 사용법을 확인합니다.</p>
                             </div>
                         </AccordionTab>
-                        {/* 5. Fullpage (공용 페이지) */}
-                        <AccordionTab header={<div className="flex align-items-center gap-2"><i className="pi pi-desktop text-primary"></i><span>5. Fullpage (학생 현황 조회 레이아웃)</span></div>}>
+
+                        {/* 6. 학생용 (공용 페이지) */}
+                        <AccordionTab header={<div className="flex align-items-center gap-2"><i className="pi pi-desktop text-primary"></i><span>6. 학생용 (현황 조회 레이아웃)</span></div>}>
                             <Accordion multiple className="mt-2">
-                                <AccordionTab header="학생 칭찬/출석/과제 현황">
+                                <AccordionTab header="학생 칭찬 현황">
                                     <div className="p-2 text-700">
                                         <p className="font-bold text-900 mb-2">📌 기능 개요</p>
-                                        <p className="mb-3">학생 본인 또는 학부모가 HOC(고차 컴포넌트) 인증을 거쳐 개인별 학업 달성률을 확인할 수 있는 페이지입니다. 관리자는 Admin 전용 뷰(`/admin-student-status`)로 접근하여 사이드메뉴와 함께 조회할 수 있고, 학생은 공용 뷰(`/student-status`)로 진입하여 꽉 찬 화면에서 조회합니다.</p>
+                                        <p className="mb-3">학생 본인 또는 학부모가 HOC(고차 컴포넌트) 인증을 거쳐 개인별 학업 달성률을 확인할 수 있는 공용 뷰(`/student-status`) 페이지입니다.</p>
                                         <p className="font-bold text-900 mb-2">🚀 사용 방법</p>
                                         <ol className="pl-3 mb-3 line-height-3">
                                             <li>초기 진입 시 <strong>학생 이름</strong>과 <strong>전화번호</strong>(학생 본인 또는 학부모)를 입력합니다. (숫자만 입력해도 무방)</li>

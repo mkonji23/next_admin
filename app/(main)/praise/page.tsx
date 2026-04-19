@@ -164,7 +164,11 @@ const PraiseStatisticsPage = () => {
             }
 
             const response = await http.get('/choiMath/attendance/getPraiseStatistics', { params });
-            setStatistics(response.data || []);
+            const formattedData = (response.data || []).map((item: any) => ({
+                ...item,
+                uniqueKey: `${item.name}_${item.grade}_${item.class || item.className || ''}`
+            }));
+            setStatistics(formattedData);
             setExpandedRows({}); // 새로운 조회 시 확장 상태 초기화
         } catch (error: any) {
             console.error('Error fetching praise statistics:', error);
@@ -302,7 +306,7 @@ const PraiseStatisticsPage = () => {
                         expandedRows={expandedRows}
                         onRowToggle={(e) => setExpandedRows(e.data)}
                         rowExpansionTemplate={(rowData) => <StudentDetailView data={rowData} />}
-                        dataKey="studentId"
+                        dataKey="uniqueKey"
                         emptyMessage="조회된 데이터가 없습니다."
                         header={header}
                         paginator

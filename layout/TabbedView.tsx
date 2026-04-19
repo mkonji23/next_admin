@@ -136,7 +136,7 @@ const TabbedView = ({ initialTab }: TabbedViewProps) => {
                 style={{
                     display: 'flex',
                     alignItems: 'center',
-                    cursor: 'move',
+                    cursor: 'pointer',
                     whiteSpace: 'nowrap',
                     minWidth: 'max-content',
                     height: '100%',

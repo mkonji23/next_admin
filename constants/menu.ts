@@ -6,8 +6,7 @@ export const AppMenuModel: AppMenuItem[] = [
         items: [
             { label: '출석 현황 통계', icon: 'pi pi-fw pi-chart-bar', to: '/attendanceList', badge: 'NEW' },
             { label: '학생별 출석현황 통계', icon: 'pi pi-fw pi-user', to: '/studentAttendanceStatistics' },
-            { label: '칭찬 현황 통계', icon: 'pi pi-fw pi-heart', to: '/praise' },
-            { label: '학생 칭찬 현황(관리자)', icon: 'pi pi-fw pi-star', to: '/admin-student-status' }
+            { label: '칭찬 현황 통계', icon: 'pi pi-fw pi-heart', to: '/praise' }
         ]
     },
     {
@@ -19,10 +18,18 @@ export const AppMenuModel: AppMenuItem[] = [
         ]
     },
     {
+        label: 'Praise',
+        items: [
+            { label: '학생 칭찬 현황(관리자)', icon: 'pi pi-fw pi-star', to: '/admin-student-status' },
+            { label: '칭찬 결산', icon: 'pi pi-fw pi-gift', to: '/praise-settlement' }
+        ]
+    },
+    {
         label: 'Share',
         items: [
             { label: '카카오 공유 게시판', icon: 'pi pi-fw pi-share-alt', to: '/kakao-share' },
-            { label: '공유 템플릿 관리', icon: 'pi pi-fw pi-copy', to: '/kakao-share-template' }
+            { label: '공유 템플릿 관리', icon: 'pi pi-fw pi-copy', to: '/kakao-share-template' },
+            { label: '공지사항', icon: 'pi pi-fw pi-bell', to: '/notice' }
             // { label: '토큰 발급(X)', icon: 'pi pi-fw pi-key', to: '/settings/kakao' }
         ]
     },
