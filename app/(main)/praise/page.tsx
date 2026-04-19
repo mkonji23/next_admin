@@ -15,16 +15,95 @@ import { Tag } from 'primereact/tag';
 import { FilterMatchMode } from 'primereact/api';
 import { ATTENDANCE_STATUS_OPTIONS } from '@/constants/attendance';
 
+const PraiseClassDataTable = ({ data }: { data: PraiseClass }) => {
+    const filterAttendance = data?.attendance?.filter((item) => item.praise);
+
+    const getAttendanceSeverity = (status: string) => {
+        switch (status) {
+            case 'class_present':
+                return 'success';
+            case 'class_absent':
+                return 'danger';
+            case 'late':
+                return 'warning';
+            default:
+                return 'info';
+        }
+    };
+
+    return (
+        <div className="p-3">
+            <DataTable value={filterAttendance} emptyMessage="칭찬 내역이 없습니다.">
+                <Column
+                    field="date"
+                    header="날짜"
+                    sortable
+                    body={(rowData: PraiseDetail) => dayjs(rowData?.date).format('YYYY-MM-DD')}
+                />
+                <Column
+                    field="status"
+                    header="출석상태"
+                    body={(rowData: PraiseDetail) => (
+                        <Tag
+                            value={ATTENDANCE_STATUS_OPTIONS.find((opt) => opt.value === rowData.status)?.label || '없음'}
+                            severity={getAttendanceSeverity(rowData.status || '') as any}
+                        />
+                    )}
+                />
+                <Column field="homework" header="숙제" body={(rowData) => `${rowData?.homework || 0}%`} />
+                <Column
+                    field="praise"
+                    header="칭찬여부"
+                    body={(rowData) =>
+                        rowData.praise ? (
+                            <i className="pi pi-face-smile text-green-500 text-2xl" />
+                        ) : (
+                            <i className="pi pi-minus text-400" />
+                        )
+                    }
+                />
+            </DataTable>
+        </div>
+    );
+};
+
+const StudentDetailView = ({ data }: { data: PraiseStatistics }) => {
+    const [expandedRows, setExpandedRows] = useState<any>({});
+
+    return (
+        <div className="p-3">
+            <h5>{data.name} 학생 상세 내역</h5>
+            <DataTable
+                value={data?.classes}
+                expandedRows={expandedRows}
+                onRowToggle={(e) => setExpandedRows(e.data)}
+                rowExpansionTemplate={(rowData) => <PraiseClassDataTable data={rowData} />}
+                dataKey="classId"
+                emptyMessage="관련 클래스 정보가 없습니다."
+            >
+                <Column expander style={{ width: '3em' }} />
+                <Column
+                    field="className"
+                    header="클래스명"
+                    sortable
+                    body={(rowData: PraiseClass) => rowData.className}
+                    headerStyle={{ minWidth: '150px' }}
+                />
+            </DataTable>
+        </div>
+    );
+};
+
 const PraiseStatisticsPage = () => {
     const [statistics, setStatistics] = useState<PraiseStatistics[]>([]);
-    const [selectedMonth, setSelectedMonth] = useState<Date>(dayjs().startOf('month').toDate());
+    const [startDate, setStartDate] = useState<Date>(dayjs().startOf('month').toDate());
+    const [endDate, setEndDate] = useState<Date>(dayjs().endOf('month').toDate());
     const [students, setStudents] = useState<any[]>([]);
     const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
     const [classes, setClasses] = useState<any[]>([]);
     const [selectedClass, setSelectedClass] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [expandedRows, setExpandedRows] = useState<any>({});
-    const [expandedRows2, setExpandedRows2] = useState<any>({});
     const [filters, setFilters] = useState<DataTableFilterMeta>({
         global: { value: null, matchMode: FilterMatchMode.CONTAINS }
     });
@@ -36,13 +115,8 @@ const PraiseStatisticsPage = () => {
     useEffect(() => {
         fetchStudents();
         fetchClasses();
+        fetchPraiseStatistics();
     }, []);
-
-    useEffect(() => {
-        if (selectedMonth) {
-            fetchPraiseStatistics();
-        }
-    }, [selectedMonth]);
 
     const fetchStudents = async () => {
         try {
@@ -73,8 +147,8 @@ const PraiseStatisticsPage = () => {
     const fetchPraiseStatistics = async () => {
         setLoading(true);
         try {
-            const dateFrom = dayjs(selectedMonth).startOf('month').format('YYYYMMDD');
-            const dateTo = dayjs(selectedMonth).endOf('month').format('YYYYMMDD');
+            const dateFrom = dayjs(startDate).format('YYYYMMDD');
+            const dateTo = dayjs(endDate).format('YYYYMMDD');
 
             const params: any = {
                 dateFrom,
@@ -91,6 +165,7 @@ const PraiseStatisticsPage = () => {
 
             const response = await http.get('/choiMath/attendance/getPraiseStatistics', { params });
             setStatistics(response.data || []);
+            setExpandedRows({}); // 새로운 조회 시 확장 상태 초기화
         } catch (error: any) {
             console.error('Error fetching praise statistics:', error);
             showToast({
@@ -118,83 +193,6 @@ const PraiseStatisticsPage = () => {
         setGlobalFilterValue(value);
     };
 
-    const getAttendanceSeverity = (status: string) => {
-        switch (status) {
-            case 'class_present':
-                return 'success';
-            case 'class_absent':
-                return 'danger';
-            case 'late':
-                return 'warning';
-            default:
-                return 'info';
-        }
-    };
-
-    const rowExpansionTemplate = (data: PraiseStatistics) => {
-        return (
-            <div className="p-3">
-                <h5>{data.name} 학생 상세 내역</h5>
-                <DataTable
-                    value={data?.classes}
-                    expandedRows={expandedRows2}
-                    onRowToggle={(e) => setExpandedRows2(e.data)}
-                    rowExpansionTemplate={rowExpansionTemplate2}
-                    dataKey="classId"
-                >
-                    <Column expander style={{ width: '3em' }} />
-                    <Column
-                        field="date"
-                        header="클래스명"
-                        sortable
-                        body={(rowData: PraiseClass) => rowData.className}
-                        headerStyle={{ minWidth: '150px' }}
-                    />
-                </DataTable>
-            </div>
-        );
-    };
-    // 칭찬DataTable
-    const rowExpansionTemplate2 = (data2: PraiseClass) => {
-        const filterAttendance = data2?.attendance?.filter((item) => item.praise);
-        return (
-            <div className="p-3">
-                <DataTable value={filterAttendance}>
-                    <Column
-                        field="date"
-                        header="날짜"
-                        sortable
-                        body={(rowData: PraiseDetail) => dayjs(rowData?.date).format('YYYY-MM-DD')}
-                    />
-                    <Column
-                        field="status"
-                        header="출석상태"
-                        body={(rowData: PraiseDetail) => (
-                            <Tag
-                                value={
-                                    ATTENDANCE_STATUS_OPTIONS.find((opt) => opt.value === rowData.status)?.label ||
-                                    '없음'
-                                }
-                                severity={getAttendanceSeverity(rowData.status || '')}
-                            />
-                        )}
-                    />
-                    <Column field="homework" header="숙제" body={(rowData) => `${rowData?.homework || 0}%`} />
-                    <Column
-                        field="praise"
-                        header="칭찬여부"
-                        body={(rowData) =>
-                            rowData.praise ? (
-                                <i className="pi pi-face-smile text-green-500 text-2xl" />
-                            ) : (
-                                <i className="pi pi-minus text-400" />
-                            )
-                        }
-                    />
-                </DataTable>
-            </div>
-        );
-    };
     const getRank = (praiseCount: number) => {
         if (!statistics || statistics.length === 0) return 0;
         const sortedUniqueCounts = Array.from(new Set(statistics.map((s) => s.totalPraiseCnt))).sort((a, b) => b - a);
@@ -225,22 +223,17 @@ const PraiseStatisticsPage = () => {
 
     return (
         <div className="grid">
-            {/* 상단 검색 조건 영역 */}
             <div className="col-12">
                 <div className="card">
                     <h5>조회 조건</h5>
                     <div className="flex flex-wrap gap-3 align-items-end">
                         <div className="flex flex-column gap-2">
-                            <label htmlFor="monthPicker" className="font-bold text-sm">
-                                조회월
-                            </label>
+                            <label className="font-bold text-sm">조회 기간 (시작)</label>
                             <Calendar
-                                id="monthPicker"
-                                value={selectedMonth}
-                                onChange={(e) => setSelectedMonth(e.value as Date)}
-                                view="month"
-                                dateFormat="yy-mm"
-                                placeholder="조회월"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.value as Date)}
+                                dateFormat="yy-mm-dd"
+                                placeholder="시작일"
                                 showIcon
                                 locale="ko"
                                 appendTo="self"
@@ -248,8 +241,22 @@ const PraiseStatisticsPage = () => {
                             />
                         </div>
                         <div className="flex flex-column gap-2">
+                            <label className="font-bold text-sm">조회 기간 (종료)</label>
+                            <Calendar
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.value as Date)}
+                                dateFormat="yy-mm-dd"
+                                placeholder="종료일"
+                                showIcon
+                                locale="ko"
+                                appendTo="self"
+                                showButtonBar
+                                minDate={startDate}
+                            />
+                        </div>
+                        <div className="flex flex-column gap-2">
                             <label htmlFor="studentSelect" className="font-bold text-sm">
-                                학생 선택 (선택)
+                                학생 선택
                             </label>
                             <Dropdown
                                 id="studentSelect"
@@ -258,12 +265,12 @@ const PraiseStatisticsPage = () => {
                                 onChange={(e) => setSelectedStudent(e.value)}
                                 placeholder="학생 선택"
                                 showClear
-                                style={{ minWidth: '200px' }}
+                                style={{ minWidth: '180px' }}
                             />
                         </div>
                         <div className="flex flex-column gap-2">
                             <label htmlFor="classSelect" className="font-bold text-sm">
-                                클래스 선택 (선택)
+                                클래스 선택
                             </label>
                             <Dropdown
                                 id="classSelect"
@@ -274,11 +281,11 @@ const PraiseStatisticsPage = () => {
                                 onChange={(e) => setSelectedClass(e.value)}
                                 placeholder="클래스 선택"
                                 showClear
-                                style={{ minWidth: '200px' }}
+                                style={{ minWidth: '180px' }}
                             />
                         </div>
                         <Button
-                            label="통계 조회"
+                            label="조회"
                             icon="pi pi-search"
                             onClick={onSearch}
                             loading={loading}
@@ -288,15 +295,14 @@ const PraiseStatisticsPage = () => {
                 </div>
             </div>
 
-            {/* 하단 결과 테이블 영역 */}
             <div className="col-12">
                 <div className="card">
                     <DataTable
                         value={statistics}
                         expandedRows={expandedRows}
                         onRowToggle={(e) => setExpandedRows(e.data)}
-                        rowExpansionTemplate={rowExpansionTemplate}
-                        dataKey="studentName"
+                        rowExpansionTemplate={(rowData) => <StudentDetailView data={rowData} />}
+                        dataKey="studentId"
                         emptyMessage="조회된 데이터가 없습니다."
                         header={header}
                         paginator

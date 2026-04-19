@@ -11,3 +11,26 @@
   z-index: 100000; /* 최상위 레이어 보장 */
   pointer-events: auto; /* 모든 인터랙션 차단 */
 }
+
+/* PrimeReact Calendar Global Styling */
+.p-datepicker-calendar {
+    /* 일요일 (첫 번째 열) */
+    thead tr th:nth-child(1) > span,
+    tbody tr td:nth-child(1) > span:not(.p-disabled) {
+        color: #ff4d4f !important;
+        font-weight: bold;
+    }
+    
+    /* 토요일 (일곱 번째 열) */
+    thead tr th:nth-child(7) > span,
+    tbody tr td:nth-child(7) > span:not(.p-disabled) {
+        color: #1890ff !important;
+        font-weight: bold;
+    }
+
+    /* 오늘 날짜가 주말인 경우 하이라이트 글자색 유지 */
+    tbody tr td:nth-child(1) > span.p-highlight,
+    tbody tr td:nth-child(7) > span.p-highlight {
+        color: #ffffff !important;
+    }
+}
