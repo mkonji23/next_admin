@@ -68,12 +68,21 @@ const NoticeListView: React.FC<NoticeListViewProps> = ({
 
     const handleNotice = async (rowData: Notice) => {
         try {
-            await http.post(`/choiMath/notice/publishNotice/${rowData.noticeId}`);
-            showToast({
-                severity: 'success',
-                summary: '공지 설정',
-                detail: '공지 상태로 변경되었습니다.'
-            });
+            const res = await http.post(`/choiMath/notice/publishNotice/${rowData.noticeId}`);
+            const isNotice = res.data?.notices?.isNotice;
+            if (isNotice) {
+                showToast({
+                    severity: 'warn',
+                    summary: '공지 해제',
+                    detail: '공지 해제되었습니다.'
+                });
+            } else {
+                showToast({
+                    severity: 'success',
+                    summary: '공지 설정',
+                    detail: '공지되었습니다.'
+                });
+            }
             onNoticeSuccess && onNoticeSuccess();
         } catch (error) {
             console.error('SetNotice error:', error);

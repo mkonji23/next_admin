@@ -19,6 +19,7 @@ import { AI_PROGRESS_MESSAGES, AI_STUDENT_COMMENTS } from '@/constants/aiComment
 import AchievementCard from './AchievementCard';
 import WeeklyReportList from './WeeklyReportList';
 import useStudentAuthStore from '@/store/useStudentAuthStore';
+import { useCustomModal } from '@/hooks/useCustomModal';
 
 interface StudentStatusContentProps {
     studentAuthData?: StudentAuthData;
@@ -44,6 +45,9 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
     const [showSpecialModal, setShowSpecialModal] = useState(false);
     const [winImage, setWinImage] = useState<string>('');
     const [showBadgePreview, setShowBadgePreview] = useState(false);
+    const { openModal } = useCustomModal();
+    const [notices, setNotices] = useState<any[]>([]);
+    const [hasCheckedNotice, setHasCheckedNotice] = useState(false);
 
     // 최고 순위 계산 (1~3위)
     const highestRank = useMemo(() => {
@@ -300,6 +304,11 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                 setClassRanks(cRanks);
 
                 prepareChartData(myData);
+
+                // Fetch notices for student's classes
+                if (myData.classes && myData.classes.length > 0) {
+                    fetchNotices(myData.classes);
+                }
             } else {
                 setStats(null);
                 setGlobalRank(0);
@@ -313,6 +322,53 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
         } finally {
             setLoading(false);
         }
+    };
+
+    const fetchNotices = async (studentClasses: any[]) => {
+        try {
+            const res = await http.get('/choiMath/notice/list', { disableLoading: true });
+            const allNotices = res.data || [];
+            const studentClassIds = studentClasses.map((c) => c.classId);
+
+            // Filter: isNotice === true AND matching classId
+            const filtered = allNotices.filter((n: any) => {
+                if (!n.isNotice) return false;
+
+                const targetIds = n.targetClassIds || [];
+                if (targetIds.length === 0) return true;
+
+                return studentClassIds.some((id) => targetIds.includes(id));
+            });
+
+            setNotices(filtered);
+        } catch (error) {
+            console.error('Fetch notices error:', error);
+        }
+    };
+
+    useEffect(() => {
+        if (notices.length > 0 && !hasCheckedNotice) {
+            const latest = notices[0];
+            const isRead = localStorage.getItem(`notice_read_${latest.noticeId}`);
+
+            if (!isRead) {
+                openModal({
+                    id: 'notice',
+                    pData: {
+                        notices: notices,
+                        initialNoticeId: latest.noticeId
+                    }
+                });
+            }
+            setHasCheckedNotice(true);
+        }
+    }, [notices, hasCheckedNotice]);
+
+    const handleShowNotices = () => {
+        openModal({
+            id: 'notice',
+            pData: { notices }
+        });
     };
 
     const prepareChartData = (data: any) => {
@@ -750,6 +806,26 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                                 </div>
 
                                 <p className="text-500 m-0 mt-1">칭찬 현황을 확인해보세요!</p>
+                            </div>
+                            <div className="ml-2 mt-1">
+                                <Button
+                                    label="공지사항"
+                                    icon="pi pi-bell"
+                                    severity="info"
+                                    size="small"
+                                    className="p-button-outlined border-round-xl p-1 px-2 text-xs"
+                                    style={{ height: '24px' }}
+                                    onClick={handleShowNotices}
+                                >
+                                    {notices.length > 0 && (
+                                        <span
+                                            className="ml-1 bg-red-500 border-circle flex align-items-center justify-content-center text-white"
+                                            style={{ width: '14px', height: '14px', fontSize: '9px' }}
+                                        >
+                                            {notices.length}
+                                        </span>
+                                    )}
+                                </Button>
                             </div>
                         </div>
                         <div className="flex flex-column align-items-end gap-2">
