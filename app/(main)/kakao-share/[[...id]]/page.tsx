@@ -39,10 +39,10 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
     const http = useHttp();
     const { sendDefault } = useKakaoShare();
 
-    const fetchShares = async (first = 0) => {
+    const fetchShares = async (first = 0, disableLoading = false) => {
         try {
             !first && setFirst(0);
-            const res = await http.get('/choiMath/share/list');
+            const res = await http.get('/choiMath/share/list', { disableLoading });
             const data = (res.data || []).map((item: ShareItem) => ({
                 ...item,
                 shareStatus: (item.shareCount || 0) > 0 ? '공유완료' : '미공유'
@@ -55,9 +55,9 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
     };
 
     // 2. 상세 조회
-    const fetchDetail = async (id: string) => {
+    const fetchDetail = async (id: string, disableLoading = false) => {
         try {
-            const res = await http.get(`/choiMath/share/detail/${id}`);
+            const res = await http.get(`/choiMath/share/detail/${id}`, { disableLoading });
             const data = res.data || {};
             if (data._id) {
                 data.shareStatus = (data.shareCount || 0) > 0 ? '공유완료' : '미공유';
@@ -340,8 +340,8 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
     }, [path]);
 
     useEffect(() => {
-        if (refreshSignal && view === 'LIST') fetchShares();
-        if (refreshSignal && selectedShare?._id && view === 'DETAIL') fetchDetail(selectedShare._id);
+        if (refreshSignal && view === 'LIST') fetchShares(first, true);
+        if (refreshSignal && selectedShare?._id && view === 'DETAIL') fetchDetail(selectedShare._id, true);
     }, [refreshSignal]);
 
     useEffect(() => {

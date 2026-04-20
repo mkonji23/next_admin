@@ -11,6 +11,7 @@ import { confirmDialog } from 'primereact/confirmdialog';
 import NoticeWriteView from './components/NoticeWriteView';
 import NoticeDetailView from './components/NoticeDetailView';
 import NoticeEditView from './components/NoticeEditView';
+import NoticeListView from './components/NoticeListView';
 
 interface Notice {
     noticeId: string;
@@ -96,86 +97,57 @@ const NoticePage = () => {
         return dayjs(rowData.createdDate).format('YYYY-MM-DD HH:mm');
     };
 
-    if (currentView === 'write') {
-        return (
-            <NoticeWriteView
-                onBack={() => setCurrentView('list')}
-                onSuccess={() => {
-                    setCurrentView('list');
-                    fetchNotices();
-                }}
-            />
-        );
-    }
-
-    const selectedNotice = notices.find(n => n.noticeId === selectedId);
-
-    if (currentView === 'detail' && selectedNotice) {
-        return (
-            <NoticeDetailView
-                initialData={selectedNotice}
-                onBack={() => setCurrentView('list')}
-                onEdit={() => setCurrentView('edit')}
-                onDeleteSuccess={() => {
-                    setCurrentView('list');
-                    fetchNotices();
-                }}
-            />
-        );
-    }
-
-    if (currentView === 'edit' && selectedNotice) {
-        return (
-            <NoticeEditView
-                initialData={selectedNotice}
-                onBack={() => setCurrentView('detail')}
-                onSuccess={() => {
-                    setCurrentView('detail');
-                    fetchNotices();
-                }}
-            />
-        );
-    }
+    const selectedNotice = notices.find((n) => n.noticeId === selectedId);
 
     return (
         <div className="grid">
             <div className="col-12">
-                <div className="card">
-                    <div className="flex flex-column md:flex-row justify-content-between align-items-start md:align-items-center mb-4">
-                        <div className="flex gap-2">
-                            <Button
-                                label="글쓰기"
-                                icon="pi pi-pencil"
-                                className="p-button-primary"
-                                onClick={() => setCurrentView('write')}
-                            />
-                            <Button
-                                label="선택 삭제"
-                                icon="pi pi-trash"
-                                className="p-button-danger p-button-outlined"
-                                onClick={handleDelete}
-                                disabled={!selectedNotices || selectedNotices.length === 0}
-                            />
-                        </div>
-                    </div>
-                    <DataTable
-                        value={notices}
-                        selection={selectedNotices}
-                        onSelectionChange={(e) => setSelectedNotices(e.value as Notice[])}
-                        dataKey="noticeId"
-                        paginator
-                        rows={10}
-                        rowsPerPageOptions={[5, 10, 25]}
-                        className="p-datatable-sm"
-                        loading={loading}
-                        emptyMessage="등록된 공지사항이 없습니다."
-                    >
-                        <Column selectionMode="multiple" headerStyle={{ width: '3rem' }}></Column>
-                        <Column header="제목" body={titleTemplate} style={{ minWidth: '300px' }}></Column>
-                        <Column field="createdUser" header="작성자" style={{ minWidth: '100px' }}></Column>
-                        <Column header="작성일" body={dateTemplate} style={{ minWidth: '150px' }}></Column>
-                    </DataTable>
-                </div>
+                {currentView === 'list' && (
+                    <NoticeListView
+                        notices={notices}
+                        selectedNotices={selectedNotices}
+                        setSelectedNotices={setSelectedNotices}
+                        onWrite={() => setCurrentView('write')}
+                        onDelete={handleDelete}
+                        onRowClick={(id) => {
+                            setSelectedId(id);
+                            setCurrentView('detail');
+                        }}
+                    />
+                )}
+
+                {currentView === 'write' && (
+                    <NoticeWriteView
+                        onBack={() => setCurrentView('list')}
+                        onSuccess={() => {
+                            setCurrentView('list');
+                            fetchNotices();
+                        }}
+                    />
+                )}
+
+                {currentView === 'detail' && selectedNotice && (
+                    <NoticeDetailView
+                        initialData={selectedNotice}
+                        onBack={() => setCurrentView('list')}
+                        onEdit={() => setCurrentView('edit')}
+                        onDeleteSuccess={() => {
+                            setCurrentView('list');
+                            fetchNotices();
+                        }}
+                    />
+                )}
+
+                {currentView === 'edit' && selectedNotice && (
+                    <NoticeEditView
+                        initialData={selectedNotice}
+                        onBack={() => setCurrentView('detail')}
+                        onSuccess={() => {
+                            setCurrentView('detail');
+                            fetchNotices();
+                        }}
+                    />
+                )}
             </div>
         </div>
     );

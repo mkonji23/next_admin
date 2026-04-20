@@ -14,6 +14,17 @@ interface NoticeEditViewProps {
 }
 
 const NoticeEditView: React.FC<NoticeEditViewProps> = ({ initialData, onBack, onSuccess }) => {
+    useEffect(() => {
+        window.history.pushState(null, '', window.location.href);
+        const handlePopState = () => {
+            onBack();
+        };
+        window.addEventListener('popstate', handlePopState);
+        return () => {
+            window.removeEventListener('popstate', handlePopState);
+        };
+    }, [onBack]);
+
     const [title, setTitle] = useState(initialData?.title || '');
     const [isNotice, setIsNotice] = useState(initialData?.isNotice || false);
     const [delta, setDelta] = useState<any>(initialData?.delta || null);
@@ -65,9 +76,12 @@ const NoticeEditView: React.FC<NoticeEditViewProps> = ({ initialData, onBack, on
     return (
         <div className="card">
             <div className="flex justify-content-between align-items-center mb-4">
-                <h5 className="m-0">공지사항 수정</h5>
+                <div className="flex align-items-center">
+                    <Button icon="pi pi-arrow-left" className="p-button-text mr-2" onClick={() => window.history.back()} />
+                    <h5 className="m-0">공지사항 수정</h5>
+                </div>
                 <div className="flex gap-2">
-                    <Button label="취소" icon="pi pi-times" className="p-button-secondary p-button-outlined" onClick={onBack} disabled={loading} />
+                    <Button label="취소" icon="pi pi-times" className="p-button-secondary p-button-outlined" onClick={() => window.history.back()} disabled={loading} />
                     <Button label="수정완료" icon="pi pi-check" onClick={handleUpdate} loading={loading} />
                 </div>
             </div>

@@ -24,6 +24,16 @@ interface NoticeDetailViewProps {
 }
 
 const NoticeDetailView: React.FC<NoticeDetailViewProps> = ({ initialData, onBack, onEdit, onDeleteSuccess }) => {
+    useEffect(() => {
+        window.history.pushState(null, '', window.location.href);
+        const handlePopState = () => {
+            onBack();
+        };
+        window.addEventListener('popstate', handlePopState);
+        return () => {
+            window.removeEventListener('popstate', handlePopState);
+        };
+    }, [onBack]);
     const http = useHttp();
     const { showToast } = useToast();
 
@@ -56,6 +66,7 @@ const NoticeDetailView: React.FC<NoticeDetailViewProps> = ({ initialData, onBack
             <div className="flex flex-column md:flex-row justify-content-between align-items-start md:align-items-center mb-4 border-bottom-1 surface-border pb-3">
                 <div className="flex flex-column gap-2">
                     <div className="flex align-items-center gap-2">
+                        <Button icon="pi pi-arrow-left" className="p-button-text mr-2" onClick={() => window.history.back()} />
                         {initialData.isNotice && <span className="p-tag p-tag-danger">공지</span>}
                         <h4 className="m-0">{initialData.title}</h4>
                     </div>
@@ -64,7 +75,7 @@ const NoticeDetailView: React.FC<NoticeDetailViewProps> = ({ initialData, onBack
                     </span>
                 </div>
                 <div className="flex gap-2 mt-3 md:mt-0">
-                    <Button label="목록" icon="pi pi-list" className="p-button-secondary p-button-outlined" onClick={onBack} />
+                    <Button label="목록" icon="pi pi-list" className="p-button-secondary p-button-outlined" onClick={() => window.history.back()} />
                     <Button label="수정" icon="pi pi-pencil" className="p-button-outlined" onClick={onEdit} />
                     <Button label="삭제" icon="pi pi-trash" className="p-button-danger p-button-outlined" onClick={handleDelete} />
                 </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
 import { Checkbox } from 'primereact/checkbox';
@@ -13,6 +13,17 @@ interface NoticeWriteViewProps {
 }
 
 const NoticeWriteView: React.FC<NoticeWriteViewProps> = ({ onBack, onSuccess }) => {
+    useEffect(() => {
+        window.history.pushState(null, '', window.location.href);
+        const handlePopState = () => {
+            onBack();
+        };
+        window.addEventListener('popstate', handlePopState);
+        return () => {
+            window.removeEventListener('popstate', handlePopState);
+        };
+    }, [onBack]);
+
     const [title, setTitle] = useState('');
     const [isNotice, setIsNotice] = useState(false);
     const [delta, setDelta] = useState<any>(null);
@@ -61,9 +72,12 @@ const NoticeWriteView: React.FC<NoticeWriteViewProps> = ({ onBack, onSuccess }) 
     return (
         <div className="card">
             <div className="flex justify-content-between align-items-center mb-4">
-                <h5 className="m-0">공지사항 작성</h5>
+                <div className="flex align-items-center">
+                    <Button icon="pi pi-arrow-left" className="p-button-text mr-2" onClick={() => window.history.back()} />
+                    <h5 className="m-0">공지사항 작성</h5>
+                </div>
                 <div className="flex gap-2">
-                    <Button label="목록" icon="pi pi-list" className="p-button-secondary p-button-outlined" onClick={onBack} disabled={loading} />
+                    <Button label="목록" icon="pi pi-list" className="p-button-secondary p-button-outlined" onClick={() => window.history.back()} disabled={loading} />
                     <Button label="저장" icon="pi pi-check" onClick={handleSave} loading={loading} />
                 </div>
             </div>
