@@ -3,6 +3,8 @@ import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
 import { InputText } from 'primereact/inputtext';
+import { useHttp } from '@/util/axiosInstance';
+import { useToast } from '@/hooks/useToast';
 import dayjs from 'dayjs';
 
 interface Notice {
@@ -18,41 +20,96 @@ interface Notice {
 
 interface NoticeListViewProps {
     notices: Notice[];
-    loading: boolean;
+    loading?: boolean;
     selectedNotices: Notice[];
     setSelectedNotices: (notices: Notice[]) => void;
     onWrite: () => void;
     onDelete: () => void;
     onRowClick: (noticeId: string) => void;
+    onNoticeSuccess: () => void;
 }
 
 const NoticeListView: React.FC<NoticeListViewProps> = ({
     notices,
-    loading,
+    loading = false,
     selectedNotices,
     setSelectedNotices,
     onWrite,
     onDelete,
-    onRowClick
+    onRowClick,
+    onNoticeSuccess
 }) => {
     const [globalFilter, setGlobalFilter] = useState<string>('');
+    const http = useHttp();
+    const { showToast } = useToast();
 
     const titleTemplate = (rowData: Notice) => {
         return (
-            <div className="flex align-items-center gap-2">
-                {rowData.isNotice && <span className="p-tag p-tag-danger">공지</span>}
-                <span
-                    className="font-semibold cursor-pointer hover:text-primary"
-                    onClick={() => onRowClick(rowData.noticeId)}
-                >
-                    {rowData.title}
-                </span>
+            <div className="flex align-items-center gap-2" style={{ minWidth: '300px' }}>
+                {rowData.isNotice ? (
+                    <span className="p-tag p-tag-success">
+                        <i className="pi pi-bell mr-1" />
+                        공지
+                    </span>
+                ) : (
+                    <span className="p-tag p-tag-danger">
+                        <i className="pi pi-clock mr-1" />
+                        미공지
+                    </span>
+                )}
+                <span className="font-semibold">{rowData.title}</span>
             </div>
         );
     };
 
     const dateTemplate = (rowData: Notice) => {
         return dayjs(rowData.createdDate).format('YYYY-MM-DD HH:mm');
+    };
+
+    const handleNotice = async (rowData: Notice) => {
+        try {
+            await http.post(`/choiMath/notice/publishNotice/${rowData.noticeId}`);
+            showToast({
+                severity: 'success',
+                summary: '공지 설정',
+                detail: '공지 상태로 변경되었습니다.'
+            });
+            onNoticeSuccess && onNoticeSuccess();
+        } catch (error) {
+            console.error('SetNotice error:', error);
+            showToast({ severity: 'error', summary: '공지 설정 실패', detail: '공지 설정 중 오류가 발생했습니다.' });
+        }
+    };
+
+    const actionTemplate = (rowData: Notice) => {
+        if (rowData.isNotice) {
+            return (
+                <Button
+                    icon="pi pi-bell-slash"
+                    label="공지해제"
+                    className="p-button-sm p-button-warning p-button-outlined"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        handleNotice(rowData);
+                    }}
+                    tooltip="공지 해제"
+                    tooltipOptions={{ position: 'top' }}
+                />
+            );
+        }
+        return (
+            <Button
+                icon="pi pi-bell"
+                label="공지하기"
+                className="p-button-sm p-button-success p-button-outlined"
+                onClick={(e) => {
+                    e.stopPropagation();
+                    handleNotice(rowData);
+                }}
+                tooltip="공지로 설정"
+                tooltipOptions={{ position: 'top' }}
+            />
+        );
     };
 
     const header = (
@@ -84,22 +141,36 @@ const NoticeListView: React.FC<NoticeListViewProps> = ({
                 value={notices}
                 selection={selectedNotices}
                 onSelectionChange={(e) => setSelectedNotices(e.value as Notice[])}
-                selectionMode="multiple"
+                selectionMode="checkbox"
                 dataKey="noticeId"
                 paginator
                 rows={10}
                 rowsPerPageOptions={[5, 10, 25]}
                 className="p-datatable-sm"
-                loading={loading}
                 emptyMessage="등록된 공지사항이 없습니다."
                 globalFilter={globalFilter}
                 globalFilterFields={['title']}
                 header={header}
+                onRowClick={(e) => onRowClick((e.data as Notice).noticeId)}
+                rowClassName={() => 'cursor-pointer'}
             >
                 <Column selectionMode="multiple" headerStyle={{ width: '3rem' }}></Column>
-                <Column field="title" header="제목" body={titleTemplate} style={{ minWidth: '300px' }}></Column>
-                <Column field="createdUser" header="작성자" style={{ minWidth: '100px' }}></Column>
-                <Column header="작성일" body={dateTemplate} style={{ minWidth: '150px' }}></Column>
+                <Column
+                    field="title"
+                    header="제목"
+                    body={titleTemplate}
+                    headerStyle={{ minWidth: '300px' }}
+                    sortable
+                ></Column>
+                <Column field="createdUser" header="작성자" style={{ minWidth: '100px' }} sortable></Column>
+                <Column
+                    field="createdDate"
+                    header="작성일"
+                    body={dateTemplate}
+                    style={{ minWidth: '150px' }}
+                    sortable
+                ></Column>
+                <Column header="공지" body={actionTemplate} style={{ width: '110px' }} align="center"></Column>
             </DataTable>
         </div>
     );

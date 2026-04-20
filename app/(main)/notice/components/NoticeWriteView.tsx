@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
 import { Checkbox } from 'primereact/checkbox';
+import { MultiSelect } from 'primereact/multiselect';
 import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
 import useAuthStore from '@/store/useAuthStore';
@@ -29,10 +30,24 @@ const NoticeWriteView: React.FC<NoticeWriteViewProps> = ({ onBack, onSuccess }) 
     const [delta, setDelta] = useState<any>(null);
     const [content, setContent] = useState('');
     const [loading, setLoading] = useState(false);
+    const [classes, setClasses] = useState<any[]>([]);
+    const [selectedClasses, setSelectedClasses] = useState<any[]>([]);
 
     const http = useHttp();
     const { showToast } = useToast();
     const { userInfo } = useAuthStore();
+
+    useEffect(() => {
+        const fetchClasses = async () => {
+            try {
+                const response = await http.get('/choiMath/class/');
+                setClasses(response.data || []);
+            } catch (error) {
+                console.error('Fetch classes error:', error);
+            }
+        };
+        fetchClasses();
+    }, []);
 
     const handleSave = async () => {
         if (!title.trim()) {
@@ -52,8 +67,9 @@ const NoticeWriteView: React.FC<NoticeWriteViewProps> = ({ onBack, onSuccess }) 
             formData.append('content', content);
             formData.append('delta', JSON.stringify(delta));
             formData.append('createdUser', userInfo?.userName || '관리자');
-            formData.append('isNotice', String(isNotice));
-            formData.append('folder', '/notice');
+            if (selectedClasses.length > 0) {
+                formData.append('classIds', JSON.stringify(selectedClasses));
+            }
 
             await http.post('/choiMath/notice/save', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
@@ -73,29 +89,59 @@ const NoticeWriteView: React.FC<NoticeWriteViewProps> = ({ onBack, onSuccess }) 
         <div className="card">
             <div className="flex justify-content-between align-items-center mb-4">
                 <div className="flex align-items-center">
-                    <Button icon="pi pi-arrow-left" className="p-button-text mr-2" onClick={() => window.history.back()} />
+                    <Button
+                        icon="pi pi-arrow-left"
+                        className="p-button-text mr-2"
+                        onClick={() => window.history.back()}
+                    />
                     <h5 className="m-0">공지사항 작성</h5>
                 </div>
                 <div className="flex gap-2">
-                    <Button label="목록" icon="pi pi-list" className="p-button-secondary p-button-outlined" onClick={() => window.history.back()} disabled={loading} />
+                    <Button
+                        label="목록"
+                        icon="pi pi-list"
+                        className="p-button-secondary p-button-outlined"
+                        onClick={() => window.history.back()}
+                        disabled={loading}
+                    />
                     <Button label="저장" icon="pi pi-check" onClick={handleSave} loading={loading} />
                 </div>
             </div>
 
             <div className="flex flex-column gap-4">
                 <div className="flex flex-column gap-2">
-                    <label htmlFor="title" className="font-bold">제목</label>
-                    <InputText id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="제목을 입력하세요" />
+                    <label htmlFor="title" className="font-bold">
+                        제목
+                    </label>
+                    <InputText
+                        id="title"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        placeholder="제목을 입력하세요"
+                    />
                 </div>
 
-                <div className="flex align-items-center gap-2">
-                    <Checkbox inputId="isNotice" checked={isNotice} onChange={(e) => setIsNotice(e.checked || false)} />
-                    <label htmlFor="isNotice" className="cursor-pointer">중요 공지로 등록 (상단 표시)</label>
+                <div className="flex flex-column gap-2">
+                    <label htmlFor="classes" className="font-bold">
+                        대상 클래스
+                    </label>
+                    <MultiSelect
+                        id="classes"
+                        value={selectedClasses}
+                        options={classes}
+                        onChange={(e) => setSelectedClasses(e.value)}
+                        optionLabel="className"
+                        optionValue="classId"
+                        placeholder="공지할 클래스를 선택하세요 (전체 선택 가능)"
+                        filter
+                        className="w-full"
+                        display="chip"
+                    />
                 </div>
 
                 <div className="flex flex-column gap-2">
                     <label className="font-bold">내용</label>
-                    <CustomEditor 
+                    <CustomEditor
                         onChange={({ textValue, delta: newDelta }) => {
                             setContent(textValue);
                             setDelta(newDelta);

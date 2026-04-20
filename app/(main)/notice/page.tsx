@@ -1,9 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { DataTable } from 'primereact/datatable';
-import { Column } from 'primereact/column';
-import { Button } from 'primereact/button';
 import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
 import dayjs from 'dayjs';
@@ -22,6 +19,8 @@ interface Notice {
     content?: string;
     delta?: any;
     imageUrls?: any[];
+    targetClassIds?: string[];
+    targetClassNames?: string[];
 }
 
 const NoticePage = () => {
@@ -105,6 +104,7 @@ const NoticePage = () => {
                 {currentView === 'list' && (
                     <NoticeListView
                         notices={notices}
+                        loading={loading}
                         selectedNotices={selectedNotices}
                         setSelectedNotices={setSelectedNotices}
                         onWrite={() => setCurrentView('write')}
@@ -113,6 +113,7 @@ const NoticePage = () => {
                             setSelectedId(id);
                             setCurrentView('detail');
                         }}
+                        onNoticeSuccess={fetchNotices}
                     />
                 )}
 
@@ -133,6 +134,9 @@ const NoticePage = () => {
                         onEdit={() => setCurrentView('edit')}
                         onDeleteSuccess={() => {
                             setCurrentView('list');
+                            fetchNotices();
+                        }}
+                        onNoticeSuccess={() => {
                             fetchNotices();
                         }}
                     />

@@ -21,21 +21,19 @@ interface NoticeDetailViewProps {
     onBack: () => void;
     onEdit: () => void;
     onDeleteSuccess: () => void;
+    onNoticeSuccess: () => void;
 }
 
-const NoticeDetailView: React.FC<NoticeDetailViewProps> = ({ initialData, onBack, onEdit, onDeleteSuccess }) => {
-    useEffect(() => {
-        window.history.pushState(null, '', window.location.href);
-        const handlePopState = () => {
-            onBack();
-        };
-        window.addEventListener('popstate', handlePopState);
-        return () => {
-            window.removeEventListener('popstate', handlePopState);
-        };
-    }, [onBack]);
+const NoticeDetailView: React.FC<NoticeDetailViewProps> = ({
+    initialData,
+    onBack,
+    onEdit,
+    onDeleteSuccess,
+    onNoticeSuccess
+}) => {
     const http = useHttp();
     const { showToast } = useToast();
+    const [isNotice, setIsNotice] = useState(initialData.isNotice);
 
     const handleDelete = () => {
         confirmDialog({
@@ -57,6 +55,32 @@ const NoticeDetailView: React.FC<NoticeDetailViewProps> = ({ initialData, onBack
         });
     };
 
+    const handleNotice = async (rowData) => {
+        try {
+            await http.post(`/choiMath/notice/publishNotice/${rowData.noticeId}`);
+            showToast({
+                severity: 'success',
+                summary: '공지 설정',
+                detail: '공지 상태로 변경되었습니다. 확인해주세요.'
+            });
+            onNoticeSuccess && onNoticeSuccess();
+        } catch (error) {
+            console.error('SetNotice error:', error);
+            showToast({ severity: 'error', summary: '공지 설정 실패', detail: '공지 설정 중 오류가 발생했습니다.' });
+        }
+    };
+
+    useEffect(() => {
+        window.history.pushState(null, '', window.location.href);
+        const handlePopState = () => {
+            onBack();
+        };
+        window.addEventListener('popstate', handlePopState);
+        return () => {
+            window.removeEventListener('popstate', handlePopState);
+        };
+    }, [onBack]);
+
     if (!initialData) {
         return <div className="p-5 text-center">존재하지 않거나 삭제된 공지사항입니다.</div>;
     }
@@ -66,26 +90,78 @@ const NoticeDetailView: React.FC<NoticeDetailViewProps> = ({ initialData, onBack
             <div className="flex flex-column md:flex-row justify-content-between align-items-start md:align-items-center mb-4 border-bottom-1 surface-border pb-3">
                 <div className="flex flex-column gap-2">
                     <div className="flex align-items-center gap-2">
-                        <Button icon="pi pi-arrow-left" className="p-button-text mr-2" onClick={() => window.history.back()} />
-                        {initialData.isNotice && <span className="p-tag p-tag-danger">공지</span>}
+                        <Button
+                            icon="pi pi-arrow-left"
+                            className="p-button-text mr-2"
+                            onClick={() => window.history.back()}
+                        />
+                        {initialData?.isNotice && (
+                            <span className="p-tag p-tag-success">
+                                <i className="pi pi-bell mr-1" />
+                                공지
+                            </span>
+                        )}
+                        {!initialData?.isNotice && (
+                            <span className="p-tag p-tag-danger">
+                                <i className="pi pi-clock mr-1" />
+                                미공지
+                            </span>
+                        )}
+
                         <h4 className="m-0">{initialData.title}</h4>
                     </div>
                     <span className="text-500 text-sm">
-                        작성자: {initialData.createdUser} | 작성일: {dayjs(initialData.createdDate).format('YYYY-MM-DD HH:mm:ss')}
+                        작성자: {initialData.createdUser} | 작성일:{' '}
+                        {dayjs(initialData.createdDate).format('YYYY-MM-DD HH:mm:ss')}
                     </span>
+                    {initialData.targetClassNames && initialData.targetClassNames.length > 0 && (
+                        <div className="flex align-items-center gap-2 flex-wrap">
+                            <span className="text-500 text-sm">대상 클래스:</span>
+                            {initialData.targetClassNames.map((name: string, i: number) => (
+                                <span key={i} className="p-tag p-tag-info">
+                                    {name}
+                                </span>
+                            ))}
+                        </div>
+                    )}
                 </div>
                 <div className="flex gap-2 mt-3 md:mt-0">
-                    <Button label="목록" icon="pi pi-list" className="p-button-secondary p-button-outlined" onClick={() => window.history.back()} />
+                    <Button
+                        label="목록"
+                        icon="pi pi-list"
+                        className="p-button-secondary p-button-outlined"
+                        onClick={() => window.history.back()}
+                    />
+                    {initialData?.isNotice ? (
+                        <Button
+                            label="공지해제"
+                            icon="pi pi-bell-slash"
+                            className="p-button-warning p-button-outlined"
+                            onClick={() => handleNotice(initialData)}
+                        />
+                    ) : (
+                        <Button
+                            label="공지하기"
+                            icon="pi pi-bell"
+                            className="p-button-success p-button-outlined"
+                            onClick={() => handleNotice(initialData)}
+                        />
+                    )}
                     <Button label="수정" icon="pi pi-pencil" className="p-button-outlined" onClick={onEdit} />
-                    <Button label="삭제" icon="pi pi-trash" className="p-button-danger p-button-outlined" onClick={handleDelete} />
+                    <Button
+                        label="삭제"
+                        icon="pi pi-trash"
+                        className="p-button-danger p-button-outlined"
+                        onClick={handleDelete}
+                    />
                 </div>
             </div>
 
             <div className="mt-4">
-                <CustomEditor 
-                    delta={initialData.delta} 
-                    readOnly={true} 
-                    style={{ minHeight: '300px', border: 'none' }} 
+                <CustomEditor
+                    delta={initialData.delta}
+                    readOnly={true}
+                    style={{ minHeight: '300px', border: 'none' }}
                 />
             </div>
         </div>

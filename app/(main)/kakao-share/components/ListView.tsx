@@ -458,7 +458,9 @@ const ListView = ({
                     <Button
                         severity="info"
                         tooltipOptions={{ position: 'bottom' }}
-                        tooltip={isMobile ? '자동 템플릿 생성' : userInfo.auth === 'admin' ? '최하죵화이팅💘' : (null as any)}
+                        tooltip={
+                            isMobile ? '자동 템플릿 생성' : userInfo.auth === 'admin' ? '최하죵화이팅💘' : (null as any)
+                        }
                         label={isMobile ? '' : '자동 템플릿 생성'}
                         icon="pi pi-clone"
                         className="white-space-nowrap flex-1 sm:flex-none"
@@ -486,7 +488,13 @@ const ListView = ({
                         severity="danger"
                         label={isMobile ? '' : '자동 템플릿 삭제'}
                         tooltipOptions={{ position: 'bottom' }}
-                        tooltip={isMobile ? '자동 템플릿 삭제' : userInfo.auth === 'admin' ? '최하죵화이팅💘💘' : (null as any)}
+                        tooltip={
+                            isMobile
+                                ? '자동 템플릿 삭제'
+                                : userInfo.auth === 'admin'
+                                ? '최하죵화이팅💘💘'
+                                : (null as any)
+                        }
                         icon="pi pi-trash"
                         className="white-space-nowrap flex-1 sm:flex-none"
                         onClick={handleDeleteTemplateClick}
@@ -523,35 +531,27 @@ const ListView = ({
                     body={(data, options) => options.rowIndex + 1}
                     style={{ width: '50px' }}
                     align={'right'}
-                    frozen={!isMobile}
                 />
-                <Column
-                    selectionMode="multiple"
-                    headerStyle={{ width: '50px' }}
-                    style={{ width: '50px' }}
-                    frozen={!isMobile}
-                ></Column>
+                <Column selectionMode="multiple" headerStyle={{ width: '50px' }} style={{ width: '50px' }}></Column>
                 <Column
                     field="shareTitle"
                     header="공유 제목 (카카오)"
                     body={titleBodyTemplate}
                     style={{ width: '250px' }}
-                    frozen={!isMobile}
                     sortable
                 />
-                <Column field="autoYear" header="년도" style={{ width: '100px' }} frozen={!isMobile} sortable />
+                <Column field="autoYear" header="년도" style={{ width: '100px' }} sortable />
                 <Column
                     field="autoMonth"
                     header="월"
                     body={(rowData) => (rowData.autoMonth ? Number(rowData.autoMonth) : '')}
                     style={{ width: '80px' }}
-                    frozen={!isMobile}
                     sortable
                 />
-                <Column field="autoWeek" header="주차" style={{ width: '80px' }} frozen={!isMobile} sortable />
+                <Column field="autoWeek" header="주차" style={{ width: '80px' }} sortable />
                 {/* <Column field="actualTitle" header="게시글 제목" sortable /> */}
-                <Column field="studentName" header="학생" headerStyle={{ minWidth: '120px' }} frozen={!isMobile} sortable />
-                <Column field="className" header="클래스" headerStyle={{ minWidth: '120px' }} frozen={!isMobile} sortable />
+                <Column field="studentName" header="학생" headerStyle={{ minWidth: '120px' }} sortable />
+                <Column field="className" header="클래스" headerStyle={{ minWidth: '120px' }} sortable />
                 <Column field="telNo" header="학생 연락처" headerStyle={{ minWidth: '100px' }} sortable />
                 <Column field="pTelNo" header="학부모 연락처" headerStyle={{ minWidth: '150px' }} sortable />
                 <Column
