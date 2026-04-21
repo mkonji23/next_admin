@@ -10,40 +10,50 @@ import { Tooltip } from 'primereact/tooltip';
 import { Card } from 'primereact/card';
 import { Dropdown } from 'primereact/dropdown';
 import { SelectButton } from 'primereact/selectbutton';
+import { Todo, TodoStatus } from '@/types/todo';
+import KanbanBoard from './KanbanBoard';
 
 interface TodoCalendarProps {
+    todos: Todo[];
     events: any[];
     onDateClick: (arg: any) => void;
     onEventClick: (clickInfo: any) => void;
     onEventChange: (changeInfo: any) => void;
     onDatesSet: (dateInfo: any) => void;
     onAddTodo: () => void;
+    onEdit: (todo: Todo) => void;
+    onDetail: (todo: Todo) => void;
     onChangeCheck?: (check: boolean) => void;
     onStatusChange?: (status: string) => void;
+    onTodoStatusChange: (todo: Todo, status: TodoStatus) => void;
     viewMode: 'calendar' | 'kanban';
     onViewModeChange: (mode: 'calendar' | 'kanban') => void;
 }
 
 const TodoCalendar: React.FC<TodoCalendarProps> = ({
+    todos,
     events,
     onDateClick,
     onEventClick,
     onEventChange,
     onDatesSet,
     onAddTodo,
+    onEdit,
+    onDetail,
     onChangeCheck,
     onStatusChange,
+    onTodoStatusChange,
     viewMode,
     onViewModeChange
 }) => {
-    const [check, setCheck] = useState(false);
+    const [check, setCheck] = useState(true);
     const [selectedStatus, setSelectedStatus] = useState('all');
 
     const statusOptions = [
         { label: '전체', value: 'all' },
         { label: '대기', value: 'PENDING' },
         { label: '진행', value: 'IN_PROGRESS' },
-        { label: 'HOLD', value: 'HOLD' },
+        { label: '보류', value: 'HOLD' },
         { label: '완료', value: 'COMPLETED' }
     ];
 
@@ -82,19 +92,19 @@ const TodoCalendar: React.FC<TodoCalendarProps> = ({
                     )}
                     className="p-button-sm"
                 />
-                <Button
-                    label="신규 등록"
-                    icon="pi pi-plus"
-                    severity="primary"
-                    onClick={onAddTodo}
-                    className="shadow-1 p-button-sm"
-                />
+                <Button label="신규 등록" icon="pi pi-plus" onClick={onAddTodo} className="shadow-1 p-button-sm" />
             </div>
         </div>
     );
 
     return (
         <div className="todo-calendar-wrapper">
+            <Tooltip
+                target=".todo-tooltip"
+                position="top"
+                appendTo={typeof document !== 'undefined' ? document.body : 'self'}
+                style={{ whiteSpace: 'pre-wrap', maxWidth: '300px' }}
+            />
             <div className="surface-card p-3 mb-4 border-round-xl shadow-1 flex flex-column md:flex-row align-items-center justify-content-between gap-4">
                 <div className="flex flex-wrap align-items-center gap-4">
                     <div className="flex align-items-center gap-3">
@@ -132,14 +142,12 @@ const TodoCalendar: React.FC<TodoCalendarProps> = ({
             </div>
 
             <Card header={cardHeader} className="shadow-2 border-round-xl overflow-hidden mb-4">
-                <Tooltip target=".todo-tooltip" position="top" appendTo="self" />
-
                 <div className="p-2">
                     {viewMode === 'calendar' ? (
                         <div className="calendar-container">
                             <FullCalendar
                                 plugins={[dayGridPlugin, interactionPlugin]}
-                                initialView="dayGridMonth"
+                                initialView="dayGridWeek"
                                 headerToolbar={{
                                     left: 'prev,next today',
                                     center: 'title',
@@ -156,23 +164,26 @@ const TodoCalendar: React.FC<TodoCalendarProps> = ({
                                 eventDrop={onEventChange}
                                 eventResize={onEventChange}
                                 eventContent={(eventInfo) => {
-                                    const eventId = `event-${eventInfo.event.id}`;
-                                    const extendedProps = eventInfo.event.extendedProps || {};
-                                    const assigneesList = extendedProps.assignees || [];
+                                    const description = eventInfo.event.extendedProps?.description || '';
+                                    const assigneesList = eventInfo.event.extendedProps?.assignees || [];
                                     const assigneesNames = assigneesList.map((item: any) => item.userName).join(', ');
-                                    const category = extendedProps.category || '';
+
+                                    const tooltipMsg = `${description.slice(0, 200)}${
+                                        description.length > 200 ? '...' : ''
+                                    }${assigneesNames ? ` \r\n\r\n담당자: ${assigneesNames}` : ''}`;
 
                                     return (
-                                        <>
-                                            <div
-                                                id={eventId}
-                                                className="w-full h-full p-1 border-round text-xs flex align-items-center gap-1"
-                                                style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                                                title={`${category ? `[${category}] ` : ''}${eventInfo.event.title}\n담당: ${assigneesNames}`}
-                                            >
-                                                {eventInfo.event.title}
-                                            </div>
-                                        </>
+                                        <div
+                                            className="w-full h-full p-1 border-round text-xs todo-tooltip"
+                                            data-pr-tooltip={tooltipMsg}
+                                            style={{
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap'
+                                            }}
+                                        >
+                                            {eventInfo.event?.extendedProps?.title || tooltipMsg}
+                                        </div>
                                     );
                                 }}
                                 locale="ko"
@@ -184,9 +195,13 @@ const TodoCalendar: React.FC<TodoCalendarProps> = ({
                             />
                         </div>
                     ) : (
-                        <div className="kanban-view-container overflow-hidden">
-                            {/* Kanban Board will be rendered here via page.tsx but managed by viewMode */}
-                            <p className="text-center text-500 py-8">칸반보드 모드가 활성화되었습니다.</p>
+                        <div className="kanban-view-container">
+                            <KanbanBoard
+                                todos={todos}
+                                onEdit={onEdit}
+                                onDetail={onDetail}
+                                onStatusChange={onTodoStatusChange}
+                            />
                         </div>
                     )}
                 </div>

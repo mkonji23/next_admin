@@ -53,12 +53,16 @@ const TodoDetail: React.FC<TodoDetailProps> = ({ selectedTodo, onEdit, onToggleC
                     <div className="surface-card p-3 border-round border-1 surface-border">
                         <div className="text-xl font-bold text-900 mb-2">{selectedTodo.title}</div>
                         <div className="flex gap-2 mb-2">
-                            <Tag value={CATEGORY_LABELS[selectedTodo.category] || '기타'} severity="secondary" />
-                            <Tag value={STATUS_LABELS[selectedTodo.status] || '알수없음'} severity={STATUS_SEVERITIES[selectedTodo.status] as any} />
+                            <Tag value={CATEGORY_LABELS[selectedTodo.category] || '기타'} severity={null} />
+                            <Tag
+                                value={STATUS_LABELS[selectedTodo.status] || '알수없음'}
+                                severity={STATUS_SEVERITIES[selectedTodo.status] as any}
+                            />
                         </div>
                         <div className="text-sm text-600 flex align-items-center gap-1">
                             <i className="pi pi-calendar text-xs"></i>
-                            {dayjs(selectedTodo.startDate).format('YYYY-MM-DD')} ~ {dayjs(selectedTodo.endDate).format('YYYY-MM-DD')}
+                            {dayjs(selectedTodo.startDate).format('YYYY-MM-DD')} ~{' '}
+                            {dayjs(selectedTodo.endDate).format('YYYY-MM-DD')}
                         </div>
                     </div>
 
@@ -92,7 +96,10 @@ const TodoDetail: React.FC<TodoDetailProps> = ({ selectedTodo, onEdit, onToggleC
 
                     <div className="mt-2">
                         <label className="block text-sm font-bold text-600 mb-1">상세 내용</label>
-                        <div className="surface-ground p-3 border-round text-sm line-height-3 text-800" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                        <div
+                            className="surface-ground p-3 border-round text-sm line-height-3 text-800"
+                            style={{ maxHeight: '400px', overflowY: 'auto' }}
+                        >
                             <CustomEditor
                                 value={selectedTodo.content}
                                 delta={selectedTodo.delta}

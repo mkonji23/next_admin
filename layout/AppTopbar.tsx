@@ -166,12 +166,17 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
         let displayContent: React.ReactNode[] = [];
         let remainingText = content;
 
-        // 1. 첫 번째 대괄호 [내용] 처리
+        // 1. 첫 번째 대괄호 [내용] 처리 (강조 표시)
         const firstBracketMatch = content.match(/^(\[[^\]]+\])/);
         if (firstBracketMatch) {
             const bracketText = firstBracketMatch[1];
+            displayContent.push(
+                <span key="bracket" className="font-bold text-primary mr-2">
+                    {bracketText}
+                </span>
+            );
             // 대괄호 이후의 텍스트부터 다시 처리 시작
-            remainingText = content.substring(bracketText.length);
+            remainingText = content.substring(bracketText.length).trim();
         }
 
         // 2. 나머지 텍스트에서 큰따옴표(" ") 패턴 강조 처리

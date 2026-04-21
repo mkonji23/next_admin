@@ -5,7 +5,7 @@ import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Tag } from 'primereact/tag';
 import dayjs from 'dayjs';
-import { Todo, TodoUser } from '@/types/todo';
+import { Todo, TodoUser, TodoStatus } from '@/types/todo';
 import { useCustomModal } from '@/hooks/useCustomModal';
 import { getUserTagColor } from '@/util/userTagColors';
 import { STATUS_LABELS, CATEGORY_LABELS, STATUS_SEVERITIES } from '@/constants/todo';
@@ -15,7 +15,7 @@ interface TodoListProps {
     selectedTodo: Todo | null;
     onSelectionChange: (todo: Todo | null) => void;
     onEdit: (todo: Todo) => void;
-    onToggleComplete: (todo: Todo) => void;
+    onStatusChange: (todo: Todo, status: TodoStatus) => void;
     currentUserId?: string;
     onRefresh?: () => void;
 }
@@ -25,7 +25,7 @@ const TodoList: React.FC<TodoListProps> = ({
     selectedTodo,
     onSelectionChange,
     onEdit,
-    onToggleComplete,
+    onStatusChange,
     onRefresh,
     currentUserId
 }) => {
@@ -37,7 +37,7 @@ const TodoList: React.FC<TodoListProps> = ({
             id: 'todoDetailModal',
             pData: {
                 todo,
-                onToggleComplete
+                onStatusChange
             }
         });
         if (res) {
@@ -92,8 +92,8 @@ const TodoList: React.FC<TodoListProps> = ({
                             onDoubleClick={() => onEdit(rowData)}
                         >
                             {!rowData.title || rowData.title === '제목없음'
-                                ? (rowData.content?.replace(/<[^>]*>/g, '').substring(0, 10) || '제목없음') +
-                                  (rowData.content?.replace(/<[^>]*>/g, '').length > 10 ? '...' : '')
+                                ? (rowData.content?.replace(/<[^>]*>/g, '').substring(0, 20) || '제목없음') +
+                                  (rowData.content?.replace(/<[^>]*>/g, '').length > 20 ? '...' : '')
                                 : rowData.title}
                         </div>
                     )}

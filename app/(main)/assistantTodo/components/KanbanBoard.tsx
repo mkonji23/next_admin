@@ -79,7 +79,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ todos, onEdit, onDetail, onSt
                     <div className="flex justify-content-between align-items-start mb-2">
                         <Tag
                             value={CATEGORY_LABELS[todo.category] || '기타'}
-                            severity="secondary"
+                            severity={null}
                             style={{ fontSize: '0.7rem' }}
                         />
                         <div className="flex gap-1">

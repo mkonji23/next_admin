@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/useToast';
 import { Todo, TodoUser, TodoStatus } from '@/types/todo';
 import dayjs from 'dayjs';
 import { CustomEditor } from '../editor/CustomEditor';
-import { STATUS_LABELS, CATEGORY_OPTIONS } from '@/constants/todo';
+import { STATUS_LABELS, CATEGORY_OPTIONS, STATUS_OPTIONS } from '@/constants/todo';
 
 interface TodoModalProps {
     visible: boolean;
@@ -85,9 +85,9 @@ const TodoModal = ({ visible, pData, onClose }: TodoModalProps) => {
             }
             setSubmitted(false);
         }
-    }, [visible, mode]);
+    }, [visible, mode, initialTodo, initialDate]);
 
-    const handleSave = async (action: 'save' | 'complete' = 'save') => {
+    const handleSave = async (action: 'save' | 'status-change' = 'save', newStatus?: TodoStatus) => {
         setSubmitted(true);
 
         if (
@@ -103,19 +103,19 @@ const TodoModal = ({ visible, pData, onClose }: TodoModalProps) => {
         }
 
         try {
-            const isCompletedValue = action === 'complete' ? true : todo.isCompleted ?? false;
-            const statusValue = action === 'complete' ? 'COMPLETED' : todo.status || 'PENDING';
+            const finalStatus = action === 'status-change' && newStatus ? newStatus : todo.status || 'PENDING';
+            const finalIsCompleted = finalStatus === 'COMPLETED';
 
             const basePayload: Omit<Todo, 'id' | 'assignees'> = {
                 title: todo.title || '',
                 category: todo.category || 'OTHER',
                 startDate: dayjs(todo.startDate).format('YYYYMMDD'),
                 endDate: dayjs(todo.endDate).format('YYYYMMDD'),
-                status: statusValue as TodoStatus,
+                status: finalStatus as TodoStatus,
                 delayedReason: todo.delayedReason || '',
                 content: todo.content || '',
                 delta: todo.delta || [],
-                isCompleted: isCompletedValue
+                isCompleted: finalIsCompleted
             };
 
             const payload: Todo = {
@@ -137,7 +137,7 @@ const TodoModal = ({ visible, pData, onClose }: TodoModalProps) => {
                 showToast({
                     severity: 'success',
                     summary: '수정 성공',
-                    detail: action === 'complete' ? '업무가 완료되었습니다.' : '할 일이 수정되었습니다.'
+                    detail: action === 'status-change' ? '상태가 변경되었습니다.' : '할 일이 수정되었습니다.'
                 });
                 onClose(payload);
             }
@@ -151,33 +151,65 @@ const TodoModal = ({ visible, pData, onClose }: TodoModalProps) => {
         }
     };
 
-    const dialogFooter = (
-        <div className="flex justify-content-end gap-2">
-            {mode === 'edit' ? (
-                <>
-                    {todo.status !== 'COMPLETED' && (
+    const renderStatusButtons = () => {
+        if (mode !== 'edit' || !todo.status) return null;
+
+        return (
+            <>
+                {todo.status === 'PENDING' && (
+                    <Button
+                        label="진행 시작"
+                        icon="pi pi-play"
+                        className="p-button-info"
+                        onClick={() => handleSave('status-change', 'IN_PROGRESS')}
+                        style={{ marginRight: 'auto' }}
+                    />
+                )}
+                {todo.status === 'IN_PROGRESS' && (
+                    <>
                         <Button
-                            label="완료"
+                            label="완료 처리"
                             icon="pi pi-check-circle"
-                            onClick={() => handleSave('complete')}
                             className="p-button-success"
+                            onClick={() => handleSave('status-change', 'COMPLETED')}
                             style={{ marginRight: 'auto' }}
                         />
-                    )}
+                        <Button
+                            label="보류/지연"
+                            icon="pi pi-pause"
+                            className="p-button-danger"
+                            onClick={() => handleSave('status-change', 'HOLD')}
+                            style={{ marginRight: 'auto' }}
+                        />
+                    </>
+                )}
+                {todo.status === 'HOLD' && (
                     <Button
-                        label="저장"
-                        icon="pi pi-save"
-                        onClick={() => handleSave('save')}
-                        className="p-button-warning"
+                        label="완료 처리"
+                        icon="pi pi-check-circle"
+                        className="p-button-success"
+                        onClick={() => handleSave('status-change', 'COMPLETED')}
+                        style={{ marginRight: 'auto' }}
                     />
-                    <Button label="취소" icon="pi pi-times" onClick={() => onClose()} className="p-button-text" />
-                </>
-            ) : (
-                <>
-                    <Button label="저장" icon="pi pi-save" onClick={() => handleSave('save')} />
-                    <Button label="취소" icon="pi pi-times" onClick={() => onClose(null)} className="p-button-text" />
-                </>
-            )}
+                )}
+                {todo.status === 'COMPLETED' && (
+                    <Button
+                        label="다시 진행"
+                        icon="pi pi-refresh"
+                        className="p-button-info"
+                        onClick={() => handleSave('status-change', 'IN_PROGRESS')}
+                        style={{ marginRight: 'auto' }}
+                    />
+                )}
+            </>
+        );
+    };
+
+    const dialogFooter = (
+        <div className="flex justify-content-end gap-2">
+            {renderStatusButtons()}
+            <Button label="저장" icon="pi pi-save" onClick={() => handleSave('save')} className="p-button-warning" />
+            <Button label="취소" icon="pi pi-times" onClick={() => onClose()} className="p-button-text" />
         </div>
     );
 
@@ -219,7 +251,13 @@ const TodoModal = ({ visible, pData, onClose }: TodoModalProps) => {
 
                 <div className="field col-12 md:col-6">
                     <label htmlFor="status">상태</label>
-                    <InputText id="status" value={STATUS_LABELS[todo.status || 'PENDING']} disabled />
+                    <Dropdown
+                        id="status"
+                        value={todo.status}
+                        options={STATUS_OPTIONS}
+                        onChange={(e) => setTodo({ ...todo, status: e.value })}
+                        placeholder="상태 선택"
+                    />
                 </div>
 
                 {todo.status === 'HOLD' && (
@@ -271,17 +309,29 @@ const TodoModal = ({ visible, pData, onClose }: TodoModalProps) => {
                         담당자
                         <span className="text-red-500"> *</span>
                     </label>
-                    <MultiSelect
-                        id="assignees"
-                        value={todo.assignees}
-                        options={users}
-                        optionLabel="userName"
-                        dataKey="userId"
-                        onChange={(e) => setTodo({ ...todo, assignees: e.value })}
-                        placeholder="담당자를 선택하세요"
-                        display="chip"
-                        className={submitted && (!todo.assignees || todo.assignees.length === 0) ? 'p-invalid' : ''}
-                    />
+                    {mode !== 'edit' ? (
+                        <MultiSelect
+                            id="assignees"
+                            value={todo.assignees}
+                            options={users}
+                            optionLabel="userName"
+                            dataKey="userId"
+                            onChange={(e) => setTodo({ ...todo, assignees: e.value })}
+                            placeholder="담당자를 선택하세요"
+                            display="chip"
+                            className={submitted && (!todo.assignees || todo.assignees.length === 0) ? 'p-invalid' : ''}
+                        />
+                    ) : (
+                        <Dropdown
+                            value={todo?.assignees?.[0]}
+                            options={users}
+                            optionLabel="userName"
+                            dataKey="userId"
+                            onChange={(e) => setTodo({ ...todo, assignees: [e.value] })}
+                            placeholder="담당자를 선택하세요"
+                            className={submitted && (!todo.assignees || todo.assignees.length === 0) ? 'p-invalid' : ''}
+                        />
+                    )}
                 </div>
 
                 <div className="field col-12">

@@ -5,7 +5,7 @@ import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
 import { Tag } from 'primereact/tag';
 import dayjs from 'dayjs';
-import { Todo, TodoUser } from '@/types/todo';
+import { Todo, TodoUser, TodoStatus } from '@/types/todo';
 import { getUserTagColor } from '@/util/userTagColors';
 import { CustomEditor } from '../editor/CustomEditor';
 import { useCustomModal } from '@/hooks/useCustomModal';
@@ -16,14 +16,14 @@ interface ToDoDetailModalProps {
     onClose: (result?: any) => void;
     pData?: {
         todo: Todo;
-        onToggleComplete: (todo: Todo) => void;
+        onStatusChange: (todo: Todo, status: TodoStatus) => void;
     };
 }
 
 const ToDoDetailModal: React.FC<ToDoDetailModalProps> = ({ visible, onClose, pData }) => {
     const { openModal } = useCustomModal();
     const todo = pData?.todo;
-    const onToggleComplete = pData?.onToggleComplete;
+    const onStatusChange = pData?.onStatusChange;
 
     const showTodoModal = async () => {
         const result = await openModal<any, Todo | null>({
@@ -37,21 +37,78 @@ const ToDoDetailModal: React.FC<ToDoDetailModalProps> = ({ visible, onClose, pDa
 
     if (!todo) return null;
 
+    const renderStatusButtons = () => {
+        if (!todo) return null;
+
+        return (
+            <>
+                {todo.status === 'PENDING' && (
+                    <Button
+                        label="진행 시작"
+                        icon="pi pi-play"
+                        className="p-button-info"
+                        onClick={() => {
+                            onStatusChange?.(todo, 'IN_PROGRESS');
+                            onClose();
+                        }}
+                        style={{ marginRight: 'auto' }}
+                    />
+                )}
+                {todo.status === 'IN_PROGRESS' && (
+                    <>
+                        <Button
+                            label="완료 처리"
+                            icon="pi pi-check-circle"
+                            className="p-button-success"
+                            onClick={() => {
+                                onStatusChange?.(todo, 'COMPLETED');
+                                onClose();
+                            }}
+                            style={{ marginRight: 'auto' }}
+                        />
+                        <Button
+                            label="보류/지연"
+                            icon="pi pi-pause"
+                            className="p-button-danger"
+                            onClick={() => {
+                                onStatusChange?.(todo, 'HOLD');
+                                onClose();
+                            }}
+                            style={{ marginRight: 'auto' }}
+                        />
+                    </>
+                )}
+                {todo.status === 'HOLD' && (
+                    <Button
+                        label="완료 처리"
+                        icon="pi pi-check-circle"
+                        className="p-button-success"
+                        onClick={() => {
+                            onStatusChange?.(todo, 'COMPLETED');
+                            onClose();
+                        }}
+                        style={{ marginRight: 'auto' }}
+                    />
+                )}
+                {todo.status === 'COMPLETED' && (
+                    <Button
+                        label="다시 진행"
+                        icon="pi pi-refresh"
+                        className="p-button-info"
+                        onClick={() => {
+                            onStatusChange?.(todo, 'IN_PROGRESS');
+                            onClose();
+                        }}
+                        style={{ marginRight: 'auto' }}
+                    />
+                )}
+            </>
+        );
+    };
+
     const footer = (
         <div className="flex justify-content-end gap-2">
-            {todo.status !== 'COMPLETED' && (
-                <Button
-                    label="완료 처리"
-                    icon="pi pi-check-circle"
-                    className="p-button-success"
-                    onClick={() => {
-                        onToggleComplete?.(todo);
-                        onClose();
-                    }}
-                    style={{ marginRight: 'auto' }}
-                />
-            )}
-
+            {renderStatusButtons()}
             <Button label="수정" icon="pi pi-pencil" onClick={() => showTodoModal()} className="p-button-warning" />
             <Button label="닫기" icon="pi pi-times" className="p-button-text" onClick={() => onClose()} />
         </div>
@@ -76,20 +133,28 @@ const ToDoDetailModal: React.FC<ToDoDetailModalProps> = ({ visible, onClose, pDa
                         <label className="block text-900 font-bold mb-1">업무 제목</label>
                         <div className="text-xl font-bold text-primary">{todo.title}</div>
                     </div>
-                    
-                    <div className="col-12 md:col-6 mb-3">
-                        <label className="block text-900 font-bold mb-1">구분 / 상태</label>
-                        <div className="flex gap-2">
-                            <Tag value={CATEGORY_LABELS[todo.category] || '기타'} severity="secondary" />
-                            <Tag value={STATUS_LABELS[todo.status] || '알수없음'} severity={STATUS_SEVERITIES[todo.status] as any} />
-                        </div>
+
+                    <div className="col-12 md:col-3 mb-3">
+                        <label className="block text-900 font-bold mb-1">업무구분</label>
+                        <Tag value={CATEGORY_LABELS[todo.category] || '기타'} severity={null} />
                     </div>
 
-                    <div className="col-12 md:col-6 mb-3">
-                        <label className="block text-900 font-bold mb-1">기간</label>
-                        <div className="text-700">
-                            {dayjs(todo.startDate).format('YYYY-MM-DD')} ~ {dayjs(todo.endDate).format('YYYY-MM-DD')}
-                        </div>
+                    <div className="col-12 md:col-3 mb-3">
+                        <label className="block text-900 font-bold mb-1">상태</label>
+                        <Tag
+                            value={STATUS_LABELS[todo.status] || '알수없음'}
+                            severity={STATUS_SEVERITIES[todo.status] as any}
+                        />
+                    </div>
+
+                    <div className="col-12 md:col-3 mb-3">
+                        <label className="block text-900 font-bold mb-1">시작일</label>
+                        <div className="text-700">{dayjs(todo.startDate).format('YYYY-MM-DD')}</div>
+                    </div>
+
+                    <div className="col-12 md:col-3 mb-3">
+                        <label className="block text-900 font-bold mb-1">종료일</label>
+                        <div className="text-700">{dayjs(todo.endDate).format('YYYY-MM-DD')}</div>
                     </div>
 
                     {todo.status === 'HOLD' && todo.delayedReason && (
@@ -120,7 +185,6 @@ const ToDoDetailModal: React.FC<ToDoDetailModalProps> = ({ visible, onClose, pDa
                             })}
                         </div>
                     </div>
-
 
                     <div className="col-12">
                         <label className="block text-900 font-bold mb-1">상세 내용</label>
