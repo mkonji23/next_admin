@@ -170,11 +170,6 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
         const firstBracketMatch = content.match(/^(\[[^\]]+\])/);
         if (firstBracketMatch) {
             const bracketText = firstBracketMatch[1];
-            displayContent.push(
-                <strong key="first-bracket" style={{ color: 'blue', fontWeight: 'bold' }}>
-                    {bracketText}
-                </strong>
-            );
             // 대괄호 이후의 텍스트부터 다시 처리 시작
             remainingText = content.substring(bracketText.length);
         }

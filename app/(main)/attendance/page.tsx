@@ -311,54 +311,59 @@ const AttendancePage = () => {
                     grid-template-columns: 150px ${dayColumnTemplates};
                     width: max-content;
                     min-width: 100%;
-                    border: 1px solid #dee2e6;
+                    border: 1px solid var(--surface-border);
                 }
                 
                 .attendance-header { display: contents; }
                 .attendance-header-row { display: contents; }
                 .attendance-header-cell-name {
-                    position: sticky; left: 0; background: white; z-index: 10;
-                    padding: 8px; border: 1px solid #dee2e6; border-bottom: 2px solid #007ad9;
+                    position: sticky; left: 0; background: var(--surface-card); z-index: 10;
+                    padding: 8px; border: 1px solid var(--surface-border); border-bottom: 2px solid var(--primary-color);
                     text-align: center; font-weight: bold; grid-row: span 2;
+                    color: var(--text-color);
                 }
                 .attendance-header-day-group {
                     grid-column: span 6;
-                    padding: 8px; border: 1px solid #dee2e6; border-bottom: 1px solid #dee2e6;
+                    padding: 8px; border: 1px solid var(--surface-border); border-bottom: 1px solid var(--surface-border);
                     text-align: center; font-weight: bold;
+                    color: var(--text-color);
                 }
                 .attendance-header-sub-cell {
-                    padding: 8px; border: 1px solid #dee2e6; text-align: center;
-                    font-weight: bold; background: #f8f9fa; border-bottom: 2px solid #007ad9;
+                    padding: 8px; border: 1px solid var(--surface-border); text-align: center;
+                    font-weight: bold; background: var(--surface-ground); border-bottom: 2px solid var(--primary-color);
+                    color: var(--text-color);
                 }
                 
                 .attendance-body { display: contents; }
                 .attendance-row { display: contents; }
                 
                 .attendance-cell-name {
-                    position: sticky; left: 0; background: white; z-index: 5;
-                    padding: 8px; border: 1px solid #dee2e6; border-right: 2px solid #007ad9;
+                    position: sticky; left: 0; background: var(--surface-card); z-index: 5;
+                    padding: 8px; border: 1px solid var(--surface-border); border-right: 2px solid var(--primary-color);
                     font-weight: 500;
+                    color: var(--text-color);
                 }
                 
                 .attendance-day-group { display: contents; }
                 
                 .attendance-cell {
                     padding: 4px;
-                    border-right: 1px solid #dee2e6;
-                    border-bottom: 1px solid #dee2e6;
+                    border-right: 1px solid var(--surface-border);
+                    border-bottom: 1px solid var(--surface-border);
                     display: flex;
                     align-items: center;
                     justify-content: center;
+                    color: var(--text-color);
                 }
                 .attendance-day-group .attendance-cell:last-of-type {
-                    border-right: 2px solid #007ad9;
+                    border-right: 2px solid var(--primary-color);
                 }
                 
                 .attendance-table-wrapper {
                     overflow-x: auto;
                     overflow-y: ${shouldUseVirtualScroll ? 'auto' : 'visible'};
                     max-height: ${shouldUseVirtualScroll ? '600px' : 'none'};
-                    border: 1px solid #dee2e6;
+                    border: 1px solid var(--surface-border);
                     width: 100%;
                     position: relative;
                 }
@@ -504,10 +509,10 @@ const AttendancePage = () => {
                                 height: 4px;
                             }
                             .attendance-toolbar::-webkit-scrollbar-track {
-                                background: #f1f1f1;
+                                background: var(--surface-ground);
                             }
                             .attendance-toolbar::-webkit-scrollbar-thumb {
-                                background: #c1c1c1;
+                                background: var(--surface-400);
                                 border-radius: 10px;
                             }
                             .no-shrink {

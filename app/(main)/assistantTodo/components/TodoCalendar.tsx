@@ -78,7 +78,6 @@ const TodoCalendar: React.FC<TodoCalendarProps> = ({
                             options={statusOptions}
                             onChange={handleStatusChange}
                             placeholder="상태 선택"
-                            className="p-inputtext-sm w-full md:w-10rem border-none bg-bluegray-50 border-round-lg"
                         />
                     </div>
 

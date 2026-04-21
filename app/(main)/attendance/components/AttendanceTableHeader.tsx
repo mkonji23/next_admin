@@ -45,23 +45,23 @@ const AttendanceTableHeader: React.FC<AttendanceTableHeaderProps> = ({
                     const currentDate: Date = new Date(year, month, day);
                     const dayOfWeek: number = currentDate.getDay();
 
-                    const style: React.CSSProperties = { textAlign: 'center' };
+                    let colorClass = '';
                     if (dayOfWeek === 0) {
-                        style.color = 'red';
+                        colorClass = 'attendance-sun';
                     } else if (dayOfWeek === 6) {
-                        style.color = 'blue';
+                        colorClass = 'attendance-sat';
                     }
 
                     const headerText: string = `${monthStr}-${dayStr} (${DAY_NAMES[dayOfWeek]})`;
                     const borderStyle: React.CSSProperties = {
-                        ...style,
-                        borderRight: day < daysInMonth ? '2px solid #007ad9' : 'none'
+                        textAlign: 'center',
+                        borderRight: day < daysInMonth ? '2px solid var(--primary-color)' : 'none'
                     };
 
                     return (
                         <div
                             key={`day_${day}`}
-                            className="attendance-header-day-group"
+                            className={`attendance-header-day-group ${colorClass}`}
                             role="columnheader"
                             style={borderStyle}
                         >
@@ -78,11 +78,11 @@ const AttendanceTableHeader: React.FC<AttendanceTableHeaderProps> = ({
                         const subCellStyle: React.CSSProperties = {
                             borderRight: isLastSubCell
                                 ? day < daysInMonth
-                                    ? '2px solid #007ad9'
+                                    ? '2px solid var(--primary-color)'
                                     : 'none'
-                                : '1px solid #dee2e6',
+                                : '1px solid var(--surface-border)',
 
-                            color: fieldNames[fieldKey] === '비고' ? 'red' : ''
+                            color: fieldNames[fieldKey] === '비고' ? '#ff4d4f' : ''
                         };
 
                         const isNote = fieldNames[fieldKey] === '비고';

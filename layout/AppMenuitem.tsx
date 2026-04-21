@@ -93,6 +93,7 @@ const AppMenuitem = (props: AppMenuItemProps) => {
                 >
                     <i className={classNames('layout-menuitem-icon', item!.icon)}></i>
                     <span className="layout-menuitem-text">{item!.label}</span>
+                    {item!.badge && <span className={classNames('layout-menuitem-badge', item!.badgeClass)}>{item!.badge}</span>}
                     {item!.items && <i className="pi pi-fw pi-angle-down layout-submenu-toggler"></i>}
                     <Ripple />
                 </a>
@@ -108,6 +109,7 @@ const AppMenuitem = (props: AppMenuItemProps) => {
                 >
                     <i className={classNames('layout-menuitem-icon', item!.icon)}></i>
                     <span className="layout-menuitem-text">{item!.label}</span>
+                    {item!.badge && <span className={classNames('layout-menuitem-badge', item!.badgeClass)}>{item!.badge}</span>}
                     {item!.items && <i className="pi pi-fw pi-angle-down layout-submenu-toggler"></i>}
                     <Ripple />
                 </a>

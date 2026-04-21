@@ -3,7 +3,8 @@
     width: 300px;
     height: calc(100vh - 9rem);
     z-index: 999;
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
     user-select: none;
     top: 7rem;
     left: 2rem;
@@ -70,6 +71,18 @@
                 font-size: 75%;
                 margin-left: auto;
                 transition: transform $transitionDuration;
+            }
+
+            .layout-menuitem-badge {
+                margin-left: auto;
+                background-color: var(--primary-color);
+                color: var(--primary-color-text);
+                padding: 0 .25rem;
+                border-radius: $borderRadius;
+                font-size: .75rem;
+                font-weight: 700;
+                min-width: 1.5rem;
+                text-align: center;
             }
 
             &.rotated-icon {

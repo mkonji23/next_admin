@@ -4,7 +4,7 @@ export const AppMenuModel: AppMenuItem[] = [
     {
         label: 'Statistics',
         items: [
-            { label: '출석 현황 통계', icon: 'pi pi-fw pi-chart-bar', to: '/attendanceList', badge: 'NEW' },
+            { label: '출석 현황 통계', icon: 'pi pi-fw pi-chart-bar', to: '/attendanceList' },
             { label: '학생별 출석현황 통계', icon: 'pi pi-fw pi-user', to: '/studentAttendanceStatistics' },
             { label: '칭찬 현황 통계', icon: 'pi pi-fw pi-heart', to: '/praise' }
         ]

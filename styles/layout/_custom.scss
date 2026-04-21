@@ -33,4 +33,108 @@
     tbody tr td:nth-child(7) > span.p-highlight {
         color: #ffffff !important;
     }
-}
+}
+
+/* Attendance Table Weekends */
+.attendance-sun { color: #ff4d4f !important; }
+.attendance-sat { color: #1890ff !important; }
+
+/* 다크 모드 요소 보정 */
+.layout-theme-dark {
+    .attendance-sun { color: #ff7875 !important; }
+    .attendance-sat { color: #40a9ff !important; }
+
+    // 1. 하드코딩된 흰색 배경 보정 (bg-white 클래스 대응)
+    .bg-white {
+        background-color: var(--surface-card) !important;
+        border-color: var(--surface-border) !important;
+    }
+
+    // 2. 하드코딩된 옅은 파란색/그레이 배경 보정 (입력창 아이콘, 프로필 배경 등)
+    .bg-blue-50, .bg-blue-100, .bg-blue-500, .bg-bluegray-50, .bg-bluegray-100 {
+        background-color: var(--surface-hover) !important;
+        color: var(--primary-color) !important;
+        border-color: var(--surface-border) !important;
+    }
+
+    // 3. 텍스트 색상 보정 (text-900 등 강한 텍스트 강조 대응)
+    .text-900 {
+        color: var(--text-color) !important;
+    }
+    
+    // 4. 로고 가시성 확보 (이미지 필터 활용)
+    img[src*="logo"] {
+        filter: brightness(0) invert(1);
+    }
+
+    // 5. 버튼 텍스트 대비 개선
+    .p-button {
+        color: #ffffff !important;
+    }
+
+    // 6. 카드 및 컨테이너 섀도우 조정
+    .shadow-1 {
+        box-shadow: 0px 3px 5px rgba(0, 0, 0, 0.4), 0px 0px 2px rgba(0, 0, 0, 0.2), 0px 1px 4px rgba(0, 0, 0, 0.2) !important;
+    }
+
+    // 7. 달력 주말 색상 보정 (어두운 배경에 맞게 조금 더 밝게)
+    .p-datepicker-calendar {
+        thead tr th:nth-child(1) > span,
+        tbody tr td:nth-child(1) > span:not(.p-disabled) {
+            color: #ff7875 !important;
+        }
+
+        thead tr th:nth-child(7) > span,
+        tbody tr td:nth-child(7) > span:not(.p-disabled) {
+            color: #40a9ff !important;
+        }
+    }
+
+    // 8. FullCalendar 다크 모드 보정
+    .fc {
+        --fc-border-color: var(--surface-border);
+        --fc-neutral-bg-color: var(--surface-ground);
+        --fc-page-bg-color: var(--surface-card);
+        --fc-today-bg-color: var(--surface-hover);
+        
+        .fc-col-header-cell {
+            background-color: var(--surface-100);
+            color: var(--text-color);
+        }
+
+        .fc-daygrid-day-number, .fc-col-header-cell-cushion {
+            color: var(--text-color) !important;
+            text-decoration: none !important;
+        }
+
+        .fc-button-primary {
+            background-color: var(--primary-color) !important;
+            border-color: var(--primary-color) !important;
+            color: var(--primary-color-text) !important;
+
+            &:hover {
+                background-color: var(--primary-400) !important;
+                border-color: var(--primary-400) !important;
+            }
+
+            &.fc-button-active {
+                background-color: var(--primary-600) !important;
+                border-color: var(--primary-600) !important;
+            }
+        }
+
+        .fc-theme-standard td, .fc-theme-standard th {
+            border-color: var(--surface-border);
+        }
+
+        // 일요일/토요일 색상 강조
+        .fc-day-sun .fc-col-header-cell-cushion,
+        .fc-day-sun .fc-daygrid-day-number {
+            color: #ff7875 !important;
+        }
+        .fc-day-sat .fc-col-header-cell-cushion,
+        .fc-day-sat .fc-daygrid-day-number {
+            color: #40a9ff !important;
+        }
+    }
+}

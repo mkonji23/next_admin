@@ -6,7 +6,6 @@ import { InputText } from 'primereact/inputtext';
 import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
 import { useConfirm } from '@/hooks/useConfirm';
-import { ClassificationInfo } from 'typescript';
 import { Class } from '@/types/class';
 
 interface WeekSchedule {
@@ -51,7 +50,7 @@ const WeekSchedulePage = () => {
                 detail: '주간 시간표를 불러오는데 실패했습니다.'
             });
         }
-    }, [http, showToast]);
+    }, []);
 
     const handleSync = async () => {
         try {
@@ -131,7 +130,6 @@ const WeekSchedulePage = () => {
         handleUpdate(studentId, field, newValue);
     };
 
-    // 엔터 키 누를 때 아래 행으로 이동 (Alt+Enter는 줄바꿈)
     const handleKeyDown = (
         e: React.KeyboardEvent,
         studentId: string,
@@ -141,7 +139,6 @@ const WeekSchedulePage = () => {
     ) => {
         if (e.key === 'Enter') {
             if (e.altKey) {
-                // Alt + Enter: 줄바꿈 수동 삽입
                 e.preventDefault();
                 const target = e.target as HTMLTextAreaElement;
                 const start = target.selectionStart;
@@ -151,14 +148,12 @@ const WeekSchedulePage = () => {
 
                 handleUpdate(studentId, field, newValue);
 
-                // 커서 위치 조정을 위해 다음 틱에서 설정
                 setTimeout(() => {
                     target.selectionStart = target.selectionEnd = start + 1;
                 }, 0);
                 return;
             }
 
-            // 일반 Enter: 다음 행으로 이동
             e.preventDefault();
             const nextIndex = index + 1;
             if (nextIndex < totalRows) {
@@ -186,11 +181,9 @@ const WeekSchedulePage = () => {
         return sortConfig.direction === 'asc' ? 'pi pi-sort-amount-up' : 'pi pi-sort-amount-down';
     };
 
-    // 필터링 및 정렬된 데이터
     const processedSchedules = useMemo(() => {
         let result = [...schedules];
 
-        // 1. 전체 검색 필터
         if (globalFilterValue) {
             const lowerValue = globalFilterValue.toLowerCase();
             result = result.filter((s) =>
@@ -201,7 +194,6 @@ const WeekSchedulePage = () => {
             );
         }
 
-        // 2. 정렬
         if (sortConfig) {
             result.sort((a, b) => {
                 const aValue = (a[sortConfig.key] || '').toString();
@@ -215,7 +207,7 @@ const WeekSchedulePage = () => {
         return result;
     }, [schedules, globalFilterValue, sortConfig]);
 
-    const getToolTipInfo = (studentId) => {
+    const getToolTipInfo = (studentId: string) => {
         const sInfo = processedSchedules.find((item) => item.studentId === studentId);
         const leng = sInfo?.classNames && sInfo!.classNames.length;
         const classNames = sInfo?.classNames?.join('\r\n') || '';
@@ -224,7 +216,7 @@ const WeekSchedulePage = () => {
 
     useEffect(() => {
         fetchSchedules();
-    }, []);
+    }, [fetchSchedules]);
 
     return (
         <>
@@ -245,9 +237,10 @@ const WeekSchedulePage = () => {
                 }
                 
                 .schedule-header-cell {
-                    background: #f1f3f5;
+                    background: var(--surface-100);
                     padding: 12px 8px;
-                    border: 1px solid #dee2e6;
+                    border: 1px solid var(--surface-border);
+                    color: var(--text-color);
                     text-align: center;
                     font-weight: 700;
                     position: sticky;
@@ -261,25 +254,26 @@ const WeekSchedulePage = () => {
                     transition: background 0.2s;
                 }
                 .sortable-header:hover {
-                    background: #e9ecef;
+                    background: var(--surface-200);
                 }
                 
-                .sticky-col-1 { position: sticky; left: 0; z-index: 20; background: #f1f3f5 !important; }
-                .sticky-col-2 { position: sticky; left: 120px; z-index: 20; background: #f1f3f5 !important; }
-                .sticky-col-3 { position: sticky; left: 200px; z-index: 20; background: #f1f3f5 !important; }
+                .sticky-col-1 { position: sticky; left: 0; z-index: 20; background: var(--surface-100) !important; }
+                .sticky-col-2 { position: sticky; left: 120px; z-index: 20; background: var(--surface-100) !important; }
+                .sticky-col-3 { position: sticky; left: 200px; z-index: 20; background: var(--surface-100) !important; }
                 
                 .schedule-cell {
                     min-height: 48px;
-                    border: 1px solid #dee2e6;
-                    background: white;
+                    border: 1px solid var(--surface-border);
+                    background: var(--surface-card);
                     display: flex;
                     align-items: stretch;
                     justify-content: center;
+                    color: var(--text-color);
                 }
                 
-                .sticky-cell-1 { position: sticky; left: 0; z-index: 5; background: #fff !important; font-weight: 600 !important; display: flex; align-items: center; justify-content: center; }
-                .sticky-cell-2 { position: sticky; left: 120px; z-index: 5; background: #fff !important; display: flex; align-items: center; justify-content: center; }
-                .sticky-cell-3 { position: sticky; left: 200px; z-index: 5; background: #fff !important; border-right: 2px solid #dee2e6 !important; display: flex; align-items: center; justify-content: center; }
+                .sticky-cell-1 { position: sticky; left: 0; z-index: 5; background: var(--surface-card) !important; font-weight: 600 !important; display: flex; align-items: center; justify-content: center; }
+                .sticky-cell-2 { position: sticky; left: 120px; z-index: 5; background: var(--surface-card) !important; display: flex; align-items: center; justify-content: center; }
+                .sticky-cell-3 { position: sticky; left: 200px; z-index: 5; background: var(--surface-card) !important; border-right: 2px solid var(--surface-border) !important; display: flex; align-items: center; justify-content: center; }
 
                 .schedule-input {
                     width: 100%;
@@ -293,21 +287,27 @@ const WeekSchedulePage = () => {
                     white-space: pre-wrap;
                     font-family: inherit;
                     line-height: 1.5;
+                    color: var(--text-color);
                 }
                 .schedule-input:hover {
-                    background: #f8f9fa;
-                    border-color: #dee2e6;
+                    background: var(--surface-ground);
+                    border-color: var(--surface-border);
                 }
                 .schedule-input:focus {
                     outline: none;
-                    background: white;
-                    border-color: #3b82f6;
-                    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+                    background: var(--surface-card);
+                    border-color: var(--primary-color);
+                    box-shadow: 0 0 0 2px var(--primary-100);
                 }
                 
                 .day-header {
-                    background: #eef2ff !important;
-                    color: #4338ca;
+                    background: var(--primary-50) !important;
+                    color: var(--primary-700);
+                }
+                
+                .layout-theme-dark .day-header {
+                    background: var(--primary-900) !important;
+                    color: var(--primary-100);
                 }
 
                 .counseling-btn {
@@ -376,7 +376,7 @@ const WeekSchedulePage = () => {
                                     />
                                 </div>
                             </div>
-                            <div className="text-sm text-600 bg-white p-2 border-round border-1 border-200">
+                            <div className="text-sm text-600 surface-card p-2 border-round border-1 surface-border">
                                 <i className="pi pi-info-circle mr-2"></i>
                                 <span className="mr-3">
                                     <kbd className="font-bold surface-200 px-1 border-round">Enter</kbd> 다음 행

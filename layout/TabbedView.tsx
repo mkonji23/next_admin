@@ -161,8 +161,8 @@ const TabbedView = ({ initialTab }: TabbedViewProps) => {
                     className="flex align-items-center"
                     style={{
                         width: '100%',
-                        borderBottom: '1px solid #dee2e6',
-                        backgroundColor: '#ffffff',
+                        borderBottom: '1px solid var(--surface-border)',
+                        backgroundColor: 'var(--surface-card)',
                         position: 'relative'
                     }}
                 >
@@ -188,10 +188,10 @@ const TabbedView = ({ initialTab }: TabbedViewProps) => {
                                 height: 4px;
                             }
                             .tab-menu-container::-webkit-scrollbar-track {
-                                background: #f1f1f1;
+                                background: var(--surface-ground);
                             }
                             .tab-menu-container::-webkit-scrollbar-thumb {
-                                background: #c1c1c1;
+                                background: var(--surface-400);
                                 border-radius: 10px;
                             }
                             /* PrimeReact 내부 스타일 강제 오버라이드 */
