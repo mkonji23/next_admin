@@ -179,6 +179,7 @@ const ClassModal = ({ visible, pData, onClose }: ClassModalProps) => {
             className="p-fluid"
             footer={dialogFooter}
             onHide={handleCancel}
+            blockScroll
         >
             <div className="field">
                 <label htmlFor="className">

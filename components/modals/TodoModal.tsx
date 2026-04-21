@@ -1,20 +1,18 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
-import { InputTextarea } from 'primereact/inputtextarea';
 import { Calendar } from 'primereact/calendar';
 import { MultiSelect } from 'primereact/multiselect';
-import { InputSwitch } from 'primereact/inputswitch';
 import { InputText } from 'primereact/inputtext';
+import { Dropdown } from 'primereact/dropdown';
 import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
-import { Todo, TodoUser } from '@/types/todo';
+import { Todo, TodoUser, TodoStatus } from '@/types/todo';
 import dayjs from 'dayjs';
-import { Editor } from 'primereact/editor';
-import Quill from 'quill';
 import { CustomEditor } from '../editor/CustomEditor';
+import { STATUS_LABELS, CATEGORY_OPTIONS } from '@/constants/todo';
 
 interface TodoModalProps {
     visible: boolean;
@@ -23,12 +21,10 @@ interface TodoModalProps {
         todo?: Todo;
         initialDate?: Date;
     };
-    onClose: (result?: Todo | null) => void;
+    onClose: (result?: Todo | Todo[] | null) => void;
 }
 
 const TodoModal = ({ visible, pData, onClose }: TodoModalProps) => {
-    const contentRef = useRef<Editor>(null);
-    const editorLoad = useRef(false);
     const mode = pData?.mode || 'new';
     const initialTodo = pData?.todo;
     const initialDate = pData?.initialDate || new Date();
@@ -37,10 +33,14 @@ const TodoModal = ({ visible, pData, onClose }: TodoModalProps) => {
     const { showToast } = useToast();
 
     const [todo, setTodo] = useState<Partial<Todo>>({
-        date: initialDate,
+        title: '',
+        category: 'OTHER',
+        startDate: initialDate,
+        endDate: initialDate,
+        status: 'PENDING',
+        delayedReason: '',
         assignees: [],
         content: '',
-        workingHours: '',
         isCompleted: false
     });
     const [users, setUsers] = useState<TodoUser[]>([]);
@@ -67,46 +67,70 @@ const TodoModal = ({ visible, pData, onClose }: TodoModalProps) => {
             if (mode === 'edit' && initialTodo) {
                 setTodo({
                     ...initialTodo,
-                    date: dayjs(initialTodo.date).toDate()
+                    startDate: dayjs(initialTodo.startDate).toDate(),
+                    endDate: dayjs(initialTodo.endDate).toDate()
                 });
             } else {
                 setTodo({
-                    date: initialDate,
+                    title: '제목없음',
+                    category: 'OTHER',
+                    startDate: initialDate,
+                    endDate: initialDate,
+                    status: 'PENDING',
+                    delayedReason: '',
                     assignees: [],
                     content: '',
-                    workingHours: '',
                     isCompleted: false
                 });
             }
             setSubmitted(false);
         }
-    }, [visible]);
+    }, [visible, mode]);
 
     const handleSave = async (action: 'save' | 'complete' = 'save') => {
         setSubmitted(true);
 
-        if (!todo.date || !todo.content || !todo.assignees || todo.assignees.length === 0) {
-            showToast({ severity: 'error', summary: '입력 오류', detail: '모든 필드를 입력해주세요.' });
+        if (
+            !todo.title ||
+            !todo.startDate ||
+            !todo.endDate ||
+            !todo.content ||
+            !todo.assignees ||
+            todo.assignees.length === 0
+        ) {
+            showToast({ severity: 'error', summary: '입력 오류', detail: '필수 항목을 모두 입력해주세요.' });
             return;
         }
 
         try {
             const isCompletedValue = action === 'complete' ? true : todo.isCompleted ?? false;
+            const statusValue = action === 'complete' ? 'COMPLETED' : todo.status || 'PENDING';
 
-            const payload: Todo = {
-                id: todo.id || '',
-                date: dayjs(todo.date).format('YYYYMMDD'),
-                assignees: todo.assignees || [],
+            const basePayload: Omit<Todo, 'id' | 'assignees'> = {
+                title: todo.title || '',
+                category: todo.category || 'OTHER',
+                startDate: dayjs(todo.startDate).format('YYYYMMDD'),
+                endDate: dayjs(todo.endDate).format('YYYYMMDD'),
+                status: statusValue as TodoStatus,
+                delayedReason: todo.delayedReason || '',
                 content: todo.content || '',
                 delta: todo.delta || [],
-                workingHours: todo.workingHours || '',
-                isCompleted: isCompletedValue,
-                createdAt: todo.createdAt
+                isCompleted: isCompletedValue
+            };
+
+            const payload: Todo = {
+                ...basePayload,
+                id: todo.id || '',
+                assignees: todo.assignees || []
             };
 
             if (mode === 'new') {
                 const response = await http.post('/choiMath/todo/createTodo', payload);
-                showToast({ severity: 'success', summary: '등록 성공', detail: '할 일이 등록되었습니다.' });
+                showToast({
+                    severity: 'success',
+                    summary: '등록 성공',
+                    detail: '할 일이 등록되었습니다.'
+                });
                 onClose({ ...payload, id: response.data.data.id });
             } else {
                 await http.post('/choiMath/todo/updateTodo', payload);
@@ -131,13 +155,13 @@ const TodoModal = ({ visible, pData, onClose }: TodoModalProps) => {
         <div className="flex justify-content-end gap-2">
             {mode === 'edit' ? (
                 <>
-                    {!todo.isCompleted && (
+                    {todo.status !== 'COMPLETED' && (
                         <Button
                             label="완료"
                             icon="pi pi-check-circle"
                             onClick={() => handleSave('complete')}
                             className="p-button-success"
-                            style={{ marginRight: 'auto' }} // 인라인 스타일로 강제 적용
+                            style={{ marginRight: 'auto' }}
                         />
                     )}
                     <Button
@@ -156,82 +180,127 @@ const TodoModal = ({ visible, pData, onClose }: TodoModalProps) => {
             )}
         </div>
     );
+
     return (
         <Dialog
             visible={visible}
-            style={{ width: '750px' }}
+            style={{ width: '800px' }}
             header={mode === 'edit' ? '할 일 수정' : '신규 할 일'}
             modal
+            blockScroll
             className="p-fluid"
             footer={dialogFooter}
             onHide={() => onClose(null)}
         >
-            <div className="field">
-                <label htmlFor="date">
-                    날짜 <span className="text-red-500">*</span>
-                </label>
-                <Calendar
-                    id="date"
-                    value={todo.date as Date}
-                    onChange={(e) => setTodo({ ...todo, date: e.value as Date })}
-                    showIcon
-                    dateFormat="yy-mm-dd"
-                    className={submitted && !todo.date ? 'p-invalid' : ''}
-                    locale="ko"
-                    appendTo={'self'}
-                />
-            </div>
-            <div className="field">
-                <label htmlFor="assignees">
-                    담당자 (중복 선택 가능) <span className="text-red-500">*</span>
-                </label>
-                <MultiSelect
-                    id="assignees"
-                    value={todo.assignees}
-                    options={users}
-                    optionLabel="userName"
-                    dataKey="userId"
-                    onChange={(e) => setTodo({ ...todo, assignees: e.value })}
-                    placeholder="담당자를 선택하세요"
-                    display="chip"
-                    className={submitted && (!todo.assignees || todo.assignees.length === 0) ? 'p-invalid' : ''}
-                />
-            </div>
-            <div className="field">
-                <label htmlFor="workingHours">근무시간(시간)</label>
-                <InputText
-                    id="workingHours"
-                    value={todo.workingHours || ''}
-                    onChange={(e) => setTodo({ ...todo, workingHours: e.target.value })}
-                    placeholder="1, 1.5 ,7 ...."
-                />
-            </div>
-            <div className="field">
-                <label htmlFor="content">
-                    업무 내용 <span className="text-red-500">*</span>
-                </label>
-                <CustomEditor
-                    value={todo.content}
-                    delta={todo.delta}
-                    style={{ height: '320px' }}
-                    onChange={(data) => {
-                        setTodo((prev) => ({
-                            ...prev,
-                            content: data.textValue,
-                            delta: data.delta
-                        }));
-                    }}
-                />
-            </div>
-            <div className="field flex align-items-center gap-2">
-                <label htmlFor="isCompleted" className="mb-0">
-                    완료 여부
-                </label>
-                <InputSwitch
-                    id="isCompleted"
-                    checked={todo.isCompleted || false}
-                    onChange={(e) => setTodo({ ...todo, isCompleted: e.value })}
-                />
+            <div className="grid">
+                <div className="field col-12">
+                    <label htmlFor="title">
+                        업무 제목 <span className="text-red-500">*</span>
+                    </label>
+                    <InputText
+                        id="title"
+                        value={todo.title || ''}
+                        onChange={(e) => setTodo({ ...todo, title: e.target.value })}
+                        placeholder="업무 제목을 입력하세요"
+                        className={submitted && !todo.title ? 'p-invalid' : ''}
+                    />
+                </div>
+
+                <div className="field col-12 md:col-6">
+                    <label htmlFor="category">업무 구분</label>
+                    <Dropdown
+                        id="category"
+                        value={todo.category}
+                        options={CATEGORY_OPTIONS}
+                        onChange={(e) => setTodo({ ...todo, category: e.value })}
+                        placeholder="구분 선택"
+                    />
+                </div>
+
+                <div className="field col-12 md:col-6">
+                    <label htmlFor="status">상태</label>
+                    <InputText id="status" value={STATUS_LABELS[todo.status || 'PENDING']} disabled />
+                </div>
+
+                {todo.status === 'HOLD' && (
+                    <div className="field col-12">
+                        <label htmlFor="delayedReason">지연 사유</label>
+                        <InputText
+                            id="delayedReason"
+                            value={todo.delayedReason || ''}
+                            onChange={(e) => setTodo({ ...todo, delayedReason: e.target.value })}
+                            placeholder="지연 사유를 입력하세요"
+                        />
+                    </div>
+                )}
+
+                <div className="field col-12 md:col-6">
+                    <label htmlFor="startDate">
+                        시작 일자 <span className="text-red-500">*</span>
+                    </label>
+                    <Calendar
+                        id="startDate"
+                        value={todo.startDate as Date}
+                        onChange={(e) => setTodo({ ...todo, startDate: e.value as Date })}
+                        showIcon
+                        dateFormat="yy-mm-dd"
+                        className={submitted && !todo.startDate ? 'p-invalid' : ''}
+                        locale="ko"
+                        appendTo={'self'}
+                    />
+                </div>
+
+                <div className="field col-12 md:col-6">
+                    <label htmlFor="endDate">
+                        종료 일자 <span className="text-red-500">*</span>
+                    </label>
+                    <Calendar
+                        id="endDate"
+                        value={todo.endDate as Date}
+                        onChange={(e) => setTodo({ ...todo, endDate: e.value as Date })}
+                        showIcon
+                        dateFormat="yy-mm-dd"
+                        className={submitted && !todo.endDate ? 'p-invalid' : ''}
+                        locale="ko"
+                        appendTo={'self'}
+                    />
+                </div>
+
+                <div className="field col-12">
+                    <label htmlFor="assignees">
+                        담당자
+                        <span className="text-red-500"> *</span>
+                    </label>
+                    <MultiSelect
+                        id="assignees"
+                        value={todo.assignees}
+                        options={users}
+                        optionLabel="userName"
+                        dataKey="userId"
+                        onChange={(e) => setTodo({ ...todo, assignees: e.value })}
+                        placeholder="담당자를 선택하세요"
+                        display="chip"
+                        className={submitted && (!todo.assignees || todo.assignees.length === 0) ? 'p-invalid' : ''}
+                    />
+                </div>
+
+                <div className="field col-12">
+                    <label htmlFor="content">
+                        상세 내용 <span className="text-red-500">*</span>
+                    </label>
+                    <CustomEditor
+                        value={todo.content}
+                        delta={todo.delta}
+                        style={{ height: '200px' }}
+                        onChange={(data) => {
+                            setTodo((prev) => ({
+                                ...prev,
+                                content: data.textValue,
+                                delta: data.delta
+                            }));
+                        }}
+                    />
+                </div>
             </div>
         </Dialog>
     );

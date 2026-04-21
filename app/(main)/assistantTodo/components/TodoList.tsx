@@ -1,12 +1,14 @@
+'use client';
+
 import React from 'react';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Tag } from 'primereact/tag';
-import { InputSwitch } from 'primereact/inputswitch';
 import dayjs from 'dayjs';
 import { Todo, TodoUser } from '@/types/todo';
 import { useCustomModal } from '@/hooks/useCustomModal';
 import { getUserTagColor } from '@/util/userTagColors';
+import { STATUS_LABELS, CATEGORY_LABELS, STATUS_SEVERITIES } from '@/constants/todo';
 
 interface TodoListProps {
     todos: Todo[];
@@ -45,7 +47,9 @@ const TodoList: React.FC<TodoListProps> = ({
 
     return (
         <div className="card mt-4">
-            <h5>할 일 목록(리스트)</h5>
+            <h5 className="flex align-items-center gap-2">
+                <i className="pi pi-list text-primary"></i>할 일 목록 (리스트)
+            </h5>
             <DataTable
                 value={todos}
                 paginator
@@ -60,41 +64,53 @@ const TodoList: React.FC<TodoListProps> = ({
                         (assignee: TodoUser) => assignee.userId === currentUserId
                     );
                     if (isAssignedToCurrentUser) {
-                        if (rowData.isCompleted) return 'my-assigned-todo-row-completed';
-                        return 'my-assigned-todo-row-completed';
+                        return rowData.status === 'COMPLETED'
+                            ? 'my-assigned-todo-row-completed'
+                            : 'my-assigned-todo-row';
                     }
-
                     return '';
                 }}
+                className="p-datatable-sm"
             >
                 <Column
-                    field="date"
-                    header="날짜"
+                    field="category"
+                    header="구분"
                     sortable
-                    body={(rowData) => dayjs(rowData.date).format('YYYY-MM-DD')}
-                    headerStyle={{ minWidth: '150px' }}
+                    body={(rowData) => <Tag value={CATEGORY_LABELS[rowData.category] || '기타'} severity={null} />}
+                    headerStyle={{ width: '100px' }}
                 />
                 <Column
-                    field="content"
-                    header="업무 내용"
+                    field="title"
+                    header="업무 제목"
                     sortable
-                    style={{ width: '40%' }}
-                    bodyClassName={'field-highlight'}
                     body={(rowData) => (
                         <div
-                            className={`truncate-cell cursor-pointer ${
-                                !rowData.isCompleted ? 'text-blue-500' : 'text-green-500'
-                            } font-semibold hover:underline`}
+                            className={`cursor-pointer font-bold hover:underline ${
+                                rowData.status === 'COMPLETED' ? 'text-400 line-through' : 'text-primary'
+                            }`}
                             onClick={() => handleContentClick(rowData)}
                             onDoubleClick={() => onEdit(rowData)}
                         >
-                            {rowData.content}
+                            {!rowData.title || rowData.title === '제목없음'
+                                ? (rowData.content?.replace(/<[^>]*>/g, '').substring(0, 10) || '제목없음') +
+                                  (rowData.content?.replace(/<[^>]*>/g, '').length > 10 ? '...' : '')
+                                : rowData.title}
                         </div>
                     )}
                 />
                 <Column
+                    header="기간"
+                    sortable
+                    sortField="startDate"
+                    body={(rowData) => (
+                        <div className="text-xs text-600">
+                            {dayjs(rowData.startDate).format('MM.DD')} ~ {dayjs(rowData.endDate).format('MM.DD')}
+                        </div>
+                    )}
+                    headerStyle={{ width: '150px' }}
+                />
+                <Column
                     field="assignees"
-                    headerStyle={{ minWidth: '100px' }}
                     header="담당자"
                     body={(rowData) => (
                         <div className="flex flex-wrap gap-1">
@@ -107,30 +123,29 @@ const TodoList: React.FC<TodoListProps> = ({
                                         style={{
                                             backgroundColor: backgroundColor,
                                             color: '#ffffff',
-                                            borderRadius: '4px'
+                                            borderRadius: '4px',
+                                            fontSize: '0.7rem'
                                         }}
                                     />
                                 );
                             })}
                         </div>
                     )}
-                    style={{ width: '20%' }}
+                    headerStyle={{ width: '120px' }}
                 />
-                <Column field="workingHours" header="근무시간" headerStyle={{ minWidth: '100px' }} />
                 <Column
-                    field="isCompleted"
-                    headerStyle={{ minWidth: '150px' }}
+                    field="status"
                     header="상태"
                     sortable
                     body={(rowData) => (
                         <div className="flex align-items-center gap-2">
-                            <InputSwitch checked={rowData.isCompleted} onChange={() => onToggleComplete(rowData)} />
                             <Tag
-                                value={rowData.isCompleted ? '완료' : '진행 중'}
-                                severity={rowData.isCompleted ? 'success' : 'warning'}
+                                value={STATUS_LABELS[rowData.status] || '진행 중'}
+                                severity={STATUS_SEVERITIES[rowData.status] as any}
                             />
                         </div>
                     )}
+                    headerStyle={{ width: '120px' }}
                 />
             </DataTable>
         </div>

@@ -220,6 +220,7 @@ const UserModal = ({ visible, pData, onClose }: UserModalProps) => {
             className="p-fluid"
             footer={dialogFooter}
             onHide={handleCancel}
+            blockScroll
         >
             <div className="field">
                 <label htmlFor="userId">

@@ -4,12 +4,12 @@ import React from 'react';
 import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
 import { Tag } from 'primereact/tag';
-import { InputTextarea } from 'primereact/inputtextarea';
 import dayjs from 'dayjs';
 import { Todo, TodoUser } from '@/types/todo';
 import { getUserTagColor } from '@/util/userTagColors';
 import { CustomEditor } from '../editor/CustomEditor';
 import { useCustomModal } from '@/hooks/useCustomModal';
+import { STATUS_LABELS, CATEGORY_LABELS, STATUS_SEVERITIES } from '@/constants/todo';
 
 interface ToDoDetailModalProps {
     visible: boolean;
@@ -24,6 +24,7 @@ const ToDoDetailModal: React.FC<ToDoDetailModalProps> = ({ visible, onClose, pDa
     const { openModal } = useCustomModal();
     const todo = pData?.todo;
     const onToggleComplete = pData?.onToggleComplete;
+
     const showTodoModal = async () => {
         const result = await openModal<any, Todo | null>({
             id: 'todo',
@@ -38,7 +39,7 @@ const ToDoDetailModal: React.FC<ToDoDetailModalProps> = ({ visible, onClose, pDa
 
     const footer = (
         <div className="flex justify-content-end gap-2">
-            {!todo.isCompleted && (
+            {todo.status !== 'COMPLETED' && (
                 <Button
                     label="완료 처리"
                     icon="pi pi-check-circle"
@@ -47,12 +48,11 @@ const ToDoDetailModal: React.FC<ToDoDetailModalProps> = ({ visible, onClose, pDa
                         onToggleComplete?.(todo);
                         onClose();
                     }}
-                    style={{ marginRight: 'auto' }} // 인라인 스타일로 강제 적용
+                    style={{ marginRight: 'auto' }}
                 />
             )}
 
             <Button label="수정" icon="pi pi-pencil" onClick={() => showTodoModal()} className="p-button-warning" />
-
             <Button label="닫기" icon="pi pi-times" className="p-button-text" onClick={() => onClose()} />
         </div>
     );
@@ -68,20 +68,39 @@ const ToDoDetailModal: React.FC<ToDoDetailModalProps> = ({ visible, onClose, pDa
             breakpoints={{ '960px': '75vw', '641px': '90vw' }}
             maximizable
             modal
+            blockScroll
         >
             <div className="p-3 surface-ground border-round">
                 <div className="grid">
-                    <div className="col-12 md:col-6 mb-3">
-                        <label className="block text-900 font-bold mb-1">날짜</label>
-                        <div className="text-700">{dayjs(todo.date).format('YYYY-MM-DD')}</div>
+                    <div className="col-12 mb-3">
+                        <label className="block text-900 font-bold mb-1">업무 제목</label>
+                        <div className="text-xl font-bold text-primary">{todo.title}</div>
                     </div>
+                    
                     <div className="col-12 md:col-6 mb-3">
-                        <label className="block text-900 font-bold mb-1">상태</label>
-                        <Tag
-                            value={todo.isCompleted ? '완료' : '진행 중'}
-                            severity={todo.isCompleted ? 'success' : 'info'}
-                        />
+                        <label className="block text-900 font-bold mb-1">구분 / 상태</label>
+                        <div className="flex gap-2">
+                            <Tag value={CATEGORY_LABELS[todo.category] || '기타'} severity="secondary" />
+                            <Tag value={STATUS_LABELS[todo.status] || '알수없음'} severity={STATUS_SEVERITIES[todo.status] as any} />
+                        </div>
                     </div>
+
+                    <div className="col-12 md:col-6 mb-3">
+                        <label className="block text-900 font-bold mb-1">기간</label>
+                        <div className="text-700">
+                            {dayjs(todo.startDate).format('YYYY-MM-DD')} ~ {dayjs(todo.endDate).format('YYYY-MM-DD')}
+                        </div>
+                    </div>
+
+                    {todo.status === 'HOLD' && todo.delayedReason && (
+                        <div className="col-12 mb-3">
+                            <label className="block text-red-500 font-bold mb-1">지연 사유</label>
+                            <div className="p-2 border-round surface-50 text-red-600 border-1 border-red-200">
+                                {todo.delayedReason}
+                            </div>
+                        </div>
+                    )}
+
                     <div className="col-12 md:col-6 mb-3">
                         <label className="block text-900 font-bold mb-1">담당자</label>
                         <div className="flex flex-wrap gap-1">
@@ -101,18 +120,18 @@ const ToDoDetailModal: React.FC<ToDoDetailModalProps> = ({ visible, onClose, pDa
                             })}
                         </div>
                     </div>
-                    <div className="col-12 md:col-6 mb-3">
-                        <label className="block text-900 font-bold mb-1">근무시간</label>
-                        <div className="text-700">{todo.workingHours || '-'}</div>
-                    </div>
+
+
                     <div className="col-12">
-                        <label className="block text-1200 font-bold mb-1">업무 내용</label>
-                        <CustomEditor
-                            value={todo.content}
-                            delta={todo.delta}
-                            readOnly={true}
-                            style={{ minHeight: '600px', maxHeight: '1000px' }}
-                        />
+                        <label className="block text-900 font-bold mb-1">상세 내용</label>
+                        <div className="surface-card border-round border-1 surface-border p-2">
+                            <CustomEditor
+                                value={todo.content}
+                                delta={todo.delta}
+                                readOnly={true}
+                                style={{ minHeight: '300px' }}
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
