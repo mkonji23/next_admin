@@ -59,17 +59,7 @@ const TodoList: React.FC<TodoListProps> = ({
                 selection={selectedTodo}
                 onSelectionChange={(e) => onSelectionChange(e.value as Todo)}
                 emptyMessage="할 일이 없습니다."
-                rowClassName={(rowData) => {
-                    const isAssignedToCurrentUser = rowData.assignees.some(
-                        (assignee: TodoUser) => assignee.userId === currentUserId
-                    );
-                    if (isAssignedToCurrentUser) {
-                        return rowData.status === 'COMPLETED'
-                            ? 'my-assigned-todo-row-completed'
-                            : 'my-assigned-todo-row';
-                    }
-                    return '';
-                }}
+                rowClassName={(rowData) => (rowData.id === selectedTodo?.id ? 'bg-blue-50' : '')}
                 className="p-datatable-sm"
             >
                 <Column
@@ -83,20 +73,34 @@ const TodoList: React.FC<TodoListProps> = ({
                     field="title"
                     header="업무 제목"
                     sortable
-                    body={(rowData) => (
-                        <div
-                            className={`cursor-pointer font-bold hover:underline ${
-                                rowData.status === 'COMPLETED' ? 'text-400 line-through' : 'text-primary'
-                            }`}
-                            onClick={() => handleContentClick(rowData)}
-                            onDoubleClick={() => onEdit(rowData)}
-                        >
-                            {!rowData.title || rowData.title === '제목없음'
-                                ? (rowData.content?.replace(/<[^>]*>/g, '').substring(0, 20) || '제목없음') +
-                                  (rowData.content?.replace(/<[^>]*>/g, '').length > 20 ? '...' : '')
-                                : rowData.title}
-                        </div>
-                    )}
+                    body={(rowData) => {
+                        const isAssignedToCurrentUser = rowData.assignees.some(
+                            (assignee: TodoUser) => assignee.userId === currentUserId
+                        );
+                        return (
+                            <div className="flex align-items-center gap-2">
+                                {isAssignedToCurrentUser && (
+                                    <Tag
+                                        value="내 업무"
+                                        severity="warning"
+                                        style={{ fontSize: '10px', padding: '2px 4px', height: 'fit-content' }}
+                                    />
+                                )}
+                                <div
+                                    className={`cursor-pointer font-bold hover:underline ${
+                                        rowData.status === 'COMPLETED' ? 'text-400 line-through' : 'text-primary'
+                                    }`}
+                                    onClick={() => handleContentClick(rowData)}
+                                    onDoubleClick={() => onEdit(rowData)}
+                                >
+                                    {!rowData.title || rowData.title === '제목없음'
+                                        ? (rowData.content?.replace(/<[^>]*>/g, '').substring(0, 20) || '제목없음') +
+                                          (rowData.content?.replace(/<[^>]*>/g, '').length > 20 ? '...' : '')
+                                        : rowData.title}
+                                </div>
+                            </div>
+                        );
+                    }}
                 />
                 <Column
                     header="기간"

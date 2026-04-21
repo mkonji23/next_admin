@@ -7,9 +7,11 @@ import { useConfirm } from '@/hooks/useConfirm';
 import { Todo, TodoStatus } from '@/types/todo';
 import TodoCalendar from './components/TodoCalendar';
 import TodoList from './components/TodoList';
+import TodoDetail from './components/TodoDetail';
 import dayjs from 'dayjs';
 import { useCustomModal } from '@/hooks/useCustomModal';
 import useAuthStore from '@/store/useAuthStore';
+import { Button } from 'primereact/button';
 
 const AssistantTodoPage = () => {
     const { get, post } = useHttp();
@@ -24,6 +26,7 @@ const AssistantTodoPage = () => {
     const [viewMode, setViewMode] = useState<'calendar' | 'kanban'>('calendar');
     const [statusFilter, setStatusFilter] = useState('all');
     const [idChk, setIdChk] = useState(true);
+    const [showDetail, setShowDetail] = useState(true);
 
     const fetchTodos = useCallback(async () => {
         try {
@@ -51,12 +54,38 @@ const AssistantTodoPage = () => {
         fetchTodos();
     }, [idChk, statusFilter, currentUserId, fetchTodos]);
 
-    const handleStatusChange = async (todo: Todo, newStatus: TodoStatus) => {
+    const handleToggleComplete = async (todo: Todo) => {
+        try {
+            const isCompleted = todo.status !== 'COMPLETED';
+            const updated: Todo = {
+                ...todo,
+                isCompleted,
+                status: isCompleted ? 'COMPLETED' : 'IN_PROGRESS'
+            };
+            await post('/choiMath/todo/updateTodo', updated);
+            setTodos((prev) => prev.map((t) => (t.id === todo.id ? updated : t)));
+
+            if (selectedTodo?.id === todo.id) {
+                setSelectedTodo(updated);
+            }
+
+            showToast({
+                severity: 'success',
+                summary: '성공',
+                detail: isCompleted ? '업무가 완료 처리되었습니다.' : '업무가 다시 진행 중으로 변경되었습니다.'
+            });
+        } catch (error) {
+            showToast({ severity: 'error', summary: '실패', detail: '업무 상태 변경에 실패했습니다.' });
+        }
+    };
+
+    const handleStatusChange = async (todo: Todo, newStatus: TodoStatus, delayedReason?: string) => {
         try {
             const updated: Todo = {
                 ...todo,
                 status: newStatus,
-                isCompleted: newStatus === 'COMPLETED'
+                isCompleted: newStatus === 'COMPLETED',
+                ...(newStatus === 'HOLD' && delayedReason ? { delayedReason } : {})
             };
             await post('/choiMath/todo/updateTodo', updated);
             setTodos((prev) => prev.map((t) => (t.id === todo.id ? updated : t)));
@@ -100,7 +129,6 @@ const AssistantTodoPage = () => {
             id: 'todo',
             pData: { mode: 'new', initialDate }
         });
-        // result is null or true because handleSave might create multiple
         if (result) {
             fetchTodos();
         }
@@ -136,61 +164,148 @@ const AssistantTodoPage = () => {
     );
 
     return (
-        <div className="p-3">
-            <TodoCalendar
-                viewMode={viewMode}
-                onViewModeChange={setViewMode}
-                todos={todos}
-                events={events}
-                onDateClick={(arg) => arg.jsEvent.detail === 2 && handleAdd(dayjs(arg.dateStr).toDate())}
-                onEventClick={(info) => {
-                    const todo = todos.find((t) => t.id === info.event.id);
-                    if (todo) {
-                        if (info.jsEvent.detail === 2) handleEdit(todo);
-                        else handleDetail(todo);
-                    }
-                }}
-                onEventChange={async (info) => {
-                    const todo = todos.find((t) => t.id === info.event.id);
-                    if (todo) {
-                        const updated = {
-                            ...todo,
-                            startDate: dayjs(info.event.start).format('YYYY-MM-DD'),
-                            endDate: dayjs(
-                                info.event.end ? dayjs(info.event.end).subtract(1, 'day') : info.event.start
-                            ).format('YYYY-MM-DD')
-                        };
-                        try {
-                            await post('/choiMath/todo/updateTodo', updated);
-                            setTodos((prev) => prev.map((t) => (t.id === todo.id ? updated : t)));
-                        } catch (e) {
-                            info.revert();
-                        }
-                    }
-                }}
-                onDatesSet={(info) => {}}
-                onAddTodo={() => handleAdd()}
-                onEdit={handleEdit}
-                onDetail={handleDetail}
-                onChangeCheck={(value) => {
-                    console.log('setIdChk(value)', value);
-                    setIdChk(value);
-                }}
-                onStatusChange={setStatusFilter}
-                onTodoStatusChange={handleStatusChange}
-            />
-
-            {viewMode === 'calendar' && (
-                <TodoList
+        <div className="grid p-3">
+            <div className={`col-12 ${showDetail ? 'lg:col-8' : 'lg:col-12'}`}>
+                <div className="flex justify-content-end mb-2">
+                    <Button
+                        icon={showDetail ? 'pi pi-chevron-right' : 'pi pi-chevron-left'}
+                        label={showDetail ? '상세 닫기' : '상세 열기'}
+                        className="p-button-text p-button-sm"
+                        onClick={() => setShowDetail(!showDetail)}
+                    />
+                </div>
+                <TodoCalendar
+                    viewMode={viewMode}
+                    onViewModeChange={setViewMode}
                     todos={todos}
-                    selectedTodo={selectedTodo}
-                    onSelectionChange={setSelectedTodo}
+                    events={events}
+                    onDateClick={(arg) => {
+                        if (arg.jsEvent.detail === 2) {
+                            handleAdd(dayjs(arg.dateStr).toDate());
+                        } else {
+                            setSelectedTodo(null);
+                        }
+                    }}
+                    onEventClick={(info) => {
+                        const todo = todos.find((t) => t.id === info.event.id);
+                        if (todo) {
+                            if (info.jsEvent.detail === 2) {
+                                handleDetail(todo);
+                            } else {
+                                setSelectedTodo(todo);
+                                setShowDetail(true);
+                            }
+                        }
+                    }}
+                    onEventChange={async (info) => {
+                        const todo = todos.find((t) => t.id === info.event.id);
+                        if (todo) {
+                            const updated = {
+                                ...todo,
+                                startDate: dayjs(info.event.start).format('YYYY-MM-DD'),
+                                endDate: dayjs(
+                                    info.event.end ? dayjs(info.event.end).subtract(1, 'day') : info.event.start
+                                ).format('YYYY-MM-DD')
+                            };
+                            try {
+                                await post('/choiMath/todo/updateTodo', updated);
+                                setTodos((prev) => prev.map((t) => (t.id === todo.id ? updated : t)));
+                            } catch (e) {
+                                info.revert();
+                            }
+                        }
+                    }}
+                    onDatesSet={(info) => {}}
+                    onAddTodo={() => handleAdd()}
                     onEdit={handleEdit}
-                    currentUserId={currentUserId}
-                    onRefresh={fetchTodos}
-                    onStatusChange={handleStatusChange}
+                    onDetail={handleDetail}
+                    onChangeCheck={(value) => setIdChk(value)}
+                    onStatusChange={(value) => setStatusFilter(value)}
+                    onTodoStatusChange={handleStatusChange}
                 />
+
+                {viewMode === 'calendar' && (
+                    <TodoList
+                        todos={todos}
+                        selectedTodo={selectedTodo}
+                        onSelectionChange={(todo) => {
+                            setSelectedTodo(todo);
+                            if (todo) setShowDetail(true);
+                        }}
+                        onEdit={handleEdit}
+                        onStatusChange={handleStatusChange}
+                        currentUserId={currentUserId}
+                        onRefresh={fetchTodos}
+                    />
+                )}
+            </div>
+
+            {showDetail && (
+                <div className="col-12 lg:col-4" style={{ position: 'sticky', top: '1rem', height: 'fit-content' }}>
+                    <TodoDetail
+                        selectedTodo={selectedTodo}
+                        onEdit={handleEdit}
+                        onStatusChange={handleStatusChange}
+                        onDelete={handleDelete}
+                        onClose={() => setShowDetail(false)}
+                    />
+                </div>
             )}
+
+            <style jsx global>{`
+                .calendar-container {
+                    background: var(--surface-card);
+                    padding: 1rem;
+                    border-radius: 8px;
+                }
+                .fc .fc-toolbar-title {
+                    font-size: 1.25rem;
+                    font-weight: 700;
+                }
+                .fc .fc-button-primary {
+                    background-color: var(--primary-color);
+                    border-color: var(--primary-color);
+                }
+                .fc .fc-button-primary:hover {
+                    background-color: var(--primary-700);
+                    border-color: var(--primary-700);
+                }
+                .fc .fc-button-primary:not(:disabled).fc-button-active,
+                .fc .fc-button-primary:not(:disabled):active {
+                    background-color: var(--primary-800);
+                    border-color: var(--primary-800);
+                }
+                .fc-event {
+                    cursor: pointer;
+                    padding: 2px 4px;
+                    border-radius: 4px;
+                }
+                .fc-daygrid-event-dot {
+                    display: none;
+                }
+                .hide-toolbar .ql-container {
+                    border: none !important;
+                }
+                .hide-toolbar .ql-editor {
+                    overflow-y: visible !important;
+                    height: auto !important;
+                    padding: 0 !important;
+                }
+                .fc-day-sun .fc-col-header-cell-cushion,
+                .fc-daygrid-day.fc-day-sun .fc-daygrid-day-number {
+                    color: #e91e63 !important;
+                }
+                .fc-day-sat .fc-col-header-cell-cushion,
+                .fc-daygrid-day.fc-day-sat .fc-daygrid-day-number {
+                    color: #2196f3 !important;
+                }
+                .my-assigned-todo-row {
+                    background-color: var(--yellow-400);
+                }
+                .my-assigned-todo-row-completed {
+                    background-color: #fa90ce;
+                }
+            `}</style>
         </div>
     );
 };

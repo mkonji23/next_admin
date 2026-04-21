@@ -96,8 +96,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ todos, onEdit, onDetail, onSt
 
                     <div className="font-bold mb-2 text-900 line-height-3">
                         {!todo.title || todo.title === '제목없음'
-                            ? (todo.content?.replace(/<[^>]*>/g, '').substring(0, 10) || '제목없음') +
-                              (todo.content?.replace(/<[^>]*>/g, '').length > 10 ? '...' : '')
+                            ? (todo.content?.replace(/<[^>]*>/g, '').substring(0, 20) || '제목없음') +
+                              (todo.content?.replace(/<[^>]*>/g, '').length > 20 ? '...' : '')
                             : todo.title}
                     </div>
 

@@ -4,7 +4,6 @@ import UserModal from '@/components/modals/UserModal';
 import ClassModal from '@/components/modals/ClassModal';
 import StudentModal from '@/components/modals/StudentModal';
 import TodoModal from '@/components/modals/TodoModal';
-import TodoDetail from '@/app/(main)/assistantTodo/components/TodoDetail';
 import ToDoDetailModal from '@/components/modals/ToDoDetailModal';
 import { ModalConfig, ModalContextType, ModalProviderProps, ModalState, OpenModalParams } from '@/types/modal';
 import StudentSelectModal from '@/components/modals/StudentSelectModal';

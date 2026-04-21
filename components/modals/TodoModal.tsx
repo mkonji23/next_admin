@@ -71,11 +71,12 @@ const TodoModal = ({ visible, pData, onClose }: TodoModalProps) => {
                     endDate: dayjs(initialTodo.endDate).toDate()
                 });
             } else {
+                const defaultDate = pData?.initialDate || new Date();
                 setTodo({
-                    title: '제목없음',
+                    title: '',
                     category: 'OTHER',
-                    startDate: initialDate,
-                    endDate: initialDate,
+                    startDate: defaultDate,
+                    endDate: defaultDate,
                     status: 'PENDING',
                     delayedReason: '',
                     assignees: [],
@@ -85,7 +86,7 @@ const TodoModal = ({ visible, pData, onClose }: TodoModalProps) => {
             }
             setSubmitted(false);
         }
-    }, [visible, mode, initialTodo, initialDate]);
+    }, [visible]);
 
     const handleSave = async (action: 'save' | 'status-change' = 'save', newStatus?: TodoStatus) => {
         setSubmitted(true);
@@ -151,63 +152,8 @@ const TodoModal = ({ visible, pData, onClose }: TodoModalProps) => {
         }
     };
 
-    const renderStatusButtons = () => {
-        if (mode !== 'edit' || !todo.status) return null;
-
-        return (
-            <>
-                {todo.status === 'PENDING' && (
-                    <Button
-                        label="진행 시작"
-                        icon="pi pi-play"
-                        className="p-button-info"
-                        onClick={() => handleSave('status-change', 'IN_PROGRESS')}
-                        style={{ marginRight: 'auto' }}
-                    />
-                )}
-                {todo.status === 'IN_PROGRESS' && (
-                    <>
-                        <Button
-                            label="완료 처리"
-                            icon="pi pi-check-circle"
-                            className="p-button-success"
-                            onClick={() => handleSave('status-change', 'COMPLETED')}
-                            style={{ marginRight: 'auto' }}
-                        />
-                        <Button
-                            label="보류/지연"
-                            icon="pi pi-pause"
-                            className="p-button-danger"
-                            onClick={() => handleSave('status-change', 'HOLD')}
-                            style={{ marginRight: 'auto' }}
-                        />
-                    </>
-                )}
-                {todo.status === 'HOLD' && (
-                    <Button
-                        label="완료 처리"
-                        icon="pi pi-check-circle"
-                        className="p-button-success"
-                        onClick={() => handleSave('status-change', 'COMPLETED')}
-                        style={{ marginRight: 'auto' }}
-                    />
-                )}
-                {todo.status === 'COMPLETED' && (
-                    <Button
-                        label="다시 진행"
-                        icon="pi pi-refresh"
-                        className="p-button-info"
-                        onClick={() => handleSave('status-change', 'IN_PROGRESS')}
-                        style={{ marginRight: 'auto' }}
-                    />
-                )}
-            </>
-        );
-    };
-
     const dialogFooter = (
         <div className="flex justify-content-end gap-2">
-            {renderStatusButtons()}
             <Button label="저장" icon="pi pi-save" onClick={() => handleSave('save')} className="p-button-warning" />
             <Button label="취소" icon="pi pi-times" onClick={() => onClose()} className="p-button-text" />
         </div>
@@ -279,7 +225,15 @@ const TodoModal = ({ visible, pData, onClose }: TodoModalProps) => {
                     <Calendar
                         id="startDate"
                         value={todo.startDate as Date}
-                        onChange={(e) => setTodo({ ...todo, startDate: e.value as Date })}
+                        onChange={(e) => {
+                            const newStart = e.value as Date;
+                            const newTodo = { ...todo, startDate: newStart };
+                            // 종료일이 시작일보다 앞선 경우 종료일을 시작일과 맞춤
+                            if (todo.endDate && dayjs(newStart).isAfter(dayjs(todo.endDate))) {
+                                newTodo.endDate = newStart;
+                            }
+                            setTodo(newTodo);
+                        }}
                         showIcon
                         dateFormat="yy-mm-dd"
                         className={submitted && !todo.startDate ? 'p-invalid' : ''}
@@ -301,6 +255,7 @@ const TodoModal = ({ visible, pData, onClose }: TodoModalProps) => {
                         className={submitted && !todo.endDate ? 'p-invalid' : ''}
                         locale="ko"
                         appendTo={'self'}
+                        minDate={todo.startDate as Date}
                     />
                 </div>
 
