@@ -756,8 +756,8 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                 </div>
 
                 <Card className="mb-5 shadow-1 border-round-2xl">
-                    <div className="flex align-items-center justify-content-between">
-                        <div className="flex align-items-center gap-3">
+                    <div className="flex flex-column md:flex-row align-items-center justify-content-between gap-3">
+                        <div className="flex align-items-center gap-3 w-full md:w-auto">
                             <div className="relative">
                                 <div
                                     className="w-4rem h-4rem flex-shrink-0 border-circle bg-blue-100 flex align-items-center justify-content-center cursor-pointer hover:shadow-2 transition-duration-200 overflow-hidden"
@@ -832,89 +832,83 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                                     </>
                                 )}
                             </div>
-                            <div>
+                            <div className="flex-1 min-w-0">
                                 <div className="flex align-items-center gap-2 flex-wrap">
-                                    <h1 className="text-xl md:text-3xl font-bold m-0 text-900">{finalName} 학생</h1>
+                                    <h1 className="text-xl md:text-3xl font-bold m-0 text-900 white-space-nowrap">{finalName} 학생</h1>
                                     {getTrophy(globalRank)}
+                                    <div className="flex align-items-center gap-1 flex-wrap">
+                                        {(studentInfo.grade || finalGrade) &&
+                                            (() => {
+                                                const gradeVal = String(studentInfo.grade || finalGrade);
+                                                const displayGrade = gradeVal.includes('학년') ? gradeVal : `${gradeVal}학년`;
+                                                return (
+                                                    <Tag
+                                                        value={displayGrade}
+                                                        className={`text-xs md:text-sm px-2 py-1 md:px-3 md:py-2 border-round-xl shadow-1 font-bold ${
+                                                            displayGrade === '1학년'
+                                                                ? 'bg-green-500'
+                                                                : displayGrade === '2학년'
+                                                                ? 'bg-indigo-500'
+                                                                : displayGrade === '3학년'
+                                                                ? 'bg-orange-500'
+                                                                : 'bg-gray-500'
+                                                        }`}
+                                                        style={{
+                                                            minWidth: '60px',
+                                                            display: 'inline-flex',
+                                                            justifyContent: 'center'
+                                                        }}
+                                                    />
+                                                );
+                                            })()}
+                                        {(studentInfo.school || finalSchool) && (
+                                            <Tag
+                                                style={{
+                                                    minWidth: '60px',
+                                                    display: 'inline-flex',
+                                                    justifyContent: 'center'
+                                                }}
+                                                value={studentInfo.school || finalSchool}
+                                                severity="info"
+                                                className="text-xs md:text-sm px-2 py-1 md:px-3 md:py-2 border-round-xl shadow-1 font-bold bg-blue-500"
+                                            />
+                                        )}
+                                    </div>
                                 </div>
-
-                                <p className="text-500 m-0 mt-1">칭찬 현황을 확인해보세요!</p>
-                            </div>
-                            <div className="ml-2 mt-1">
-                                <Button
-                                    label="공지사항"
-                                    icon="pi pi-bell"
-                                    severity="info"
-                                    size="small"
-                                    className="p-button-outlined border-round-xl p-1 px-2 text-xs"
-                                    style={{ height: '24px' }}
-                                    onClick={handleShowNotices}
-                                >
-                                    {notices.length > 0 && (
-                                        <span
-                                            className="ml-1 bg-red-500 border-circle flex align-items-center justify-content-center text-white"
-                                            style={{ width: '14px', height: '14px', fontSize: '9px' }}
-                                        >
-                                            {notices.length}
-                                        </span>
-                                    )}
-                                </Button>
+                                <p className="text-500 m-0 mt-1 text-sm md:text-base">칭찬 현황을 확인해보세요!</p>
                             </div>
                         </div>
-                        <div className="flex flex-column align-items-end gap-2">
-                            <div className="flex align-items-center gap-3">
-                                <div className="flex flex-column align-items-end gap-2">
-                                    {(studentInfo.grade || finalGrade) &&
-                                        (() => {
-                                            const gradeVal = String(studentInfo.grade || finalGrade);
-                                            const displayGrade = gradeVal.includes('학년')
-                                                ? gradeVal
-                                                : `${gradeVal}학년`;
-                                            return (
-                                                <Tag
-                                                    value={displayGrade}
-                                                    className={`text-sm px-3 py-2 border-round-xl shadow-1 font-bold ${
-                                                        displayGrade === '1학년'
-                                                            ? 'bg-green-500'
-                                                            : displayGrade === '2학년'
-                                                            ? 'bg-indigo-500'
-                                                            : displayGrade === '3학년'
-                                                            ? 'bg-orange-500'
-                                                            : 'bg-gray-500'
-                                                    }`}
-                                                    style={{
-                                                        minWidth: '70px',
-                                                        display: 'inline-flex',
-                                                        justifyContent: 'center'
-                                                    }}
-                                                />
-                                            );
-                                        })()}
-                                    {(studentInfo.school || finalSchool) && (
-                                        <Tag
-                                            style={{
-                                                minWidth: '70px',
-                                                display: 'inline-flex',
-                                                justifyContent: 'center'
-                                            }}
-                                            value={studentInfo.school || finalSchool}
-                                            severity="info"
-                                            className="text-sm px-3 py-2 border-round-xl shadow-1 font-bold bg-blue-500"
-                                        />
-                                    )}
-                                </div>
-                                <Button
-                                    icon="pi pi-sign-out"
-                                    severity="secondary"
-                                    text
-                                    rounded
-                                    aria-label="로그아웃"
-                                    tooltip="로그아웃"
-                                    tooltipOptions={{ position: 'bottom' }}
-                                    onClick={handleLogout}
-                                    className="hover:bg-gray-200"
-                                />
-                            </div>
+
+                        <div className="flex align-items-center gap-2 ml-auto md:ml-0">
+                            <Button
+                                label="공지사항"
+                                icon="pi pi-bell"
+                                severity="info"
+                                size="small"
+                                className="p-button-outlined border-round-xl p-1 px-2 text-xs"
+                                style={{ height: '32px' }}
+                                onClick={handleShowNotices}
+                            >
+                                {notices.length > 0 && (
+                                    <span
+                                        className="ml-1 bg-red-500 border-circle flex align-items-center justify-content-center text-white"
+                                        style={{ width: '16px', height: '16px', fontSize: '10px' }}
+                                    >
+                                        {notices.length}
+                                    </span>
+                                )}
+                            </Button>
+                            <Button
+                                icon="pi pi-sign-out"
+                                severity="secondary"
+                                text
+                                rounded
+                                aria-label="로그아웃"
+                                tooltip="로그아웃"
+                                tooltipOptions={{ position: 'bottom' }}
+                                onClick={handleLogout}
+                                className="hover:bg-gray-200"
+                            />
                         </div>
                     </div>
                 </Card>
