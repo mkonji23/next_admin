@@ -13,6 +13,8 @@ import { ShareItem } from '@/app/(main)/kakao-share/types';
 import Zoom from 'yet-another-react-lightbox/plugins/zoom';
 import { CustomEditor } from '@/components/editor/CustomEditor';
 import { useLightboxHistory } from '@/hooks/useLightboxHistory';
+import { LayoutContext } from '@/layout/context/layoutcontext';
+import { useContext } from 'react';
 
 interface KakaoShareViewContentProps {
     shareData: ShareItem;
@@ -30,6 +32,8 @@ const KakaoShareViewContent: React.FC<KakaoShareViewContentProps> = ({
     const [open, setOpen] = useState(false);
     const [index, setIndex] = useState(0);
     const { handleClose } = useLightboxHistory(open, setOpen);
+    const { layoutConfig } = useContext(LayoutContext);
+    const isDark = layoutConfig.colorScheme === 'dark';
 
     const formatDate = (dateStr?: string) => {
         if (!dateStr) return '';
@@ -42,10 +46,10 @@ const KakaoShareViewContent: React.FC<KakaoShareViewContentProps> = ({
     }));
 
     return (
-        <div className="layout-content p-3 md:p-5 flex justify-content-center min-h-screen bg-gray-50">
+        <div className="layout-content p-3 md:p-5 flex justify-content-center min-h-screen surface-ground">
             <div className="w-full" style={{ maxWidth: '800px' }}>
                 <Card title={shareData.actualTitle} className="shadow-4 mb-4">
-                    <div className="flex justify-content-between align-items-center mb-4 text-sm text-gray-500 flex-wrap gap-2">
+                    <div className="flex justify-content-between align-items-center mb-4 text-sm text-color-secondary flex-wrap gap-2">
                         <div className="flex align-items-center gap-2">
                             {pageType && (
                                 <Tag
@@ -57,17 +61,17 @@ const KakaoShareViewContent: React.FC<KakaoShareViewContentProps> = ({
                         </div>
                         {shareData?.className && (
                             <span>
-                                클래스 이름: <span className="text-900 font-bold">{shareData.className}</span>
+                                클래스 이름: <span className="text-color font-bold">{shareData.className}</span>
                             </span>
                         )}
                         {shareData?.studentName && (
                             <span>
-                                학생 이름: <span className="text-900 font-bold">{shareData.studentName}</span>
+                                학생 이름: <span className="text-color font-bold">{shareData.studentName}</span>
                             </span>
                         )}
                     </div>
 
-                    <div className="mb-6 surface-50 p-3 border-round">
+                    <div className="mb-6 surface-section p-3 border-round">
                         <CustomEditor
                             value={shareData.actualContent || ''}
                             delta={shareData.delta}
@@ -104,8 +108,8 @@ const KakaoShareViewContent: React.FC<KakaoShareViewContentProps> = ({
                                                     icon="pi pi-download"
                                                     className="p-button-rounded p-button-secondary p-button-text p-button-sm absolute top-0 left-0 m-2"
                                                     style={{
-                                                        background: 'rgba(255,255,255,0.7)',
-                                                        color: '#333',
+                                                        background: isDark ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.7)',
+                                                        color: isDark ? '#fff' : '#333',
                                                         width: '1.75rem',
                                                         height: '1.75rem',
                                                         zIndex: 1
@@ -132,7 +136,7 @@ const KakaoShareViewContent: React.FC<KakaoShareViewContentProps> = ({
                         style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover' }}
                         className="shadow-2"
                     />
-                    <div className="text-gray-400 text-xs">
+                    <div className="text-color-secondary text-xs">
                         &copy; {new Date().getFullYear()} chochoMath. All rights reserved.
                     </div>
                 </div>

@@ -51,8 +51,10 @@ const AssistantTodoPage = () => {
     }, [statusFilter, idChk, currentUserId]);
 
     useEffect(() => {
-        fetchTodos();
-    }, [idChk, statusFilter, currentUserId, fetchTodos]);
+        if (currentUserId) {
+            fetchTodos();
+        }
+    }, [idChk, statusFilter, currentUserId]);
 
     const handleToggleComplete = async (todo: Todo) => {
         try {

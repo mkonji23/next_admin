@@ -10,12 +10,15 @@ import { InputText } from 'primereact/inputtext';
 import { classNames } from 'primereact/utils';
 import useAuth from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
+import { requestFcmToken } from '@/lib/firebase';
+import { useHttp } from '@/util/axiosInstance';
 const LoginPage = () => {
     const { login } = useAuth();
     const [password, setPassword] = useState('');
     const [email, setEmail] = useState('');
     const { layoutConfig } = useContext(LayoutContext);
     const { showToast } = useToast();
+    const { post } = useHttp();
 
     const router = useRouter();
     const containerClassName = classNames(
@@ -26,11 +29,100 @@ const LoginPage = () => {
     // 한글 자판 위치를 영문 자판 위치로 매핑하는 함수
     const korToEng = (text: string) => {
         const cho = ['r', 'R', 's', 'e', 'E', 'f', 'a', 'q', 'Q', 't', 'T', 'd', 'w', 'W', 'c', 'z', 'x', 'v', 'g'];
-        const jung = ['k', 'o', 'i', 'O', 'j', 'p', 'u', 'P', 'h', 'hk', 'ho', 'hl', 'y', 'n', 'nj', 'np', 'nl', 'b', 'm', 'ml', 'l'];
-        const jong = ['', 'r', 'R', 'rt', 's', 'sw', 'sg', 'e', 'f', 'fr', 'fa', 'fq', 'ft', 'fx', 'fv', 'fg', 'a', 'q', 'qt', 't', 'T', 'd', 'w', 'c', 'z', 'x', 'v', 'g'];
+        const jung = [
+            'k',
+            'o',
+            'i',
+            'O',
+            'j',
+            'p',
+            'u',
+            'P',
+            'h',
+            'hk',
+            'ho',
+            'hl',
+            'y',
+            'n',
+            'nj',
+            'np',
+            'nl',
+            'b',
+            'm',
+            'ml',
+            'l'
+        ];
+        const jong = [
+            '',
+            'r',
+            'R',
+            'rt',
+            's',
+            'sw',
+            'sg',
+            'e',
+            'f',
+            'fr',
+            'fa',
+            'fq',
+            'ft',
+            'fx',
+            'fv',
+            'fg',
+            'a',
+            'q',
+            'qt',
+            't',
+            'T',
+            'd',
+            'w',
+            'c',
+            'z',
+            'x',
+            'v',
+            'g'
+        ];
         const singleJamo: { [key: string]: string } = {
-            'ㄱ': 'r', 'ㄲ': 'R', 'ㄴ': 's', 'ㄷ': 'e', 'ㄸ': 'E', 'ㄹ': 'f', 'ㅁ': 'a', 'ㅂ': 'q', 'ㅃ': 'Q', 'ㅅ': 't', 'ㅆ': 'T', 'ㅇ': 'd', 'ㅈ': 'w', 'ㅉ': 'W', 'ㅊ': 'c', 'ㅋ': 'z', 'ㅌ': 'x', 'ㅍ': 'v', 'ㅎ': 'g',
-            'ㅏ': 'k', 'ㅐ': 'o', 'ㅑ': 'i', 'ㅒ': 'O', 'ㅓ': 'j', 'ㅔ': 'p', 'ㅕ': 'u', 'ㅖ': 'P', 'ㅗ': 'h', 'ㅘ': 'hk', 'ㅙ': 'ho', 'ㅚ': 'hl', 'ㅛ': 'y', 'ㅜ': 'n', 'ㅝ': 'nj', 'ㅞ': 'np', 'ㅟ': 'nl', 'ㅠ': 'b', 'ㅡ': 'm', 'ㅢ': 'ml', 'ㅣ': 'l'
+            ㄱ: 'r',
+            ㄲ: 'R',
+            ㄴ: 's',
+            ㄷ: 'e',
+            ㄸ: 'E',
+            ㄹ: 'f',
+            ㅁ: 'a',
+            ㅂ: 'q',
+            ㅃ: 'Q',
+            ㅅ: 't',
+            ㅆ: 'T',
+            ㅇ: 'd',
+            ㅈ: 'w',
+            ㅉ: 'W',
+            ㅊ: 'c',
+            ㅋ: 'z',
+            ㅌ: 'x',
+            ㅍ: 'v',
+            ㅎ: 'g',
+            ㅏ: 'k',
+            ㅐ: 'o',
+            ㅑ: 'i',
+            ㅒ: 'O',
+            ㅓ: 'j',
+            ㅔ: 'p',
+            ㅕ: 'u',
+            ㅖ: 'P',
+            ㅗ: 'h',
+            ㅘ: 'hk',
+            ㅙ: 'ho',
+            ㅚ: 'hl',
+            ㅛ: 'y',
+            ㅜ: 'n',
+            ㅝ: 'nj',
+            ㅞ: 'np',
+            ㅟ: 'nl',
+            ㅠ: 'b',
+            ㅡ: 'm',
+            ㅢ: 'ml',
+            ㅣ: 'l'
         };
 
         let result = '';
@@ -54,6 +146,19 @@ const LoginPage = () => {
     const signIn = async () => {
         const res = await login({ userId: email, password: password });
         if (res) {
+            // 로그인 성공 후 FCM 토큰 요청
+            const token = await requestFcmToken();
+            if (token) {
+                try {
+                    // 서버에 토큰 저장 요청 (API가 구현되어 있다고 가정)
+                    await post('/db/saveToken', {
+                        token,
+                        type: process.env.NODE_ENV === 'development' ? 'debug' : 'release'
+                    });
+                } catch (error) {
+                    console.error('Failed to update FCM token on server:', error);
+                }
+            }
             router.push('/');
         }
     };
