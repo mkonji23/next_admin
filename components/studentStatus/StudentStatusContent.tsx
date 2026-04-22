@@ -216,7 +216,6 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
     }, [stats, chartData, attendanceRate]);
 
     const fetchStudentStats = async () => {
-        setLoading(true);
         try {
             const params = {
                 dateFrom: currentDate.startOf('month').format('YYYYMMDD'),
@@ -322,9 +321,9 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
         } catch (error) {
             setStats(null);
             if (error === 'jwt must be provided' || error === 'student session expired') {
-                handleLogout();
+                setAiAnalyzing(false);
             }
-            console.error('Error fetching student stats:', error);
+            console.error('Fetch student stats error:', error);
         } finally {
             setLoading(false);
         }
@@ -689,10 +688,12 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
         }
     };
 
-    if (loading) {
+    // 데이터가 아예 없을 때(최초 로딩 등)만 전체 스피너를 보여주고,
+    // 데이터가 있는 상태에서 갱신할 때는 globalLoadingBar가 처리하도록 합니다.
+    if (loading && !stats) {
         return (
             <div className="flex justify-content-center align-items-center min-h-screen">
-                <i className="pi pi-spin pi-spinner text-primary text-4xl"></i>
+                <img src="/layout/images/loading.gif" alt="Loading..." style={{ width: '200px' }} />
             </div>
         );
     }
@@ -725,6 +726,7 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                             readOnlyInput
                             locale="ko"
                             appendTo={'self'}
+                            maxDate={new Date()}
                         />
                     </div>
                     <Button
@@ -733,6 +735,7 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                         rounded
                         text
                         onClick={() => setCurrentDate((prev) => prev.add(1, 'month'))}
+                        disabled={currentDate.isSame(dayjs(), 'month') || currentDate.isAfter(dayjs(), 'month')}
                     />
                     <Button
                         icon="pi pi-refresh"
