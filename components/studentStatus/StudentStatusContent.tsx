@@ -22,6 +22,7 @@ import useStudentAuthStore from '@/store/useStudentAuthStore';
 import { useCustomModal } from '@/hooks/useCustomModal';
 import { LayoutContext } from '@/layout/context/layoutcontext';
 import { useContext } from 'react';
+import { PrimeReactContext } from 'primereact/api';
 
 interface StudentStatusContentProps {
     studentAuthData?: StudentAuthData;
@@ -31,6 +32,7 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
     const http = useHttp();
     const { clearStudentAuth } = useStudentAuthStore();
     const { layoutConfig, setLayoutConfig } = useContext(LayoutContext);
+    const { changeTheme } = useContext(PrimeReactContext);
     const isDark = layoutConfig.colorScheme === 'dark';
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState<any>(null);
@@ -558,16 +560,14 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
     };
 
     const toggleDarkMode = () => {
-        const newColorScheme = isDark ? 'light' : 'dark';
-        const newTheme = isDark ? 'lara-light-indigo' : 'lara-dark-indigo';
+        const isLight = layoutConfig.theme === 'lara-light-indigo';
+        const newTheme = isLight ? 'lara-dark-indigo' : 'lara-light-indigo';
+        const newColorScheme = isLight ? 'dark' : 'light';
 
-        setLayoutConfig((prevConfig) => ({
-            ...prevConfig,
-            colorScheme: newColorScheme,
-            theme: newTheme
-        }));
+        changeTheme?.(layoutConfig.theme, newTheme, 'theme-css', () => {
+            setLayoutConfig((prevState) => ({ ...prevState, theme: newTheme, colorScheme: newColorScheme }));
+        });
     };
-
 
     const rowExpansionTemplate = (data: any) => {
         const filterAttendance = data?.attendance?.filter((item: any) => item.status !== 'none' || item.praise);
@@ -709,7 +709,11 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                         text
                         onClick={() => setCurrentDate((prev) => prev.subtract(1, 'month'))}
                     />
-                    <div className={`flex align-items-center gap-2 px-3 shadow-1 border-round-3xl ${isDark ? 'surface-card' : 'bg-white'}`}>
+                    <div
+                        className={`flex align-items-center gap-2 px-3 shadow-1 border-round-3xl ${
+                            isDark ? 'surface-card' : 'bg-white'
+                        }`}
+                    >
                         <i className="pi pi-calendar text-primary text-xl ml-2"></i>
                         <Calendar
                             value={currentDate.toDate()}
@@ -770,7 +774,9 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                                 {isTopRanker && winImage && (
                                     <>
                                         <div
-                                            className={`absolute flex align-items-center justify-content-center border-circle shadow-2 overflow-hidden hover:shadow-4 transition-duration-200 ${isDark ? 'surface-card' : 'bg-white'}`}
+                                            className={`absolute flex align-items-center justify-content-center border-circle shadow-2 overflow-hidden hover:shadow-4 transition-duration-200 ${
+                                                isDark ? 'surface-card' : 'bg-white'
+                                            }`}
                                             style={{
                                                 width: '28px',
                                                 height: '28px',
