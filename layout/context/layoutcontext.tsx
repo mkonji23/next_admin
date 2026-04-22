@@ -44,6 +44,21 @@ export const LayoutProvider = ({ children }: ChildContainerProps) => {
         root.classList.add(`layout-theme-${layoutConfig.colorScheme}`);
     }, [layoutConfig]);
 
+    // 테마가 변경될 때마다 실제 CSS 파일을 교체합니다.
+    useEffect(() => {
+        const themeLink = document.getElementById('theme-css') as HTMLLinkElement;
+        if (themeLink) {
+            const currentHref = themeLink.getAttribute('href');
+            const newHref = `/themes/${layoutConfig.theme}/theme.css`;
+            
+            if (currentHref !== newHref) {
+                changeTheme?.(layoutConfig.theme, layoutConfig.theme, 'theme-css', () => {});
+                // 또는 더 직접적으로:
+                themeLink.setAttribute('href', newHref);
+            }
+        }
+    }, [layoutConfig.theme]);
+
     const [layoutState, setLayoutState] = useState<LayoutState>({
         staticMenuDesktopInactive: false,
         overlayMenuActive: false,

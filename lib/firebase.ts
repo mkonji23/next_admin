@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getMessaging, Messaging, getToken } from 'firebase/messaging';
+import { getMessaging, Messaging, getToken, onMessage } from 'firebase/messaging';
 
 const firebaseConfig = {
     apiKey: 'AIzaSyBVnLDizyoMB8UxTvFo8wei57VJZ4ABcxI',
@@ -19,6 +19,9 @@ let messaging: Messaging | undefined;
 // 클라이언트 사이드에서만 messaging을 초기화합니다.
 if (typeof window !== 'undefined') {
     messaging = getMessaging(app);
+    // onMessage(messaging, (payload) => {
+    //     console.log('Message received. ', payload);
+    // });
 }
 
 export const requestFcmToken = async () => {
@@ -28,10 +31,9 @@ export const requestFcmToken = async () => {
         const permission = await Notification.requestPermission();
         if (permission === 'granted' && messaging) {
             const token = await getToken(messaging, {
-                vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
+                vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY
             });
             if (token) {
-                console.log('FCM Token:', token);
                 return token;
             }
         }

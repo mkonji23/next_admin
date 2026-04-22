@@ -126,19 +126,22 @@ const ToDoDetailModal: React.FC<ToDoDetailModalProps> = ({ visible, onClose, pDa
 
     const footer = (
         <div className="flex justify-content-between align-items-center gap-2">
+            <div className="flex gap-2">{renderStatusButtons()}</div>
             <div className="flex gap-2">
-                {renderStatusButtons()}
-            </div>
-            <div className="flex gap-2">
-                <Button label="수정" icon="pi pi-pencil" onClick={() => showTodoModal()} className="p-button-warning" />
                 <Button label="닫기" icon="pi pi-times" className="p-button-text" onClick={() => onClose()} />
+                <Button label="수정" icon="pi pi-pencil" onClick={() => showTodoModal()} className="p-button-warning" />
             </div>
         </div>
     );
 
     const holdFooter = (
         <div className="flex justify-content-end gap-2">
-            <Button label="취소" icon="pi pi-times" className="p-button-text" onClick={() => setHoldDialogVisible(false)} />
+            <Button
+                label="취소"
+                icon="pi pi-times"
+                className="p-button-text"
+                onClick={() => setHoldDialogVisible(false)}
+            />
             <Button label="확인" icon="pi pi-check" onClick={handleHoldSubmit} />
         </div>
     );

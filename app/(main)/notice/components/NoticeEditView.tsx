@@ -33,7 +33,7 @@ const NoticeEditView: React.FC<NoticeEditViewProps> = ({ initialData, onBack, on
     const [imageUrls, setImageUrls] = useState<any[]>(initialData?.imageUrls || []);
     const [loading, setLoading] = useState(false);
     const [classes, setClasses] = useState<any[]>([]);
-    const [selectedClasses, setSelectedClasses] = useState<any[]>(initialData?.targetClassIds || []);
+    const [selectedClasses, setSelectedClasses] = useState<any[]>([]);
 
     const http = useHttp();
     const { showToast } = useToast();
@@ -43,7 +43,14 @@ const NoticeEditView: React.FC<NoticeEditViewProps> = ({ initialData, onBack, on
         const fetchClasses = async () => {
             try {
                 const response = await http.get('/choiMath/class/');
-                setClasses(response.data || []);
+                // classId가 있는 유효한 데이터만 필터링합니다.
+                const classData = (response.data || []).filter((c: any) => c.classId);
+                setClasses(classData);
+
+                // 클래스 목록이 로드된 후 선택된 값을 설정하여 라벨 매핑 이슈를 방지합니다.
+                if (initialData?.classIds) {
+                    setSelectedClasses(initialData.classIds);
+                }
             } catch (error) {
                 console.error('Fetch classes error:', error);
             }

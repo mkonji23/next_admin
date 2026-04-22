@@ -9,6 +9,9 @@ import { Student } from '../modals/StudentModal';
 import { useToast } from '@/hooks/useToast';
 import { Password } from 'primereact/password';
 import useStudentAuthStore from '@/store/useStudentAuthStore';
+import { LayoutContext } from '@/layout/context/layoutcontext';
+import { useContext } from 'react';
+import { requestFcmToken } from '@/lib/firebase';
 
 export interface StudentAuthData {
     studentId?: string;
@@ -26,6 +29,8 @@ const withStudentAuth = <P extends object>(
         const http = useHttp();
         const { showToast } = useToast();
         const { setStudentAuth, studentAuthData: storedStudentAuthData, studentToken } = useStudentAuthStore();
+        const { layoutConfig } = useContext(LayoutContext);
+        const isDark = layoutConfig.colorScheme === 'dark';
 
         const [isAuthorized, setIsAuthorized] = useState(false);
         const [studentAuthData, setStudentAuthData] = useState<StudentAuthData | null>(null);
@@ -145,6 +150,24 @@ const withStudentAuth = <P extends object>(
                     setStudentAuth(studentToken, studentData);
                     setStudentAuthData(studentData);
                     setIsAuthorized(true);
+
+                    // FCM 토큰 요청 및 저장 로직 추가
+                    try {
+                        const token = await requestFcmToken();
+                        if (token) {
+                            await http.post('/db/saveToken', {
+                                token,
+                                type: process.env.NODE_ENV === 'development' ? 'debug' : 'release',
+                                target: target,
+                                name: studentData?.name,
+                                school: studentData?.school,
+                                grade: studentData?.grade,
+                                studentId: studentData?.studentId
+                            });
+                        }
+                    } catch (fcmError) {
+                        console.error('Failed to handle FCM token for student:', fcmError);
+                    }
                 }
             } catch (err: any) {
                 if (err === 'Invalid password') {
@@ -200,11 +223,11 @@ const withStudentAuth = <P extends object>(
         const renderInitial = () => (
             <div className="flex flex-column gap-3 mt-2">
                 <div className="flex flex-column gap-2">
-                    <label className="text-sm font-semibold text-700" htmlFor="nameInput">
+                    <label className="text-sm font-semibold text-color-secondary" htmlFor="nameInput">
                         이름
                     </label>
                     <div className="p-inputgroup">
-                        <span className="p-inputgroup-addon bg-blue-50 border-blue-100 text-blue-500">
+                        <span className="p-inputgroup-addon surface-100 border-300 text-blue-500">
                             <i className="pi pi-user"></i>
                         </span>
                         <InputText
@@ -215,17 +238,17 @@ const withStudentAuth = <P extends object>(
                             onChange={(e) => setName(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && phoneInputRef.current?.focus()}
                             enterKeyHint="next"
-                            className={`border-blue-100 focus:border-blue-400 ${error ? 'p-invalid' : ''}`}
+                            className={`surface-border focus:border-blue-400 ${error ? 'p-invalid' : ''}`}
                             disabled={loading}
                         />
                     </div>
                 </div>
                 <div className="flex flex-column gap-2 mt-2">
-                    <label className="text-sm font-semibold text-700" htmlFor="phoneInput">
+                    <label className="text-sm font-semibold text-color-secondary" htmlFor="phoneInput">
                         전화번호
                     </label>
                     <div className="p-inputgroup">
-                        <span className="p-inputgroup-addon bg-blue-50 border-blue-100 text-blue-500">
+                        <span className="p-inputgroup-addon surface-100 border-300 text-blue-500">
                             <i className="pi pi-mobile"></i>
                         </span>
                         <InputText
@@ -239,7 +262,7 @@ const withStudentAuth = <P extends object>(
                             inputMode="numeric"
                             pattern="[0-9]*"
                             enterKeyHint="search"
-                            className={`border-blue-100 focus:border-blue-400 ${error ? 'p-invalid' : ''}`}
+                            className={`surface-border focus:border-blue-400 ${error ? 'p-invalid' : ''}`}
                             disabled={loading}
                         />
                     </div>
@@ -258,18 +281,18 @@ const withStudentAuth = <P extends object>(
             <div className="flex flex-column gap-3 mt-2">
                 <div className="text-center">
                     {target === 'student' && (
-                        <p className="text-lg font-bold text-blue-600">{foundStudent?.name}님, 안녕하세요!</p>
+                        <p className="text-lg font-bold text-blue-500">{foundStudent?.name}님, 안녕하세요!</p>
                     )}
                     {target === 'parent' && (
-                        <p className="text-lg font-bold text-blue-600">{foundStudent?.name} 학부모님, 안녕하세요!</p>
+                        <p className="text-lg font-bold text-blue-500">{foundStudent?.name} 학부모님, 안녕하세요!</p>
                     )}
                 </div>
                 <div className="flex flex-column gap-2">
-                    <label className="text-sm font-semibold text-700" htmlFor="passwordInput">
+                    <label className="text-sm font-semibold text-color-secondary" htmlFor="passwordInput">
                         간편 비밀번호
                     </label>
                     <div className="p-inputgroup">
-                        <span className="p-inputgroup-addon bg-blue-50 border-blue-100 text-blue-500">
+                        <span className="p-inputgroup-addon surface-100 border-300 text-blue-500">
                             <i className="pi pi-lock"></i>
                         </span>
                         <InputText
@@ -282,7 +305,7 @@ const withStudentAuth = <P extends object>(
                             onKeyDown={(e) => e.key === 'Enter' && handlePasswordSubmit()}
                             enterKeyHint="go"
                             inputMode="numeric"
-                            className={`border-blue-100 focus:border-blue-400 ${error ? 'p-invalid' : ''}`}
+                            className={`surface-border focus:border-blue-400 ${error ? 'p-invalid' : ''}`}
                             disabled={loading}
                         />
                     </div>
@@ -300,15 +323,15 @@ const withStudentAuth = <P extends object>(
         const renderPasswordCreate = () => (
             <div className="flex flex-column gap-3 mt-2">
                 <div className="text-center">
-                    <p className="text-lg font-bold text-green-600">첫 로그인입니다!</p>
-                    <p className="text-sm text-600 -mt-2">사용하실 4자리 비밀번호를 생성해주세요.</p>
+                    <p className="text-lg font-bold text-green-500">첫 로그인입니다!</p>
+                    <p className="text-sm text-color-secondary -mt-2">사용하실 4자리 비밀번호를 생성해주세요.</p>
                 </div>
                 <div className="flex flex-column gap-2">
-                    <label className="text-sm font-semibold text-700" htmlFor="newPasswordInput">
+                    <label className="text-sm font-semibold text-color-secondary" htmlFor="newPasswordInput">
                         새 간편 비밀번호 (4자리 숫자)
                     </label>
                     <div className="p-inputgroup">
-                        <span className="p-inputgroup-addon bg-green-50 border-green-100 text-green-500">
+                        <span className="p-inputgroup-addon surface-100 border-300 text-green-500">
                             <i className="pi pi-key"></i>
                         </span>
                         <Password
@@ -324,7 +347,7 @@ const withStudentAuth = <P extends object>(
                             inputMode="numeric"
                             pattern="[0-9]*"
                             enterKeyHint="done"
-                            className={`border-green-100 focus:border-green-400 ${error ? 'p-invalid' : ''}`}
+                            className={`surface-border focus:border-green-400 ${error ? 'p-invalid' : ''}`}
                             disabled={loading}
                             feedback={false}
                         />
@@ -354,10 +377,7 @@ const withStudentAuth = <P extends object>(
         };
 
         return (
-            <div
-                className="flex align-items-center justify-content-center min-h-screen p-3"
-                style={{ background: 'linear-gradient(135deg, #f6f8fd 0%, #f1f6f9 100%)' }}
-            >
+            <div className="flex align-items-center justify-content-center min-h-screen p-3 surface-ground">
                 <Card
                     style={{
                         width: '100%',
@@ -373,18 +393,18 @@ const withStudentAuth = <P extends object>(
                         {/* 로고 */}
                         {authState === 'INITIAL' && (
                             <img
-                                src={`/layout/images/logo-dark.svg`}
+                                src={`/layout/images/logo-${isDark ? 'white' : 'dark'}.svg`}
                                 alt="chocho"
                                 height="50"
                                 className="mr-0 lg:mr-2"
                             />
                         )}
-                        <h2 className="text-2xl font-bold mb-2 text-900">
+                        <h2 className="text-2xl font-bold mb-2 text-color">
                             {authState === 'INITIAL' && '본인 확인'}
                             {authState === 'PASSWORD_VERIFY' && '비밀번호 확인'}
                             {authState === 'PASSWORD_CREATE' && '비밀번호 생성'}
                         </h2>
-                        <p className="text-600 m-0">
+                        <p className="text-color-secondary m-0">
                             {authState === 'INITIAL' && '학생 본인 확인 후 조회가 가능합니다.'}
                             {authState === 'PASSWORD_VERIFY' && '안전한 접속을 위해 비밀번호를 입력해주세요.'}
                         </p>

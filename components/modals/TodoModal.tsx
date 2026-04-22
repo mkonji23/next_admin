@@ -154,8 +154,8 @@ const TodoModal = ({ visible, pData, onClose }: TodoModalProps) => {
 
     const dialogFooter = (
         <div className="flex justify-content-end gap-2">
-            <Button label="저장" icon="pi pi-save" onClick={() => handleSave('save')} className="p-button-warning" />
             <Button label="취소" icon="pi pi-times" onClick={() => onClose()} className="p-button-text" />
+            <Button label="저장" icon="pi pi-save" onClick={() => handleSave('save')} className="p-button-warning" />
         </div>
     );
 

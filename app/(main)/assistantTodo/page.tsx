@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
 import { useConfirm } from '@/hooks/useConfirm';
@@ -12,6 +12,7 @@ import dayjs from 'dayjs';
 import { useCustomModal } from '@/hooks/useCustomModal';
 import useAuthStore from '@/store/useAuthStore';
 import { Button } from 'primereact/button';
+import { useNotificationStore } from '@/store/useNotificationStore';
 
 const AssistantTodoPage = () => {
     const { get, post } = useHttp();
@@ -20,6 +21,8 @@ const AssistantTodoPage = () => {
     const { userInfo } = useAuthStore();
     const currentUserId = userInfo?.userId || '';
     const { openModal } = useCustomModal();
+    const { notifications } = useNotificationStore();
+    const lastNotiId = useRef<string | null>(null);
 
     const [todos, setTodos] = useState<Todo[]>([]);
     const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
@@ -55,6 +58,15 @@ const AssistantTodoPage = () => {
             fetchTodos();
         }
     }, [idChk, statusFilter, currentUserId]);
+
+    // 알림 기반 자동 새로고침 로직
+    useEffect(() => {
+        const latest = notifications[0];
+        if (latest && latest.type === 'TODO_CREATED' && latest._id !== lastNotiId.current) {
+            lastNotiId.current = latest._id;
+            fetchTodos();
+        }
+    }, [notifications, fetchTodos]);
 
     const handleToggleComplete = async (todo: Todo) => {
         try {

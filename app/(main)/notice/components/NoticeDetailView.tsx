@@ -14,6 +14,7 @@ interface NoticeDetail {
     createdUser: string;
     isNotice: boolean;
     createdDate: string;
+    classIds?: string[];
 }
 
 interface NoticeDetailViewProps {
@@ -34,6 +35,7 @@ const NoticeDetailView: React.FC<NoticeDetailViewProps> = ({
     const http = useHttp();
     const { showToast } = useToast();
     const [isNotice, setIsNotice] = useState(initialData.isNotice);
+    const [classes, setClasses] = useState<any[]>([]);
 
     const handleDelete = () => {
         confirmDialog({
@@ -71,6 +73,18 @@ const NoticeDetailView: React.FC<NoticeDetailViewProps> = ({
     };
 
     useEffect(() => {
+        const fetchClasses = async () => {
+            try {
+                const response = await http.get('/choiMath/class/', { disableLoading: true });
+                setClasses(response.data || []);
+            } catch (error) {
+                console.error('Fetch classes error:', error);
+            }
+        };
+        fetchClasses();
+    }, []);
+
+    useEffect(() => {
         window.history.pushState(null, '', window.location.href);
         const handlePopState = () => {
             onBack();
@@ -96,13 +110,13 @@ const NoticeDetailView: React.FC<NoticeDetailViewProps> = ({
                             onClick={() => window.history.back()}
                         />
                         {initialData?.isNotice && (
-                            <span className="p-tag p-tag-success">
+                            <span className="p-tag p-tag-success" style={{ minWidth: '60px', textAlign: 'center' }}>
                                 <i className="pi pi-bell mr-1" />
                                 공지
                             </span>
                         )}
                         {!initialData?.isNotice && (
-                            <span className="p-tag p-tag-danger">
+                            <span className="p-tag p-tag-danger" style={{ minWidth: '60px', textAlign: 'center' }}>
                                 <i className="pi pi-clock mr-1" />
                                 미공지
                             </span>
@@ -114,14 +128,17 @@ const NoticeDetailView: React.FC<NoticeDetailViewProps> = ({
                         작성자: {initialData.createdUser} | 작성일:{' '}
                         {dayjs(initialData.createdDate).format('YYYY-MM-DD HH:mm:ss')}
                     </span>
-                    {initialData.targetClassNames && initialData.targetClassNames.length > 0 && (
+                    {classes && classes.length > 0 && initialData.classIds && initialData.classIds.length > 0 && (
                         <div className="flex align-items-center gap-2 flex-wrap">
                             <span className="text-500 text-sm">대상 클래스:</span>
-                            {initialData.targetClassNames.map((name: string, i: number) => (
-                                <span key={i} className="p-tag p-tag-info">
-                                    {name}
-                                </span>
-                            ))}
+                            {initialData.classIds.map((id: string) => {
+                                const matchedClass = classes.find((c) => c.classId === id);
+                                return (
+                                    <span key={id} className="p-tag p-tag-info">
+                                        {matchedClass ? matchedClass.className : id}
+                                    </span>
+                                );
+                            })}
                         </div>
                     )}
                 </div>

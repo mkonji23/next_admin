@@ -20,6 +20,8 @@ import AchievementCard from './AchievementCard';
 import WeeklyReportList from './WeeklyReportList';
 import useStudentAuthStore from '@/store/useStudentAuthStore';
 import { useCustomModal } from '@/hooks/useCustomModal';
+import { LayoutContext } from '@/layout/context/layoutcontext';
+import { useContext } from 'react';
 
 interface StudentStatusContentProps {
     studentAuthData?: StudentAuthData;
@@ -28,6 +30,8 @@ interface StudentStatusContentProps {
 const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) => {
     const http = useHttp();
     const { clearStudentAuth } = useStudentAuthStore();
+    const { layoutConfig, setLayoutConfig } = useContext(LayoutContext);
+    const isDark = layoutConfig.colorScheme === 'dark';
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState<any>(null);
     const [currentDate, setCurrentDate] = useState<Dayjs>(dayjs());
@@ -553,6 +557,18 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
         window.location.reload();
     };
 
+    const toggleDarkMode = () => {
+        const newColorScheme = isDark ? 'light' : 'dark';
+        const newTheme = isDark ? 'lara-light-indigo' : 'lara-dark-indigo';
+
+        setLayoutConfig((prevConfig) => ({
+            ...prevConfig,
+            colorScheme: newColorScheme,
+            theme: newTheme
+        }));
+    };
+
+
     const rowExpansionTemplate = (data: any) => {
         const filterAttendance = data?.attendance?.filter((item: any) => item.status !== 'none' || item.praise);
 
@@ -693,7 +709,7 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                         text
                         onClick={() => setCurrentDate((prev) => prev.subtract(1, 'month'))}
                     />
-                    <div className="flex align-items-center gap-2 px-3 bg-white shadow-1 border-round-3xl">
+                    <div className={`flex align-items-center gap-2 px-3 shadow-1 border-round-3xl ${isDark ? 'surface-card' : 'bg-white'}`}>
                         <i className="pi pi-calendar text-primary text-xl ml-2"></i>
                         <Calendar
                             value={currentDate.toDate()}
@@ -722,6 +738,14 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                         onClick={() => setCurrentDate(dayjs())}
                         tooltip="이번 달로 이동"
                     />
+                    <Button
+                        icon={isDark ? 'pi pi-sun' : 'pi pi-moon'}
+                        severity="warning"
+                        rounded
+                        text
+                        onClick={toggleDarkMode}
+                        tooltip={isDark ? '라이트 모드' : '다크 모드'}
+                    />
                 </div>
 
                 <Card className="mb-5 shadow-1 border-round-2xl">
@@ -746,7 +770,7 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                                 {isTopRanker && winImage && (
                                     <>
                                         <div
-                                            className="absolute flex align-items-center justify-content-center border-circle shadow-2 bg-white overflow-hidden hover:shadow-4 transition-duration-200"
+                                            className={`absolute flex align-items-center justify-content-center border-circle shadow-2 overflow-hidden hover:shadow-4 transition-duration-200 ${isDark ? 'surface-card' : 'bg-white'}`}
                                             style={{
                                                 width: '28px',
                                                 height: '28px',

@@ -13,6 +13,8 @@ import { getCommonLabel } from '@/util/common';
 import { USER_AUTH_OPTIONS } from '@/constants/user';
 import { useToast } from '@/hooks/useToast';
 import { useHttp } from '@/util/axiosInstance';
+import { requestFcmToken } from '@/lib/firebase';
+import { InputSwitch } from 'primereact/inputswitch';
 
 const ProfilePage = () => {
     const { userInfo, initializeFromStorage, setInfo } = useAuthStore();
@@ -34,10 +36,17 @@ const ProfilePage = () => {
     });
     const [passwordSubmitted, setPasswordSubmitted] = useState(false);
     const [selectedTagColor, setSelectedTagColor] = useState<string | undefined>(undefined);
+    const [notificationEnabled, setNotificationEnabled] = useState(false);
+    const [permissionStatus, setPermissionStatus] = useState<NotificationPermission>('default');
 
     useEffect(() => {
         initializeFromStorage();
         setMounted(true);
+
+        if (typeof window !== 'undefined' && 'Notification' in window) {
+            setPermissionStatus(Notification.permission);
+            setNotificationEnabled(Notification.permission === 'granted');
+        }
     }, [initializeFromStorage]);
 
     useEffect(() => {
@@ -201,6 +210,55 @@ const ProfilePage = () => {
         }
     };
 
+    const handleNotificationToggle = async (enabled: boolean) => {
+        if (enabled) {
+            // 알림 활성화 시도
+            const token = await requestFcmToken();
+            if (token) {
+                try {
+                    await http.post('/db/saveToken', {
+                        token,
+                        type: process.env.NODE_ENV === 'development' ? 'debug' : 'release'
+                    });
+                    setNotificationEnabled(true);
+                    setPermissionStatus('granted');
+                    showToast({
+                        severity: 'success',
+                        summary: '알림 활성화',
+                        detail: '푸시 알림이 성공적으로 활성화되었습니다.'
+                    });
+                } catch (error) {
+                    console.error('Failed to save token:', error);
+                    showToast({
+                        severity: 'error',
+                        summary: '오류',
+                        detail: '알림 토큰 저장에 실패했습니다.'
+                    });
+                    setNotificationEnabled(false);
+                }
+            } else {
+                setNotificationEnabled(false);
+                if (Notification.permission === 'denied') {
+                    showToast({
+                        severity: 'error',
+                        summary: '권한 거부됨',
+                        detail: '브라우저 설정에서 알림 권한을 허용해주세요.'
+                    });
+                }
+            }
+        } else {
+            // 알림 비활성화는 브라우저 수준에서 막을 수 없으므로,
+            // 서버에서 토큰을 삭제하거나 상태만 변경하는 식으로 구현 가능합니다.
+            // 여기서는 UI 상태만 변경합니다.
+            setNotificationEnabled(false);
+            showToast({
+                severity: 'info',
+                summary: '알림 비활성화',
+                detail: '이 기기에서 알림 수신을 중단합니다. (브라우저 권한은 유지됩니다)'
+            });
+        }
+    };
+
     const handlePasswordDialogClose = () => {
         setPasswordDialogVisible(false);
         setPasswordData({
@@ -349,6 +407,24 @@ const ProfilePage = () => {
                                 <label>상태</label>
                                 <div className="p-2">
                                     <Tag value="활성" severity="success" />
+                                </div>
+                            </div>
+                            <div className="field col-12 md:col-6">
+                                <label htmlFor="notification">푸시 알림 설정</label>
+                                <div className="flex align-items-center gap-3 p-2">
+                                    <InputSwitch
+                                        checked={notificationEnabled}
+                                        onChange={(e) => handleNotificationToggle(e.value || false)}
+                                        disabled={permissionStatus === 'denied'}
+                                    />
+                                    <span className="text-900 font-medium">
+                                        {notificationEnabled ? '활성화됨' : '비활성화됨'}
+                                    </span>
+                                    {permissionStatus === 'denied' && (
+                                        <small className="text-red-500">
+                                            (브라우저에서 알림이 차단되어 있습니다)
+                                        </small>
+                                    )}
                                 </div>
                             </div>
                         </div>

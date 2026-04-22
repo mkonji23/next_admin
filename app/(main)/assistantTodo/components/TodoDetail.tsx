@@ -77,7 +77,7 @@ const TodoDetail: React.FC<TodoDetailProps> = ({ selectedTodo, onEdit, onStatusC
                         icon="pi pi-refresh"
                         className="p-button-rounded p-button-info p-button-sm"
                         onClick={() => onStatusChange(selectedTodo, 'IN_PROGRESS')}
-                        tooltip="다시 진행"
+                        tooltip="진행중으로 상태변경"
                     />
                 )}
                 <Button
@@ -98,7 +98,12 @@ const TodoDetail: React.FC<TodoDetailProps> = ({ selectedTodo, onEdit, onStatusC
 
     const holdDialogFooter = (
         <div className="flex justify-content-end gap-2">
-            <Button label="취소" icon="pi pi-times" className="p-button-text" onClick={() => setHoldDialogVisible(false)} />
+            <Button
+                label="취소"
+                icon="pi pi-times"
+                className="p-button-text"
+                onClick={() => setHoldDialogVisible(false)}
+            />
             <Button label="확인" icon="pi pi-check" onClick={handleHoldSubmit} autoFocus />
         </div>
     );
@@ -139,11 +144,15 @@ const TodoDetail: React.FC<TodoDetailProps> = ({ selectedTodo, onEdit, onStatusC
                             <div className="grid">
                                 <div className="col-6">
                                     <label className="block text-500 text-xs mb-1">시작일</label>
-                                    <div className="text-900 font-medium">{dayjs(selectedTodo.startDate).format('YYYY-MM-DD')}</div>
+                                    <div className="text-900 font-medium">
+                                        {dayjs(selectedTodo.startDate).format('YYYY-MM-DD')}
+                                    </div>
                                 </div>
                                 <div className="col-6">
                                     <label className="block text-500 text-xs mb-1">종료일</label>
-                                    <div className="text-900 font-medium">{dayjs(selectedTodo.endDate).format('YYYY-MM-DD')}</div>
+                                    <div className="text-900 font-medium">
+                                        {dayjs(selectedTodo.endDate).format('YYYY-MM-DD')}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -185,7 +194,10 @@ const TodoDetail: React.FC<TodoDetailProps> = ({ selectedTodo, onEdit, onStatusC
                         </div>
                     </div>
                 ) : (
-                    <div className="flex flex-column align-items-center justify-content-center py-8 text-500 surface-50 border-round-xl border-1 border-dashed surface-border" style={{ minHeight: '300px' }}>
+                    <div
+                        className="flex flex-column align-items-center justify-content-center py-8 text-500 surface-50 border-round-xl border-1 border-dashed surface-border"
+                        style={{ minHeight: '300px' }}
+                    >
                         <i className="pi pi-mouse text-4xl mb-3"></i>
                         <p>업무를 선택하면 상세 정보를 볼 수 있습니다.</p>
                     </div>
@@ -200,7 +212,9 @@ const TodoDetail: React.FC<TodoDetailProps> = ({ selectedTodo, onEdit, onStatusC
                 onHide={() => setHoldDialogVisible(false)}
             >
                 <div className="flex flex-column gap-2 mt-2">
-                    <label htmlFor="delayedReason" className="font-bold">사유</label>
+                    <label htmlFor="delayedReason" className="font-bold">
+                        사유
+                    </label>
                     <InputTextarea
                         id="delayedReason"
                         value={delayedReason}
