@@ -77,7 +77,6 @@ const NoticeModal = ({ visible, onClose, pData }: NoticeModalProps) => {
             emptyMessage="공지사항이 없습니다."
         >
             <Column field="title" header="제목" body={titleTemplate} />
-            <Column field="createdDate" header="작성일" body={dateTemplate} style={{ width: '120px' }} />
         </DataTable>
     );
 
@@ -89,7 +88,7 @@ const NoticeModal = ({ visible, onClose, pData }: NoticeModalProps) => {
                     {dayjs(selectedNotice?.createdDate).format('YYYY-MM-DD HH:mm')}
                 </span>
             </div>
-            <div className="overflow-auto" style={{ maxHeight: '400px' }}>
+            <div className="overflow-auto" style={{ minHeight: '400px' }}>
                 <CustomEditor delta={selectedNotice?.delta} readOnly={true} style={{ border: 'none' }} />
             </div>
             {!pData?.initialNoticeId && (

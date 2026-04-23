@@ -331,21 +331,15 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
 
     const fetchNotices = async (studentClasses: any[]) => {
         try {
-            const res = await http.get('/choiMath/notice/list', { disableLoading: true });
-            const allNotices = res.data || [];
             const studentClassIds = studentClasses.map((c) => c.classId);
 
-            // Filter: isNotice === true AND matching classId
-            const filtered = allNotices.filter((n: any) => {
-                if (!n.isNotice) return false;
-
-                const targetIds = n.targetClassIds || [];
-                if (targetIds.length === 0) return true;
-
-                return studentClassIds.some((id) => targetIds.includes(id));
+            const res = await http.get('/choiMath/notice/list', {
+                params: { classIds: { $in: studentClassIds } },
+                disableLoading: true
             });
+            const allNotices = res.data || [];
 
-            setNotices(filtered);
+            setNotices(allNotices);
         } catch (error) {
             console.error('Fetch notices error:', error);
         }
@@ -358,7 +352,7 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
 
             if (!isRead) {
                 openModal({
-                    id: 'notice',
+                    id: 'noticeModal',
                     pData: {
                         notices: notices,
                         initialNoticeId: latest.noticeId
@@ -371,7 +365,7 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
 
     const handleShowNotices = () => {
         openModal({
-            id: 'notice',
+            id: 'noticeModal',
             pData: { notices }
         });
     };
@@ -834,13 +828,17 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                             </div>
                             <div className="flex-1 min-w-0">
                                 <div className="flex align-items-center gap-2 flex-wrap">
-                                    <h1 className="text-xl md:text-3xl font-bold m-0 text-900 white-space-nowrap">{finalName} 학생</h1>
+                                    <h1 className="text-xl md:text-3xl font-bold m-0 text-900 white-space-nowrap">
+                                        {finalName} 학생
+                                    </h1>
                                     {getTrophy(globalRank)}
                                     <div className="flex align-items-center gap-1 flex-wrap">
                                         {(studentInfo.grade || finalGrade) &&
                                             (() => {
                                                 const gradeVal = String(studentInfo.grade || finalGrade);
-                                                const displayGrade = gradeVal.includes('학년') ? gradeVal : `${gradeVal}학년`;
+                                                const displayGrade = gradeVal.includes('학년')
+                                                    ? gradeVal
+                                                    : `${gradeVal}학년`;
                                                 return (
                                                     <Tag
                                                         value={displayGrade}

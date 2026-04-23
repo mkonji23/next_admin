@@ -51,7 +51,7 @@ export const ModalProvider = ({ children }: ModalProviderProps) => {
         registerModal({ id: 'editAutoTemplate', component: EditAutoTemplateModal });
         registerModal({ id: 'KakaoTemplateModal', component: KakaoTemplateModal });
         registerModal({ id: 'autoImageUpload', component: AutoImageUploadModal });
-        registerModal({ id: 'notice', component: NoticeModal });
+        registerModal({ id: 'noticeModal', component: NoticeModal });
 
         // 여기에 다른 모달들을 추가할 수 있습니다
     }, [registerModal]);

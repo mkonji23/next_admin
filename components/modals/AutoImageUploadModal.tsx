@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
 import { Dropdown } from 'primereact/dropdown';
+import { Checkbox } from 'primereact/checkbox';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { useHttp } from '@/util/axiosInstance';
@@ -40,6 +41,7 @@ const AutoImageUploadModal = ({ visible, onClose }: AutoImageUploadModalProps) =
 
     const [loading, setLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [noImageOnly, setNoImageOnly] = useState(false);
 
     // Lightbox 상태
     const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -65,6 +67,15 @@ const AutoImageUploadModal = ({ visible, onClose }: AutoImageUploadModalProps) =
         // 이미지 삭제 여부 확인
         return JSON.stringify(students) !== JSON.stringify(originalStudents);
     }, [students, originalStudents, pendingFiles]);
+
+    // 필터링된 학생 목록
+    const filteredStudents = useMemo(() => {
+        if (!noImageOnly) return students;
+        return students.filter((s) => {
+            const images = (s.shareImageUrls || []).filter((img: any) => !img.isDelete);
+            return images.length === 0;
+        });
+    }, [students, noImageOnly]);
 
     const handleSearch = async () => {
         if (hasChanges) {
@@ -149,7 +160,7 @@ const AutoImageUploadModal = ({ visible, onClose }: AutoImageUploadModalProps) =
                 return s;
             })
         );
-        
+
         // 동일한 파일 재선택을 위해 value 초기화
         if (fileInputRefs.current[id]) {
             fileInputRefs.current[id]!.value = '';
@@ -177,7 +188,9 @@ const AutoImageUploadModal = ({ visible, onClose }: AutoImageUploadModalProps) =
                             shareImageUrls: (s.shareImageUrls || []).map((img) => {
                                 const url = typeof img === 'string' ? img : img.url;
                                 if (url === imageUrl) {
-                                    return typeof img === 'string' ? { url: img, isDelete: true } : { ...img, isDelete: true };
+                                    return typeof img === 'string'
+                                        ? { url: img, isDelete: true }
+                                        : { ...img, isDelete: true };
                                 }
                                 return img;
                             })
@@ -254,9 +267,10 @@ const AutoImageUploadModal = ({ visible, onClose }: AutoImageUploadModalProps) =
             showToast({
                 severity: failCount === 0 ? 'success' : successCount > 0 ? 'warn' : 'error',
                 summary: '저장 결과',
-                detail: failCount > 0 
-                    ? `${successCount}건 성공, ${failCount}건 실패\n실패 항목: ${failedInfo.join(', ')}`
-                    : `${successCount}건 모두 성공적으로 저장되었습니다.`
+                detail:
+                    failCount > 0
+                        ? `${successCount}건 성공, ${failCount}건 실패\n실패 항목: ${failedInfo.join(', ')}`
+                        : `${successCount}건 모두 성공적으로 저장되었습니다.`
             });
 
             if (successCount > 0) {
@@ -399,9 +413,10 @@ const AutoImageUploadModal = ({ visible, onClose }: AutoImageUploadModalProps) =
     return (
         <>
             <Dialog
-                header="자동 템플릿 이미지 일괄 관리"
+                header="자동 템플릿 이미지  관리"
                 visible={visible}
                 style={{ width: isMobile ? '95vw' : '900px' }}
+                contentStyle={{ overflow: 'hidden' }}
                 footer={footer}
                 onHide={handleClose}
                 className="p-fluid"
@@ -430,11 +445,22 @@ const AutoImageUploadModal = ({ visible, onClose }: AutoImageUploadModalProps) =
                     </div>
                 </div>
 
+                <div className="flex align-items-center mb-2 px-1">
+                    <Checkbox
+                        inputId="noImageOnly"
+                        checked={noImageOnly}
+                        onChange={(e) => setNoImageOnly(e.checked || false)}
+                    />
+
+                    <label htmlFor="noImageOnly" className="ml-2 font-bold cursor-pointer text-sm">
+                        이미지 없음 {noImageOnly && `(${filteredStudents.length}명)`}
+                    </label>
+                </div>
                 <DataTable
-                    value={students}
+                    value={filteredStudents}
                     scrollable
                     tableStyle={{ minWidth: isMobile ? '700px' : 'auto' }}
-                    scrollHeight="500px"
+                    scrollHeight={isMobile ? '400px' : '450px'}
                     paginator
                     rows={10}
                     rowsPerPageOptions={[5, 10, 20, 50]}
@@ -444,6 +470,8 @@ const AutoImageUploadModal = ({ visible, onClose }: AutoImageUploadModalProps) =
                     <Column field="studentName" header="학생명" style={{ minWidth: '100px' }} sortable />
                     <Column field="className" header="클래스" style={{ minWidth: '150px' }} sortable />
                     <Column
+                        sortable
+                        field="shareImageUrls"
                         header="현재 이미지 (클릭 시 확대)"
                         body={imageBodyTemplate}
                         style={{ minWidth: '160px' }}
