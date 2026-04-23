@@ -45,7 +45,7 @@ export default function NotificationListener() {
             // Add new notification to the store
             fetchNotifications();
             // Optionally, show a toast
-            showToast({ severity: 'info', summary: '새 알림', detail: data.message });
+            showToast({ severity: 'info', summary: '새 알림', detail: data.content });
         });
 
         // 3. 이벤트 바인딩 (Express 서버에서 지정한 이벤트명)

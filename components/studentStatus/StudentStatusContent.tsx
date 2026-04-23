@@ -19,6 +19,7 @@ import { AI_PROGRESS_MESSAGES, AI_STUDENT_COMMENTS } from '@/constants/aiComment
 import AchievementCard from './AchievementCard';
 import WeeklyReportList from './WeeklyReportList';
 import useStudentAuthStore from '@/store/useStudentAuthStore';
+import { useRefreshStore } from '@/store/useRefreshStore';
 import { useCustomModal } from '@/hooks/useCustomModal';
 import { LayoutContext } from '@/layout/context/layoutcontext';
 import { useContext } from 'react';
@@ -52,6 +53,7 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
     const [winImage, setWinImage] = useState<string>('');
     const [showBadgePreview, setShowBadgePreview] = useState(false);
     const { openModal } = useCustomModal();
+    const { noticeRefreshSignal } = useRefreshStore();
     const [notices, setNotices] = useState<any[]>([]);
     const [hasCheckedNotice, setHasCheckedNotice] = useState(false);
 
@@ -334,16 +336,36 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
             const studentClassIds = studentClasses.map((c) => c.classId);
 
             const res = await http.get('/choiMath/notice/list', {
-                params: { classIds: { $in: studentClassIds } },
+                params: { classIds: { $in: studentClassIds }, isNotice: true },
                 disableLoading: true
             });
             const allNotices = res.data || [];
-
             setNotices(allNotices);
+            return allNotices;
         } catch (error) {
             console.error('Fetch notices error:', error);
+            return [];
         }
     };
+
+    useEffect(() => {
+        if (noticeRefreshSignal > 0 && stats?.classes) {
+            fetchNotices(stats.classes).then((updatedNotices) => {
+                if (updatedNotices.length > 0) {
+                    const latest = updatedNotices[0];
+                    // 실시간 신호가 오면 읽음 여부와 관계없이 혹은 최신 정보를 즉시 띄워줌
+                    openModal({
+                        id: 'noticeModal',
+                        pData: {
+                            notices: updatedNotices,
+                            initialNoticeId: latest.noticeId
+                        }
+                    });
+                    setHasCheckedNotice(true);
+                }
+            });
+        }
+    }, [noticeRefreshSignal]);
 
     useEffect(() => {
         if (notices.length > 0 && !hasCheckedNotice) {

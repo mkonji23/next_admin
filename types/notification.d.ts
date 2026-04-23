@@ -9,8 +9,8 @@ export interface Notification {
 }
 
 export interface PusherMessage {
-    message: string;
-    createdAt: Date;
+    [key: string]: any;
+    content?: string;
 }
 
 interface NotificationDetail {

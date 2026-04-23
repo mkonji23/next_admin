@@ -69,7 +69,7 @@ const NoticeListView: React.FC<NoticeListViewProps> = ({
     const handleNotice = async (rowData: Notice) => {
         try {
             const res = await http.post(`/choiMath/notice/publishNotice/${rowData.noticeId}`);
-            const isNotice = res.data?.notices?.isNotice;
+            const isNotice = res.data?.notice?.isNotice;
             if (isNotice) {
                 showToast({
                     severity: 'warn',

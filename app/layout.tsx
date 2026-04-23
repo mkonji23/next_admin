@@ -13,6 +13,7 @@ import { ModalProvider } from '@/hooks/useCustomModal';
 import KakaoScript from '@/components/KakaoScript';
 import { GlobalLoading } from '@/layout/GlobalLoading';
 import NotificationListener from '@/components/chat/NotificationListener';
+import NotificationStudentListener from '@/components/chat/NotificationStudentListener';
 import PwaInstallPrompt from '@/components/PwaInstallPrompt';
 import { Metadata, Viewport } from 'next';
 import DynamicManifest from '@/components/DynamicManifest';
@@ -63,6 +64,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
                                         <PwaInstallPrompt />
                                     </ModalProvider>
                                     <NotificationListener />
+                                    <NotificationStudentListener />
                                 </ConfirmProvider>
                             </LoadingProvider>
                         </ToastProvider>
