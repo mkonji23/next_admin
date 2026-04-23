@@ -72,6 +72,7 @@ const TodoList: React.FC<TodoListProps> = ({
                 <Column
                     field="title"
                     header="업무 제목"
+                    headerStyle={{ minWidth: '250px' }}
                     sortable
                     body={(rowData) => {
                         const isAssignedToCurrentUser = rowData.assignees.some(
@@ -111,7 +112,7 @@ const TodoList: React.FC<TodoListProps> = ({
                             {dayjs(rowData.startDate).format('MM.DD')} ~ {dayjs(rowData.endDate).format('MM.DD')}
                         </div>
                     )}
-                    headerStyle={{ width: '150px' }}
+                    headerStyle={{ minWidth: '150px' }}
                 />
                 <Column
                     field="assignees"
@@ -135,7 +136,7 @@ const TodoList: React.FC<TodoListProps> = ({
                             })}
                         </div>
                     )}
-                    headerStyle={{ width: '120px' }}
+                    headerStyle={{ minWidth: '100px' }}
                 />
                 <Column
                     field="status"
@@ -149,7 +150,7 @@ const TodoList: React.FC<TodoListProps> = ({
                             />
                         </div>
                     )}
-                    headerStyle={{ width: '120px' }}
+                    headerStyle={{ minWidth: '120px' }}
                 />
             </DataTable>
         </div>
