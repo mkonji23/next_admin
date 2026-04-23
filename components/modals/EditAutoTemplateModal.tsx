@@ -181,15 +181,15 @@ const EditAutoTemplateModal = ({ visible, onClose }: EditAutoTemplateModalProps)
             <div className="grid mb-4">
                 <div className="field col-3">
                     <label className="font-bold">년도</label>
-                    <Dropdown value={year} options={years} onChange={(e) => setYear(e.value)} />
+                    <Dropdown value={year} options={years} onChange={(e) => setYear(e.value)} appendTo="self" />
                 </div>
                 <div className="field col-3">
                     <label className="font-bold">월</label>
-                    <Dropdown value={month} options={months} onChange={(e) => setMonth(e.value)} />
+                    <Dropdown value={month} options={months} onChange={(e) => setMonth(e.value)} appendTo="self" />
                 </div>
                 <div className="field col-3">
                     <label className="font-bold">주차</label>
-                    <Dropdown value={week} options={weeks} onChange={(e) => setWeek(e.value)} />
+                    <Dropdown value={week} options={weeks} onChange={(e) => setWeek(e.value)} appendTo="self" />
                 </div>
                 <div className="field col-3 flex align-items-end">
                     <Button label="조회" icon="pi pi-search" onClick={handleSearch} className="p-button-info" />
@@ -214,6 +214,7 @@ const EditAutoTemplateModal = ({ visible, onClose }: EditAutoTemplateModalProps)
                             ]}
                             onChange={handleTemplateChange}
                             placeholder="템플릿을 선택하세요"
+                            appendTo="self"
                         />
                     </div>
 
