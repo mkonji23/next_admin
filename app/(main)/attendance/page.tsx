@@ -396,6 +396,7 @@ const AttendancePage = () => {
                                     월 선택 <span className="text-red-500 ml-1">*</span>
                                 </label>
                                 <Calendar
+                                    locale="ko"
                                     id="monthpicker"
                                     value={date}
                                     onChange={(e) => setDate(e.value as Date)}
