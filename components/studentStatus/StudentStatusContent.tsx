@@ -3,21 +3,22 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useHttp } from '@/util/axiosInstance';
 import withStudentAuth, { StudentAuthData } from '@/components/hoc/withStudentAuth';
-import { Chart } from 'primereact/chart';
 import { Card } from 'primereact/card';
-import { ProgressBar } from 'primereact/progressbar';
 import { Tag } from 'primereact/tag';
 import { Button } from 'primereact/button';
 import { Calendar } from 'primereact/calendar';
-import { DataTable } from 'primereact/datatable';
-import { Column } from 'primereact/column';
 import { Dialog } from 'primereact/dialog';
-import { Image } from 'primereact/image';
 import dayjs, { Dayjs } from 'dayjs';
 import { ATTENDANCE_STATUS_OPTIONS } from '@/constants/attendance';
-import { AI_PROGRESS_MESSAGES, AI_STUDENT_COMMENTS } from '@/constants/aiComments';
+import { AI_STUDENT_COMMENTS } from '@/constants/aiComments';
 import AchievementCard from './AchievementCard';
 import WeeklyReportList from './WeeklyReportList';
+import AIStudentComment from './AIStudentComment';
+import StatsCardsRow from './StatsCardsRow';
+import ChartsRow from './ChartsRow';
+import DetailsTable from './DetailsTable';
+import ProfileSelectionDialog from './ProfileSelectionDialog';
+import SpecialStudentPopup from './SpecialStudentPopup';
 import useStudentAuthStore from '@/store/useStudentAuthStore';
 import { useRefreshStore } from '@/store/useRefreshStore';
 import { useCustomModal } from '@/hooks/useCustomModal';
@@ -555,20 +556,6 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
 
         setChartData({ classesHomework, classesAttendance });
     };
-
-    const getAttendanceSeverity = (status: string) => {
-        switch (status) {
-            case 'class_present':
-                return 'success';
-            case 'class_absent':
-                return 'danger';
-            case 'late':
-                return 'warning';
-            default:
-                return 'info';
-        }
-    };
-
     const handleLogout = () => {
         clearStudentAuth();
         window.location.reload();
@@ -582,67 +569,6 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
         changeTheme?.(layoutConfig.theme, newTheme, 'theme-css', () => {
             setLayoutConfig((prevState) => ({ ...prevState, theme: newTheme, colorScheme: newColorScheme }));
         });
-    };
-
-    const rowExpansionTemplate = (data: any) => {
-        const filterAttendance = data?.attendance?.filter((item: any) => item.status !== 'none' || item.praise);
-
-        return (
-            <div className="p-3">
-                <DataTable value={filterAttendance} emptyMessage="칭찬,출석 내역이 없습니다.">
-                    <Column
-                        field="date"
-                        header="날짜"
-                        headerStyle={{ minWidth: '120px' }}
-                        sortable
-                        body={(rowData: any) => dayjs(rowData?.date).format('YYYY-MM-DD')}
-                    />
-                    <Column
-                        field="status"
-                        header="출석상태"
-                        headerStyle={{ minWidth: '100px' }}
-                        sortable
-                        body={(rowData: any) => (
-                            <Tag
-                                value={
-                                    ATTENDANCE_STATUS_OPTIONS.find((opt) => opt.value === rowData.status)?.label ||
-                                    '없음'
-                                }
-                                severity={getAttendanceSeverity(rowData.status || '')}
-                            />
-                        )}
-                    />
-                    <Column
-                        sortable
-                        field="homework"
-                        headerStyle={{ minWidth: '80px' }}
-                        header="숙제"
-                        body={(rowData: any) => `${rowData?.homework || 0}%`}
-                    />
-                    <Column
-                        sortable
-                        field="praise"
-                        header="칭찬여부"
-                        align={'center'}
-                        headerStyle={{ minWidth: '100px' }}
-                        body={(rowData: any) =>
-                            rowData.praise ? (
-                                <i className="pi pi-face-smile text-green-500 text-2xl" />
-                            ) : (
-                                <i className="pi pi-minus text-400" />
-                            )
-                        }
-                    />
-                    <Column
-                        sortable
-                        field="note"
-                        headerStyle={{ minWidth: '120px', textAlign: 'center' }}
-                        header="비고"
-                        alignHeader={'center'}
-                    />
-                </DataTable>
-            </div>
-        );
     };
 
     const getTrophy = (rank: number) => {
@@ -934,72 +860,20 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                 </Card>
 
                 {/* 프로필 선택 다이얼로그 */}
-                <Dialog
-                    header="프로필 아이콘 선택"
+                <ProfileSelectionDialog
                     visible={showProfileDialog}
                     onHide={() => setShowProfileDialog(false)}
-                    style={{ width: '90vw', maxWidth: '400px' }}
-                    draggable={false}
-                    resizable={false}
-                    dismissableMask
-                >
-                    <div className="grid justify-content-center gap-3 py-3">
-                        {profileIcons.map((icon, idx) => (
-                            <div
-                                key={idx}
-                                className={`col-3 flex flex-column align-items-center cursor-pointer p-2 border-round hover:surface-100 transition-duration-200 ${
-                                    profileImage === icon.value ? 'bg-blue-50 border-1 border-blue-500' : ''
-                                }`}
-                                onClick={() => handleProfileChange(icon.value)}
-                            >
-                                <div className="w-4rem h-4rem border-circle bg-blue-100 flex align-items-center justify-content-center overflow-hidden mb-2">
-                                    {icon.value ? (
-                                        <img
-                                            src={icon.value}
-                                            alt={icon.name}
-                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                        />
-                                    ) : (
-                                        <i className="pi pi-user text-blue-500 text-2xl"></i>
-                                    )}
-                                </div>
-                                <span className="text-xs text-700">{icon.name}</span>
-                            </div>
-                        ))}
-                    </div>
-                </Dialog>
+                    profileIcons={profileIcons}
+                    profileImage={profileImage}
+                    onProfileChange={handleProfileChange}
+                />
 
                 {/* 서현준 학생 특별 팝업 */}
-                <Dialog
+                <SpecialStudentPopup
                     visible={showSpecialModal}
                     onHide={() => setShowSpecialModal(false)}
-                    showHeader={false}
-                    style={{ width: '90vw', maxWidth: '600px' }}
-                    contentStyle={{ padding: 0, borderRadius: '24px', overflow: 'hidden' }}
-                    dismissableMask
-                >
-                    <div className="relative">
-                        <img
-                            src="/images/special/hj.png"
-                            alt="Welcome"
-                            className="w-full h-auto block"
-                            style={{ maxHeight: '80vh', objectFit: 'contain' }}
-                        />
-                        <Button
-                            icon="pi pi-times"
-                            className="absolute top-0 right-0 m-3 p-button-rounded p-button-secondary p-button-text bg-white-alpha-20 hover:bg-white-alpha-40 transition-duration-200"
-                            onClick={() => setShowSpecialModal(false)}
-                            style={{ color: 'white', backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
-                        />
-                        <div
-                            className="absolute bottom-0 left-0 w-full p-4 flex flex-column align-items-center"
-                            style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent)' }}
-                        >
-                            <h2 className="text-white font-bold m-0 mb-2">반가워요, 서현준 학생! 👋</h2>
-                            <p className="text-white-alpha-80 m-0 text-sm">최선을 다하는 당신을 응원합니다.</p>
-                        </div>
-                    </div>
-                </Dialog>
+                    studentName={finalName}
+                />
 
                 {stats && (
                     <AchievementCard
@@ -1025,334 +899,28 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                 ) : (
                     <>
                         {/* AI 학생 한줄평 영역 */}
-                        <div className="grid mt-2 mb-4">
-                            <div className="col-12">
-                                <div
-                                    className="border-round-2xl shadow-1 p-4 flex flex-column align-items-center justify-content-center relative overflow-hidden"
-                                    style={{
-                                        minHeight: '140px',
-                                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                                    }}
-                                >
-                                    <div className="absolute top-0 right-0 p-3" style={{ opacity: 0.1 }}>
-                                        <i className="pi pi-sparkles text-8xl text-white"></i>
-                                    </div>
-                                    <div className="absolute bottom-0 left-0 p-3" style={{ opacity: 0.1 }}>
-                                        <i className="pi pi-bolt text-7xl text-white"></i>
-                                    </div>
+                        <AIStudentComment aiAnalyzing={aiAnalyzing} aiProgress={aiProgress} aiComment={aiComment} />
 
-                                    {aiAnalyzing ? (
-                                        (() => {
-                                            const currentMessage =
-                                                AI_PROGRESS_MESSAGES.find((m) => aiProgress < m.threshold)?.message ||
-                                                AI_PROGRESS_MESSAGES[AI_PROGRESS_MESSAGES.length - 1].message;
+                        {/* 학생 성취 하이라이트 */}
+                        <StatsCardsRow
+                            classes={stats.classes}
+                            classRanks={classRanks}
+                            totalPraiseCnt={stats.totalPraiseCnt || 0}
+                            globalRank={globalRank}
+                        />
 
-                                            return (
-                                                <div className="w-full md:w-8 z-1 flex flex-column align-items-center">
-                                                    <span className="text-yellow-200 font-bold mb-3 text-base md:text-xl text-center">
-                                                        <i className="pi pi-cog pi-spin mr-2"></i>
-                                                        {currentMessage}
-                                                    </span>
-                                                    <ProgressBar
-                                                        value={aiProgress}
-                                                        className="w-full border-round-3xl shadow-1"
-                                                        style={{
-                                                            height: '18px',
-                                                            backgroundColor: 'rgba(255,255,255,0.2)'
-                                                        }}
-                                                        color="#facc15"
-                                                        displayValueTemplate={(val) => (
-                                                            <span className="text-xs text-800 font-bold">{val}%</span>
-                                                        )}
-                                                    />
-                                                </div>
-                                            );
-                                        })()
-                                    ) : (
-                                        <div className="flex align-items-center gap-3 z-1 w-full justify-content-center">
-                                            <i className="pi pi-sparkles text-3xl md:text-5xl text-yellow-300 drop-shadow-md"></i>
-                                            <span
-                                                className="text-lg md:text-2xl font-bold text-white line-height-3 text-center"
-                                                style={{ textShadow: '1px 1px 3px rgba(0,0,0,0.3)' }}
-                                            >
-                                                💡 AI 코치 코멘트: <br />{' '}
-                                                <span className="text-yellow-100">{aiComment}</span>
-                                            </span>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
+                        {/* 차트 영역*/}
+                        <ChartsRow chartData={chartData} />
 
-                        {/* Stats Cards Row */}
-                        <div className="grid gap-4 mb-4 pb-2" style={{ margin: 0 }}>
-                            {stats.classes?.map((c: any) => {
-                                const praiseCount = c.attendance?.filter((a: any) => a.praise).length || 0;
-                                const rank = classRanks[c.classId] || 0;
-                                return (
-                                    <div
-                                        key={c.classId || c.className}
-                                        className="col-12 sm:col-6 md:col lg:col flex-1 p-0"
-                                    >
-                                        <Card className="shadow-1 border-round-2xl h-full relative overflow-hidden">
-                                            <div
-                                                className="flex flex-column justify-content-center align-items-center"
-                                                style={{ minHeight: '130px' }}
-                                            >
-                                                <div className="absolute top-0 right-0 p-3" style={{ opacity: 0.1 }}>
-                                                    <i className="pi pi-star-fill text-7xl text-blue-500"></i>
-                                                </div>
-                                                <h3 className="font-medium m-0 mb-3 z-1 text-center text-600">
-                                                    {c.className}
-                                                </h3>
-                                                <div className="flex align-items-center gap-2 z-1 mb-3">
-                                                    <i className="pi pi-star-fill text-4xl drop-shadow-md text-blue-400"></i>
-                                                    <span className="text-5xl font-black text-900">{praiseCount}</span>
-                                                    <span className="text-lg text-600 font-bold mt-2">개</span>
-                                                </div>
-                                                {rank > 0 ? (
-                                                    <Tag
-                                                        value={`${rank}위`}
-                                                        severity={rank <= 3 ? 'warning' : 'info'}
-                                                        className={`px-3 py-1 text-sm border-round-xl ${
-                                                            rank <= 3 ? 'bg-yellow-500 text-white' : ''
-                                                        }`}
-                                                    />
-                                                ) : (
-                                                    <Tag
-                                                        value="순위 없음"
-                                                        severity="info"
-                                                        className="px-3 py-1 text-sm border-round-xl"
-                                                    />
-                                                )}
-                                            </div>
-                                        </Card>
-                                    </div>
-                                );
-                            })}
+                        {/* 클래스별 칭찬 및 출석 내역*/}
+                        <DetailsTable
+                            classes={stats.classes}
+                            expandedRows={expandedRows}
+                            onRowToggle={setExpandedRows}
+                            classRanks={classRanks}
+                        />
 
-                            <div className="col-12 sm:col-6 md:col lg:col flex-1 p-0">
-                                <Card className="shadow-1 border-round-2xl h-full relative overflow-hidden border-2 border-yellow-400">
-                                    <div
-                                        className="flex flex-column justify-content-center align-items-center"
-                                        style={{ minHeight: '130px' }}
-                                    >
-                                        <div className="absolute top-0 right-0 p-3" style={{ opacity: 0.1 }}>
-                                            <i className="pi pi-star-fill text-7xl text-yellow-500"></i>
-                                        </div>
-                                        <h3 className="font-medium m-0 mb-3 z-1 text-center text-800 text-xl">
-                                            총 칭찬 배지
-                                        </h3>
-                                        <div className="flex align-items-center gap-2 z-1 mb-3">
-                                            <i className="pi pi-star-fill text-5xl mr-2 drop-shadow-md text-yellow-500"></i>
-                                            <span className="text-6xl font-black text-900">
-                                                {stats.totalPraiseCnt || 0}
-                                            </span>
-                                            <span className="text-lg text-600 font-bold mt-2">개</span>
-                                        </div>
-                                        <Tag
-                                            value={`종합 ${globalRank}위`}
-                                            severity={globalRank <= 3 ? 'warning' : 'info'}
-                                            className={`px-3 py-1 text-sm border-round-xl ${
-                                                globalRank <= 3 ? 'bg-yellow-500 text-white' : ''
-                                            }`}
-                                        />
-                                    </div>
-                                </Card>
-                            </div>
-                        </div>
-
-                        {/* Charts Row */}
-                        <div className="grid">
-                            <div className="col-12 xl:col-6">
-                                <Card
-                                    title="클래스별 출석 현황"
-                                    className="h-full border-none shadow-1 border-round-2xl"
-                                >
-                                    {chartData.classesAttendance && chartData.classesAttendance.length > 0 ? (
-                                        <div className="grid justify-content-center pb-2">
-                                            {chartData.classesAttendance.map((ca: any, idx: number) => {
-                                                const isTotal = ca.className === '총 출석현황';
-                                                return (
-                                                    <div key={idx} className="col-12 sm:col-6 md:col-4 mb-4">
-                                                        <div className="text-center flex flex-column align-items-center p-2">
-                                                            <span
-                                                                className={`font-bold mb-3 text-overflow-ellipsis overflow-hidden white-space-nowrap w-full ${
-                                                                    isTotal
-                                                                        ? 'text-teal-600 text-lg'
-                                                                        : 'text-700 text-base'
-                                                                }`}
-                                                                title={ca.className}
-                                                            >
-                                                                {ca.className}
-                                                            </span>
-                                                            <div
-                                                                className="relative"
-                                                                style={{ width: '130px', height: '130px' }}
-                                                            >
-                                                                <Chart
-                                                                    type="doughnut"
-                                                                    data={ca.attData}
-                                                                    options={ca.attOptions}
-                                                                    className="w-full h-full"
-                                                                />
-                                                                <div
-                                                                    className="absolute top-50 left-50"
-                                                                    style={{ transform: 'translate(-50%, -50%)' }}
-                                                                >
-                                                                    <span
-                                                                        className={`font-bold text-xl ${
-                                                                            isTotal ? 'text-teal-600' : 'text-green-500'
-                                                                        }`}
-                                                                    >
-                                                                        {ca.percentage}%
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    ) : (
-                                        <div className="text-center p-5 text-500">
-                                            <i className="pi pi-calendar text-4xl mb-3 block"></i>
-                                            출석 데이터가 없습니다.
-                                        </div>
-                                    )}
-                                </Card>
-                            </div>
-
-                            <div className="col-12 xl:col-6">
-                                <Card
-                                    title="클래스별 과제 달성률"
-                                    className="h-full border-none shadow-1 border-round-2xl"
-                                >
-                                    {chartData.classesHomework && chartData.classesHomework.length > 0 ? (
-                                        <div className="grid justify-content-center pb-2">
-                                            {chartData.classesHomework.map((hc: any, idx: number) => {
-                                                const isTotal = hc.className === '총 달성률';
-                                                return (
-                                                    <div key={idx} className="col-12 sm:col-6 md:col-4 mb-4">
-                                                        <div className="text-center flex flex-column align-items-center p-2">
-                                                            <span
-                                                                className={`font-bold mb-3 text-overflow-ellipsis overflow-hidden white-space-nowrap w-full ${
-                                                                    isTotal
-                                                                        ? 'text-indigo-600 text-lg'
-                                                                        : 'text-700 text-base'
-                                                                }`}
-                                                                title={hc.className}
-                                                            >
-                                                                {hc.className}
-                                                            </span>
-                                                            <div
-                                                                className="relative"
-                                                                style={{ width: '130px', height: '130px' }}
-                                                            >
-                                                                <Chart
-                                                                    type="doughnut"
-                                                                    data={hc.hwData}
-                                                                    options={hc.hwOptions}
-                                                                    className="w-full h-full"
-                                                                />
-                                                                <div
-                                                                    className="absolute top-50 left-50"
-                                                                    style={{ transform: 'translate(-50%, -50%)' }}
-                                                                >
-                                                                    <span
-                                                                        className={`font-bold text-xl ${
-                                                                            isTotal
-                                                                                ? 'text-indigo-600'
-                                                                                : 'text-blue-500'
-                                                                        }`}
-                                                                    >
-                                                                        {hc.avgScore}%
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    ) : (
-                                        <div className="text-center p-5 text-500">
-                                            <i className="pi pi-file-edit text-4xl mb-3 block"></i>
-                                            과제 데이터가 없습니다.
-                                        </div>
-                                    )}
-                                </Card>
-                            </div>
-                        </div>
-
-                        {/* Details Table */}
-                        <div className="grid mt-2">
-                            <div className="col-12">
-                                <Card
-                                    title="클래스별 칭찬 및 출석 내역"
-                                    className="border-none shadow-1 border-round-2xl overflow-hidden"
-                                >
-                                    <DataTable
-                                        value={stats.classes}
-                                        expandedRows={expandedRows}
-                                        onRowToggle={(e) => setExpandedRows(e.data)}
-                                        rowExpansionTemplate={rowExpansionTemplate}
-                                        dataKey="classId"
-                                        emptyMessage="수강 중인 클래스가 없습니다."
-                                        className="p-datatable-sm"
-                                    >
-                                        <Column expander style={{ width: '3em' }} />
-                                        <Column field="className" header="클래스명" sortable />
-                                        <Column
-                                            header="칭찬 횟수"
-                                            body={(rowData) => {
-                                                const praiseCount =
-                                                    rowData.attendance?.filter((a: any) => a.praise).length || 0;
-                                                return (
-                                                    <Tag
-                                                        value={`${praiseCount}회`}
-                                                        severity={praiseCount > 0 ? 'success' : 'info'}
-                                                    />
-                                                );
-                                            }}
-                                        />
-                                        <Column
-                                            header="순위"
-                                            body={(rowData) => {
-                                                const rank = classRanks[rowData.classId] || 0;
-                                                if (rank === 0) return <span>-</span>;
-                                                let textColor = 'text-600';
-                                                let trophyColor = '';
-                                                if (rank === 1) {
-                                                    textColor = 'text-yellow-600';
-                                                    trophyColor = '#FFD700';
-                                                } else if (rank === 2) {
-                                                    textColor = 'text-gray-500';
-                                                    trophyColor = '#C0C0C0';
-                                                } else if (rank === 3) {
-                                                    textColor = 'text-orange-600';
-                                                    trophyColor = '#CD7F32';
-                                                }
-
-                                                return (
-                                                    <div className={`flex align-items-center font-bold ${textColor}`}>
-                                                        {rank}위
-                                                        {rank <= 3 && (
-                                                            <i
-                                                                className="pi pi-trophy ml-1"
-                                                                style={{ color: trophyColor }}
-                                                            ></i>
-                                                        )}
-                                                    </div>
-                                                );
-                                            }}
-                                        />
-                                    </DataTable>
-                                </Card>
-                            </div>
-                        </div>
-
-                        {/* Weekly Report List */}
+                        {/*주간 리포트 (REPORT) */}
                         <WeeklyReportList studentId={finalStudentId} />
                     </>
                 )}

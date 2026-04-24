@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Card } from 'primereact/card';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
@@ -45,21 +46,19 @@ const WeeklyReportList = ({ studentId }: WeeklyReportListProps) => {
         }
     };
 
-    const viewReport = (publicUrl: string) => {
-        if (!publicUrl) return;
-        // 학생/학부모 뷰 페이지로 이동
-        window.open(`/kakao-share/public-view/${publicUrl}`, '_blank');
-    };
 
     const titleTemplate = (rowData: any) => {
         return (
             <div className="flex align-items-center gap-2">
-                <span
-                    className="text-blue-500 font-bold cursor-pointer hover:underline"
-                    onClick={() => viewReport(rowData.publicUrl)}
+                <Link
+                    href={`/kakao-share/public-view/${rowData.publicUrl}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-500 font-bold hover:underline"
+                    style={{ textDecoration: 'none' }}
                 >
                     {rowData.shareTitle}
-                </span>
+                </Link>
                 {!rowData?.isRead && (
                     <span
                         className="bg-red-500 text-white flex align-items-center justify-content-center font-bold"
