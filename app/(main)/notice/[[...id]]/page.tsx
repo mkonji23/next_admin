@@ -1,14 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
 import dayjs from 'dayjs';
 import { confirmDialog } from 'primereact/confirmdialog';
-import NoticeWriteView from './components/NoticeWriteView';
-import NoticeDetailView from './components/NoticeDetailView';
-import NoticeEditView from './components/NoticeEditView';
-import NoticeListView from './components/NoticeListView';
+import NoticeWriteView from '../components/NoticeWriteView';
+import NoticeDetailView from '../components/NoticeDetailView';
+import NoticeEditView from '../components/NoticeEditView';
+import NoticeListView from '../components/NoticeListView';
 
 interface Notice {
     noticeId: string;
@@ -23,20 +23,38 @@ interface Notice {
     targetClassNames?: string[];
 }
 
-const NoticePage = () => {
+const NoticePage = ({ path }: { path?: string }) => {
     const [notices, setNotices] = useState<Notice[]>([]);
     const [selectedNotices, setSelectedNotices] = useState<Notice[]>([]);
     const [loading, setLoading] = useState(false);
 
     const [currentView, setCurrentView] = useState<'list' | 'write' | 'detail' | 'edit'>('list');
     const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [detailNotice, setDetailNotice] = useState<Notice | null>(null);
+    const [detailLoading, setDetailLoading] = useState(false);
 
     const http = useHttp();
     const { showToast } = useToast();
 
+    // Determine if we are in a dedicated detail tab via URL
+    const isDedicatedDetailTab = useMemo(() => {
+        return path && path.startsWith('/notice/') && !path.endsWith('/write') && path !== '/notice';
+    }, [path]);
+
     useEffect(() => {
+        // Initial data fetch for list view
         fetchNotices();
-    }, []);
+
+        // Handle direct URL access
+        if (isDedicatedDetailTab) {
+            const id = path?.split('/')[2];
+            if (id) {
+                setSelectedId(id);
+                setCurrentView('detail');
+                fetchDetail(id);
+            }
+        }
+    }, [path, isDedicatedDetailTab]);
 
     const fetchNotices = async () => {
         setLoading(true);
@@ -48,6 +66,22 @@ const NoticePage = () => {
             showToast({ severity: 'error', summary: '조회 실패', detail: '공지사항 목록을 불러오지 못했습니다.' });
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchDetail = async (id: string) => {
+        setDetailLoading(true);
+        try {
+            const response = await http.get('/choiMath/notice/list', {
+                params: { noticeId: id },
+                disableLoading: true
+            });
+            const data = response.data?.find((n: any) => n.noticeId === id);
+            setDetailNotice(data || null);
+        } catch (error) {
+            console.error('Fetch detail error:', error);
+        } finally {
+            setDetailLoading(false);
         }
     };
 
@@ -75,28 +109,8 @@ const NoticePage = () => {
         });
     };
 
-    const titleTemplate = (rowData: Notice) => {
-        return (
-            <div className="flex align-items-center gap-2">
-                {rowData.isNotice && <span className="p-tag p-tag-danger">공지</span>}
-                <span
-                    className="font-semibold cursor-pointer hover:text-primary"
-                    onClick={() => {
-                        setSelectedId(rowData.noticeId);
-                        setCurrentView('detail');
-                    }}
-                >
-                    {rowData.title}
-                </span>
-            </div>
-        );
-    };
-
-    const dateTemplate = (rowData: Notice) => {
-        return dayjs(rowData.createdDate).format('YYYY-MM-DD HH:mm');
-    };
-
-    const selectedNotice = notices.find((n) => n.noticeId === selectedId);
+    // Use detailNotice if fetched directly, otherwise find in the list
+    const selectedNotice = detailNotice || notices.find((n) => n.noticeId === selectedId);
 
     return (
         <div className="grid">
@@ -127,7 +141,13 @@ const NoticePage = () => {
                     />
                 )}
 
-                {currentView === 'detail' && selectedNotice && (
+                {currentView === 'detail' && detailLoading && (
+                    <div className="card flex justify-content-center align-items-center p-5">
+                        <i className="pi pi-spin pi-spinner text-primary text-4xl"></i>
+                    </div>
+                )}
+
+                {currentView === 'detail' && !detailLoading && selectedNotice && (
                     <NoticeDetailView
                         initialData={selectedNotice}
                         onBack={() => setCurrentView('list')}
@@ -137,6 +157,7 @@ const NoticePage = () => {
                             fetchNotices();
                         }}
                         onNoticeSuccess={() => {
+                            if (selectedId) fetchDetail(selectedId);
                             fetchNotices();
                         }}
                     />
@@ -148,9 +169,14 @@ const NoticePage = () => {
                         onBack={() => setCurrentView('detail')}
                         onSuccess={() => {
                             setCurrentView('detail');
+                            if (selectedId) fetchDetail(selectedId);
                             fetchNotices();
                         }}
                     />
+                )}
+
+                {currentView === 'detail' && !detailLoading && !selectedNotice && (
+                    <div className="card p-5 text-center">존재하지 않거나 삭제된 공지사항입니다.</div>
                 )}
             </div>
         </div>

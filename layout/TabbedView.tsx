@@ -67,12 +67,30 @@ const TabbedView = ({ initialTab }: TabbedViewProps) => {
             } else if (currentPathname === initialTab.id) {
                 setActiveTab(initialTab.id);
             } else {
-                // URL이 어떤 탭에도 해당하지 않으면, 기본 탭으로 리다이렉트하거나 처리
-                router.replace(initialTab.id);
-                setActiveTab(initialTab.id);
+                // URL이 어떤 탭에도 해당하지 않으면, 유효한 경로인지 확인 후 탭 추가
+                const component = getComponentForPath(currentPathname);
+                // getComponentForPath returns a "Not Found" div if it doesn't match
+                const isNotFound = React.isValidElement(component) && 
+                                 typeof component.props?.children === 'string' && 
+                                 component.props.children.includes('페이지를 찾을 수 없습니다');
+
+                if (!isNotFound) {
+                    // 유효한 경로면 탭 추가
+                    let label = currentPathname.split('/').pop() || '페이지';
+                    if (currentPathname.startsWith('/notice/')) label = '공지사항 상세';
+                    
+                    addTab({
+                        id: currentPathname,
+                        label: label,
+                        path: currentPathname
+                    });
+                } else {
+                    router.replace(initialTab.id);
+                    setActiveTab(initialTab.id);
+                }
             }
         }
-    }, [currentPathname, tabs, initialTab.id, setActiveTab, router]);
+    }, [currentPathname, tabs, initialTab.id, setActiveTab, router, addTab]);
 
     const onTabChange = (e: { value: MenuItem; index: number }) => {
         if (e.value && e.value.id) {

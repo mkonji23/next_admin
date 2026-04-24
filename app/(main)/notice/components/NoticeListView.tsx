@@ -109,7 +109,7 @@ const NoticeListView: React.FC<NoticeListViewProps> = ({
         return (
             <Button
                 icon="pi pi-bell"
-                label="공지하기"
+                label="공지"
                 className="p-button-sm p-button-success p-button-outlined"
                 onClick={(e) => {
                     e.stopPropagation();
@@ -131,6 +131,13 @@ const NoticeListView: React.FC<NoticeListViewProps> = ({
                     className="p-button-danger p-button-outlined"
                     onClick={onDelete}
                     disabled={!selectedNotices || selectedNotices.length === 0}
+                />
+                <Button
+                    label="조회"
+                    icon="pi pi-search"
+                    className="p-button-primary p-button-outlined"
+                    onClick={onNoticeSuccess}
+                    loading={loading}
                 />
             </div>
             <span className="p-input-icon-left">

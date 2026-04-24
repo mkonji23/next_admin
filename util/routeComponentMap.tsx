@@ -21,7 +21,7 @@ const routeMap: { [key: string]: React.LazyExoticComponent<React.ComponentType<a
     '/assistantTodo': React.lazy(() => import('@/app/(main)/assistantTodo/page')),
     '/admin-student-status': React.lazy(() => import('@/app/(main)/admin-student-status/page')),
     '/praise-settlement': React.lazy(() => import('@/app/(main)/praise-settlement/page')),
-    '/notice': React.lazy(() => import('@/app/(main)/notice/page'))
+    '/notice': React.lazy(() => import('@/app/(main)/notice/[[...id]]/page'))
     // 참고: AppMenu.tsx에 정의된 다른 모든 경로들을 여기에 추가해야 합니다.
     // 예: '/uikit/formlayout': React.lazy(() => import('@/app/(main)/uikit/formlayout/page')),
 };
@@ -33,7 +33,7 @@ export const getComponentForPath = (path: string): React.ReactNode => {
     // Dynamic match check (e.g., /kakao-share/67e2...)
     if (!Component) {
         // Find if the path starts with any of our defined base routes
-        const baseRoutes = ['/kakao-share'];
+        const baseRoutes = ['/kakao-share', '/notice'];
         for (const base of baseRoutes) {
             if (path.startsWith(`${base}/`)) {
                 Component = routeMap[base];
