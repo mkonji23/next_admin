@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
 import { Dropdown } from 'primereact/dropdown';
+import { InputText } from 'primereact/inputtext';
 import dayjs from 'dayjs';
 import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
@@ -25,6 +26,7 @@ const DeleteTemplateModal = ({ visible, onClose }: DeleteTemplateModalProps) => 
     const [year, setYear] = useState(currentYear);
     const [month, setMonth] = useState(currentMonth);
     const [week, setWeek] = useState(currentWeek);
+    const [password, setPassword] = useState('');
 
     const years = Array.from({ length: 3 }, (_, i) => ({
         label: `${currentYear - 1 + i}년`,
@@ -38,6 +40,7 @@ const DeleteTemplateModal = ({ visible, onClose }: DeleteTemplateModalProps) => 
             setYear(currentYear);
             setMonth(currentMonth);
             setWeek(currentWeek);
+            setPassword('');
         }
     }, [visible, currentYear, currentMonth, currentWeek]);
 

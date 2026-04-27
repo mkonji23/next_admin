@@ -147,15 +147,14 @@ const ShareAutoTemplateModal = ({ visible, onClose }: ShareAutoTemplateModalProp
             };
 
             const cdata = await http.post('/choiMath/share/get-dup-check', saveData);
+
             if (cdata?.data.isDuplicate) {
-                const confirmed = await showConfirm({
-                    header: '중복 데이터 확인',
-                    message: '이미 생성된 템플릿 데이터가 있습니다. \r\n 기존 자동 데이터를 삭제하고 진행하시겠습니까?',
-                    icon: 'pi pi-exclamation-triangle',
-                    acceptLabel: '생성',
-                    rejectLabel: '취소'
+                showToast({
+                    severity: 'warn',
+                    summary: '중복 데이터 확인',
+                    detail: '이미 생성된 템플릿 데이터가 있습니다.'
                 });
-                if (!confirmed) return;
+                return;
             }
 
             const res = await http.post('/choiMath/share/create-auto', saveData);

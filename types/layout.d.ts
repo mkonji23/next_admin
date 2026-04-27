@@ -99,6 +99,7 @@ export interface AppMenuItem extends MenuModel {
     visible?: boolean;
     disabled?: boolean;
     replaceUrl?: boolean;
+    isAdmin?: boolean;
     command?: ({ originalEvent, item }: CommandProps) => void;
 }
 

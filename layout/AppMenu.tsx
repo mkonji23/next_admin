@@ -27,6 +27,8 @@ const AppMenu = () => {
             if (!group.items) return group;
 
             const visibleItems = group.items.filter((item) => {
+                // isAdmin이 true면 admin만 볼 수 있음
+                if (item.isAdmin && userInfo.auth !== 'admin') return false;
                 // to가 없거나 menuPermissions에 포함된 경우만 표시
                 return !item.to || userInfo.menuPermissions?.includes(item.to);
             });

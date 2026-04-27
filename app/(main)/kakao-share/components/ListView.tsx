@@ -484,7 +484,7 @@ const ListView = ({
                         className="white-space-nowrap flex-1 sm:flex-none"
                         onClick={handleAutoImageUploadClick}
                     />
-                    <Button
+                    {/* <Button
                         severity="danger"
                         label={isMobile ? '' : '자동 템플릿 삭제'}
                         tooltipOptions={{ position: 'bottom' }}
@@ -498,7 +498,7 @@ const ListView = ({
                         icon="pi pi-trash"
                         className="white-space-nowrap flex-1 sm:flex-none"
                         onClick={handleDeleteTemplateClick}
-                    />
+                    /> */}
                 </div>
             </div>
             <style>{`
