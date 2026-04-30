@@ -30,29 +30,34 @@ const useKakaoShare = () => {
             linkUrl = 'http://localhost:4000',
             serverCallbackArgs = {}
         } = params;
-        window.Kakao.Share.sendDefault({
-            objectType: 'feed',
-            content: {
-                title: title,
-                description: description,
-                imageUrl: imageUrl,
-                link: {
-                    mobileWebUrl: linkUrl,
-                    webUrl: linkUrl
-                }
-            },
-            // 서버 콜백 설정 시 함께 전달될 파라미터
-            serverCallbackArgs: serverCallbackArgs,
-            buttons: [
-                {
-                    title: buttonText,
+        try {
+            window.Kakao.Share.sendDefault({
+                objectType: 'feed',
+                content: {
+                    title: title,
+                    description: description,
+                    imageUrl: imageUrl,
                     link: {
                         mobileWebUrl: linkUrl,
                         webUrl: linkUrl
                     }
-                }
-            ]
-        });
+                },
+                // 서버 콜백 설정 시 함께 전달될 파라미터
+                serverCallbackArgs: serverCallbackArgs,
+                buttons: [
+                    {
+                        title: buttonText,
+                        link: {
+                            mobileWebUrl: linkUrl,
+                            webUrl: linkUrl
+                        }
+                    }
+                ]
+            });
+        } catch (error) {
+            console.error('Kakao share error:', error);
+            alert('팝업 차단 또는 광고 차단 프로그램(AdGuard 등)으로 인해 공유창을 열 수 없습니다. 차단을 해제하고 다시 시도해주세요.');
+        }
     };
 
     const unLink = () => {
