@@ -14,17 +14,10 @@ const nextConfig = {
         ignoreBuildErrors: true
     },
     async rewrites() {
-        const isDev = process.env.NODE_ENV === 'development';
         return [
             {
                 source: '/v1/api/:path*', // 클라이언트에서 호출하는 경로
                 destination: 'http://localhost:3000/api/:path*' // 실제 API 서버 주소
-            },
-            {
-                source: '/api/choiMath/:path*', 
-                destination: isDev 
-                    ? 'http://localhost:3000/api/choiMath/:path*' 
-                    : 'https://serve-less.vercel.app/api/choiMath/:path*' 
             }
         ];
     }
