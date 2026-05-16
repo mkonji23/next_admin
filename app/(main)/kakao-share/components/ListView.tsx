@@ -55,6 +55,7 @@ const ListView = ({
     selectedItems,
     setSelectedItems
 }: ListViewProps) => {
+    const dt = React.useRef<DataTable<ShareItem[]>>(null);
     const { showToast } = useToast();
     const { openModal } = useCustomModal();
     const { userInfo } = useAuthStore();
@@ -451,7 +452,13 @@ const ListView = ({
                         tooltipOptions={{ position: 'bottom' }}
                         icon="pi pi-search"
                         className="white-space-nowrap flex-1 sm:flex-none"
-                        onClick={onSearch}
+                        onClick={() => {
+                            clearFilter();
+                            if (dt.current) {
+                                dt.current.reset();
+                            }
+                            onSearch();
+                        }}
                     />
                 </div>
                 <div className="flex gap-2 overflow-x-auto pb-1">
@@ -507,6 +514,7 @@ const ListView = ({
                 }
             `}</style>
             <DataTable
+                ref={dt}
                 scrollable
                 showGridlines
                 tableStyle={{ minWidth: '2000px' }}

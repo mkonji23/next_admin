@@ -113,7 +113,7 @@ const EditAutoTemplateModal = ({ visible, onClose }: EditAutoTemplateModalProps)
             }
         } catch (error: any) {
             console.error('Failed to fetch auto share data:', error);
-            if (error === 'Not Found') {
+            if (error === 'noData') {
                 showToast({
                     severity: 'warn',
                     summary: '조회 결과 없음',
@@ -178,7 +178,7 @@ const EditAutoTemplateModal = ({ visible, onClose }: EditAutoTemplateModalProps)
     const footer = (
         <div>
             <Button label="취소" icon="pi pi-times" onClick={() => onClose(null)} className="p-button-text" />
-            <Button label="저장" icon="pi pi-check" onClick={handleSave} autoFocus />
+            <Button label="저장" icon="pi pi-check" disabled={!template?.shareTitle} onClick={handleSave} autoFocus />
         </div>
     );
 
