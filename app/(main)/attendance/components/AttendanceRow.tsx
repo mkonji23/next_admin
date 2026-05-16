@@ -30,6 +30,13 @@ const AttendanceRow = React.memo<AttendanceRowProps>(
                             {user.name}
                         </span>
                         <div className="flex gap-1 ml-2">
+                            <Button
+                                icon="pi pi-id-card"
+                                className="p-button-rounded p-button-text p-button-secondary"
+                                style={{ width: '24px', height: '24px', padding: 0 }}
+                                tooltip={`${user.school || '학교 미지정'} / ${user.grade || '학년 미지정'}`}
+                                tooltipOptions={{ position: 'top', showDelay: 100 }}
+                            />
                             {user.description && (
                                 <Button
                                     icon="pi pi-info-circle"
@@ -39,13 +46,6 @@ const AttendanceRow = React.memo<AttendanceRowProps>(
                                     tooltipOptions={{ position: 'top', showDelay: 100 }}
                                 />
                             )}
-                            <Button
-                                icon="pi pi-id-card"
-                                className="p-button-rounded p-button-text p-button-secondary"
-                                style={{ width: '24px', height: '24px', padding: 0 }}
-                                tooltip={`${user.school || '학교 미지정'} / ${user.grade || '학년 미지정'}`}
-                                tooltipOptions={{ position: 'top', showDelay: 100 }}
-                            />
                         </div>
                     </div>
                 </div>

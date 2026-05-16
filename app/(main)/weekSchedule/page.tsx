@@ -431,7 +431,7 @@ const WeekSchedulePage = () => {
                                         <div className="schedule-cell sticky-cell-1">
                                             {s.studentName}
                                             <Button
-                                                icon="pi pi-exclamation-circle"
+                                                icon="pi pi-id-card"
                                                 rounded
                                                 text
                                                 severity="info"
@@ -441,10 +441,10 @@ const WeekSchedulePage = () => {
                                             />
                                             {s.description && (
                                                 <Button
-                                                    icon="pi pi-exclamation-circle"
+                                                    icon="pi pi-info-circle"
                                                     rounded
                                                     text
-                                                    severity="danger"
+                                                    severity="info"
                                                     tooltip={s.description}
                                                     tooltipOptions={{ position: 'top' }}
                                                     style={{ width: '20px', height: '20px', marginLeft: '4px' }}
