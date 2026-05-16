@@ -38,6 +38,10 @@ const EditAutoTemplateModal = ({ visible, onClose }: EditAutoTemplateModalProps)
     const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
 
     const [template, setTemplate] = useState({
+        autoYear: '',
+        autoMonth: '',
+        autoWeek: '',
+        templateId: '',
         shareTitle: '',
         shareContent: '',
         actualTitle: '',
@@ -90,6 +94,10 @@ const EditAutoTemplateModal = ({ visible, onClose }: EditAutoTemplateModalProps)
                 }
 
                 setTemplate({
+                    autoYear: String(year),
+                    autoMonth: String(month).padStart(2, '0'),
+                    autoWeek: String(week),
+                    templateId: data.templateId || '',
                     shareTitle: data.shareTitle || '',
                     shareContent: data.shareContent || '',
                     actualTitle: data.actualTitle || '',
@@ -136,6 +144,10 @@ const EditAutoTemplateModal = ({ visible, onClose }: EditAutoTemplateModalProps)
 
     const handleSave = async () => {
         try {
+            if (!selectedTemplateId) {
+                showToast({ severity: 'error', summary: '오류', detail: '조회 후 저장하세요.' });
+                return;
+            }
             const payload = {
                 ...template,
                 autoYear: String(year),
@@ -149,7 +161,8 @@ const EditAutoTemplateModal = ({ visible, onClose }: EditAutoTemplateModalProps)
             };
 
             await http.post('/choiMath/share/update-auto', payload);
-            showToast({ severity: 'success', summary: '성공', detail: '자동 공유 데이터가 대량 업데이트되었습니다.' });
+            const successMsg = `${year}년 ${month}월 ${week}주차 데이터가 성공적으로 저장되었습니다.`;
+            showToast({ severity: 'success', summary: '성공', detail: successMsg });
             onClose(true);
         } catch (error: any) {
             console.error('Save error:', error);
@@ -173,7 +186,7 @@ const EditAutoTemplateModal = ({ visible, onClose }: EditAutoTemplateModalProps)
         <Dialog
             header="자동 템플릿 설정 수정"
             visible={visible}
-            style={{ width: '800px' }}
+            style={{ width: '800px', minHeight: '600px' }}
             footer={footer}
             onHide={() => onClose(null)}
             className="p-fluid"
@@ -196,11 +209,45 @@ const EditAutoTemplateModal = ({ visible, onClose }: EditAutoTemplateModalProps)
                 </div>
             </div>
 
-            {template && (
+            {template && template?.shareTitle && (
                 <>
                     <div className="field">
+                        <label htmlFor="shareTitle" className="font-bold">
+                            카카오 공유 제목<span style={{ color: 'red' }}>*</span>
+                        </label>
+                        <InputText
+                            id="shareTitle"
+                            value={template.shareTitle}
+                            onChange={(e) => setTemplate((prev) => ({ ...prev, shareTitle: e.target.value }))}
+                        />
+                    </div>
+
+                    <div className="field">
+                        <label htmlFor="shareContent" className="font-bold">
+                            카카오 공유 내용<span style={{ color: 'red' }}>*</span>
+                        </label>
+                        <InputTextarea
+                            id="shareContent"
+                            value={template.shareContent}
+                            onChange={(e) => setTemplate((prev) => ({ ...prev, shareContent: e.target.value }))}
+                            rows={3}
+                        />
+                    </div>
+
+                    <div className="field">
+                        <label htmlFor="actualTitle" className="font-bold">
+                            게시글 제목<span style={{ color: 'red' }}>*</span>
+                        </label>
+                        <InputText
+                            id="actualTitle"
+                            value={template.actualTitle}
+                            onChange={(e) => setTemplate((prev) => ({ ...prev, actualTitle: e.target.value }))}
+                        />
+                    </div>
+
+                    <div className="field">
                         <label htmlFor="templateSelect" className="font-bold">
-                            기존 게시글 내용 템플릿 불러오기
+                            템플릿 선택
                         </label>
                         <Dropdown
                             id="templateSelect"
@@ -219,41 +266,7 @@ const EditAutoTemplateModal = ({ visible, onClose }: EditAutoTemplateModalProps)
                     </div>
 
                     <div className="field">
-                        <label htmlFor="shareTitle" className="font-bold">
-                            카카오 공유 제목 (기본값)
-                        </label>
-                        <InputText
-                            id="shareTitle"
-                            value={template.shareTitle}
-                            onChange={(e) => setTemplate((prev) => ({ ...prev, shareTitle: e.target.value }))}
-                        />
-                    </div>
-
-                    <div className="field">
-                        <label htmlFor="shareContent" className="font-bold">
-                            카카오 공유 내용 (기본값)
-                        </label>
-                        <InputTextarea
-                            id="shareContent"
-                            value={template.shareContent}
-                            onChange={(e) => setTemplate((prev) => ({ ...prev, shareContent: e.target.value }))}
-                            rows={3}
-                        />
-                    </div>
-
-                    <div className="field">
-                        <label htmlFor="actualTitle" className="font-bold">
-                            게시글 제목 (기본값)
-                        </label>
-                        <InputText
-                            id="actualTitle"
-                            value={template.actualTitle}
-                            onChange={(e) => setTemplate((prev) => ({ ...prev, actualTitle: e.target.value }))}
-                        />
-                    </div>
-
-                    <div className="field">
-                        <label className="font-bold">게시글 내용 (기본값)</label>
+                        <label className="font-bold">게시글 내용</label>
                         <div className="flex flex-wrap gap-2 mb-2">
                             <Button
                                 label="#{년도}"
