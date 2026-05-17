@@ -108,20 +108,13 @@ const EditAutoTemplateModal = ({ visible, onClose }: EditAutoTemplateModalProps)
                 if (data.templateId) {
                     setSelectedTemplateId(data.templateId);
                 }
-
                 showToast({ severity: 'success', summary: '조회 성공', detail: '데이터를 불러왔습니다.' });
+            } else {
+                showToast({ severity: 'warn', summary: '데이터 없음', detail: '데이터가 없습니다..' });
             }
         } catch (error: any) {
             console.error('Failed to fetch auto share data:', error);
-            if (error === 'noData') {
-                showToast({
-                    severity: 'warn',
-                    summary: '조회 결과 없음',
-                    detail: '해당 주차에 설정된 데이터가 없습니다.'
-                });
-            } else {
-                showToast({ severity: 'error', summary: '오류', detail: '데이터 조회 중 오류가 발생했습니다.' });
-            }
+            showToast({ severity: 'error', summary: '오류', detail: '데이터 조회 중 오류가 발생했습니다.' });
         }
     };
 
@@ -144,7 +137,7 @@ const EditAutoTemplateModal = ({ visible, onClose }: EditAutoTemplateModalProps)
 
     const handleSave = async () => {
         try {
-            if (!selectedTemplateId) {
+            if (!template.shareTitle) {
                 showToast({ severity: 'error', summary: '오류', detail: '조회 후 저장하세요.' });
                 return;
             }
