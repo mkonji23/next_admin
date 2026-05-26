@@ -12,8 +12,8 @@ export const metadata: Metadata = {
         images: [
             {
                 url: 'https://chochomath.vercel.app/layout/images/bae.jpg',
-                width: 512,
-                height: 512,
+                width: 256,
+                height: 256,
                 alt: '칭찬 현황 대표 이미지'
             }
         ]
