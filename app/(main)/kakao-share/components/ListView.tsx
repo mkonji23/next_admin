@@ -264,6 +264,7 @@ const ListView = ({
                     )}
                 </div>
                 <span
+                    id={`share-title-${rowId}`}
                     className="truncate-cell-300 text-primary font-bold cursor-pointer hover:underline"
                     onClick={(e) => {
                         e.stopPropagation();
@@ -272,6 +273,7 @@ const ListView = ({
                 >
                     {rowData.shareTitle}
                 </span>
+                <Tooltip target={`#share-title-${rowId}`} content={rowData.shareTitle} position="top" />
             </div>
         );
     };

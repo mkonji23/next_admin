@@ -169,7 +169,7 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
                 setSelectedShare(null);
             }
 
-            fetchShares();
+            fetchShares(first);
         } catch (error: any) {
             console.error('Save error:', error);
             const errMsg = error.response?.data?.message || error.message || '저장에 실패했습니다.';

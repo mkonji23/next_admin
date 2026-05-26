@@ -134,6 +134,7 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
         try {
             const newValues = {
                 ...values,
+                autoMonth: String(values.autoMonth).padStart(2, '0'),
                 ...(editData?.shareImageUrls && {
                     shareImageUrls: editData.shareImageUrls.map((item) => ({
                         ...item,

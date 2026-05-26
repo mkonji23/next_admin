@@ -158,7 +158,6 @@ const KakaoShareTemplatePage = () => {
     };
 
     const actionBodyTemplate = (rowData: KakaoTemplate) => {
-        console.log('rowData', rowData);
         return (
             <div className="flex gap-2">
                 <Button
