@@ -8,7 +8,15 @@ export const metadata: Metadata = {
     openGraph: {
         title: '나의 칭찬 현황 보기',
         description: '칭찬, 출석현황 그리고 평가메시지를 확인하세요!',
-        type: 'website'
+        type: 'website',
+        images: [
+            {
+                url: 'https://chochomath.vercel.app/icons/icon-ios-1024x1024.png',
+                width: 1024,
+                height: 1024,
+                alt: '칭찬 현황 대표 이미지'
+            }
+        ]
     }
 };
 
