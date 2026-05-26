@@ -11,7 +11,7 @@ export const metadata: Metadata = {
         type: 'website',
         images: [
             {
-                url: 'https://chochomath.vercel.app/icons/icon-ios-1024x1024.png',
+                url: 'https://chochomath.vercel.app/layout/images/bae.jpg',
                 width: 1024,
                 height: 1024,
                 alt: '칭찬 현황 대표 이미지'
