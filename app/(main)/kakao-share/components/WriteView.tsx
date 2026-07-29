@@ -129,19 +129,47 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
         }
     };
 
+    const editorRef = useRef<CustomEditorRef>(null);
+
     const onSubmit = async (values: any) => {
         setIsOptimizing(true);
         try {
+            let editorUploadedImages: any[] = [];
+            if (editorRef.current) {
+                const res = await editorRef.current.uploadPendingImages();
+                values.actualContent = res.textValue;
+                values.delta = res.delta;
+                editorUploadedImages = res.uploadedImages;
+            }
+
+            // 본문에서 현재 사용 중인 이미지 URL 수집
+            const currentUrlsInEditor: string[] = [];
+            if (values.delta?.ops) {
+                for (const op of values.delta.ops) {
+                    if (op.insert && typeof op.insert === 'object' && (op.insert as any).image) {
+                        currentUrlsInEditor.push((op.insert as any).image);
+                    }
+                }
+            }
+
+            // 기존 이미지 중 본문에서 제거된 이미지는 isDelete: true 마킹
+            let currentShareImageUrls = editData?.shareImageUrls || [];
+            currentShareImageUrls = currentShareImageUrls.map((img: any) => {
+                if (img.url && !currentUrlsInEditor.includes(img.url)) {
+                    return { ...img, isDelete: true };
+                }
+                return img;
+            });
+
             const newValues = {
                 ...values,
                 autoMonth: String(values.autoMonth).padStart(2, '0'),
-                ...(editData?.shareImageUrls && {
-                    shareImageUrls: editData.shareImageUrls.map((item) => ({
-                        ...item,
-                        versionInfo: ''
-                    }))
-                })
+                shareImageUrls: [...currentShareImageUrls, ...editorUploadedImages].map((item) => ({
+                    ...item,
+                    versionInfo: ''
+                }))
             };
+
             if (selectedFiles) {
                 const optimizedFiles = await compressImages(selectedFiles, {
                     maxWidth: 1200,
@@ -487,6 +515,7 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
                                 {({ input, meta }) => (
                                     <>
                                         <CustomEditor
+                                            ref={editorRef}
                                             value={input.value}
                                             delta={form.getState().values.delta}
                                             onChange={(data) => {

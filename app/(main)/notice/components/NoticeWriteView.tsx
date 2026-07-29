@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
 import { Checkbox } from 'primereact/checkbox';
@@ -6,7 +6,7 @@ import { MultiSelect } from 'primereact/multiselect';
 import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
 import useAuthStore from '@/store/useAuthStore';
-import { CustomEditor } from '@/components/editor/CustomEditor';
+import { CustomEditor, CustomEditorRef } from '@/components/editor/CustomEditor';
 
 interface NoticeWriteViewProps {
     onBack: () => void;
@@ -32,6 +32,7 @@ const NoticeWriteView: React.FC<NoticeWriteViewProps> = ({ onBack, onSuccess }) 
     const [loading, setLoading] = useState(false);
     const [classes, setClasses] = useState<any[]>([]);
     const [selectedClasses, setSelectedClasses] = useState<any[]>([]);
+    const editorRef = useRef<CustomEditorRef>(null);
 
     const http = useHttp();
     const { showToast } = useToast();
@@ -62,10 +63,22 @@ const NoticeWriteView: React.FC<NoticeWriteViewProps> = ({ onBack, onSuccess }) 
 
         setLoading(true);
         try {
+            let finalContent = content;
+            let finalDelta = delta;
+            let editorImages: any[] = [];
+
+            if (editorRef.current) {
+                const res = await editorRef.current.uploadPendingImages();
+                finalContent = res.textValue;
+                finalDelta = res.delta;
+                editorImages = res.uploadedImages;
+            }
+
             const formData = new FormData();
             formData.append('title', title);
-            formData.append('content', content);
-            formData.append('delta', JSON.stringify(delta));
+            formData.append('content', finalContent);
+            formData.append('delta', JSON.stringify(finalDelta));
+            formData.append('imageUrls', JSON.stringify(editorImages));
             formData.append('createdUser', userInfo?.userName || '관리자');
             if (selectedClasses.length > 0) {
                 formData.append('classIds', JSON.stringify(selectedClasses));
@@ -142,6 +155,7 @@ const NoticeWriteView: React.FC<NoticeWriteViewProps> = ({ onBack, onSuccess }) 
                 <div className="flex flex-column gap-2">
                     <label className="font-bold">내용</label>
                     <CustomEditor
+                        ref={editorRef}
                         onChange={({ textValue, delta: newDelta }) => {
                             setContent(textValue);
                             setDelta(newDelta);

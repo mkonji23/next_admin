@@ -1,3 +1,5 @@
+const path = require('path');
+
 /** @type {import('next').NextConfig} */
 const withPWA = require('@ducanh2912/next-pwa').default({
     dest: 'public',
@@ -7,6 +9,7 @@ const withPWA = require('@ducanh2912/next-pwa').default({
 });
 
 const nextConfig = {
+    outputFileTracingRoot: path.join(__dirname, './'),
     reactStrictMode: false,
     typescript: {
         // !! 주의: 타입 에러가 있어도 빌드를 강제로 진행합니다.

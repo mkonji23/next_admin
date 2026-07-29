@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
 import { Checkbox } from 'primereact/checkbox';
@@ -6,7 +6,7 @@ import { MultiSelect } from 'primereact/multiselect';
 import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
 import useAuthStore from '@/store/useAuthStore';
-import { CustomEditor } from '@/components/editor/CustomEditor';
+import { CustomEditor, CustomEditorRef } from '@/components/editor/CustomEditor';
 
 interface NoticeEditViewProps {
     initialData: any;
@@ -34,6 +34,7 @@ const NoticeEditView: React.FC<NoticeEditViewProps> = ({ initialData, onBack, on
     const [loading, setLoading] = useState(false);
     const [classes, setClasses] = useState<any[]>([]);
     const [selectedClasses, setSelectedClasses] = useState<any[]>([]);
+    const editorRef = useRef<CustomEditorRef>(null);
 
     const http = useHttp();
     const { showToast } = useToast();
@@ -43,11 +44,9 @@ const NoticeEditView: React.FC<NoticeEditViewProps> = ({ initialData, onBack, on
         const fetchClasses = async () => {
             try {
                 const response = await http.get('/choiMath/class/');
-                // classId가 있는 유효한 데이터만 필터링합니다.
                 const classData = (response.data || []).filter((c: any) => c.classId);
                 setClasses(classData);
 
-                // 클래스 목록이 로드된 후 선택된 값을 설정하여 라벨 매핑 이슈를 방지합니다.
                 if (initialData?.classIds) {
                     setSelectedClasses(initialData.classIds);
                 }
@@ -71,13 +70,44 @@ const NoticeEditView: React.FC<NoticeEditViewProps> = ({ initialData, onBack, on
 
         setLoading(true);
         try {
+            let finalContent = content;
+            let finalDelta = delta;
+            let newUploadedImages: any[] = [];
+
+            if (editorRef.current) {
+                const res = await editorRef.current.uploadPendingImages();
+                finalContent = res.textValue;
+                finalDelta = res.delta;
+                newUploadedImages = res.uploadedImages;
+            }
+
+            // 본문에서 현재 사용 중인 이미지 URL 수집
+            const currentUrlsInEditor: string[] = [];
+            if (finalDelta?.ops) {
+                for (const op of finalDelta.ops) {
+                    if (op.insert && typeof op.insert === 'object' && (op.insert as any).image) {
+                        currentUrlsInEditor.push((op.insert as any).image);
+                    }
+                }
+            }
+
+            // 기존 이미지 중 본문에서 삭제된 이미지는 isDelete: true 마킹 (백엔드에서 ImageKit 삭제 수행)
+            const processedOldImages = imageUrls.map((img: any) => {
+                if (img.url && !currentUrlsInEditor.includes(img.url)) {
+                    return { ...img, isDelete: true };
+                }
+                return img;
+            });
+
+            const combinedImageUrls = [...processedOldImages, ...newUploadedImages];
+
             const formData = new FormData();
             formData.append('title', title);
-            formData.append('content', content);
-            formData.append('delta', JSON.stringify(delta));
+            formData.append('content', finalContent);
+            formData.append('delta', JSON.stringify(finalDelta));
             formData.append('updatedUser', userInfo?.userName || '관리자');
             formData.append('isNotice', String(isNotice));
-            formData.append('imageUrls', JSON.stringify(imageUrls));
+            formData.append('imageUrls', JSON.stringify(combinedImageUrls));
             if (selectedClasses.length > 0) {
                 formData.append('classIds', JSON.stringify(selectedClasses));
             }
@@ -153,6 +183,7 @@ const NoticeEditView: React.FC<NoticeEditViewProps> = ({ initialData, onBack, on
                 <div className="flex flex-column gap-2">
                     <label className="font-bold">내용</label>
                     <CustomEditor
+                        ref={editorRef}
                         delta={delta}
                         onChange={({ textValue, delta: newDelta }) => {
                             setContent(textValue);
