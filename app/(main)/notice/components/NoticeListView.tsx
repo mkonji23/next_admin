@@ -161,7 +161,6 @@ const NoticeListView: React.FC<NoticeListViewProps> = ({
                 dataKey="noticeId"
                 paginator
                 rows={10}
-                rowsPerPageOptions={[5, 10, 25]}
                 className="p-datatable-sm"
                 emptyMessage="등록된 공지사항이 없습니다."
                 globalFilter={globalFilter}

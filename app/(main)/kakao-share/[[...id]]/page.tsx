@@ -1,12 +1,11 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/useToast';
 import { useHttp } from '@/util/axiosInstance';
 import useKakaoShare from '@/hooks/useKakaoShare';
 import { useConfirm } from '@/hooks/useConfirm';
 
-import { FilterMatchMode } from 'primereact/api';
 import DetailView from '../components/DetailView';
 import ListView from '../components/ListView';
 import WriteView from '../components/WriteView';
@@ -22,26 +21,13 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
     const [shares, setShares] = useState<ShareItem[]>([]);
     const [selectedShare, setSelectedShare] = useState<ShareItem | null>(null);
 
-    // List view state to be maintained
-    const [filters, setFilters] = useState({
-        global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-        autoYear: { value: String(new Date().getFullYear()), matchMode: FilterMatchMode.EQUALS },
-        autoMonth: { value: null, matchMode: FilterMatchMode.EQUALS },
-        autoWeek: { value: null, matchMode: FilterMatchMode.EQUALS },
-        shareStatus: { value: null, matchMode: FilterMatchMode.EQUALS }
-    });
-    const [globalFilterValue, setGlobalFilterValue] = useState('');
-    const [first, setFirst] = useState(0);
-    const [listSelectedItems, setListSelectedItems] = useState<ShareItem[]>([]);
-
     const { showToast } = useToast();
     const { showConfirm } = useConfirm();
     const http = useHttp();
     const { sendDefault } = useKakaoShare();
 
-    const fetchShares = async (first = 0, disableLoading = false) => {
+    const fetchShares = async (disableLoading = false) => {
         try {
-            !first && setFirst(0);
             const res = await http.get('/choiMath/share/list', { disableLoading });
             const data = (res.data || []).map((item: ShareItem) => ({
                 ...item,
@@ -169,7 +155,7 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
                 setSelectedShare(null);
             }
 
-            fetchShares(first);
+            fetchShares();
         } catch (error: any) {
             console.error('Save error:', error);
             const errMsg = error.response?.data?.message || error.message || '저장에 실패했습니다.';
@@ -213,7 +199,6 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
             const ids = selectedItems.map((item) => item._id);
             await http.post('/choiMath/share/delete', { ids });
             showToast({ severity: 'success', summary: '삭제 완료', detail: '선택한 게시글들이 삭제되었습니다.' });
-            setListSelectedItems([]);
             fetchShares();
         } catch (error) {
             console.error('Multiple Delete error:', error);
@@ -340,7 +325,7 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
     }, [path]);
 
     useEffect(() => {
-        if (refreshSignal && view === 'LIST') fetchShares(first, true);
+        if (refreshSignal && view === 'LIST') fetchShares(true);
         if (refreshSignal && selectedShare?._id && view === 'DETAIL') fetchDetail(selectedShare._id, true);
     }, [refreshSignal]);
 
@@ -365,14 +350,6 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
                     onDelete={handleDelete}
                     onDeleteMultiple={handleDeleteMultiple}
                     onCopyToNew={handleCopyToNew}
-                    filters={filters}
-                    setFilters={setFilters}
-                    globalFilterValue={globalFilterValue}
-                    setGlobalFilterValue={setGlobalFilterValue}
-                    first={first}
-                    setFirst={setFirst}
-                    selectedItems={listSelectedItems}
-                    setSelectedItems={setListSelectedItems}
                 />
             )}
             {view === 'DETAIL' && (

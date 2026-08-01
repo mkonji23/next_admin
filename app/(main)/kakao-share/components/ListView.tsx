@@ -26,14 +26,6 @@ interface ListViewProps {
     onDelete: (id: string) => void;
     onDeleteMultiple: (selectedItems: ShareItem[]) => void;
     onCopyToNew: (item: ShareItem) => void;
-    filters: any;
-    setFilters: (filters: any) => void;
-    globalFilterValue: string;
-    setGlobalFilterValue: (value: string) => void;
-    first: number;
-    setFirst: (first: number) => void;
-    selectedItems: ShareItem[];
-    setSelectedItems: (items: ShareItem[]) => void;
 }
 
 const ListView = ({
@@ -45,21 +37,25 @@ const ListView = ({
     onDelete,
     onDeleteMultiple,
     onSearch,
-    onCopyToNew,
-    filters,
-    setFilters,
-    globalFilterValue,
-    setGlobalFilterValue,
-    first,
-    setFirst,
-    selectedItems,
-    setSelectedItems
+    onCopyToNew
 }: ListViewProps) => {
     const dt = React.useRef<DataTable<ShareItem[]>>(null);
     const { showToast } = useToast();
     const { openModal } = useCustomModal();
     const { userInfo } = useAuthStore();
     const isMobile = useMobile();
+
+    const [filters, setFilters] = useState<any>({
+        global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        autoYear: { value: String(new Date().getFullYear()), matchMode: FilterMatchMode.EQUALS },
+        autoMonth: { value: null, matchMode: FilterMatchMode.EQUALS },
+        autoWeek: { value: null, matchMode: FilterMatchMode.EQUALS },
+        shareStatus: { value: null, matchMode: FilterMatchMode.EQUALS }
+    });
+    const [globalFilterValue, setGlobalFilterValue] = useState<string>('');
+    const [first, setFirst] = useState<number>(0);
+    const [selectedItems, setSelectedItems] = useState<ShareItem[]>([]);
+    const [filteredCount, setFilteredCount] = useState<number>(shares.length);
 
     const yearOptions = Array.from(new Set(shares.map((s) => s.autoYear).filter(Boolean)))
         .sort()
@@ -91,6 +87,7 @@ const ListView = ({
     const clearFilter = () => {
         setFilters(initFilters());
         setGlobalFilterValue('');
+        setFirst(0);
     };
 
     const onGlobalFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -172,7 +169,9 @@ const ListView = ({
         return (
             <div className="flex flex-column gap-3">
                 <div className="flex flex-column md:flex-row gap-3 justify-content-between align-items-start md:align-items-center">
-                    <h5 className="m-0">공유 게시판 목록</h5>
+                    <div className="flex align-items-center gap-2">
+                        <h5 className="m-0">공유 게시판 목록 (총 {filteredCount}개)</h5>
+                    </div>
                     <div className="flex flex-wrap gap-2 align-items-center w-full md:w-auto">
                         <Dropdown
                             value={filters.autoYear?.value}
@@ -442,9 +441,10 @@ const ListView = ({
                         tooltipOptions={{ position: 'bottom' }}
                         icon="pi pi-trash"
                         className="p-button-danger p-button-outlined white-space-nowrap flex-1 sm:flex-none"
-                        onClick={() => {
+                        onClick={async () => {
                             if (selectedItems.length === 0) return;
-                            onDeleteMultiple(selectedItems);
+                            await onDeleteMultiple(selectedItems);
+                            setSelectedItems([]);
                         }}
                         disabled={selectedItems.length === 0}
                     />
@@ -530,6 +530,7 @@ const ListView = ({
                 dataKey="_id"
                 filters={filters}
                 globalFilterFields={['shareTitle', 'actualTitle', 'studentName', 'telNo', 'pTelNo', 'shareStatus']}
+                onValueChange={(data) => setFilteredCount(data.length)}
                 header={header}
                 rows={10}
                 paginator
