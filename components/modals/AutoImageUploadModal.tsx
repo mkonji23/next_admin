@@ -413,7 +413,7 @@ const AutoImageUploadModal = ({ visible, onClose }: AutoImageUploadModalProps) =
     return (
         <>
             <Dialog
-                header="자동 템플릿 이미지  관리"
+                header="자동 템플릿 이미지 관리"
                 visible={visible}
                 style={{ width: isMobile ? '95vw' : '900px' }}
                 contentStyle={{ overflow: 'hidden' }}
