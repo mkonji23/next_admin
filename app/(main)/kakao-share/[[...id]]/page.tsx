@@ -339,7 +339,7 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
 
     return (
         <div className="kakao-share-page">
-            {view === 'LIST' && (
+            <div style={{ display: view === 'LIST' ? 'block' : 'none' }}>
                 <ListView
                     shares={shares}
                     onSearch={fetchShares}
@@ -351,7 +351,7 @@ const KakaoSharePage = ({ path }: { path?: string }) => {
                     onDeleteMultiple={handleDeleteMultiple}
                     onCopyToNew={handleCopyToNew}
                 />
-            )}
+            </div>
             {view === 'DETAIL' && (
                 <DetailView
                     selectedShare={selectedShare}
