@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
@@ -56,6 +56,10 @@ const ListView = ({
     const [first, setFirst] = useState<number>(0);
     const [selectedItems, setSelectedItems] = useState<ShareItem[]>([]);
     const [filteredCount, setFilteredCount] = useState<number>(shares.length);
+
+    useEffect(() => {
+        setFilteredCount(shares.length);
+    }, [shares]);
 
     const yearOptions = Array.from(new Set(shares.map((s) => s.autoYear).filter(Boolean)))
         .sort()
