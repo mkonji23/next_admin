@@ -37,6 +37,8 @@ const ShareAutoTemplateModal = ({ visible, onClose }: ShareAutoTemplateModalProp
     const [month, setMonth] = useState(currentMonth);
     const [week, setWeek] = useState(currentWeek);
     const [templateList, setTemplateList] = useState<any[]>([]);
+    const [classList, setClassList] = useState<any[]>([]);
+    const [selectedClassId, setSelectedClassId] = useState<string>('ALL');
     const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
 
     const [template, setTemplate] = useState({
@@ -57,13 +59,17 @@ const ShareAutoTemplateModal = ({ visible, onClose }: ShareAutoTemplateModalProp
     const months = Array.from({ length: 12 }, (_, i) => ({ label: `${i + 1}월`, value: i + 1 }));
     const weeks = Array.from({ length: 5 }, (_, i) => ({ label: `${i + 1}주차`, value: i + 1 }));
 
-    // 공유 템플릿 관리 목록 조회
-    const fetchTemplates = async () => {
+    // 공유 템플릿 관리 목록 및 클래스 목록 조회
+    const fetchTemplatesAndClasses = async () => {
         try {
-            const res = await http.get('/choiMath/template/');
-            setTemplateList(res.data || []);
+            const [resTemplates, resClasses] = await Promise.all([
+                http.get('/choiMath/template/'),
+                http.get('/choiMath/class/')
+            ]);
+            setTemplateList(resTemplates.data || []);
+            setClassList(resClasses.data || []);
         } catch (error) {
-            console.error('Failed to fetch templates:', error);
+            console.error('Failed to fetch templates or classes:', error);
         }
     };
 
@@ -87,9 +93,10 @@ const ShareAutoTemplateModal = ({ visible, onClose }: ShareAutoTemplateModalProp
             setYear(currentYear);
             setMonth(currentMonth);
             setWeek(currentWeek);
+            setSelectedClassId('ALL');
             setSelectedTemplateId(null);
             updateTemplate(currentYear, currentMonth, currentWeek);
-            fetchTemplates();
+            fetchTemplatesAndClasses();
         }
     }, [visible]);
 
@@ -138,8 +145,19 @@ const ShareAutoTemplateModal = ({ visible, onClose }: ShareAutoTemplateModalProp
 
     const handleSave = async () => {
         try {
+            if (selectedClassId === 'ALL') {
+                const confirmed = await showConfirm({
+                    header: '전체 클래스 템플릿 생성',
+                    message: '전체 클래스로 선택 후 저장 시 모든 템플릿에 적용됩니다. 계속하시겠습니까?',
+                    acceptLabel: '확인',
+                    rejectLabel: '취소'
+                });
+                if (!confirmed) return;
+            }
+
             const saveData = {
                 ...template,
+                classId: selectedClassId,
                 postContentDelta:
                     typeof template.postContentDelta === 'string'
                         ? template.postContentDelta
@@ -159,10 +177,15 @@ const ShareAutoTemplateModal = ({ visible, onClose }: ShareAutoTemplateModalProp
 
             const res = await http.post('/choiMath/share/create-auto', saveData);
             if (res?.data?.acknowledged) {
+                const targetClassName =
+                    selectedClassId === 'ALL'
+                        ? '전체 클래스'
+                        : classList.find((c) => c.classId === selectedClassId)?.className || selectedClassId;
+
                 showToast({
                     severity: 'success',
                     summary: '카카오 공유 자동 템플릿 생성',
-                    detail: `${year}년 ${month}월 ${week}주차 템플릿 ${
+                    detail: `[${targetClassName}] ${year}년 ${month}월 ${week}주차 템플릿 ${
                         res?.data?.insertedCount || 0
                     }개가 생성되었습니다.`
                 });
@@ -191,19 +214,34 @@ const ShareAutoTemplateModal = ({ visible, onClose }: ShareAutoTemplateModalProp
             className="p-fluid"
         >
             <div className="grid">
-                <div className="field col-4">
+                <div className="field col-3">
+                    <label htmlFor="classId">
+                        클래스 선택<span className="text-red-500 font-bold">*</span>
+                    </label>
+                    <Dropdown
+                        id="classId"
+                        value={selectedClassId}
+                        options={[
+                            { label: '전체 클래스', value: 'ALL' },
+                            ...classList.map((c) => ({ label: c.className, value: c.classId }))
+                        ]}
+                        onChange={(e) => setSelectedClassId(e.value)}
+                        placeholder="클래스 선택"
+                    />
+                </div>
+                <div className="field col-3">
                     <label htmlFor="year">
                         년도<span className="text-red-500 font-bold">*</span>
                     </label>
                     <Dropdown id="year" value={year} options={years} onChange={handleYearChange} placeholder="년도" />
                 </div>
-                <div className="field col-4">
+                <div className="field col-3">
                     <label htmlFor="month">
                         월<span className="text-red-500 font-bold">*</span>
                     </label>
                     <Dropdown id="month" value={month} options={months} onChange={handleMonthChange} placeholder="월" />
                 </div>
-                <div className="field col-4">
+                <div className="field col-3">
                     <label htmlFor="week">
                         주차<span className="text-red-500 font-bold">*</span>
                     </label>

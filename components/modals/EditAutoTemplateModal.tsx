@@ -22,6 +22,18 @@ interface EditAutoTemplateModalProps {
     onClose: (result?: any) => void;
 }
 
+const initialTemplateState = {
+    autoYear: '',
+    autoMonth: '',
+    autoWeek: '',
+    templateId: '',
+    shareTitle: '',
+    shareContent: '',
+    actualTitle: '',
+    postContent: '',
+    postContentDelta: null as any
+};
+
 const EditAutoTemplateModal = ({ visible, onClose }: EditAutoTemplateModalProps) => {
     const http = useHttp();
     const { showToast } = useToast();
@@ -35,19 +47,11 @@ const EditAutoTemplateModal = ({ visible, onClose }: EditAutoTemplateModalProps)
     const [month, setMonth] = useState(currentMonth);
     const [week, setWeek] = useState(currentWeek);
     const [templateList, setTemplateList] = useState<any[]>([]);
+    const [classList, setClassList] = useState<any[]>([]);
+    const [selectedClassId, setSelectedClassId] = useState<string>('ALL');
     const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
 
-    const [template, setTemplate] = useState({
-        autoYear: '',
-        autoMonth: '',
-        autoWeek: '',
-        templateId: '',
-        shareTitle: '',
-        shareContent: '',
-        actualTitle: '',
-        postContent: '',
-        postContentDelta: null as any
-    });
+    const [template, setTemplate] = useState(initialTemplateState);
 
     const years = Array.from({ length: 3 }, (_, i) => ({
         label: `${currentYear - 1 + i}년`,
@@ -58,31 +62,47 @@ const EditAutoTemplateModal = ({ visible, onClose }: EditAutoTemplateModalProps)
 
     useEffect(() => {
         if (visible) {
-            fetchTemplates();
+            fetchTemplatesAndClasses();
+            setSelectedClassId('ALL');
+            setYear(currentYear);
+            setMonth(currentMonth);
+            setWeek(currentWeek);
+            setSelectedTemplateId(null);
+            setTemplate(initialTemplateState);
         }
     }, [visible]);
 
-    const fetchTemplates = async () => {
+    const resetTemplateData = () => {
+        setTemplate(initialTemplateState);
+        setSelectedTemplateId(null);
+    };
+
+    const fetchTemplatesAndClasses = async () => {
         try {
-            const res = await http.get('/choiMath/template/');
-            setTemplateList(res.data || []);
+            const [resTemplates, resClasses] = await Promise.all([
+                http.get('/choiMath/template/'),
+                http.get('/choiMath/class/')
+            ]);
+            setTemplateList(resTemplates.data || []);
+            setClassList(resClasses.data || []);
         } catch (error) {
-            console.error('Failed to fetch templates:', error);
+            console.error('Failed to fetch templates or classes:', error);
         }
     };
 
-    // 년도, 월, 주차 선택 후 조회 버튼 클릭 시
+    // 년도, 월, 주차, 클래스 선택 후 조회 버튼 클릭 시
     const handleSearch = async () => {
         try {
             const res = await http.get('/choiMath/share/get-auto-share', {
                 params: {
                     autoYear: String(year),
                     autoMonth: String(month).padStart(2, '0'),
-                    autoWeek: String(week)
+                    autoWeek: String(week),
+                    classId: selectedClassId
                 }
             });
 
-            if (res.status === 200 && res.data) {
+            if (res.status === 200 && res.data && (res.data.shareTitle || res.data.templateId || res.data._id)) {
                 const data = res.data;
                 let parsedDelta = data.postContentDelta;
                 if (typeof data.postContentDelta === 'string' && data.postContentDelta) {
@@ -107,13 +127,17 @@ const EditAutoTemplateModal = ({ visible, onClose }: EditAutoTemplateModalProps)
 
                 if (data.templateId) {
                     setSelectedTemplateId(data.templateId);
+                } else {
+                    setSelectedTemplateId(null);
                 }
                 showToast({ severity: 'success', summary: '조회 성공', detail: '데이터를 불러왔습니다.' });
             } else {
-                showToast({ severity: 'warn', summary: '데이터 없음', detail: '데이터가 없습니다..' });
+                resetTemplateData();
+                showToast({ severity: 'warn', summary: '데이터 없음', detail: '데이터가 없습니다.' });
             }
         } catch (error: any) {
             console.error('Failed to fetch auto share data:', error);
+            resetTemplateData();
             showToast({ severity: 'error', summary: '오류', detail: '데이터 조회 중 오류가 발생했습니다.' });
         }
     };
@@ -143,6 +167,7 @@ const EditAutoTemplateModal = ({ visible, onClose }: EditAutoTemplateModalProps)
             }
             const payload = {
                 ...template,
+                classId: selectedClassId,
                 autoYear: String(year),
                 autoMonth: String(month).padStart(2, '0'),
                 autoWeek: String(week),
@@ -154,7 +179,11 @@ const EditAutoTemplateModal = ({ visible, onClose }: EditAutoTemplateModalProps)
             };
 
             await http.post('/choiMath/share/update-auto', payload);
-            const successMsg = `${year}년 ${month}월 ${week}주차 데이터가 성공적으로 저장되었습니다.`;
+            const targetClassName =
+                selectedClassId === 'ALL'
+                    ? '전체 클래스'
+                    : classList.find((c) => c.classId === selectedClassId)?.className || selectedClassId;
+            const successMsg = `[${targetClassName}] ${year}년 ${month}월 ${week}주차 데이터가 성공적으로 저장되었습니다.`;
             showToast({ severity: 'success', summary: '성공', detail: successMsg });
             onClose(true);
         } catch (error: any) {
@@ -179,26 +208,65 @@ const EditAutoTemplateModal = ({ visible, onClose }: EditAutoTemplateModalProps)
         <Dialog
             header="자동 템플릿 설정 수정"
             visible={visible}
-            style={{ width: '800px', minHeight: '600px' }}
+            style={{ width: '820px', minHeight: '600px' }}
             footer={footer}
             onHide={() => onClose(null)}
             className="p-fluid"
         >
             <div className="grid mb-4">
                 <div className="field col-3">
+                    <label className="font-bold">클래스 선택</label>
+                    <Dropdown
+                        value={selectedClassId}
+                        options={[
+                            { label: '전체 클래스', value: 'ALL' },
+                            ...classList.map((c) => ({ label: c.className, value: c.classId }))
+                        ]}
+                        onChange={(e) => {
+                            setSelectedClassId(e.value);
+                            resetTemplateData();
+                        }}
+                        appendTo="self"
+                    />
+                </div>
+                <div className="field col-3">
                     <label className="font-bold">년도</label>
-                    <Dropdown value={year} options={years} onChange={(e) => setYear(e.value)} appendTo="self" />
+                    <Dropdown
+                        value={year}
+                        options={years}
+                        onChange={(e) => {
+                            setYear(e.value);
+                            resetTemplateData();
+                        }}
+                        appendTo="self"
+                    />
                 </div>
-                <div className="field col-3">
+                <div className="field col-2">
                     <label className="font-bold">월</label>
-                    <Dropdown value={month} options={months} onChange={(e) => setMonth(e.value)} appendTo="self" />
+                    <Dropdown
+                        value={month}
+                        options={months}
+                        onChange={(e) => {
+                            setMonth(e.value);
+                            resetTemplateData();
+                        }}
+                        appendTo="self"
+                    />
                 </div>
-                <div className="field col-3">
+                <div className="field col-2">
                     <label className="font-bold">주차</label>
-                    <Dropdown value={week} options={weeks} onChange={(e) => setWeek(e.value)} appendTo="self" />
+                    <Dropdown
+                        value={week}
+                        options={weeks}
+                        onChange={(e) => {
+                            setWeek(e.value);
+                            resetTemplateData();
+                        }}
+                        appendTo="self"
+                    />
                 </div>
-                <div className="field col-3 flex align-items-end">
-                    <Button label="조회" icon="pi pi-search" onClick={handleSearch} className="p-button-info" />
+                <div className="field col-2 flex align-items-end">
+                    <Button label="조회" icon="pi pi-search" onClick={handleSearch} className="p-button-info w-full" />
                 </div>
             </div>
 
