@@ -294,6 +294,7 @@ const AttendanceDayCells = React.memo<AttendanceDayCellsProps>(({ user, day, onU
                     value={localNote || ''}
                     onChange={(e) => handleNoteChange(e.target.value)}
                     placeholder=""
+                    title={localNote || ''}
                 />
             </div>
             <div className="attendance-cell" role="cell">
@@ -302,6 +303,7 @@ const AttendanceDayCells = React.memo<AttendanceDayCellsProps>(({ user, day, onU
                     value={localSpecialNote || ''}
                     onChange={(e) => handleSpecialNoteChange(e.target.value)}
                     placeholder=""
+                    title={localSpecialNote || ''}
                 />
             </div>
         </div>

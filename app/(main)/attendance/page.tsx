@@ -33,6 +33,16 @@ interface User {
 
 const VIRTUAL_SCROLL_THRESHOLD = 50;
 
+const DEFAULT_COLUMN_WIDTHS = {
+    name: 150,
+    attendance: 140,
+    homework: 120,
+    praise: 70,
+    testScore: 70,
+    note: 100,        // 줄어든 비고(노트) 너비 (기존 160px -> 100px)
+    specialNote: 240  // 늘어난 특이사항 너비 (기존 160px -> 240px)
+};
+
 const AttendancePage = () => {
     const { showConfirm } = useConfirm();
     const [date, setDate] = useState<Date | null>(null);
@@ -41,12 +51,44 @@ const AttendancePage = () => {
     const [classes, setClasses] = useState<ClassOption[]>([]);
     const [globalFilterValue, setGlobalFilterValue] = useState('');
     const [selectedScrollDate, setSelectedScrollDate] = useState<Date | null>(null);
+    const [columnWidths, setColumnWidths] = useState(DEFAULT_COLUMN_WIDTHS);
     const http = useHttp();
     const { showToast } = useToast();
     const tableWrapperRef = useRef<HTMLDivElement>(null);
     const tableBodyRef = useRef<HTMLDivElement>(null);
     const scrolled = useRef<boolean>(false);
     const datePickerOverlayRef = useRef<OverlayPanel>(null);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('attendance_column_widths');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    setColumnWidths((prev) => ({ ...prev, ...parsed }));
+                } catch (e) {
+                    console.error('Failed to load saved column widths', e);
+                }
+            }
+        }
+    }, []);
+
+    const handleColumnResize = useCallback((fieldKey: string, newWidth: number) => {
+        setColumnWidths((prev) => {
+            const updated = { ...prev, [fieldKey]: newWidth };
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('attendance_column_widths', JSON.stringify(updated));
+            }
+            return updated;
+        });
+    }, []);
+
+    const handleResetColumnWidths = useCallback(() => {
+        setColumnWidths(DEFAULT_COLUMN_WIDTHS);
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem('attendance_column_widths');
+        }
+    }, []);
 
     useEffect(() => {
         setDate(new Date());
@@ -152,11 +194,13 @@ const AttendancePage = () => {
             if (targetDate.getFullYear() === date.getFullYear() && targetDate.getMonth() === date.getMonth()) {
                 const day = targetDate.getDate();
 
-                const totalWidth = widthPx
-                    .split(' ') // 1. 공백을 기준으로 쪼개서 배열로 만듦
-                    .map((item) => parseInt(item)) // 2. 각 요소에서 숫자만 추출 (parseInt는 'px'를 무시하고 숫자만 남깁니다)
-                    .reduce((acc, cur) => acc + cur, 0); // 3. 배열의 모든 숫자를 합산
-                const dayWidth = totalWidth;
+                const dayWidth =
+                    columnWidths.attendance +
+                    columnWidths.homework +
+                    columnWidths.praise +
+                    columnWidths.testScore +
+                    columnWidths.note +
+                    columnWidths.specialNote;
                 const scrollPos = (day - 1) * dayWidth;
 
                 requestAnimationFrame(() => {
@@ -176,7 +220,7 @@ const AttendancePage = () => {
                 });
             }
         },
-        [date, showToast]
+        [date, showToast, columnWidths]
     );
 
     const handleMoveToday = useCallback(() => {
@@ -300,15 +344,15 @@ const AttendancePage = () => {
     const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
     const year = date.getFullYear();
     const month = date.getMonth();
-    const widthPx = '140px 120px 70px 70px 160px 160px';
+    const singleDayTemplate = `var(--col-attendance, ${columnWidths.attendance}px) var(--col-homework, ${columnWidths.homework}px) var(--col-praise, ${columnWidths.praise}px) var(--col-testScore, ${columnWidths.testScore}px) var(--col-note, ${columnWidths.note}px) var(--col-specialNote, ${columnWidths.specialNote}px)`;
     // 컬럼 width적용 (출석, 숙제, 칭찬, 점수, 비고(칭찬), 비고(특이사항))
-    const dayColumnTemplates = Array.from({ length: daysInMonth }, () => widthPx).join(' ');
+    const dayColumnTemplates = Array.from({ length: daysInMonth }, () => singleDayTemplate).join(' ');
     return (
         <>
             <style>{`
                 .attendance-table {
                     display: grid;
-                    grid-template-columns: 150px ${dayColumnTemplates};
+                    grid-template-columns: var(--col-name, ${columnWidths.name || 150}px) ${dayColumnTemplates};
                     width: max-content;
                     min-width: 100%;
                     border: 1px solid var(--surface-border);
@@ -321,6 +365,7 @@ const AttendancePage = () => {
                     padding: 8px; border: 1px solid var(--surface-border); border-bottom: 2px solid var(--primary-color);
                     text-align: center; font-weight: bold; grid-row: span 2;
                     color: var(--text-color);
+                    position: relative;
                 }
                 .attendance-header-day-group {
                     grid-column: span 6;
@@ -332,6 +377,21 @@ const AttendancePage = () => {
                     padding: 8px; border: 1px solid var(--surface-border); text-align: center;
                     font-weight: bold; background: var(--surface-ground); border-bottom: 2px solid var(--primary-color);
                     color: var(--text-color);
+                    position: relative;
+                }
+                .col-resizer {
+                    position: absolute;
+                    top: 0;
+                    right: 0;
+                    width: 6px;
+                    height: 100%;
+                    cursor: col-resize;
+                    user-select: none;
+                    touch-action: none;
+                    z-index: 15;
+                }
+                .col-resizer:hover, .col-resizer:active {
+                    background-color: var(--primary-color, #3b82f6);
                 }
                 
                 .attendance-body { display: contents; }
@@ -502,6 +562,17 @@ const AttendancePage = () => {
                                         />
                                     </div>
                                 </OverlayPanel>
+                                <Button
+                                    icon="pi pi-arrows-alt"
+                                    rounded
+                                    outlined
+                                    label="열너비 초기화"
+                                    onClick={handleResetColumnWidths}
+                                    className="no-shrink"
+                                    style={{ width: 'auto', whiteSpace: 'nowrap' }}
+                                    tooltip="열 너비를 기본값으로 초기화합니다"
+                                    tooltipOptions={{ position: 'top' }}
+                                />
                             </div>
                         </div>
 
@@ -535,12 +606,27 @@ const AttendancePage = () => {
                             role="region"
                             aria-label="출석부 테이블"
                         >
-                            <div className="attendance-table" role="table" aria-label="출석부">
+                            <div
+                                className="attendance-table"
+                                role="table"
+                                aria-label="출석부"
+                                style={{
+                                    '--col-name': `${columnWidths.name}px`,
+                                    '--col-attendance': `${columnWidths.attendance}px`,
+                                    '--col-homework': `${columnWidths.homework}px`,
+                                    '--col-praise': `${columnWidths.praise}px`,
+                                    '--col-testScore': `${columnWidths.testScore}px`,
+                                    '--col-note': `${columnWidths.note}px`,
+                                    '--col-specialNote': `${columnWidths.specialNote}px`
+                                } as React.CSSProperties}
+                            >
                                 <AttendanceTableHeader
                                     daysInMonth={daysInMonth}
                                     year={year}
                                     month={month}
                                     totalStudents={filteredUsers.length}
+                                    columnWidths={columnWidths}
+                                    onResizeColumn={handleColumnResize}
                                     fieldNames={{
                                         attendance: '출석',
                                         homework: '숙제',
