@@ -40,12 +40,12 @@ interface ClassOption {
 
 const StudentAttendanceStatisticsPage = () => {
     dayjs.locale('ko');
-    const [selectedYear, setSelectedYear] = useState<Date | null>(null);
-    const [selectedMonth, setSelectedMonth] = useState<Date | null>(null);
+    const [selectedYear, setSelectedYear] = useState<Date | null>(new Date());
+    const [selectedMonth, setSelectedMonth] = useState<Date | null>(new Date());
     const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
-    const [selectedClass, setSelectedClass] = useState<string | null>(null);
+    const [selectedClass, setSelectedClass] = useState<string | null>('');
     const [students, setStudents] = useState<StudentOption[]>([]);
-    const [classes, setClasses] = useState<ClassOption[]>([]);
+    const [classes, setClasses] = useState<ClassOption[]>([{ label: '전체', value: '', classId: '' }]);
     const [statistics, setStatistics] = useState<StudentAttendanceStatisticsResponse | null>(null);
     const [loading, setLoading] = useState(false);
     const [expandedRows, setExpandedRows] = useState<any>({});
@@ -250,12 +250,6 @@ const StudentAttendanceStatisticsPage = () => {
         fetchClasses();
     }, []);
 
-    useEffect(() => {
-        if (statistics && statistics.classes) {
-            initChart(statistics.classes);
-        }
-    }, [statistics]);
-
     const rowExpansionTemplate = (tdata: StudentClassStatistics) => {
         console.log('tdata', tdata);
         const data = { ...tdata, attendance: tdata.attendance?.filter((item) => item.status !== 'none') };
@@ -286,7 +280,7 @@ const StudentAttendanceStatisticsPage = () => {
                             const option = ATTENDANCE_STATUS_OPTIONS.find((opt) => opt.value === rowData.status);
                             const label = option ? option.label : rowData.status;
                             const severity = getAttendanceSeverity(rowData.status);
-                            return <Tag value={label} severity={severity} />;
+                            return <Tag value={label} severity={severity as any} />;
                         }}
                         sortable
                     />
@@ -302,7 +296,7 @@ const StudentAttendanceStatisticsPage = () => {
                             const option = HOMEWORK_PROGRESS_OPTIONS.find((opt) => opt.value === progress);
                             const label = option ? option.label : `${progress}%`;
                             const severity = getHomeworkSeverity(progress);
-                            return <Tag value={label} severity={severity} />;
+                            return <Tag value={label} severity={severity as any} />;
                         }}
                         sortable
                     />
@@ -571,6 +565,7 @@ const StudentAttendanceStatisticsPage = () => {
                         view="year"
                         dateFormat="yy"
                         showIcon
+                        showButtonBar
                         placeholder="연도 선택"
                         appendTo="self"
                     />
