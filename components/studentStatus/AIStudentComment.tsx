@@ -1,16 +1,59 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ProgressBar } from 'primereact/progressbar';
 import { AI_PROGRESS_MESSAGES } from '@/constants/aiComments';
 
 interface AIStudentCommentProps {
-    aiAnalyzing: boolean;
-    aiProgress: number;
     aiComment: string;
+    isDataLoaded?: boolean;
+    aiAnalyzing?: boolean;
+    aiProgress?: number;
 }
 
-const AIStudentComment: React.FC<AIStudentCommentProps> = ({ aiAnalyzing, aiProgress, aiComment }) => {
+const AIStudentComment: React.FC<AIStudentCommentProps> = ({
+    aiComment,
+    isDataLoaded = true,
+    aiAnalyzing: externalAiAnalyzing,
+    aiProgress: externalAiProgress
+}) => {
+    const [internalProgress, setInternalProgress] = useState(0);
+    const [internalAnalyzing, setInternalAnalyzing] = useState(true);
+
+    const isControlled = externalAiAnalyzing !== undefined && externalAiProgress !== undefined;
+    const aiAnalyzing = isControlled ? externalAiAnalyzing : internalAnalyzing;
+    const aiProgress = isControlled ? externalAiProgress : internalProgress;
+
+    useEffect(() => {
+        if (isControlled || !isDataLoaded) return;
+
+        setInternalAnalyzing(true);
+        setInternalProgress(0);
+
+        const totalTime = Math.floor(Math.random() * (7000 - 5000 + 1)) + 5000;
+        const startTime = Date.now();
+        let timeoutId: ReturnType<typeof setTimeout>;
+
+        const timer = setInterval(() => {
+            const elapsed = Date.now() - startTime;
+            let newProgress = Math.floor((elapsed / totalTime) * 100);
+
+            if (newProgress >= 100) {
+                newProgress = 100;
+                clearInterval(timer);
+                setInternalProgress(100);
+                timeoutId = setTimeout(() => setInternalAnalyzing(false), 400);
+            } else {
+                setInternalProgress(newProgress);
+            }
+        }, 100);
+
+        return () => {
+            clearInterval(timer);
+            if (timeoutId) clearTimeout(timeoutId);
+        };
+    }, [isControlled, isDataLoaded]);
+
     return (
         <div className="grid mt-2 mb-4">
             <div className="col-12">
@@ -62,8 +105,7 @@ const AIStudentComment: React.FC<AIStudentCommentProps> = ({ aiAnalyzing, aiProg
                                 className="text-lg md:text-2xl font-bold text-white line-height-3 text-center"
                                 style={{ textShadow: '1px 1px 3px rgba(0,0,0,0.3)' }}
                             >
-                                💡 AI 코치 코멘트: <br />{' '}
-                                <span className="text-yellow-100">{aiComment}</span>
+                                💡 AI 코치 코멘트: <br /> <span className="text-yellow-100">{aiComment}</span>
                             </span>
                         </div>
                     )}

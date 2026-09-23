@@ -18,7 +18,6 @@ import StatsCardsRow from './StatsCardsRow';
 import ChartsRow from './ChartsRow';
 import DetailsTable from './DetailsTable';
 import ProfileSelectionDialog from './ProfileSelectionDialog';
-import SpecialStudentPopup from './SpecialStudentPopup';
 import useStudentAuthStore from '@/store/useStudentAuthStore';
 import { useRefreshStore } from '@/store/useRefreshStore';
 import { useCustomModal } from '@/hooks/useCustomModal';
@@ -44,13 +43,10 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
     const [globalRank, setGlobalRank] = useState<number>(0);
     const [classRanks, setClassRanks] = useState<Record<string, number>>({});
     const [studentInfo, setStudentInfo] = useState<{ school?: string; grade?: string }>({});
-    const [aiAnalyzing, setAiAnalyzing] = useState(true);
-    const [aiProgress, setAiProgress] = useState(0);
     const [praiseTopRankers, setPraiseTopRankers] = useState<any[]>([]);
     const [totalHomeworkAvg, setTotalHomeworkAvg] = useState<number>(0);
     const [profileImage, setProfileImage] = useState<string>(studentAuthData?.profile || '');
     const [showProfileDialog, setShowProfileDialog] = useState(false);
-    const [showSpecialModal, setShowSpecialModal] = useState(false);
     const [winImage, setWinImage] = useState<string>('');
     const [showBadgePreview, setShowBadgePreview] = useState(false);
     const { openModal } = useCustomModal();
@@ -127,12 +123,6 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
     const finalGrade = studentAuthData?.grade;
 
     useEffect(() => {
-        if (finalName === '서현준') {
-            setShowSpecialModal(true);
-        }
-    }, [finalName]);
-
-    useEffect(() => {
         if (finalStudentId) {
             fetchStudentStats();
         } else {
@@ -140,31 +130,6 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [finalStudentId, currentDate]);
-
-    useEffect(() => {
-        if (stats) {
-            setAiAnalyzing(true);
-            setAiProgress(0);
-            const totalTime = Math.floor(Math.random() * (7000 - 5000 + 1)) + 5000;
-            const startTime = Date.now();
-
-            const timer = setInterval(() => {
-                const elapsed = Date.now() - startTime;
-                let newProgress = Math.floor((elapsed / totalTime) * 100);
-
-                if (newProgress >= 100) {
-                    newProgress = 100;
-                    clearInterval(timer);
-                    setAiProgress(newProgress);
-                    setTimeout(() => setAiAnalyzing(false), 400);
-                } else {
-                    setAiProgress(newProgress);
-                }
-            }, 100);
-
-            return () => clearInterval(timer);
-        }
-    }, [stats]);
 
     const attendanceRate = useMemo(() => {
         if (!chartData.classesAttendance || chartData.classesAttendance.length === 0) return 0;
@@ -323,9 +288,6 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
             }
         } catch (error) {
             setStats(null);
-            if (error === 'jwt must be provided' || error === 'student session expired') {
-                setAiAnalyzing(false);
-            }
             console.error('Fetch student stats error:', error);
         } finally {
             setLoading(false);
@@ -868,13 +830,6 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                     onProfileChange={handleProfileChange}
                 />
 
-                {/* 서현준 학생 특별 팝업 */}
-                <SpecialStudentPopup
-                    visible={showSpecialModal}
-                    onHide={() => setShowSpecialModal(false)}
-                    studentName={finalName}
-                />
-
                 {stats && (
                     <AchievementCard
                         collapsed={true}
@@ -899,7 +854,11 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                 ) : (
                     <>
                         {/* AI 학생 한줄평 영역 */}
-                        <AIStudentComment aiAnalyzing={aiAnalyzing} aiProgress={aiProgress} aiComment={aiComment} />
+                        <AIStudentComment
+                            key={currentDate.format('YYYYMM')}
+                            aiComment={aiComment}
+                            isDataLoaded={Boolean(stats)}
+                        />
 
                         {/* 학생 성취 하이라이트 */}
                         <StatsCardsRow
