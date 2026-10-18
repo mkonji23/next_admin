@@ -22,12 +22,15 @@ const IK_LIMITS = {
     extensionUnitsCount: 650,
 };
 
-/** Vercel Hobby Plan */
+/** Vercel Hobby Plan (공식 사용량 대시보드 기준) */
 const VERCEL_LIMITS = {
-    bandwidthGB: 100,          // 100 GB / 월
-    buildMinutes: 6000,        // 6,000 분 / 월
-    functionInvocations: 1_000_000, // 100만 회 / 월
-    functionGBHours: 360,      // 360 GB-hours / 월
+    cdnRequests: 1_000_000,             // CDN Requests: 1M (1,000,000회)
+    fastDataTransferGB: 100,            // Fast Data Transfer: 100 GB
+    fastOriginTransferGB: 10,           // Fast Origin Transfer: 10 GB
+    functionInvocations: 1_000_000,     // Function Invocations: 1M (1,000,000회)
+    functionGBHours: 100,               // Function Duration: 100 GB-Hrs
+    edgeMiddlewareInvocations: 1_000_000,// Edge Middleware Invocations: 1M
+    buildMinutes: 6000,                 // Build Minutes: 6,000분
 };
 
 /** MongoDB Atlas Free Tier */
@@ -54,11 +57,18 @@ interface VercelUsage {
     projectCount?: number;
     deploymentCount?: number;
     projects?: { id: string; name: string; updatedAt?: number }[];
+    cdnRequests: number;
+    bandwidthBytes: number;
+    fastDataTransferMB: number;
     bandwidthGB: number;
-    buildMinutes: number;
+    fastOriginTransferMB: number;
+    fastOriginTransferGB: number;
     functionInvocations: number;
+    functionDurationGbHours: number;
     functionGBHours: number;
-    rawRecords: any[];
+    buildMinutes: number;
+    buildCount: number;
+    edgeMiddlewareInvocations: number;
 }
 
 interface CollectionStat {
@@ -143,7 +153,7 @@ const UsageBarCard = ({ icon, label, usedLabel, limitLabel, pct, note, isFixed }
                 </div>
 
                 <div className="mb-2">
-                    <div style={{ height: '10px', borderRadius: '5px', backgroundColor: '#e2e8f0', overflow: 'hidden' }}>
+                    <div style={{ height: '10px', borderRadius: '5px', backgroundColor: 'var(--surface-border, #e2e8f0)', overflow: 'hidden' }}>
                         <div
                             style={{
                                 height: '100%',
@@ -316,9 +326,11 @@ const SystemUsagePage = () => {
     ].filter(w => w.pct >= WARN_THRESHOLD) : [];
 
     const vercelWarnings = vercelData ? [
-        { pct: usagePct(vercelData.bandwidthGB, VERCEL_LIMITS.bandwidthGB), label: 'Vercel 대역폭' },
-        { pct: usagePct(vercelData.buildMinutes, VERCEL_LIMITS.buildMinutes), label: 'Vercel 빌드 시간' },
+        { pct: usagePct(vercelData.cdnRequests, VERCEL_LIMITS.cdnRequests), label: 'Vercel CDN 요청' },
+        { pct: usagePct(vercelData.bandwidthGB, VERCEL_LIMITS.fastDataTransferGB), label: 'Vercel 대역폭' },
         { pct: usagePct(vercelData.functionInvocations, VERCEL_LIMITS.functionInvocations), label: 'Vercel 함수 실행' },
+        { pct: usagePct(vercelData.functionDurationGbHours, VERCEL_LIMITS.functionGBHours), label: 'Vercel 함수 실행시간' },
+        { pct: usagePct(vercelData.buildMinutes, VERCEL_LIMITS.buildMinutes), label: 'Vercel 빌드 시간' },
     ].filter(w => w.pct >= WARN_THRESHOLD) : [];
 
     const mongoStoragePct = mongoData ? usagePct(mongoData.storageSize, MONGO_STORAGE_LIMIT_BYTES) : 0;
@@ -333,7 +345,7 @@ const SystemUsagePage = () => {
         const pct = Math.round((row.storageSize / maxStorage) * 100);
         return (
             <div className="flex align-items-center gap-2">
-                <div style={{ width: '120px', height: '8px', borderRadius: '4px', backgroundColor: '#e2e8f0', overflow: 'hidden' }}>
+                <div style={{ width: '120px', height: '8px', borderRadius: '4px', backgroundColor: 'var(--surface-border, #e2e8f0)', overflow: 'hidden' }}>
                     <div style={{ width: `${pct}%`, height: '100%', backgroundColor: '#6366f1', borderRadius: '4px' }} />
                 </div>
                 <span className="text-sm text-500">{pct}%</span>
@@ -421,13 +433,13 @@ const SystemUsagePage = () => {
             ══════════════════════════════════════════════════════════════ */}
             <SectionHeader
                 icon="pi pi-cloud"
-                iconColor="#000000"
+                iconColor="var(--text-color, #000000)"
                 title="Vercel 사용량"
                 badge={vercelData && <Tag value={`${dayjs(vercelData.from).format('MM/DD')} ~ ${dayjs(vercelData.to).format('MM/DD')}`} severity="secondary" className="ml-1" />}
                 subTitle="Hobby 플랜 월간 한도 대비 (80% 이상 경고) · VERCEL_ACCESS_TOKEN 필요"
             />
 
-            {loadingVercel ? <LoadingCard color="#000000" /> : vercelData ? (
+            {loadingVercel ? <LoadingCard color="var(--text-color, #000000)" /> : vercelData ? (
                 <>
                     {/* 프로젝트 및 배포 현황 요약 */}
                     <div className="col-12 md:col-6">
@@ -469,28 +481,92 @@ const SystemUsagePage = () => {
                         </div>
                     </div>
 
-                    <UsageBarCard icon="pi pi-send" label="대역폭 (Fast Transfer)" usedLabel={`${vercelData.bandwidthGB.toFixed(2)} GB`} limitLabel="100 GB / 월" pct={usagePct(vercelData.bandwidthGB, VERCEL_LIMITS.bandwidthGB)} />
-                    <UsageBarCard icon="pi pi-hammer" label="빌드 실행 시간" usedLabel={`${vercelData.buildMinutes.toFixed(0)} 분`} limitLabel="6,000 분 / 월" pct={usagePct(vercelData.buildMinutes, VERCEL_LIMITS.buildMinutes)} />
-                    <UsageBarCard icon="pi pi-bolt" label="함수 실행 횟수" usedLabel={`${vercelData.functionInvocations.toLocaleString()} 회`} limitLabel="1,000,000 회 / 월" pct={usagePct(vercelData.functionInvocations, VERCEL_LIMITS.functionInvocations)} />
-                    <UsageBarCard icon="pi pi-microchip" label="함수 메모리 (GB-hrs)" usedLabel={`${vercelData.functionGBHours.toFixed(2)} GB-hrs`} limitLabel="360 GB-hrs / 월" pct={usagePct(vercelData.functionGBHours, VERCEL_LIMITS.functionGBHours)} />
+                    {/* Vercel 공식 대시보드 핵심 지표 카드 */}
+                    <UsageBarCard
+                        icon="pi pi-globe"
+                        label="CDN Requests"
+                        usedLabel={`${(vercelData.cdnRequests >= 1000 ? (vercelData.cdnRequests / 1000).toFixed(1) + 'K' : vercelData.cdnRequests)} 회`}
+                        limitLabel="1M (100만 회) / 월"
+                        pct={usagePct(vercelData.cdnRequests, VERCEL_LIMITS.cdnRequests)}
+                        note={`총 ${vercelData.cdnRequests.toLocaleString()} 건 요청`}
+                    />
+
+                    <UsageBarCard
+                        icon="pi pi-send"
+                        label="Fast Data Transfer"
+                        usedLabel={vercelData.fastDataTransferMB >= 1024 ? `${vercelData.bandwidthGB.toFixed(2)} GB` : `${vercelData.fastDataTransferMB} MB`}
+                        limitLabel="100 GB / 월"
+                        pct={usagePct(vercelData.bandwidthGB, VERCEL_LIMITS.fastDataTransferGB)}
+                        note={`${bytesToReadable(vercelData.bandwidthBytes)} 아웃바운드`}
+                    />
+
+                    <UsageBarCard
+                        icon="pi pi-cloud-download"
+                        label="Fast Origin Transfer"
+                        usedLabel={`${vercelData.fastOriginTransferMB} MB`}
+                        limitLabel="10 GB / 월"
+                        pct={usagePct(vercelData.fastOriginTransferGB, VERCEL_LIMITS.fastOriginTransferGB)}
+                        note={`인바운드 / 오리진 전송`}
+                    />
+
+                    <UsageBarCard
+                        icon="pi pi-bolt"
+                        label="Function Invocations"
+                        usedLabel={`${(vercelData.functionInvocations >= 1000 ? (vercelData.functionInvocations / 1000).toFixed(1) + 'K' : vercelData.functionInvocations)} 회`}
+                        limitLabel="1M (100만 회) / 월"
+                        pct={usagePct(vercelData.functionInvocations, VERCEL_LIMITS.functionInvocations)}
+                        note={`총 ${vercelData.functionInvocations.toLocaleString()} 회 실행`}
+                    />
+
+                    <UsageBarCard
+                        icon="pi pi-clock"
+                        label="Function Duration"
+                        usedLabel={`${vercelData.functionDurationGbHours.toFixed(2)} GB-Hrs`}
+                        limitLabel="100 GB-Hrs / 월"
+                        pct={usagePct(vercelData.functionDurationGbHours, VERCEL_LIMITS.functionGBHours)}
+                        note={`서버리스 함수 실행 시간/메모리`}
+                    />
+
+                    <UsageBarCard
+                        icon="pi pi-share-alt"
+                        label="Edge Middleware Invocations"
+                        usedLabel={`${(vercelData.edgeMiddlewareInvocations >= 1000 ? (vercelData.edgeMiddlewareInvocations / 1000).toFixed(1) + 'K' : vercelData.edgeMiddlewareInvocations)} 회`}
+                        limitLabel="1M (100만 회) / 월"
+                        pct={usagePct(vercelData.edgeMiddlewareInvocations, VERCEL_LIMITS.edgeMiddlewareInvocations)}
+                        note={`미들웨어 실행 횟수`}
+                    />
+
+                    <UsageBarCard
+                        icon="pi pi-hammer"
+                        label="Build Execution Time"
+                        usedLabel={`${vercelData.buildMinutes.toFixed(1)} 분`}
+                        limitLabel="6,000 분 / 월"
+                        pct={usagePct(vercelData.buildMinutes, VERCEL_LIMITS.buildMinutes)}
+                        note={`총 ${vercelData.buildCount ?? 0}회 빌드 감지`}
+                    />
 
                     {/* Vercel 한도 안내 */}
                     <div className="col-12">
-                        <div className="card" style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                        <div className="card surface-50 border-1 surface-border">
                             <div className="flex align-items-center gap-2 mb-2">
-                                <i className="pi pi-info-circle" style={{ color: '#000' }} />
-                                <span className="font-semibold text-sm">Vercel Hobby Plan 리소스 한도</span>
+                                <i className="pi pi-info-circle text-primary" />
+                                <span className="font-semibold text-sm text-900">Vercel Hobby Plan 리소스 한도 (최근 30일)</span>
                             </div>
                             <div className="flex flex-wrap gap-3 text-sm text-600">
                                 {[
-                                    '대역폭: 100 GB/월',
+                                    'CDN Requests: 100만 회/월',
+                                    'Fast Data Transfer: 100 GB/월',
+                                    'Fast Origin Transfer: 10 GB/월',
+                                    'Function Invocations: 100만 회/월',
+                                    'Function Duration: 100 GB-Hrs/월',
+                                    'Edge Middleware: 100만 회/월',
                                     '빌드 시간: 6,000분/월',
-                                    '함수 실행: 100만 회/월',
-                                    '함수 메모리: 360 GB-hrs/월',
                                     '배포: 100회/일',
-                                    '프로젝트: 200개',
                                 ].map(t => (
-                                    <span key={t}><i className="pi pi-circle-fill mr-1" style={{ color: '#22c55e', fontSize: '8px' }} />{t}</span>
+                                    <span key={t} className="flex align-items-center">
+                                        <i className="pi pi-circle-fill mr-1" style={{ color: '#22c55e', fontSize: '8px' }} />
+                                        {t}
+                                    </span>
                                 ))}
                             </div>
                         </div>
@@ -498,14 +574,14 @@ const SystemUsagePage = () => {
                 </>
             ) : (
                 <div className="col-12">
-                    <div className="card" style={{ border: '1px dashed #e2e8f0' }}>
+                    <div className="card border-dashed border-1 surface-border surface-50">
                         <div className="flex align-items-center gap-3 p-2">
                             <i className="pi pi-info-circle text-2xl text-500" />
                             <div>
-                                <p className="m-0 font-semibold text-700">Vercel 사용량을 불러올 수 없습니다</p>
-                                <p className="m-0 text-sm text-500 mt-1">
-                                    <a href="https://vercel.com/account/tokens" target="_blank" rel="noreferrer" className="text-primary">vercel.com/account/tokens</a>에서 Personal Access Token을 발급한 뒤
-                                    <code className="mx-1 px-1 border-round" style={{ backgroundColor: '#f1f5f9', fontSize: '12px' }}>VERCEL_ACCESS_TOKEN</code>
+                                <p className="m-0 font-semibold text-900">Vercel 사용량을 불러올 수 없습니다</p>
+                                <p className="m-0 text-sm text-600 mt-1">
+                                    <a href="https://vercel.com/account/tokens" target="_blank" rel="noreferrer" className="text-primary font-medium">vercel.com/account/tokens</a>에서 Personal Access Token을 발급한 뒤
+                                    <code className="mx-1 px-1 border-round surface-100 text-primary" style={{ fontSize: '12px' }}>VERCEL_ACCESS_TOKEN</code>
                                     환경변수에 설정하세요.
                                 </p>
                             </div>
