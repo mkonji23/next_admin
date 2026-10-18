@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Calendar } from 'primereact/calendar';
 import { Button } from 'primereact/button';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
@@ -259,11 +258,6 @@ const SystemUsagePage = () => {
     const http = useHttp();
     const { showToast } = useToast();
 
-    const [dateRange, setDateRange] = useState<Date[]>([
-        dayjs().startOf('month').toDate(),
-        dayjs().toDate(),
-    ]);
-
     const [imageKitData, setImageKitData] = useState<ImageKitUsage | null>(null);
     const [vercelData, setVercelData] = useState<VercelUsage | null>(null);
     const [mongoData, setMongoData] = useState<MongoUsage | null>(null);
@@ -271,11 +265,12 @@ const SystemUsagePage = () => {
     const [loadingVercel, setLoadingVercel] = useState(false);
     const [loadingMongo, setLoadingMongo] = useState(false);
 
+    // ImageKit 사용량 조회 (최근 30일 기준)
     const fetchImageKitUsage = useCallback(async () => {
         try {
             setLoadingIK(true);
-            const startDate = dayjs(dateRange[0]).format('YYYY-MM-DD');
-            const endDate = dayjs(dateRange[1] ?? dateRange[0]).add(1, 'day').format('YYYY-MM-DD');
+            const startDate = dayjs().subtract(30, 'day').format('YYYY-MM-DD');
+            const endDate = dayjs().add(1, 'day').format('YYYY-MM-DD');
             const res = await http.get('/system/usage/imagekit', { params: { startDate, endDate } });
             setImageKitData(res.data);
         } catch {
@@ -283,7 +278,7 @@ const SystemUsagePage = () => {
         } finally {
             setLoadingIK(false);
         }
-    }, [dateRange]);
+    }, []);
 
     const fetchVercelUsage = useCallback(async () => {
         try {
@@ -362,24 +357,15 @@ const SystemUsagePage = () => {
                     <div className="flex flex-wrap align-items-center justify-content-between gap-3">
                         <div>
                             <h4 className="m-0 mb-1">시스템 사용량 모니터링</h4>
-                            <div className="flex align-items-center gap-2 mt-1">
+                            <div className="flex flex-wrap align-items-center gap-2 mt-1">
                                 <span className="text-500 text-sm">ImageKit · Vercel · MongoDB 리소스 현황</span>
+                                <Tag value="최근 30일 기준" severity="info" />
                                 <Tag value="IK Free" severity="warning" />
                                 <Tag value="Vercel Hobby" severity="warning" />
                                 <Tag value="MongoDB Free" severity="warning" />
                             </div>
                         </div>
-                        <div className="flex flex-wrap align-items-center gap-2">
-                            <Calendar
-                                value={dateRange}
-                                onChange={e => setDateRange(e.value as Date[])}
-                                selectionMode="range"
-                                dateFormat="yy-mm-dd"
-                                showIcon
-                                placeholder="기간 선택 (ImageKit)"
-                                className="w-full md:w-22rem"
-                                readOnlyInput
-                            />
+                        <div className="flex align-items-center gap-2">
                             <Button
                                 icon="pi pi-refresh"
                                 label="새로고침"
