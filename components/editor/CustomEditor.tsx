@@ -13,12 +13,38 @@ interface CustomEditorProps {
     style?: React.CSSProperties;
     placeholder?: string;
     readOnly?: boolean;
+    folder?: string;
 }
+
+// Delta에서 모든 이미지 URL을 추출하는 헬퍼 함수
+export const extractImageUrlsFromDelta = (delta: any): string[] => {
+    if (!delta) return [];
+    let parsed = delta;
+    if (typeof delta === 'string') {
+        try {
+            parsed = JSON.parse(delta);
+        } catch {
+            return [];
+        }
+    }
+    const urls: string[] = [];
+    if (parsed && Array.isArray(parsed.ops)) {
+        for (const op of parsed.ops) {
+            if (op.insert && typeof op.insert === 'object' && (op.insert as any).image) {
+                const src = (op.insert as any).image;
+                if (typeof src === 'string' && src.startsWith('http')) {
+                    urls.push(src);
+                }
+            }
+        }
+    }
+    return urls;
+};
 
 export interface CustomEditorRef {
     insertText: (text: string) => void;
     getQuill: () => Quill | null;
-    uploadPendingImages: () => Promise<{ textValue: string; delta: any; uploadedImages: any[] }>;
+    uploadPendingImages: (folder?: string) => Promise<{ textValue: string; delta: any; uploadedImages: any[] }>;
     deleteImagesFromImageKit: (fileIds: (string | { fileId?: string; url?: string })[]) => Promise<boolean>;
     deleteRemovedImages: (oldImages: (string | { fileId?: string; url?: string })[]) => Promise<boolean>;
 }
@@ -39,7 +65,7 @@ const dataURLtoFile = (dataurl: string, filename: string): File => {
 
 // eslint-disable-next-line react/display-name
 export const CustomEditor = forwardRef<CustomEditorRef, CustomEditorProps>(
-    ({ value, delta, onChange, style, placeholder, readOnly }, ref) => {
+    ({ value, delta, onChange, style, placeholder, readOnly, folder = '/' }, ref) => {
         const contentRef = useRef<Editor>(null);
         const editorLoad = useRef(false);
         const isProcessingRef = useRef(false);
@@ -47,14 +73,14 @@ export const CustomEditor = forwardRef<CustomEditorRef, CustomEditorProps>(
         const { showToast } = useToast();
 
         // ImageKit 서버 일괄 업로드 헬퍼 (단 1번의 HTTP 요청으로 모든 파일 일괄 업로드)
-        const uploadImagesToImageKit = async (files: File[]): Promise<any[]> => {
+        const uploadImagesToImageKit = async (files: File[], folder: string = '/'): Promise<any[]> => {
             if (!files || files.length === 0) return [];
             try {
                 const formData = new FormData();
                 files.forEach((file) => {
                     formData.append('files', file);
                 });
-                formData.append('folder', '/');
+                formData.append('folder', folder || '/');
 
                 const res = await http.post('/imageKit/upload', formData, {
                     headers: {
@@ -150,7 +176,9 @@ export const CustomEditor = forwardRef<CustomEditorRef, CustomEditorProps>(
         };
 
         // 저장 시점에 호출: 에디터 내의 모든 base64 이미지를 1번의 HTTP 요청으로 배치 업로드 및 URL 교체
-        const uploadPendingImages = async (): Promise<{ textValue: string; delta: any; uploadedImages: any[] }> => {
+        const uploadPendingImages = async (
+            targetFolder?: string
+        ): Promise<{ textValue: string; delta: any; uploadedImages: any[] }> => {
             const quill = contentRef.current?.getQuill();
             if (!quill) return { textValue: '', delta: null, uploadedImages: [] };
 
@@ -184,7 +212,8 @@ export const CustomEditor = forwardRef<CustomEditorRef, CustomEditorProps>(
                 );
 
                 // 3. 단 1회의 batch POST 요청으로 ImageKit에 일괄 업로드
-                const uploadedResults = await uploadImagesToImageKit(compressedFiles);
+                const destFolder = targetFolder || folder || '/';
+                const uploadedResults = await uploadImagesToImageKit(compressedFiles, destFolder);
 
                 if (uploadedResults.length === 0) {
                     return { textValue: quill.getText(), delta: contents, uploadedImages: [] };

@@ -10,6 +10,7 @@ import { useCustomModal } from '@/hooks/useCustomModal';
 import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
 import { useConfirm } from '@/hooks/useConfirm';
+import { extractImageUrlsFromDelta } from '@/components/editor/CustomEditor';
 import dayjs from 'dayjs';
 
 interface KakaoTemplate {
@@ -17,6 +18,7 @@ interface KakaoTemplate {
     templateName?: string;
     content: string;
     delta?: any;
+    imageUrls?: any[];
     createdDate: string;
     updatedDate: string;
 }
@@ -26,7 +28,7 @@ const KakaoShareTemplatePage = () => {
     const [selectedTemplates, setSelectedTemplates] = useState<KakaoTemplate[] | null>(null);
     const [globalFilterValue, setGlobalFilterValue] = useState('');
     const [loading, setLoading] = useState(false);
-    const [filters, setFilters] = useState({
+    const [filters, setFilters] = useState<any>({
         global: { value: null, matchMode: FilterMatchMode.CONTAINS }
     });
 
@@ -72,6 +74,23 @@ const KakaoShareTemplatePage = () => {
 
         if (confirmed) {
             try {
+                // 삭제할 템플릿의 모든 이미지를 수집하여 ImageKit에서 삭제
+                const target = templates.find((t) => t.templateId === templateId);
+                if (target) {
+                    const fromDelta = extractImageUrlsFromDelta(target.delta);
+                    const fromList = (target.imageUrls || [])
+                        .map((item: any) => (typeof item === 'string' ? item : item.url))
+                        .filter(Boolean);
+                    const imagesToDelete = Array.from(new Set([...fromList, ...fromDelta]));
+                    if (imagesToDelete.length > 0) {
+                        try {
+                            await http.post('/imageKit/delete', { fileIds: imagesToDelete });
+                        } catch (imgErr) {
+                            console.error('Failed to delete images from ImageKit:', imgErr);
+                        }
+                    }
+                }
+
                 await http.post('/choiMath/template/delete', { templateId: templateId });
                 showToast({ severity: 'success', summary: '성공', detail: '템플릿이 삭제되었습니다.' });
                 fetchTemplates();
@@ -96,6 +115,23 @@ const KakaoShareTemplatePage = () => {
         if (confirmed) {
             try {
                 setLoading(true);
+                // 선택된 템플릿들의 모든 이미지를 수집하여 ImageKit에서 일괄 삭제
+                const allImagesToDelete = selectedTemplates.flatMap((t) => {
+                    const fromDelta = extractImageUrlsFromDelta(t.delta);
+                    const fromList = (t.imageUrls || [])
+                        .map((item: any) => (typeof item === 'string' ? item : item.url))
+                        .filter(Boolean);
+                    return [...fromList, ...fromDelta];
+                });
+                const uniqueImages = Array.from(new Set(allImagesToDelete));
+                if (uniqueImages.length > 0) {
+                    try {
+                        await http.post('/imageKit/delete', { fileIds: uniqueImages });
+                    } catch (imgErr) {
+                        console.error('Failed to delete images from ImageKit:', imgErr);
+                    }
+                }
+
                 // 개별 삭제 API를 루프 돌려 호출
                 await Promise.all(
                     selectedTemplates.map((t) => http.post('/choiMath/template/delete', { templateId: t.templateId }))

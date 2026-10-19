@@ -17,7 +17,7 @@ import Lightbox from 'yet-another-react-lightbox';
 import Download from 'yet-another-react-lightbox/plugins/download';
 import 'yet-another-react-lightbox/styles.css';
 import Zoom from 'yet-another-react-lightbox/plugins/zoom';
-import { CustomEditor } from '@/components/editor/CustomEditor';
+import { CustomEditor, CustomEditorRef, extractImageUrlsFromDelta } from '@/components/editor/CustomEditor';
 import { useLightboxHistory } from '@/hooks/useLightboxHistory';
 
 interface WriteViewProps {
@@ -28,6 +28,7 @@ interface WriteViewProps {
 }
 const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewProps) => {
     const [editData, setEditData] = useState<ShareItem>();
+    const [existingEditorImageUrls, setExistingEditorImageUrls] = useState<string[]>([]);
     const fileUploadRef = useRef<FileUpload>(null);
     const { showToast } = useToast();
     const http = useHttp();
@@ -78,8 +79,16 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
     }, []);
 
     useEffect(() => {
-        initialData && setEditData(initialData);
-    }, [initialData]);
+        if (initialData) {
+            setEditData(initialData);
+            if (!isCopy && initialData.delta) {
+                const urls = extractImageUrlsFromDelta(initialData.delta);
+                setExistingEditorImageUrls(urls);
+            } else {
+                setExistingEditorImageUrls([]);
+            }
+        }
+    }, [initialData, isCopy]);
 
     const handleAutoTitle = (form: any, month: string, week: string) => {
         if (month && week) {
@@ -134,10 +143,28 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
     const onSubmit = async (values: any) => {
         setIsOptimizing(true);
         try {
+            let finalDelta = values.delta;
+            let finalContent = values.actualContent;
+
             if (editorRef.current) {
-                const res = await editorRef.current.uploadPendingImages();
-                values.actualContent = res.textValue;
-                values.delta = res.delta;
+                const res = await editorRef.current.uploadPendingImages('/share');
+                finalContent = res.textValue;
+                finalDelta = res.delta;
+                values.actualContent = finalContent;
+                values.delta = finalDelta;
+            }
+
+            // 수정 모드인 경우, 에디터 본문에서 삭제된 이미지를 식별하여 ImageKit에서 삭제
+            if (editData?._id && !isCopy && existingEditorImageUrls.length > 0) {
+                const currentUrlsInEditor = extractImageUrlsFromDelta(finalDelta);
+                const removedUrls = existingEditorImageUrls.filter((url) => !currentUrlsInEditor.includes(url));
+                if (removedUrls.length > 0) {
+                    try {
+                        await http.post('/imageKit/delete', { fileIds: removedUrls });
+                    } catch (delError) {
+                        console.error('Failed to delete removed editor images from ImageKit:', delError);
+                    }
+                }
             }
 
             const currentShareImageUrls = editData?.shareImageUrls || [];

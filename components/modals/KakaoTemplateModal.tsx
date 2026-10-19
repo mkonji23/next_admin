@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
 import { InputText } from 'primereact/inputtext';
-import { CustomEditor, CustomEditorRef } from '../editor/CustomEditor';
+import { CustomEditor, CustomEditorRef, extractImageUrlsFromDelta } from '../editor/CustomEditor';
 import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
 
@@ -20,6 +20,8 @@ const KakaoTemplateModal = ({ visible, onClose, pData }: KakaoTemplateModalProps
         content: '',
         delta: null as any
     });
+    const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]);
+    const [loading, setLoading] = useState(false);
 
     const editorRef = useRef<CustomEditorRef>(null);
     const http = useHttp();
@@ -33,12 +35,21 @@ const KakaoTemplateModal = ({ visible, onClose, pData }: KakaoTemplateModalProps
                     content: pData.content || '',
                     delta: pData.delta || null
                 });
+
+                // 기존 템플릿의 이미지 URL 목록 추출 및 보관 (수정 시 삭제 감지용)
+                const fromDelta = extractImageUrlsFromDelta(pData.delta);
+                const fromList = (pData.imageUrls || [])
+                    .map((item: any) => (typeof item === 'string' ? item : item.url))
+                    .filter(Boolean);
+                const initialImages = Array.from(new Set([...fromList, ...fromDelta]));
+                setExistingImageUrls(initialImages);
             } else {
                 setTemplate({
                     templateName: '',
                     content: '',
                     delta: null
                 });
+                setExistingImageUrls([]);
             }
         }
     }, [visible, pData]);
@@ -49,10 +60,48 @@ const KakaoTemplateModal = ({ visible, onClose, pData }: KakaoTemplateModalProps
             return;
         }
 
+        setLoading(true);
         try {
+            let finalContent = template.content;
+            let finalDelta = template.delta;
+            let newUploadedImages: any[] = [];
+
+            // 1. 에디터 내 대용량 Base64 이미지를 ImageKit의 /template 폴더로 일괄 업로드 및 CDN URL로 치환
+            if (editorRef.current) {
+                const uploadRes = await editorRef.current.uploadPendingImages('/template');
+                finalContent = uploadRes.textValue;
+                finalDelta = uploadRes.delta;
+                newUploadedImages = uploadRes.uploadedImages || [];
+            }
+
+            // 2. 현재 최종 에디터 본문(Delta)에 포함된 이미지 URL 수집
+            const currentUrlsInEditor = extractImageUrlsFromDelta(finalDelta);
+
+            // 3. 기존 이미지 중 본문에서 삭제된 이미지를 식별하여 ImageKit에서 삭제
+            if (pData?.templateId && existingImageUrls.length > 0) {
+                const removedUrls = existingImageUrls.filter((url) => !currentUrlsInEditor.includes(url));
+                if (removedUrls.length > 0) {
+                    try {
+                        await http.post('/imageKit/delete', { fileIds: removedUrls });
+                    } catch (delError) {
+                        console.error('Failed to delete removed images from ImageKit:', delError);
+                    }
+                }
+            }
+
+            // 4. 유지된 기존 이미지 + 신규 업로드된 이미지 목록 취합
+            const newUploadedUrls = newUploadedImages
+                .map((img: any) => (typeof img === 'string' ? img : img.url))
+                .filter(Boolean);
+            const activeImageUrls = Array.from(
+                new Set([...existingImageUrls.filter((url) => currentUrlsInEditor.includes(url)), ...newUploadedUrls])
+            );
+
             const payload = {
-                ...template,
-                delta: typeof template.delta === 'string' ? template.delta : JSON.stringify(template.delta)
+                templateName: template.templateName,
+                content: finalContent,
+                delta: typeof finalDelta === 'string' ? finalDelta : JSON.stringify(finalDelta),
+                imageUrls: activeImageUrls
             };
 
             if (pData?.templateId) {
@@ -67,15 +116,23 @@ const KakaoTemplateModal = ({ visible, onClose, pData }: KakaoTemplateModalProps
             onClose(true);
         } catch (error: any) {
             console.error(error);
-            const errMsg = error.response?.data?.error || '저장에 실패했습니다.';
+            const errMsg = error.response?.data?.error || error.response?.data?.message || '저장에 실패했습니다.';
             showToast({ severity: 'error', summary: '오류', detail: errMsg });
+        } finally {
+            setLoading(false);
         }
     };
 
     const footer = (
         <div>
-            <Button label="취소" icon="pi pi-times" onClick={() => onClose(null)} className="p-button-text" />
-            <Button label="저장" icon="pi pi-check" onClick={handleSave} autoFocus />
+            <Button
+                label="취소"
+                icon="pi pi-times"
+                onClick={() => onClose(null)}
+                className="p-button-text"
+                disabled={loading}
+            />
+            <Button label="저장" icon="pi pi-check" onClick={handleSave} loading={loading} autoFocus />
         </div>
     );
 
@@ -141,6 +198,7 @@ const KakaoTemplateModal = ({ visible, onClose, pData }: KakaoTemplateModalProps
                 </div>
                 <CustomEditor
                     ref={editorRef}
+                    folder="/template"
                     value={template.content}
                     delta={template.delta}
                     onChange={(data) =>
