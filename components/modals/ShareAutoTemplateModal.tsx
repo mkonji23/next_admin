@@ -10,7 +10,7 @@ import dayjs from 'dayjs';
 import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
 import { useConfirm } from '@/hooks/useConfirm';
-import { CustomEditor, CustomEditorRef } from '../editor/CustomEditor';
+import { CustomEditor, CustomEditorRef, extractImageUrlsFromDelta } from '../editor/CustomEditor';
 
 /**
  * ShareAutoTemplateModal
@@ -143,6 +143,8 @@ const ShareAutoTemplateModal = ({ visible, onClose }: ShareAutoTemplateModalProp
         updateTemplate(year, month, w);
     };
 
+    const [saving, setSaving] = useState(false);
+
     const handleSave = async () => {
         try {
             if (selectedClassId === 'ALL') {
@@ -155,13 +157,30 @@ const ShareAutoTemplateModal = ({ visible, onClose }: ShareAutoTemplateModalProp
                 if (!confirmed) return;
             }
 
+            setSaving(true);
+            let finalContent = template.postContent;
+            let finalDelta = template.postContentDelta;
+
+            // 1. 에디터 본문 내 임시 Base64 이미지를 ImageKit의 /template 폴더로 업로드 및 URL 치환
+            if (editorRef.current) {
+                const uploadRes = await editorRef.current.uploadPendingImages('/template');
+                finalContent = uploadRes.textValue;
+                finalDelta = uploadRes.delta;
+            }
+
+            // 2. 최종 Delta에서 본문 이미지 URL 목록 추출하여 shareImageUrls 구성
+            const currentUrlsInEditor = extractImageUrlsFromDelta(finalDelta);
+            const shareImageUrls = currentUrlsInEditor.map((url) => ({ url }));
+
             const saveData = {
                 ...template,
-                classId: selectedClassId,
+                postContent: finalContent,
                 postContentDelta:
-                    typeof template.postContentDelta === 'string'
-                        ? template.postContentDelta
-                        : JSON.stringify(template.postContentDelta)
+                    typeof finalDelta === 'string'
+                        ? finalDelta
+                        : JSON.stringify(finalDelta),
+                classId: selectedClassId,
+                shareImageUrls
             };
 
             const cdata = await http.post('/choiMath/share/get-dup-check', saveData);
@@ -194,13 +213,15 @@ const ShareAutoTemplateModal = ({ visible, onClose }: ShareAutoTemplateModalProp
         } catch (error) {
             console.error(error);
             showToast({ severity: 'error', summary: '오류', detail: '템플릿 생성에 실패했습니다.' });
+        } finally {
+            setSaving(false);
         }
     };
 
     const footer = (
         <div>
-            <Button label="취소" icon="pi pi-times" onClick={() => onClose(null)} className="p-button-text" />
-            <Button label="생성" icon="pi pi-check" onClick={handleSave} autoFocus />
+            <Button label="취소" icon="pi pi-times" onClick={() => onClose(null)} className="p-button-text" disabled={saving} />
+            <Button label="생성" icon="pi pi-check" onClick={handleSave} loading={saving} autoFocus />
         </div>
     );
 
@@ -337,6 +358,7 @@ const ShareAutoTemplateModal = ({ visible, onClose }: ShareAutoTemplateModalProp
                 </div>
                 <CustomEditor
                     ref={editorRef}
+                    folder="/template"
                     value={template.postContent}
                     delta={template.postContentDelta}
                     onChange={(data) => {

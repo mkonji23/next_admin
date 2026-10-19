@@ -75,10 +75,10 @@ const NoticeEditView: React.FC<NoticeEditViewProps> = ({ initialData, onBack, on
             let newUploadedImages: any[] = [];
 
             if (editorRef.current) {
-                const res = await editorRef.current.uploadPendingImages();
+                const res = await editorRef.current.uploadPendingImages('/notice');
                 finalContent = res.textValue;
                 finalDelta = res.delta;
-                newUploadedImages = res.uploadedImages;
+                newUploadedImages = res.uploadedImages || [];
             }
 
             // 본문에서 현재 사용 중인 이미지 URL 수집
@@ -184,6 +184,7 @@ const NoticeEditView: React.FC<NoticeEditViewProps> = ({ initialData, onBack, on
                     <label className="font-bold">내용</label>
                     <CustomEditor
                         ref={editorRef}
+                        folder="/notice"
                         delta={delta}
                         onChange={({ textValue, delta: newDelta }) => {
                             setContent(textValue);

@@ -6,7 +6,7 @@ import { Button } from 'primereact/button';
 import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
-import { CustomEditor, CustomEditorRef } from '../editor/CustomEditor';
+import { CustomEditor, CustomEditorRef, extractImageUrlsFromDelta } from '../editor/CustomEditor';
 import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
 import dayjs from 'dayjs';
@@ -159,23 +159,43 @@ const EditAutoTemplateModal = ({ visible, onClose }: EditAutoTemplateModalProps)
         }
     };
 
+    const [saving, setSaving] = useState(false);
+
     const handleSave = async () => {
         try {
             if (!template.shareTitle) {
                 showToast({ severity: 'error', summary: '오류', detail: '조회 후 저장하세요.' });
                 return;
             }
+
+            setSaving(true);
+            let finalContent = template.postContent;
+            let finalDelta = template.postContentDelta;
+
+            // 1. 에디터 본문 내 임시 Base64 이미지를 ImageKit의 /template 폴더로 업로드 및 URL 치환
+            if (editorRef.current) {
+                const uploadRes = await editorRef.current.uploadPendingImages('/template');
+                finalContent = uploadRes.textValue;
+                finalDelta = uploadRes.delta;
+            }
+
+            // 2. 최종 Delta에서 본문 이미지 URL 목록 추출하여 shareImageUrls 구성
+            const currentUrlsInEditor = extractImageUrlsFromDelta(finalDelta);
+            const shareImageUrls = currentUrlsInEditor.map((url) => ({ url }));
+
             const payload = {
                 ...template,
+                postContent: finalContent,
                 classId: selectedClassId,
                 autoYear: String(year),
                 autoMonth: String(month).padStart(2, '0'),
                 autoWeek: String(week),
                 templateId: selectedTemplateId,
                 postContentDelta:
-                    typeof template.postContentDelta === 'object'
-                        ? JSON.stringify(template.postContentDelta)
-                        : template.postContentDelta
+                    typeof finalDelta === 'object'
+                        ? JSON.stringify(finalDelta)
+                        : finalDelta,
+                shareImageUrls
             };
 
             await http.post('/choiMath/share/update-auto', payload);
@@ -190,6 +210,8 @@ const EditAutoTemplateModal = ({ visible, onClose }: EditAutoTemplateModalProps)
             console.error('Save error:', error);
             const errMsg = error.response?.data?.message || error.message || '저장에 실패했습니다.';
             showToast({ severity: 'error', summary: '오류', detail: errMsg });
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -199,8 +221,8 @@ const EditAutoTemplateModal = ({ visible, onClose }: EditAutoTemplateModalProps)
 
     const footer = (
         <div>
-            <Button label="취소" icon="pi pi-times" onClick={() => onClose(null)} className="p-button-text" />
-            <Button label="저장" icon="pi pi-check" disabled={!template?.shareTitle} onClick={handleSave} autoFocus />
+            <Button label="취소" icon="pi pi-times" onClick={() => onClose(null)} className="p-button-text" disabled={saving} />
+            <Button label="저장" icon="pi pi-check" disabled={!template?.shareTitle || saving} loading={saving} onClick={handleSave} autoFocus />
         </div>
     );
 
@@ -362,6 +384,7 @@ const EditAutoTemplateModal = ({ visible, onClose }: EditAutoTemplateModalProps)
                         </div>
                         <CustomEditor
                             ref={editorRef}
+                            folder="/template"
                             value={template.postContent}
                             delta={template.postContentDelta}
                             onChange={(data) =>

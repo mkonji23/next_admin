@@ -158,9 +158,11 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
             if (editData?._id && !isCopy && existingEditorImageUrls.length > 0) {
                 const currentUrlsInEditor = extractImageUrlsFromDelta(finalDelta);
                 const removedUrls = existingEditorImageUrls.filter((url) => !currentUrlsInEditor.includes(url));
-                if (removedUrls.length > 0) {
+                // 1:N 공통 템플릿 이미지(/template/)는 다른 학생들도 공유하므로 ImageKit 삭제 대상에서 제외!
+                const imagesToDelete = removedUrls.filter((url) => !url.includes('/template/'));
+                if (imagesToDelete.length > 0) {
                     try {
-                        await http.post('/imageKit/delete', { fileIds: removedUrls });
+                        await http.post('/imageKit/delete', { fileIds: imagesToDelete });
                     } catch (delError) {
                         console.error('Failed to delete removed editor images from ImageKit:', delError);
                     }

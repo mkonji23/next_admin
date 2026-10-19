@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
 import { Calendar } from 'primereact/calendar';
@@ -11,7 +11,7 @@ import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
 import { Todo, TodoUser, TodoStatus } from '@/types/todo';
 import dayjs from 'dayjs';
-import { CustomEditor } from '../editor/CustomEditor';
+import { CustomEditor, CustomEditorRef, extractImageUrlsFromDelta } from '../editor/CustomEditor';
 import { STATUS_LABELS, CATEGORY_OPTIONS, STATUS_OPTIONS } from '@/constants/todo';
 
 interface TodoModalProps {
@@ -45,6 +45,8 @@ const TodoModal = ({ visible, pData, onClose }: TodoModalProps) => {
     });
     const [users, setUsers] = useState<TodoUser[]>([]);
     const [submitted, setSubmitted] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const editorRef = useRef<CustomEditorRef>(null);
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -85,17 +87,22 @@ const TodoModal = ({ visible, pData, onClose }: TodoModalProps) => {
                 });
             }
             setSubmitted(false);
+            setSaving(false);
         }
     }, [visible]);
 
     const handleSave = async (action: 'save' | 'status-change' = 'save', newStatus?: TodoStatus) => {
         setSubmitted(true);
 
+        const hasContent =
+            (todo.content && todo.content.trim().length > 0) ||
+            (todo.delta && todo.delta.ops && todo.delta.ops.length > 0);
+
         if (
             !todo.title ||
             !todo.startDate ||
             !todo.endDate ||
-            !todo.content ||
+            !hasContent ||
             !todo.assignees ||
             todo.assignees.length === 0
         ) {
@@ -103,19 +110,47 @@ const TodoModal = ({ visible, pData, onClose }: TodoModalProps) => {
             return;
         }
 
+        setSaving(true);
         try {
+            let finalContent = todo.content || '';
+            let finalDelta = todo.delta || [];
+
+            // 1. 에디터 내 Base64 이미지를 ImageKit의 /todo 폴더로 업로드 및 CDN URL로 치환
+            if (editorRef.current) {
+                const uploadRes = await editorRef.current.uploadPendingImages('/todo');
+                finalContent = uploadRes.textValue;
+                finalDelta = uploadRes.delta;
+            }
+
+            // 2. 최종 Delta에서 본문 이미지 URL 목록 추출
+            const currentUrls = extractImageUrlsFromDelta(finalDelta);
+
+            // 3. 수정 모드일 때 본문에서 삭제된 이미지를 식별하여 ImageKit에서 삭제
+            if (mode === 'edit' && initialTodo?.delta) {
+                const oldUrls = extractImageUrlsFromDelta(initialTodo.delta);
+                const removedUrls = oldUrls.filter((url) => !currentUrls.includes(url));
+                if (removedUrls.length > 0) {
+                    try {
+                        await http.post('/imageKit/delete', { fileIds: removedUrls });
+                    } catch (delError) {
+                        console.error('Failed to delete removed todo images from ImageKit:', delError);
+                    }
+                }
+            }
+
             const finalStatus = action === 'status-change' && newStatus ? newStatus : todo.status || 'PENDING';
             const finalIsCompleted = finalStatus === 'COMPLETED';
 
-            const basePayload: Omit<Todo, 'id' | 'assignees'> = {
+            const basePayload: Omit<Todo, 'id' | 'assignees'> & { imageUrls?: string[] } = {
                 title: todo.title || '',
                 category: todo.category || 'OTHER',
                 startDate: dayjs(todo.startDate).format('YYYYMMDD'),
                 endDate: dayjs(todo.endDate).format('YYYYMMDD'),
                 status: finalStatus as TodoStatus,
                 delayedReason: todo.delayedReason || '',
-                content: todo.content || '',
-                delta: todo.delta || [],
+                content: finalContent,
+                delta: finalDelta,
+                imageUrls: currentUrls,
                 isCompleted: finalIsCompleted
             };
 
@@ -149,13 +184,28 @@ const TodoModal = ({ visible, pData, onClose }: TodoModalProps) => {
                 summary: '실패',
                 detail: error.response?.data?.message || '작업에 실패했습니다.'
             });
+        } finally {
+            setSaving(false);
         }
     };
 
     const dialogFooter = (
         <div className="flex justify-content-end gap-2">
-            <Button label="취소" icon="pi pi-times" onClick={() => onClose()} className="p-button-text" />
-            <Button label="저장" icon="pi pi-save" onClick={() => handleSave('save')} className="p-button-warning" />
+            <Button
+                label="취소"
+                icon="pi pi-times"
+                onClick={() => onClose()}
+                className="p-button-text"
+                disabled={saving}
+            />
+            <Button
+                label="저장"
+                icon="pi pi-save"
+                onClick={() => handleSave('save')}
+                className="p-button-warning"
+                loading={saving}
+                disabled={saving}
+            />
         </div>
     );
 
@@ -294,6 +344,8 @@ const TodoModal = ({ visible, pData, onClose }: TodoModalProps) => {
                         상세 내용 <span className="text-red-500">*</span>
                     </label>
                     <CustomEditor
+                        ref={editorRef}
+                        folder="/todo"
                         value={todo.content}
                         delta={todo.delta}
                         style={{ height: '200px' }}

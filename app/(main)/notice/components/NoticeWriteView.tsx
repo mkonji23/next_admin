@@ -6,7 +6,7 @@ import { MultiSelect } from 'primereact/multiselect';
 import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
 import useAuthStore from '@/store/useAuthStore';
-import { CustomEditor, CustomEditorRef } from '@/components/editor/CustomEditor';
+import { CustomEditor, CustomEditorRef, extractImageUrlsFromDelta } from '@/components/editor/CustomEditor';
 
 interface NoticeWriteViewProps {
     onBack: () => void;
@@ -68,17 +68,24 @@ const NoticeWriteView: React.FC<NoticeWriteViewProps> = ({ onBack, onSuccess }) 
             let editorImages: any[] = [];
 
             if (editorRef.current) {
-                const res = await editorRef.current.uploadPendingImages();
+                const res = await editorRef.current.uploadPendingImages('/notice');
                 finalContent = res.textValue;
                 finalDelta = res.delta;
-                editorImages = res.uploadedImages;
+                editorImages = res.uploadedImages || [];
             }
+
+            // Delta 내의 모든 이미지 URL 및 신규 업로드 URL을 imageUrls에 반영
+            const currentUrlsInEditor = extractImageUrlsFromDelta(finalDelta);
+            const uploadedUrls = editorImages
+                .map((img: any) => (typeof img === 'string' ? img : img.url))
+                .filter(Boolean);
+            const allImageUrls = Array.from(new Set([...currentUrlsInEditor, ...uploadedUrls])).map((url) => ({ url }));
 
             const formData = new FormData();
             formData.append('title', title);
             formData.append('content', finalContent);
             formData.append('delta', JSON.stringify(finalDelta));
-            formData.append('imageUrls', JSON.stringify(editorImages));
+            formData.append('imageUrls', JSON.stringify(allImageUrls));
             formData.append('createdUser', userInfo?.userName || '관리자');
             if (selectedClasses.length > 0) {
                 formData.append('classIds', JSON.stringify(selectedClasses));
@@ -156,6 +163,7 @@ const NoticeWriteView: React.FC<NoticeWriteViewProps> = ({ onBack, onSuccess }) 
                     <label className="font-bold">내용</label>
                     <CustomEditor
                         ref={editorRef}
+                        folder="/notice"
                         onChange={({ textValue, delta: newDelta }) => {
                             setContent(textValue);
                             setDelta(newDelta);
