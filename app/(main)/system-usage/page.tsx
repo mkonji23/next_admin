@@ -55,7 +55,24 @@ interface VercelUsage {
     plan?: string;
     projectCount?: number;
     deploymentCount?: number;
-    projects?: { id: string; name: string; updatedAt?: number }[];
+    latestDeployment?: {
+        id?: string;
+        name?: string;
+        url?: string;
+        created?: number;
+        state?: string;
+        target?: string;
+        branch?: string;
+        commitMessage?: string;
+    } | null;
+    projects?: {
+        id: string;
+        name: string;
+        updatedAt?: number;
+        latestDeploymentDate?: number | null;
+        latestDeploymentState?: string | null;
+        latestDeploymentUrl?: string | null;
+    }[];
     cdnRequests: number;
     bandwidthBytes: number;
     fastDataTransferMB: number;
@@ -421,7 +438,7 @@ const SystemUsagePage = () => {
                 icon="pi pi-cloud"
                 iconColor="var(--text-color, #000000)"
                 title="Vercel 사용량"
-                badge={vercelData && <Tag value={`${dayjs(vercelData.from).format('MM/DD')} ~ ${dayjs(vercelData.to).format('MM/DD')}`} severity="secondary" className="ml-1" />}
+                badge={vercelData && <Tag value={`${dayjs(vercelData.from).format('MM/DD')} ~ ${dayjs(vercelData.to).format('MM/DD')}`} severity="info" className="ml-1" />}
                 subTitle="Hobby 플랜 월간 한도 대비 (80% 이상 경고) · VERCEL_ACCESS_TOKEN 필요"
             />
 
@@ -430,15 +447,10 @@ const SystemUsagePage = () => {
                     {/* 프로젝트 및 배포 현황 요약 */}
                     <div className="col-12 md:col-6">
                         <div className="card mb-0 h-full">
-                            <div className="flex justify-content-between mb-3">
+                            <div className="flex justify-content-between mb-2">
                                 <div>
-                                    <span className="block text-500 font-medium mb-3">활성 프로젝트</span>
+                                    <span className="block text-500 font-medium mb-1">활성 프로젝트</span>
                                     <div className="text-900 font-medium text-xl">{vercelData.projectCount ?? 0}개 프로젝트</div>
-                                    <div className="flex flex-wrap gap-1 mt-2">
-                                        {vercelData.projects?.map((p) => (
-                                            <Tag key={p.id} value={p.name} severity="info" />
-                                        ))}
-                                    </div>
                                 </div>
                                 <div
                                     className="flex align-items-center justify-content-center border-round"
@@ -447,15 +459,40 @@ const SystemUsagePage = () => {
                                     <i className="pi pi-folder text-xl text-900" />
                                 </div>
                             </div>
+                            <div className="flex flex-column gap-2 mt-2 pt-2 border-top-1 surface-border">
+                                {vercelData.projects?.map((p) => (
+                                    <div key={p.id} className="flex align-items-center justify-content-between text-sm py-1">
+                                        <div className="flex align-items-center gap-2">
+                                            <Tag value={p.name} severity="info" />
+                                            {p.latestDeploymentState && (
+                                                <Tag
+                                                    value={p.latestDeploymentState}
+                                                    severity={
+                                                        p.latestDeploymentState === 'READY'
+                                                            ? 'success'
+                                                            : p.latestDeploymentState === 'ERROR'
+                                                            ? 'danger'
+                                                            : 'warning'
+                                                    }
+                                                />
+                                            )}
+                                        </div>
+                                        <span className="text-500 text-xs">
+                                            {p.latestDeploymentDate
+                                                ? dayjs(p.latestDeploymentDate).format('YYYY-MM-DD HH:mm')
+                                                : '-'}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
                     <div className="col-12 md:col-6">
                         <div className="card mb-0 h-full">
-                            <div className="flex justify-content-between mb-3">
+                            <div className="flex justify-content-between mb-2">
                                 <div>
-                                    <span className="block text-500 font-medium mb-3">최근 배포 이력</span>
+                                    <span className="block text-500 font-medium mb-1">최근 배포 이력</span>
                                     <div className="text-900 font-medium text-xl">{vercelData.deploymentCount ?? 0}회 배포 감지</div>
-                                    <span className="text-500 text-sm">일일 한도: 100회 / 일</span>
                                 </div>
                                 <div
                                     className="flex align-items-center justify-content-center border-round"
@@ -464,6 +501,50 @@ const SystemUsagePage = () => {
                                     <i className="pi pi-cloud-upload text-xl text-900" />
                                 </div>
                             </div>
+
+                            {vercelData.latestDeployment ? (
+                                <div className="mt-2 pt-2 border-top-1 surface-border text-sm">
+                                    <div className="flex align-items-center justify-content-between mb-2">
+                                        <span className="text-700 font-semibold flex align-items-center gap-1">
+                                            <i className="pi pi-clock text-xs text-primary" />
+                                            최근 배포:{' '}
+                                            {dayjs(vercelData.latestDeployment.created).format('YYYY-MM-DD HH:mm:ss')}
+                                        </span>
+                                        <Tag
+                                            value={vercelData.latestDeployment.state || 'READY'}
+                                            severity={
+                                                vercelData.latestDeployment.state === 'READY'
+                                                    ? 'success'
+                                                    : vercelData.latestDeployment.state === 'ERROR'
+                                                    ? 'danger'
+                                                    : 'warning'
+                                            }
+                                        />
+                                    </div>
+                                    <div className="text-500 text-xs flex flex-wrap align-items-center gap-2">
+                                        <span>
+                                            프로젝트: <b className="text-700">{vercelData.latestDeployment.name}</b>
+                                        </span>
+                                        {vercelData.latestDeployment.branch && (
+                                            <span>
+                                                브랜치: <b className="text-700">{vercelData.latestDeployment.branch}</b>
+                                            </span>
+                                        )}
+                                        {vercelData.latestDeployment.url && (
+                                            <a
+                                                href={`https://${vercelData.latestDeployment.url}`}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="text-primary hover:underline ml-auto"
+                                            >
+                                                도메인 열기 <i className="pi pi-external-link text-xs" />
+                                            </a>
+                                        )}
+                                    </div>
+                                </div>
+                            ) : (
+                                <span className="text-500 text-sm">일일 한도: 100회 / 일</span>
+                            )}
                         </div>
                     </div>
 

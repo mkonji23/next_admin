@@ -5,6 +5,7 @@ import Quill from 'quill';
 import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
 import { compressImage } from '@/util/imageResizer';
+import dayjs from 'dayjs';
 
 interface CustomEditorProps {
     value?: string;
@@ -185,14 +186,24 @@ export const CustomEditor = forwardRef<CustomEditorRef, CustomEditorProps>(
             const contents = quill.getContents();
             if (!contents.ops) return { textValue: quill.getText(), delta: contents, uploadedImages: [] };
 
-            // 1. base64 이미지 오퍼레이션 타겟 및 파일 수집
+            // 1. base64 이미지 오퍼레이션 타겟 및 파일 수집 (파일명에 날짜 및 시간 포함)
             const pendingTargets: { opIndex: number; rawFile: File }[] = [];
+            const targetDir = targetFolder || folder || '/';
+            const folderPrefix = targetDir.replace(/^\/+|\/+$/g, '') || 'image';
+            const dateStr = dayjs().format('YYYYMMDD_HHmmss');
 
             contents.ops.forEach((op, index) => {
                 if (op.insert && typeof op.insert === 'object' && (op.insert as any).image) {
                     const src = (op.insert as any).image;
                     if (typeof src === 'string' && src.startsWith('data:image/')) {
-                        const rawFile = dataURLtoFile(src, `editor_image_${Date.now()}_${index}.png`);
+                        const mimeMatch = src.match(/data:(image\/[a-zA-Z0-9]+);/);
+                        const mime = mimeMatch ? mimeMatch[1] : 'image/png';
+                        let ext = mime.replace('image/', '').toLowerCase();
+                        if (ext === 'jpeg') ext = 'jpg';
+                        if (!ext || ext === 'octet-stream') ext = 'png';
+
+                        const fileName = `${folderPrefix}_${dateStr}_${String(index + 1).padStart(2, '0')}.${ext}`;
+                        const rawFile = dataURLtoFile(src, fileName);
                         pendingTargets.push({ opIndex: index, rawFile });
                     }
                 }
