@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useMemo, useRef, useCallback, useContext } from 'react';
+import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { ColumnGroup } from 'primereact/columngroup';
@@ -9,8 +9,7 @@ import { Button } from 'primereact/button';
 import { InputText } from 'primereact/inputtext';
 import { Dropdown } from 'primereact/dropdown';
 import { Tag } from 'primereact/tag';
-import { FilterMatchMode, PrimeReactContext } from 'primereact/api';
-import { LayoutContext } from '@/layout/context/layoutcontext';
+import { FilterMatchMode } from 'primereact/api';
 import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
 import { StudentScoreRow } from '@/types/score';
@@ -149,20 +148,7 @@ ScoreCellInput.displayName = 'ScoreCellInput';
 const ScoreListPage = () => {
     const http = useHttp();
     const { showToast } = useToast();
-    const { layoutConfig, setLayoutConfig } = useContext(LayoutContext);
-    const { changeTheme } = useContext(PrimeReactContext);
     const fileInputRef = useRef<HTMLInputElement>(null);
-
-    // 테마 토글 (라이트 <-> 다크)
-    const toggleTheme = () => {
-        const isLight = layoutConfig?.colorScheme === 'light';
-        const newTheme = isLight ? 'lara-dark-indigo' : 'lara-light-indigo';
-        const newColorScheme = isLight ? 'dark' : 'light';
-
-        changeTheme?.(layoutConfig.theme, newTheme, 'theme-css', () => {
-            setLayoutConfig((prevState) => ({ ...prevState, theme: newTheme, colorScheme: newColorScheme }));
-        });
-    };
 
     // 기본 연도 2026년으로 설정
     const [selectedYear, setSelectedYear] = useState<number>(2026);
@@ -716,7 +702,7 @@ const ScoreListPage = () => {
                     {/* 상단 1행: 타이틀 및 액션 버튼들 */}
                     <div className="flex flex-column md:flex-row md:align-items-center md:justify-content-between gap-3 mb-2 pb-2 border-bottom-1 surface-border">
                         <div className="flex align-items-center gap-2">
-                            <span className="text-xl font-bold text-900">📊 성적 관리표</span>
+                            <span className="text-xl font-bold text-900">성적 관리표</span>
                             {modifiedCount > 0 && (
                                 <Tag severity="warning" value={`수정됨: ${modifiedCount}명`} className="ml-2 font-bold" />
                             )}
@@ -761,15 +747,6 @@ const ScoreListPage = () => {
                                 size="small"
                                 onClick={() => fetchScores(selectedYear, selectedGradeTab)}
                                 tooltip="새로고침"
-                            />
-                            <Button
-                                icon={layoutConfig?.colorScheme === 'light' ? 'pi pi-moon' : 'pi pi-sun'}
-                                severity="secondary"
-                                text
-                                size="small"
-                                onClick={toggleTheme}
-                                tooltip={layoutConfig?.colorScheme === 'light' ? '다크 모드로 전환' : '라이트 모드로 전환'}
-                                tooltipOptions={{ position: 'bottom' }}
                             />
                         </div>
                     </div>
