@@ -18,6 +18,7 @@ import StatsCardsRow from './StatsCardsRow';
 import ChartsRow from './ChartsRow';
 import DetailsTable from './DetailsTable';
 import ProfileSelectionDialog from './ProfileSelectionDialog';
+import StudyStopwatchCard from './StudyStopwatchCard';
 import useStudentAuthStore from '@/store/useStudentAuthStore';
 import { useRefreshStore } from '@/store/useRefreshStore';
 import { useCustomModal } from '@/hooks/useCustomModal';
@@ -820,6 +821,9 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                         </div>
                     </div>
                 </Card>
+
+                {/* ⏱️ 순공시간 스톱워치 위젯 */}
+                <StudyStopwatchCard studentId={finalStudentId} studentName={finalName} />
 
                 {/* 프로필 선택 다이얼로그 */}
                 <ProfileSelectionDialog

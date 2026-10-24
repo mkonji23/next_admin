@@ -8,12 +8,13 @@ import { Row } from 'primereact/row';
 import { Button } from 'primereact/button';
 import { InputText } from 'primereact/inputtext';
 import { Dropdown } from 'primereact/dropdown';
+import { Dialog } from 'primereact/dialog';
 import { Tag } from 'primereact/tag';
 import { FilterMatchMode } from 'primereact/api';
 import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
 import { StudentScoreRow } from '@/types/score';
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx-js-style';
 
 // 고3 제외 (고1, 고2, 전체만)
 const GRADE_TABS = [
@@ -22,17 +23,67 @@ const GRADE_TABS = [
     { label: '전체 학생', value: 'all' }
 ];
 
-const yearOptions = [
-    { label: '2026년', value: 2026 },
-    { label: '2025년', value: 2025 },
-    { label: '2024년', value: 2024 },
-    { label: '2023년', value: 2023 }
-];
+// 실제 연도 기반 동적 옵션 생성 (현재 연도 + 1년 ~ 과거 4년)
+const getCurrentYearOptions = (): { label: string; value: number }[] => {
+    const currentYear = new Date().getFullYear();
+    const options: { label: string; value: number }[] = [];
+    for (let y = currentYear + 1; y >= currentYear - 4; y--) {
+        options.push({ label: `${y}년`, value: y });
+    }
+    return options;
+};
 
 const TRACK_OPTIONS = [
     { label: '문과', value: '문과' },
     { label: '이과', value: '이과' }
 ];
+
+// 고2 선택과목 프리셋 옵션 (직접 입력도 지원)
+const ELECTIVE_SUBJECT_OPTIONS = [
+    // 과학탐구
+    { label: '물리학Ⅰ', value: '물리학Ⅰ' },
+    { label: '화학Ⅰ', value: '화학Ⅰ' },
+    { label: '생명과학Ⅰ', value: '생명과학Ⅰ' },
+    { label: '지구과학Ⅰ', value: '지구과학Ⅰ' },
+    { label: '물리학Ⅱ', value: '물리학Ⅱ' },
+    { label: '화학Ⅱ', value: '화학Ⅱ' },
+    { label: '생명과학Ⅱ', value: '생명과학Ⅱ' },
+    { label: '지구과학Ⅱ', value: '지구과학Ⅱ' },
+    // 사회탐구
+    { label: '생활과 윤리', value: '생활과 윤리' },
+    { label: '사회·문화', value: '사회·문화' },
+    { label: '한국지리', value: '한국지리' },
+    { label: '세계지리', value: '세계지리' },
+    { label: '윤리와 사상', value: '윤리와 사상' },
+    { label: '정치와 법', value: '정치와 법' },
+    { label: '경제', value: '경제' },
+    { label: '동아시아사', value: '동아시아사' },
+    { label: '세계사', value: '세계사' },
+    // 수학 / 기타
+    { label: '기하', value: '기하' },
+    { label: '인공지능 수학', value: '인공지능 수학' },
+    { label: '확률과 통계', value: '확률과 통계' },
+    { label: '정보', value: '정보' },
+    { label: '제2외국어', value: '제2외국어' },
+    { label: '한문Ⅰ', value: '한문Ⅰ' }
+];
+
+// 학생의 선택과목 정보를 추출하는 헬퍼 함수
+const getStudentElectives = (row: StudentScoreRow) => {
+    const fromScores = row.scores?.electiveSubjects;
+    if (fromScores) {
+        return {
+            elective1: fromScores.elective1 || '',
+            elective2: fromScores.elective2 || '',
+            elective3: fromScores.elective3 || ''
+        };
+    }
+    return {
+        elective1: row.scores?.['2-1-mid']?.elective1_name || row.scores?.['2-1-final']?.elective1_name || '',
+        elective2: row.scores?.['2-1-mid']?.elective2_name || row.scores?.['2-1-final']?.elective2_name || '',
+        elective3: row.scores?.['2-1-mid']?.elective3_name || row.scores?.['2-1-final']?.elective3_name || ''
+    };
+};
 
 // 🚀 [초고속 60fps 렌더링 최적화 & 다크모드 완벽 대응 셀 컴포넌트]
 interface ScoreCellInputProps {
@@ -40,6 +91,7 @@ interface ScoreCellInputProps {
     studentId: string;
     termKey: string;
     subjectKey: string;
+    subLabel?: string; // 선택과목명 등의 서브 라벨
     onCellChange: (studentId: string, termKey: string, subjectKey: string, val: string) => void;
 }
 
@@ -48,6 +100,7 @@ const ScoreCellInput = React.memo(({
     studentId,
     termKey,
     subjectKey,
+    subLabel,
     onCellChange
 }: ScoreCellInputProps) => {
     const [val, setVal] = useState<string>(
@@ -73,7 +126,7 @@ const ScoreCellInput = React.memo(({
     }, []);
 
     // ⚡ 1. 키 입력 즉시 로컬 state 갱신 (지연 시간 0ms, 60fps 유지)
-    // ⚡ 2. 300ms 디바운스로 부모 state 전파하여 900+개 전체 셀의 불필요한 연쇄 리렌더링 차단
+    // ⚡ 2. 300ms 디바운스로 부모 state 전파하여 전체 셀의 불필요한 연쇄 리렌더링 차단
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const nextVal = e.target.value;
         setVal(nextVal);
@@ -117,17 +170,26 @@ const ScoreCellInput = React.memo(({
     const isFilled = val !== '';
 
     return (
-        <div className="p-1 w-full flex justify-content-center">
+        <div className="p-1 w-full flex flex-column align-items-center justify-content-center">
+            {subLabel ? (
+                <span
+                    className="text-xs font-semibold text-600 text-center text-overflow-ellipsis overflow-hidden whitespace-nowrap mb-1"
+                    style={{ maxWidth: '85px', fontSize: '10.5px', lineHeight: '12px' }}
+                    title={subLabel}
+                >
+                    {subLabel}
+                </span>
+            ) : null}
             <input
                 type="text"
                 value={val}
+                placeholder={subLabel || ''}
                 className="p-inputtext p-inputtext-sm text-center w-full font-semibold"
                 style={{
                     height: '32px',
                     fontSize: '13px',
                     padding: '4px',
                     borderRadius: '4px',
-                    // 다크 모드 / 라이트 모드 CSS 변수 완벽 연동
                     backgroundColor: isFilled ? 'var(--highlight-bg, rgba(99, 102, 241, 0.12))' : 'var(--surface-card, #ffffff)',
                     color: 'var(--text-color, #1f2937)',
                     border: isFilled ? '1.5px solid var(--primary-color, #6366F1)' : '1px solid var(--surface-border, #ced4da)',
@@ -150,8 +212,9 @@ const ScoreListPage = () => {
     const { showToast } = useToast();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // 기본 연도 2026년으로 설정
-    const [selectedYear, setSelectedYear] = useState<number>(2026);
+    // 실제 시간 기반 동적 연도 옵션 생성 및 현재 연도 기본값 설정
+    const yearOptions = useMemo(() => getCurrentYearOptions(), []);
+    const [selectedYear, setSelectedYear] = useState<number>(() => new Date().getFullYear());
     const [selectedGradeTab, setSelectedGradeTab] = useState<string>('1');
     const [loading, setLoading] = useState<boolean>(false);
     const [saving, setSaving] = useState<boolean>(false);
@@ -160,6 +223,15 @@ const ScoreListPage = () => {
         global: { value: null, matchMode: FilterMatchMode.CONTAINS }
     });
     const [globalFilterValue, setGlobalFilterValue] = useState<string>('');
+
+    // 고2 선택과목 설정 모달 상태
+    const [electiveModalVisible, setElectiveModalVisible] = useState<boolean>(false);
+    const [currentElectiveStudent, setCurrentElectiveStudent] = useState<StudentScoreRow | null>(null);
+    const [tempElectives, setTempElectives] = useState<{ elective1: string; elective2: string; elective3: string }>({
+        elective1: '',
+        elective2: '',
+        elective3: ''
+    });
 
     // 데이터 조회 (연도, 학년 변경 시 학생 목록 및 성적 로드)
     const fetchScores = async (year = selectedYear, grade = selectedGradeTab) => {
@@ -207,7 +279,7 @@ const ScoreListPage = () => {
         setGlobalFilterValue(val);
     };
 
-    // 🚀 [핵심] 성적란 텍스트/숫자 자유 입력 핸들러 (scores: {} 상태여도 즉시 자동 생성)
+    // 🚀 성적란 텍스트/숫자 자유 입력 핸들러
     const handleScoreInputChange = useCallback((
         studentId: string,
         termKey: string,
@@ -253,6 +325,50 @@ const ScoreListPage = () => {
         );
     };
 
+    // 선택과목 설정 모달 열기
+    const handleOpenElectiveModal = (student: StudentScoreRow) => {
+        const current = getStudentElectives(student);
+        setCurrentElectiveStudent(student);
+        setTempElectives(current);
+        setElectiveModalVisible(true);
+    };
+
+    // 선택과목 설정 저장 핸들러
+    const handleSaveElectives = () => {
+        if (!currentElectiveStudent) return;
+        const studentId = currentElectiveStudent.studentId;
+
+        setScoreData((prev) =>
+            prev.map((row) => {
+                if (row.studentId !== studentId) return row;
+                const updatedScores = { ...(row.scores || {}) };
+                updatedScores.electiveSubjects = tempElectives;
+
+                // 각 학기 시험 객체에도 선택과목명 동기화
+                ['2-1-mid', '2-1-final', '2-1-overall', '2-2-mid', '2-2-final', '2-2-overall'].forEach((term) => {
+                    const termObj = { ...(updatedScores[term] || {}) };
+                    termObj.elective1_name = tempElectives.elective1;
+                    termObj.elective2_name = tempElectives.elective2;
+                    termObj.elective3_name = tempElectives.elective3;
+                    updatedScores[term] = termObj;
+                });
+
+                return {
+                    ...row,
+                    scores: updatedScores,
+                    isModified: true
+                };
+            })
+        );
+
+        setElectiveModalVisible(false);
+        showToast({
+            severity: 'info',
+            summary: '선택과목 반영',
+            detail: `${currentElectiveStudent.name} 학생의 선택과목이 적용되었습니다. 일괄 저장을 눌러 영구 저장하세요.`
+        });
+    };
+
     // 일괄 저장
     const handleSaveBatch = async () => {
         const modifiedRows = scoreData.filter((r) => r.isModified);
@@ -269,7 +385,9 @@ const ScoreListPage = () => {
 
                 Object.keys(sourceScores).forEach((term) => {
                     const termObj = sourceScores[term];
-                    if (termObj && typeof termObj === 'object') {
+                    if (term === 'electiveSubjects') {
+                        cleanedScores[term] = termObj;
+                    } else if (termObj && typeof termObj === 'object') {
                         cleanedScores[term] = {};
                         Object.keys(termObj).forEach((sub) => {
                             const rawVal = termObj[sub];
@@ -320,7 +438,7 @@ const ScoreListPage = () => {
         }
     };
 
-    // 엑셀 내보내기 (1-2 기말, 2-2 중간, 2-2 기말 포함)
+    // 엑셀 내보내기
     const exportToExcel = () => {
         if (scoreData.length === 0) {
             showToast({ severity: 'warn', summary: '내보내기 불가', detail: '내보낼 데이터가 없습니다.' });
@@ -378,6 +496,11 @@ const ScoreListPage = () => {
                 baseInfo['1-2기말_한국사'] = row.scores?.['1-2-final']?.history ?? '';
                 baseInfo['1-2기말_과학'] = row.scores?.['1-2-final']?.science ?? '';
             } else {
+                const electives = getStudentElectives(row);
+                baseInfo['선택1_과목'] = electives.elective1;
+                baseInfo['선택2_과목'] = electives.elective2;
+                baseInfo['선택3_과목'] = electives.elective3;
+
                 // 2-1 중간
                 baseInfo['2-1중간_수학'] = row.scores?.['2-1-mid']?.math ?? '';
                 baseInfo['2-1중간_국어'] = row.scores?.['2-1-mid']?.korean ?? '';
@@ -423,6 +546,84 @@ const ScoreListPage = () => {
         });
 
         const worksheet = XLSX.utils.json_to_sheet(excelRows);
+
+        // 1. 글자 길이에 맞춰 컬럼 너비(wch) 자동 계산 (한글 2바이트 고려)
+        const keys = Object.keys(excelRows[0] || {});
+        const getByteLength = (str: any) => {
+            const s = String(str ?? '');
+            let len = 0;
+            for (let i = 0; i < s.length; i++) {
+                len += s.charCodeAt(i) > 128 ? 2 : 1;
+            }
+            return len;
+        };
+
+        const colWidths = keys.map((key) => {
+            let maxLen = getByteLength(key);
+            for (const row of excelRows) {
+                const valLen = getByteLength(row[key]);
+                if (valLen > maxLen) {
+                    maxLen = valLen;
+                }
+            }
+            // 양옆 여백 3자 추가, 최소 너비 11
+            return { wch: Math.max(maxLen + 3, 11) };
+        });
+        worksheet['!cols'] = colWidths;
+
+        // 2. 헤더 및 데이터 셀 스타일 적용 (굵은 글씨, 테두리, 배경색, 가운데 정렬)
+        const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+        for (let col = range.s.c; col <= range.e.c; col++) {
+            // 헤더 셀 (Row 0)
+            const headerAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+            if (worksheet[headerAddress]) {
+                worksheet[headerAddress].s = {
+                    font: {
+                        name: '맑은 고딕',
+                        bold: true,
+                        sz: 11,
+                        color: { rgb: '111827' }
+                    },
+                    fill: {
+                        fgColor: { rgb: 'E5E7EB' } // 헤더 배경: 은은한 라이트 그레이
+                    },
+                    border: {
+                        top: { style: 'thin', color: { rgb: '9CA3AF' } },
+                        bottom: { style: 'medium', color: { rgb: '4B5563' } },
+                        left: { style: 'thin', color: { rgb: 'D1D5DB' } },
+                        right: { style: 'thin', color: { rgb: 'D1D5DB' } }
+                    },
+                    alignment: {
+                        horizontal: 'center',
+                        vertical: 'center'
+                    }
+                };
+            }
+
+            // 데이터 셀들 (Row 1 ~ 끝)
+            for (let row = range.s.r + 1; row <= range.e.r; row++) {
+                const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+                if (worksheet[cellAddress]) {
+                    worksheet[cellAddress].s = {
+                        font: {
+                            name: '맑은 고딕',
+                            sz: 10
+                        },
+                        border: {
+                            top: { style: 'thin', color: { rgb: 'E5E7EB' } },
+                            bottom: { style: 'thin', color: { rgb: 'E5E7EB' } },
+                            left: { style: 'thin', color: { rgb: 'E5E7EB' } },
+                            right: { style: 'thin', color: { rgb: 'E5E7EB' } }
+                        },
+                        alignment: {
+                            horizontal: 'center',
+                            vertical: 'center'
+                        }
+                    };
+                }
+            }
+        }
+
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Scores');
         XLSX.writeFile(
@@ -431,7 +632,7 @@ const ScoreListPage = () => {
         );
     };
 
-    // 엑셀 업로드 처리 (ArrayBuffer 최신 표준)
+    // 엑셀 업로드 처리
     const handleImportExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -450,6 +651,8 @@ const ScoreListPage = () => {
                     return;
                 }
 
+                const isGrade1 = selectedGradeTab === '1';
+
                 setScoreData((prev) => {
                     const next = [...prev];
                     importedData.forEach((item) => {
@@ -462,6 +665,16 @@ const ScoreListPage = () => {
                         if (targetIndex !== -1) {
                             const cur = next[targetIndex];
                             const scores = { ...cur.scores };
+
+                            // 선택과목 정보
+                            if (item['선택1_과목'] !== undefined || item['선택2_과목'] !== undefined || item['선택3_과목'] !== undefined) {
+                                const curElectives = scores.electiveSubjects || {};
+                                scores.electiveSubjects = {
+                                    elective1: item['선택1_과목'] !== undefined ? String(item['선택1_과목']) : curElectives.elective1 || '',
+                                    elective2: item['선택2_과목'] !== undefined ? String(item['선택2_과목']) : curElectives.elective2 || '',
+                                    elective3: item['선택3_과목'] !== undefined ? String(item['선택3_과목']) : curElectives.elective3 || ''
+                                };
+                            }
 
                             // 1-1 중간
                             if (item['1-1중간_수학'] !== undefined) {
@@ -523,6 +736,43 @@ const ScoreListPage = () => {
                                 };
                             }
 
+                            // 2-1 중간
+                            if (item['2-1중간_수학'] !== undefined) {
+                                scores['2-1-mid'] = {
+                                    ...scores['2-1-mid'],
+                                    math: item['2-1중간_수학'],
+                                    korean: item['2-1중간_국어'],
+                                    english: item['2-1중간_영어'],
+                                    elective1_score: item['2-1중간_선택1'],
+                                    elective2_score: item['2-1중간_선택2'],
+                                    elective3_score: item['2-1중간_선택3']
+                                };
+                            }
+                            // 2-1 기말
+                            if (item['2-1기말_수학'] !== undefined) {
+                                scores['2-1-final'] = {
+                                    ...scores['2-1-final'],
+                                    math: item['2-1기말_수학'],
+                                    korean: item['2-1기말_국어'],
+                                    english: item['2-1기말_영어'],
+                                    elective1_score: item['2-1기말_선택1'],
+                                    elective2_score: item['2-1기말_선택2'],
+                                    elective3_score: item['2-1기말_선택3']
+                                };
+                            }
+                            // 2-1 종합
+                            if (item['1학기종합_수학등급'] !== undefined && !isGrade1) {
+                                scores['2-1-overall'] = {
+                                    ...scores['2-1-overall'],
+                                    math: item['1학기종합_수학등급'],
+                                    korean: item['1학기종합_국어등급'],
+                                    english: item['1학기종합_영어등급'],
+                                    elective1_score: item['1학기종합_선택1등급'],
+                                    elective2_score: item['1학기종합_선택2등급'],
+                                    elective3_score: item['1학기종합_선택3등급']
+                                };
+                            }
+
                             // 2-2 중간
                             if (item['2-2중간_수학'] !== undefined) {
                                 scores['2-2-mid'] = {
@@ -578,6 +828,7 @@ const ScoreListPage = () => {
     const COL_WIDTH = {
         name: '240px',
         track: '105px',
+        electives: '190px',
         subject: '84px',
         elective: '95px'
     };
@@ -586,7 +837,7 @@ const ScoreListPage = () => {
     const headerGroupGrade1 = (
         <ColumnGroup>
             <Row>
-                <Column header="학생 정보 (이름 / 학년 / 학교)" rowSpan={2} frozen style={{ width: COL_WIDTH.name, minWidth: COL_WIDTH.name }} />
+                <Column header="학생 정보 (이름 / 학년 / 학교)" rowSpan={2} frozen style={{ width: COL_WIDTH.name, minWidth: COL_WIDTH.name, zIndex: 10 }} />
                 <Column header="계열" rowSpan={2} style={{ width: COL_WIDTH.track, minWidth: COL_WIDTH.track }} />
                 <Column header="1-1 중간" colSpan={6} />
                 <Column header="1-1 기말" colSpan={6} />
@@ -637,12 +888,13 @@ const ScoreListPage = () => {
         </ColumnGroup>
     );
 
-    // 2학년 다단 헤더 정의
+    // 2학년 다단 헤더 정의 (선택과목 컬럼 포함)
     const headerGroupGrade2 = (
         <ColumnGroup>
             <Row>
-                <Column header="학생 정보 (이름 / 학년 / 학교)" rowSpan={2} frozen style={{ width: COL_WIDTH.name, minWidth: COL_WIDTH.name }} />
+                <Column header="학생 정보 (이름 / 학년 / 학교)" rowSpan={2} frozen style={{ width: COL_WIDTH.name, minWidth: COL_WIDTH.name, zIndex: 10 }} />
                 <Column header="계열" rowSpan={2} style={{ width: COL_WIDTH.track, minWidth: COL_WIDTH.track }} />
+                <Column header="선택과목 (1·2·3)" rowSpan={2} style={{ width: COL_WIDTH.electives, minWidth: COL_WIDTH.electives }} />
                 <Column header="2-1 중간" colSpan={6} />
                 <Column header="2-1 기말" colSpan={6} />
                 <Column header="1학기 종합등급" colSpan={6} />
@@ -697,6 +949,34 @@ const ScoreListPage = () => {
 
     return (
         <div className="grid">
+            {/* 🚀 오른쪽 가로 스크롤 시 고정(frozen) 학생 정보 컬럼 뒤로 스크롤 요소들이 들어가도록 z-index 및 배경 스타일 보강 */}
+            <style>{`
+                .score-datatable .p-datatable-thead > tr > th.p-datatable-frozen-column {
+                    position: sticky !important;
+                    left: 0 !important;
+                    z-index: 10 !important;
+                    background-color: var(--surface-50, #f8fafc) !important;
+                }
+                .score-datatable .p-datatable-tbody > tr > td.p-datatable-frozen-column {
+                    position: sticky !important;
+                    left: 0 !important;
+                    z-index: 5 !important;
+                    background-color: var(--surface-card, #ffffff) !important;
+                    box-shadow: 2px 0 6px rgba(0, 0, 0, 0.06);
+                }
+                .score-datatable .p-datatable-tbody > tr > td:not(.p-datatable-frozen-column) {
+                    position: relative;
+                    z-index: 1 !important;
+                }
+                .score-datatable .p-datatable-tbody > tr > td:not(.p-datatable-frozen-column) .p-dropdown,
+                .score-datatable .p-datatable-tbody > tr > td:not(.p-datatable-frozen-column) .p-tag,
+                .score-datatable .p-datatable-tbody > tr > td:not(.p-datatable-frozen-column) .p-button,
+                .score-datatable .p-datatable-tbody > tr > td:not(.p-datatable-frozen-column) input {
+                    position: relative;
+                    z-index: 1 !important;
+                }
+            `}</style>
+
             <div className="col-12">
                 <div className="card shadow-2 p-3">
                     {/* 상단 1행: 타이틀 및 액션 버튼들 */}
@@ -742,45 +1022,45 @@ const ScoreListPage = () => {
                             />
                             <Button
                                 icon="pi pi-refresh"
+                                label="새로고침"
                                 severity="secondary"
-                                text
                                 size="small"
+                                outlined
                                 onClick={() => fetchScores(selectedYear, selectedGradeTab)}
-                                tooltip="새로고침"
                             />
                         </div>
                     </div>
 
-                    {/* 상단 2행: 라벨 달린 연도/학년 셀렉트박스 & 검색 필터 */}
+                    {/* 상단 2행: 넉넉한 고정 너비의 연도/학년 셀렉트박스 & 검색 필터 */}
                     <div className="flex flex-column md:flex-row md:align-items-center md:justify-content-between gap-3 mb-3 px-1">
                         <div className="flex flex-wrap align-items-center gap-3">
-                            {/* 연도 라벨 + Selectbox */}
-                            <div className="flex align-items-center gap-1">
+                            {/* 연도 라벨 + Selectbox (너비 135px로 넉넉하게 확장) */}
+                            <div className="flex align-items-center gap-2">
                                 <label className="font-bold text-sm text-700 whitespace-nowrap">연도:</label>
                                 <Dropdown
                                     value={selectedYear}
                                     options={yearOptions}
                                     onChange={(e) => setSelectedYear(e.value)}
                                     className="p-inputtext-sm font-semibold"
-                                    style={{ width: '120px' }}
+                                    style={{ width: '135px' }}
                                 />
                             </div>
 
-                            {/* 학년 라벨 + Selectbox (고3 제외) */}
-                            <div className="flex align-items-center gap-1">
+                            {/* 학년 라벨 + Selectbox (고3 제외, 너비 145px로 전체 텍스트 완벽 표시) */}
+                            <div className="flex align-items-center gap-2">
                                 <label className="font-bold text-sm text-700 whitespace-nowrap">학년:</label>
                                 <Dropdown
                                     value={selectedGradeTab}
                                     options={GRADE_TABS}
                                     onChange={(e) => setSelectedGradeTab(e.value)}
                                     className="p-inputtext-sm font-semibold"
-                                    style={{ width: '125px' }}
+                                    style={{ width: '145px' }}
                                     placeholder="학년 선택"
                                 />
                             </div>
 
-                            {/* 검색 라벨 + Input */}
-                            <div className="flex align-items-center gap-1">
+                            {/* 검색 라벨 + Input (너비 260px로 여유롭게 검색어/placeholder 노출) */}
+                            <div className="flex align-items-center gap-2">
                                 <label className="font-bold text-sm text-700 whitespace-nowrap">검색:</label>
                                 <span className="p-input-icon-left">
                                     <i className="pi pi-search text-500" />
@@ -789,7 +1069,7 @@ const ScoreListPage = () => {
                                         onChange={onGlobalFilterChange}
                                         placeholder="이름 또는 학교 검색..."
                                         className="p-inputtext-sm"
-                                        style={{ width: '210px' }}
+                                        style={{ width: '260px' }}
                                     />
                                 </span>
                             </div>
@@ -800,7 +1080,7 @@ const ScoreListPage = () => {
                         </div>
                     </div>
 
-                    {/* 성적 그리드 테이블: 모든 성적 셀에 항상 활성화된 InputText 제공 */}
+                    {/* 성적 그리드 테이블 */}
                     <div className="surface-card">
                         {isGrade1View ? (
                             <DataTable
@@ -816,13 +1096,13 @@ const ScoreListPage = () => {
                                 size="small"
                                 stripedRows
                                 showGridlines
-                                className="p-datatable-sm"
+                                className="p-datatable-sm score-datatable"
                             >
                                 {/* 고정 컬럼: 학생 정보 */}
                                 <Column
                                     field="name"
                                     frozen
-                                    style={{ width: COL_WIDTH.name, minWidth: COL_WIDTH.name }}
+                                    style={{ width: COL_WIDTH.name, minWidth: COL_WIDTH.name, zIndex: 5, backgroundColor: "var(--surface-card, #ffffff)" }}
                                     body={(row: StudentScoreRow) => (
                                         <div className="flex align-items-center justify-content-between gap-1 px-1 py-1">
                                             <div className="flex align-items-center flex-wrap gap-1">
@@ -920,7 +1200,7 @@ const ScoreListPage = () => {
                                 headerColumnGroup={headerGroupGrade2}
                                 scrollable
                                 scrollHeight="calc(100vh - 280px)"
-                                tableStyle={{ minWidth: '2800px' }}
+                                tableStyle={{ minWidth: '3000px' }}
                                 filters={filters}
                                 globalFilterFields={['name', 'school', 'grade', 'track']}
                                 loading={loading}
@@ -928,13 +1208,13 @@ const ScoreListPage = () => {
                                 size="small"
                                 stripedRows
                                 showGridlines
-                                className="p-datatable-sm"
+                                className="p-datatable-sm score-datatable"
                             >
                                 {/* 고정 컬럼: 학생 정보 */}
                                 <Column
                                     field="name"
                                     frozen
-                                    style={{ width: COL_WIDTH.name, minWidth: COL_WIDTH.name }}
+                                    style={{ width: COL_WIDTH.name, minWidth: COL_WIDTH.name, zIndex: 5, backgroundColor: "var(--surface-card, #ffffff)" }}
                                     body={(row: StudentScoreRow) => (
                                         <div className="flex align-items-center justify-content-between gap-1 px-1 py-1">
                                             <div className="flex align-items-center flex-wrap gap-1">
@@ -979,65 +1259,191 @@ const ScoreListPage = () => {
                                 {/* 계열: 2학년 문과/이과 드롭다운 */}
                                 <Column
                                     field="track"
-                                    style={{ width: COL_WIDTH.track, minWidth: COL_WIDTH.track }}
+                                    style={{ width: COL_WIDTH.track, minWidth: COL_WIDTH.track, zIndex: 1 }}
                                     body={(row: StudentScoreRow) => (
-                                        <div className="p-1 flex justify-content-center">
+                                        <div className="p-1 flex justify-content-center" style={{ position: "relative", zIndex: 1 }}>
                                             <Dropdown
                                                 value={row.track || '문과'}
                                                 options={TRACK_OPTIONS}
                                                 onChange={(e) => handleTrackChange(row.studentId, e.value)}
                                                 className="p-inputtext-sm w-full font-medium"
                                                 style={{ height: '32px', fontSize: '12px' }}
+                                                valueTemplate={(option) => {
+                                                    const label = option ? option.label : (row.track || '문과');
+                                                    return (
+                                                        <span
+                                                            className="flex align-items-center justify-content-center w-full"
+                                                            style={{ transform: 'translateY(-2px)' }}
+                                                        >
+                                                            {label}
+                                                        </span>
+                                                    );
+                                                }}
+                                                pt={{
+                                                    input: {
+                                                        style: {
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            paddingTop: '0',
+                                                            paddingBottom: '0',
+                                                            height: '100%'
+                                                        }
+                                                    }
+                                                }}
                                                 placeholder="계열"
                                             />
                                         </div>
                                     )}
                                 />
 
+                                {/* 선택과목 컬럼: 학생별 선택1, 선택2, 선택3 과목 확인 및 변경 */}
+                                <Column
+                                    header="선택과목"
+                                    style={{ width: COL_WIDTH.electives, minWidth: COL_WIDTH.electives, zIndex: 1 }}
+                                    body={(row: StudentScoreRow) => {
+                                        const electives = getStudentElectives(row);
+                                        const hasAny = electives.elective1 || electives.elective2 || electives.elective3;
+                                        return (
+                                            <div
+                                                className="flex flex-column gap-1 p-1 cursor-pointer hover:surface-100 border-round transition-duration-150"
+                                                onClick={() => handleOpenElectiveModal(row)}
+                                                title="클릭하여 학생의 선택1, 2, 3 과목 설정"
+                                            >
+                                                {hasAny ? (
+                                                    <div className="flex flex-column gap-1">
+                                                        {electives.elective1 && (
+                                                            <Tag severity="info" value={`1: ${electives.elective1}`} className="text-overflow-ellipsis overflow-hidden" style={{ fontSize: '10px', padding: '1px 5px', height: '18px', textAlign: 'left' }} />
+                                                        )}
+                                                        {electives.elective2 && (
+                                                            <Tag severity="success" value={`2: ${electives.elective2}`} className="text-overflow-ellipsis overflow-hidden" style={{ fontSize: '10px', padding: '1px 5px', height: '18px', textAlign: 'left' }} />
+                                                        )}
+                                                        {electives.elective3 && (
+                                                            <Tag severity="warning" value={`3: ${electives.elective3}`} className="text-overflow-ellipsis overflow-hidden" style={{ fontSize: '10px', padding: '1px 5px', height: '18px', textAlign: 'left' }} />
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <Button
+                                                        label="과목 설정"
+                                                        icon="pi pi-pencil"
+                                                        size="small"
+                                                        outlined
+                                                        className="p-button-xs w-full"
+                                                        style={{ height: '28px', fontSize: '11px' }}
+                                                    />
+                                                )}
+                                            </div>
+                                        );
+                                    }}
+                                />
+
                                 {/* 2-1 중간 */}
                                 <Column field="scores.2-1-mid.math" style={{ width: COL_WIDTH.subject, minWidth: COL_WIDTH.subject }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-1-mid']?.math} studentId={row.studentId} termKey="2-1-mid" subjectKey="math" onCellChange={handleScoreInputChange} />} />
                                 <Column field="scores.2-1-mid.korean" style={{ width: COL_WIDTH.subject, minWidth: COL_WIDTH.subject }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-1-mid']?.korean} studentId={row.studentId} termKey="2-1-mid" subjectKey="korean" onCellChange={handleScoreInputChange} />} />
                                 <Column field="scores.2-1-mid.english" style={{ width: COL_WIDTH.subject, minWidth: COL_WIDTH.subject }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-1-mid']?.english} studentId={row.studentId} termKey="2-1-mid" subjectKey="english" onCellChange={handleScoreInputChange} />} />
-                                <Column field="scores.2-1-mid.elective1_score" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-1-mid']?.elective1_score} studentId={row.studentId} termKey="2-1-mid" subjectKey="elective1_score" onCellChange={handleScoreInputChange} />} />
-                                <Column field="scores.2-1-mid.elective2_score" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-1-mid']?.elective2_score} studentId={row.studentId} termKey="2-1-mid" subjectKey="elective2_score" onCellChange={handleScoreInputChange} />} />
-                                <Column field="scores.2-1-mid.elective3_score" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-1-mid']?.elective3_score} studentId={row.studentId} termKey="2-1-mid" subjectKey="elective3_score" onCellChange={handleScoreInputChange} />} />
+                                <Column field="scores.2-1-mid.elective1_score" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-1-mid']?.elective1_score} studentId={row.studentId} termKey="2-1-mid" subjectKey="elective1_score" subLabel={getStudentElectives(row).elective1} onCellChange={handleScoreInputChange} />} />
+                                <Column field="scores.2-1-mid.elective2_score" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-1-mid']?.elective2_score} studentId={row.studentId} termKey="2-1-mid" subjectKey="elective2_score" subLabel={getStudentElectives(row).elective2} onCellChange={handleScoreInputChange} />} />
+                                <Column field="scores.2-1-mid.elective3_score" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-1-mid']?.elective3_score} studentId={row.studentId} termKey="2-1-mid" subjectKey="elective3_score" subLabel={getStudentElectives(row).elective3} onCellChange={handleScoreInputChange} />} />
 
                                 {/* 2-1 기말 */}
                                 <Column field="scores.2-1-final.math" style={{ width: COL_WIDTH.subject, minWidth: COL_WIDTH.subject }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-1-final']?.math} studentId={row.studentId} termKey="2-1-final" subjectKey="math" onCellChange={handleScoreInputChange} />} />
                                 <Column field="scores.2-1-final.korean" style={{ width: COL_WIDTH.subject, minWidth: COL_WIDTH.subject }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-1-final']?.korean} studentId={row.studentId} termKey="2-1-final" subjectKey="korean" onCellChange={handleScoreInputChange} />} />
                                 <Column field="scores.2-1-final.english" style={{ width: COL_WIDTH.subject, minWidth: COL_WIDTH.subject }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-1-final']?.english} studentId={row.studentId} termKey="2-1-final" subjectKey="english" onCellChange={handleScoreInputChange} />} />
-                                <Column field="scores.2-1-final.elective1_score" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-1-final']?.elective1_score} studentId={row.studentId} termKey="2-1-final" subjectKey="elective1_score" onCellChange={handleScoreInputChange} />} />
-                                <Column field="scores.2-1-final.elective2_score" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-1-final']?.elective2_score} studentId={row.studentId} termKey="2-1-final" subjectKey="elective2_score" onCellChange={handleScoreInputChange} />} />
-                                <Column field="scores.2-1-final.elective3_score" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-1-final']?.elective3_score} studentId={row.studentId} termKey="2-1-final" subjectKey="elective3_score" onCellChange={handleScoreInputChange} />} />
+                                <Column field="scores.2-1-final.elective1_score" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-1-final']?.elective1_score} studentId={row.studentId} termKey="2-1-final" subjectKey="elective1_score" subLabel={getStudentElectives(row).elective1} onCellChange={handleScoreInputChange} />} />
+                                <Column field="scores.2-1-final.elective2_score" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-1-final']?.elective2_score} studentId={row.studentId} termKey="2-1-final" subjectKey="elective2_score" subLabel={getStudentElectives(row).elective2} onCellChange={handleScoreInputChange} />} />
+                                <Column field="scores.2-1-final.elective3_score" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-1-final']?.elective3_score} studentId={row.studentId} termKey="2-1-final" subjectKey="elective3_score" subLabel={getStudentElectives(row).elective3} onCellChange={handleScoreInputChange} />} />
 
                                 {/* 1학기 종합등급 */}
                                 <Column field="scores.2-1-overall.math" style={{ width: COL_WIDTH.subject, minWidth: COL_WIDTH.subject }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-1-overall']?.math} studentId={row.studentId} termKey="2-1-overall" subjectKey="math" onCellChange={handleScoreInputChange} />} />
                                 <Column field="scores.2-1-overall.korean" style={{ width: COL_WIDTH.subject, minWidth: COL_WIDTH.subject }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-1-overall']?.korean} studentId={row.studentId} termKey="2-1-overall" subjectKey="korean" onCellChange={handleScoreInputChange} />} />
                                 <Column field="scores.2-1-overall.english" style={{ width: COL_WIDTH.subject, minWidth: COL_WIDTH.subject }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-1-overall']?.english} studentId={row.studentId} termKey="2-1-overall" subjectKey="english" onCellChange={handleScoreInputChange} />} />
-                                <Column field="scores.2-1-overall.elective1_score" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-1-overall']?.elective1_score} studentId={row.studentId} termKey="2-1-overall" subjectKey="elective1_score" onCellChange={handleScoreInputChange} />} />
-                                <Column field="scores.2-1-overall.elective2_score" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-1-overall']?.elective2_score} studentId={row.studentId} termKey="2-1-overall" subjectKey="elective2_score" onCellChange={handleScoreInputChange} />} />
-                                <Column field="scores.2-1-overall.elective3_score" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-1-overall']?.elective3_score} studentId={row.studentId} termKey="2-1-overall" subjectKey="elective3_score" onCellChange={handleScoreInputChange} />} />
+                                <Column field="scores.2-1-overall.elective1_score" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-1-overall']?.elective1_score} studentId={row.studentId} termKey="2-1-overall" subjectKey="elective1_score" subLabel={getStudentElectives(row).elective1} onCellChange={handleScoreInputChange} />} />
+                                <Column field="scores.2-1-overall.elective2_score" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-1-overall']?.elective2_score} studentId={row.studentId} termKey="2-1-overall" subjectKey="elective2_score" subLabel={getStudentElectives(row).elective2} onCellChange={handleScoreInputChange} />} />
+                                <Column field="scores.2-1-overall.elective3_score" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-1-overall']?.elective3_score} studentId={row.studentId} termKey="2-1-overall" subjectKey="elective3_score" subLabel={getStudentElectives(row).elective3} onCellChange={handleScoreInputChange} />} />
 
                                 {/* 2-2 중간 */}
                                 <Column field="scores.2-2-mid.math" style={{ width: COL_WIDTH.subject, minWidth: COL_WIDTH.subject }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-2-mid']?.math} studentId={row.studentId} termKey="2-2-mid" subjectKey="math" onCellChange={handleScoreInputChange} />} />
                                 <Column field="scores.2-2-mid.korean" style={{ width: COL_WIDTH.subject, minWidth: COL_WIDTH.subject }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-2-mid']?.korean} studentId={row.studentId} termKey="2-2-mid" subjectKey="korean" onCellChange={handleScoreInputChange} />} />
                                 <Column field="scores.2-2-mid.english" style={{ width: COL_WIDTH.subject, minWidth: COL_WIDTH.subject }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-2-mid']?.english} studentId={row.studentId} termKey="2-2-mid" subjectKey="english" onCellChange={handleScoreInputChange} />} />
-                                <Column field="scores.2-2-mid.elective1_score" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-2-mid']?.elective1_score} studentId={row.studentId} termKey="2-2-mid" subjectKey="elective1_score" onCellChange={handleScoreInputChange} />} />
-                                <Column field="scores.2-2-mid.elective2_score" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-2-mid']?.elective2_score} studentId={row.studentId} termKey="2-2-mid" subjectKey="elective2_score" onCellChange={handleScoreInputChange} />} />
-                                <Column field="scores.2-2-mid.elective3_score" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-2-mid']?.elective3_score} studentId={row.studentId} termKey="2-2-mid" subjectKey="elective3_score" onCellChange={handleScoreInputChange} />} />
+                                <Column field="scores.2-2-mid.elective1_score" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-2-mid']?.elective1_score} studentId={row.studentId} termKey="2-2-mid" subjectKey="elective1_score" subLabel={getStudentElectives(row).elective1} onCellChange={handleScoreInputChange} />} />
+                                <Column field="scores.2-2-mid.elective2_score" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-2-mid']?.elective2_score} studentId={row.studentId} termKey="2-2-mid" subjectKey="elective2_score" subLabel={getStudentElectives(row).elective2} onCellChange={handleScoreInputChange} />} />
+                                <Column field="scores.2-2-mid.elective3_score" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-2-mid']?.elective3_score} studentId={row.studentId} termKey="2-2-mid" subjectKey="elective3_score" subLabel={getStudentElectives(row).elective3} onCellChange={handleScoreInputChange} />} />
 
                                 {/* 2-2 기말 */}
                                 <Column field="scores.2-2-final.math" style={{ width: COL_WIDTH.subject, minWidth: COL_WIDTH.subject }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-2-final']?.math} studentId={row.studentId} termKey="2-2-final" subjectKey="math" onCellChange={handleScoreInputChange} />} />
                                 <Column field="scores.2-2-final.korean" style={{ width: COL_WIDTH.subject, minWidth: COL_WIDTH.subject }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-2-final']?.korean} studentId={row.studentId} termKey="2-2-final" subjectKey="korean" onCellChange={handleScoreInputChange} />} />
                                 <Column field="scores.2-2-final.english" style={{ width: COL_WIDTH.subject, minWidth: COL_WIDTH.subject }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-2-final']?.english} studentId={row.studentId} termKey="2-2-final" subjectKey="english" onCellChange={handleScoreInputChange} />} />
-                                <Column field="scores.2-2-final.elective1_score" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-2-final']?.elective1_score} studentId={row.studentId} termKey="2-2-final" subjectKey="elective1_score" onCellChange={handleScoreInputChange} />} />
-                                <Column field="scores.2-2-final.elective2_score" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-2-final']?.elective2_score} studentId={row.studentId} termKey="2-2-final" subjectKey="elective2_score" onCellChange={handleScoreInputChange} />} />
-                                <Column field="scores.2-2-final.elective3_score" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-2-final']?.elective3_score} studentId={row.studentId} termKey="2-2-final" subjectKey="elective3_score" onCellChange={handleScoreInputChange} />} />
+                                <Column field="scores.2-2-final.elective1_score" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-2-final']?.elective1_score} studentId={row.studentId} termKey="2-2-final" subjectKey="elective1_score" subLabel={getStudentElectives(row).elective1} onCellChange={handleScoreInputChange} />} />
+                                <Column field="scores.2-2-final.elective2_score" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-2-final']?.elective2_score} studentId={row.studentId} termKey="2-2-final" subjectKey="elective2_score" subLabel={getStudentElectives(row).elective2} onCellChange={handleScoreInputChange} />} />
+                                <Column field="scores.2-2-final.elective3_score" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-2-final']?.elective3_score} studentId={row.studentId} termKey="2-2-final" subjectKey="elective3_score" subLabel={getStudentElectives(row).elective3} onCellChange={handleScoreInputChange} />} />
                             </DataTable>
                         )}
                     </div>
                 </div>
             </div>
+
+            {/* 고2 학생별 선택과목 설정 대화상자 */}
+            <Dialog
+                visible={electiveModalVisible}
+                onHide={() => setElectiveModalVisible(false)}
+                header="고2 선택과목 설정"
+                style={{ width: '440px' }}
+                modal
+                footer={
+                    <div className="flex justify-content-end gap-2">
+                        <Button label="취소" severity="secondary" text size="small" onClick={() => setElectiveModalVisible(false)} />
+                        <Button label="적용하기" icon="pi pi-check" size="small" onClick={handleSaveElectives} />
+                    </div>
+                }
+            >
+                {currentElectiveStudent && (
+                    <div className="flex flex-column gap-3 pt-2">
+                        <div className="surface-100 p-2 border-round text-sm">
+                            <span className="font-bold text-900">{currentElectiveStudent.name}</span>
+                            <span className="text-600 ml-2">({currentElectiveStudent.school} / {currentElectiveStudent.track || '계열 미지정'})</span>
+                        </div>
+
+                        <div className="flex flex-column gap-1">
+                            <label className="text-xs font-bold text-700">선택과목 1</label>
+                            <Dropdown
+                                value={tempElectives.elective1}
+                                options={ELECTIVE_SUBJECT_OPTIONS}
+                                onChange={(e) => setTempElectives((prev) => ({ ...prev, elective1: e.value }))}
+                                editable
+                                placeholder="과목 선택 또는 직접 입력"
+                                className="p-inputtext-sm w-full"
+                            />
+                        </div>
+
+                        <div className="flex flex-column gap-1">
+                            <label className="text-xs font-bold text-700">선택과목 2</label>
+                            <Dropdown
+                                value={tempElectives.elective2}
+                                options={ELECTIVE_SUBJECT_OPTIONS}
+                                onChange={(e) => setTempElectives((prev) => ({ ...prev, elective2: e.value }))}
+                                editable
+                                placeholder="과목 선택 또는 직접 입력"
+                                className="p-inputtext-sm w-full"
+                            />
+                        </div>
+
+                        <div className="flex flex-column gap-1">
+                            <label className="text-xs font-bold text-700">선택과목 3</label>
+                            <Dropdown
+                                value={tempElectives.elective3}
+                                options={ELECTIVE_SUBJECT_OPTIONS}
+                                onChange={(e) => setTempElectives((prev) => ({ ...prev, elective3: e.value }))}
+                                editable
+                                placeholder="과목 선택 또는 직접 입력"
+                                className="p-inputtext-sm w-full"
+                            />
+                        </div>
+                        <p className="text-xs text-500 m-0">
+                            * 과목을 드롭다운에서 선택하거나 직접 입력할 수 있습니다.<br />
+                            * 적용 후 상단의 <strong>[일괄 저장]</strong> 버튼을 누르면 DB에 영구 저장됩니다.
+                        </p>
+                    </div>
+                )}
+            </Dialog>
         </div>
     );
 };
