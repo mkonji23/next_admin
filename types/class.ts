@@ -2,7 +2,9 @@ import { Student as StudentData } from '@/components/modals/StudentModal';
 
 export interface Student {
     studentId?: string;
+    userId?: string;
     name?: string;
+    userName?: string;
     grade?: string;
     school?: string;
     phoneNumber?: string;
@@ -22,4 +24,5 @@ export interface Class {
     startDate?: string;
     endDate?: string;
     isClosed?: boolean;
+    status?: '개강전' | '진행중' | '종강' | string;
 }

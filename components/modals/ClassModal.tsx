@@ -6,6 +6,7 @@ import { Calendar } from 'primereact/calendar';
 import { Checkbox } from 'primereact/checkbox';
 import { Button } from 'primereact/button';
 import { Chip } from 'primereact/chip';
+import { Tag } from 'primereact/tag';
 import { useState, useEffect } from 'react';
 import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
@@ -37,7 +38,8 @@ const ClassModal = ({ visible, pData, onClose }: ClassModalProps) => {
         description: '',
         startDate: '',
         endDate: '',
-        isClosed: false
+        isClosed: false,
+        status: '개강전'
     });
     const [startDateValue, setStartDateValue] = useState<Date | null>(null);
     const [endDateValue, setEndDateValue] = useState<Date | null>(null);
@@ -67,6 +69,21 @@ const ClassModal = ({ visible, pData, onClose }: ClassModalProps) => {
                 setClassData({ ...initialClass });
                 setStartDateValue(parseDate(initialClass.startDate));
                 setEndDateValue(parseDate(initialClass.endDate));
+            } else if (mode === 'new' && initialClass) {
+                // 이전 클래스(종강 클래스 등) 정보 및 학생 데이터 승계하여 신규 생성
+                setClassData({
+                    classId: '',
+                    className: initialClass.className || '',
+                    teacher: initialClass.teacher || '',
+                    students: initialClass.students ? [...initialClass.students] : [],
+                    description: initialClass.description || '',
+                    startDate: '',
+                    endDate: '',
+                    isClosed: false,
+                    status: '개강전'
+                });
+                setStartDateValue(null);
+                setEndDateValue(null);
             } else {
                 setClassData({
                     classId: '',
@@ -76,7 +93,8 @@ const ClassModal = ({ visible, pData, onClose }: ClassModalProps) => {
                     description: '',
                     startDate: '',
                     endDate: '',
-                    isClosed: false
+                    isClosed: false,
+                    status: '개강전'
                 });
                 setStartDateValue(null);
                 setEndDateValue(null);
@@ -109,7 +127,11 @@ const ClassModal = ({ visible, pData, onClose }: ClassModalProps) => {
     };
 
     const isEditMode = mode === 'edit';
-    const header = isEditMode ? '클래스 수정' : '클래스 등록';
+    const header = isEditMode
+        ? '클래스 수정'
+        : initialClass
+        ? '새 수업 클래스 등록 (이전 클래스 정보 승계)'
+        : '클래스 등록';
     const saveButtonLabel = isEditMode ? '저장' : '등록';
 
     const handleSave = async () => {
@@ -133,7 +155,8 @@ const ClassModal = ({ visible, pData, onClose }: ClassModalProps) => {
                     description: classData.description,
                     startDate: formattedStartDate,
                     endDate: formattedEndDate,
-                    isClosed: classData.isClosed || false
+                    isClosed: false,
+                    status: '개강전'
                 };
                 await http.post('/choiMath/class', payload);
                 showToast({ severity: 'success', summary: '등록 성공', detail: '클래스 등록에 성공했습니다.' });
@@ -146,7 +169,12 @@ const ClassModal = ({ visible, pData, onClose }: ClassModalProps) => {
                     description: classData.description,
                     startDate: formattedStartDate,
                     endDate: formattedEndDate,
-                    isClosed: classData.isClosed || false
+                    isClosed: classData.isClosed || false,
+                    status: classData.isClosed
+                        ? '종강'
+                        : formattedStartDate
+                        ? '진행중'
+                        : '개강전'
                 };
                 await http.post('/choiMath/class/update', payload);
                 showToast({ severity: 'success', summary: '수정 성공', detail: '클래스 정보가 수정되었습니다.' });
@@ -278,18 +306,28 @@ const ClassModal = ({ visible, pData, onClose }: ClassModalProps) => {
                     appendTo={'self'}
                 />
             </div>
-            <div className="field">
-                <div className="flex align-items-center">
-                    <Checkbox
-                        inputId="isClosed"
-                        checked={classData.isClosed || false}
-                        onChange={(e) => setClassData({ ...classData, isClosed: e.checked ?? false })}
-                    />
-                    <label htmlFor="isClosed" className="ml-2">
-                        종강 여부
-                    </label>
+            {isEditMode ? (
+                <div className="field">
+                    <div className="flex align-items-center">
+                        <Checkbox
+                            inputId="isClosed"
+                            checked={classData.isClosed || false}
+                            onChange={(e) => setClassData({ ...classData, isClosed: e.checked ?? false })}
+                        />
+                        <label htmlFor="isClosed" className="ml-2">
+                            종강 여부
+                        </label>
+                    </div>
                 </div>
-            </div>
+            ) : (
+                <div className="field">
+                    <label>상태</label>
+                    <div className="flex align-items-center gap-2 mt-1">
+                        <Tag severity="warning" value="개강전" />
+                        <span className="text-500 text-sm">신규 클래스는 개강전 상태로 등록됩니다.</span>
+                    </div>
+                </div>
+            )}
         </Dialog>
     );
 };

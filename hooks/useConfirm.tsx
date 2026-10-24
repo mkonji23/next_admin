@@ -9,6 +9,7 @@ type ShowConfirmParams = {
     icon?: string;
     acceptLabel?: string;
     rejectLabel?: string;
+    acceptClassName?: string;
 };
 
 type ConfirmContextType = {
@@ -24,7 +25,7 @@ export const ConfirmProvider = ({ children }: { children: ReactNode }) => {
                 message: params.message,
                 header: params.header,
                 icon: params.icon || 'pi pi-exclamation-triangle',
-                acceptClassName: 'p-button-danger',
+                acceptClassName: params.acceptClassName || 'p-button-danger',
                 acceptLabel: params.acceptLabel || '확인',
                 rejectLabel: params.rejectLabel || '취소',
                 accept: () => resolve(true),

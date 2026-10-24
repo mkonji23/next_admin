@@ -495,6 +495,13 @@ const ScoreListPage = () => {
                 baseInfo['1-2기말_사회'] = row.scores?.['1-2-final']?.society ?? '';
                 baseInfo['1-2기말_한국사'] = row.scores?.['1-2-final']?.history ?? '';
                 baseInfo['1-2기말_과학'] = row.scores?.['1-2-final']?.science ?? '';
+
+                // 2학기 종합등급
+                baseInfo['2학기종합_수학등급'] = row.scores?.['1-2-overall']?.math ?? '';
+                baseInfo['2학기종합_국어등급'] = row.scores?.['1-2-overall']?.korean ?? '';
+                baseInfo['2학기종합_영어등급'] = row.scores?.['1-2-overall']?.english ?? '';
+                baseInfo['2학기종합_사회등급'] = row.scores?.['1-2-overall']?.society ?? '';
+                baseInfo['2학기종합_과학등급'] = row.scores?.['1-2-overall']?.science ?? '';
             } else {
                 const electives = getStudentElectives(row);
                 baseInfo['선택1_과목'] = electives.elective1;
@@ -540,6 +547,14 @@ const ScoreListPage = () => {
                 baseInfo['2-2기말_선택1'] = row.scores?.['2-2-final']?.elective1_score ?? '';
                 baseInfo['2-2기말_선택2'] = row.scores?.['2-2-final']?.elective2_score ?? '';
                 baseInfo['2-2기말_선택3'] = row.scores?.['2-2-final']?.elective3_score ?? '';
+
+                // 2학기 종합등급
+                baseInfo['2학기종합_수학등급'] = row.scores?.['2-2-overall']?.math ?? '';
+                baseInfo['2학기종합_국어등급'] = row.scores?.['2-2-overall']?.korean ?? '';
+                baseInfo['2학기종합_영어등급'] = row.scores?.['2-2-overall']?.english ?? '';
+                baseInfo['2학기종합_선택1등급'] = row.scores?.['2-2-overall']?.elective1_score ?? '';
+                baseInfo['2학기종합_선택2등급'] = row.scores?.['2-2-overall']?.elective2_score ?? '';
+                baseInfo['2학기종합_선택3등급'] = row.scores?.['2-2-overall']?.elective3_score ?? '';
             }
 
             return baseInfo;
@@ -735,6 +750,17 @@ const ScoreListPage = () => {
                                     science: item['1-2기말_과학']
                                 };
                             }
+                            // 2학기 종합 (1학년)
+                            if (item['2학기종합_수학등급'] !== undefined && isGrade1) {
+                                scores['1-2-overall'] = {
+                                    ...scores['1-2-overall'],
+                                    math: item['2학기종합_수학등급'],
+                                    korean: item['2학기종합_국어등급'],
+                                    english: item['2학기종합_영어등급'],
+                                    society: item['2학기종합_사회등급'],
+                                    science: item['2학기종합_과학등급']
+                                };
+                            }
 
                             // 2-1 중간
                             if (item['2-1중간_수학'] !== undefined) {
@@ -797,6 +823,18 @@ const ScoreListPage = () => {
                                     elective3_score: item['2-2기말_선택3']
                                 };
                             }
+                            // 2학기 종합 (2학년)
+                            if (item['2학기종합_수학등급'] !== undefined && !isGrade1) {
+                                scores['2-2-overall'] = {
+                                    ...scores['2-2-overall'],
+                                    math: item['2학기종합_수학등급'],
+                                    korean: item['2학기종합_국어등급'],
+                                    english: item['2학기종합_영어등급'],
+                                    elective1_score: item['2학기종합_선택1등급'],
+                                    elective2_score: item['2학기종합_선택2등급'],
+                                    elective3_score: item['2학기종합_선택3등급']
+                                };
+                            }
 
                             next[targetIndex] = {
                                 ...cur,
@@ -837,13 +875,14 @@ const ScoreListPage = () => {
     const headerGroupGrade1 = (
         <ColumnGroup>
             <Row>
-                <Column header="학생 정보 (이름 / 학년 / 학교)" rowSpan={2} frozen style={{ width: COL_WIDTH.name, minWidth: COL_WIDTH.name, zIndex: 10 }} />
-                <Column header="계열" rowSpan={2} style={{ width: COL_WIDTH.track, minWidth: COL_WIDTH.track }} />
+                <Column header="학생 정보 (이름 / 학년 / 학교)" rowSpan={2} frozen style={{ width: COL_WIDTH.name, minWidth: COL_WIDTH.name, zIndex: 30 }} />
+                <Column header="계열" rowSpan={2} frozen style={{ width: COL_WIDTH.track, minWidth: COL_WIDTH.track, zIndex: 30, left: COL_WIDTH.name }} />
                 <Column header="1-1 중간" colSpan={6} />
                 <Column header="1-1 기말" colSpan={6} />
                 <Column header="1학기 종합등급" colSpan={5} />
                 <Column header="1-2 중간" colSpan={6} />
                 <Column header="1-2 기말" colSpan={6} />
+                <Column header="2학기 종합등급" colSpan={5} />
             </Row>
             <Row>
                 {/* 1-1 중간 */}
@@ -884,6 +923,13 @@ const ScoreListPage = () => {
                 <Column header="사회" style={{ width: COL_WIDTH.subject, minWidth: COL_WIDTH.subject }} />
                 <Column header="한국사" style={{ width: COL_WIDTH.subject, minWidth: COL_WIDTH.subject }} />
                 <Column header="과학" style={{ width: COL_WIDTH.subject, minWidth: COL_WIDTH.subject }} />
+
+                {/* 2학기 종합등급 */}
+                <Column header="수학" style={{ width: COL_WIDTH.subject, minWidth: COL_WIDTH.subject }} />
+                <Column header="국어" style={{ width: COL_WIDTH.subject, minWidth: COL_WIDTH.subject }} />
+                <Column header="영어" style={{ width: COL_WIDTH.subject, minWidth: COL_WIDTH.subject }} />
+                <Column header="사회" style={{ width: COL_WIDTH.subject, minWidth: COL_WIDTH.subject }} />
+                <Column header="과학" style={{ width: COL_WIDTH.subject, minWidth: COL_WIDTH.subject }} />
             </Row>
         </ColumnGroup>
     );
@@ -892,14 +938,15 @@ const ScoreListPage = () => {
     const headerGroupGrade2 = (
         <ColumnGroup>
             <Row>
-                <Column header="학생 정보 (이름 / 학년 / 학교)" rowSpan={2} frozen style={{ width: COL_WIDTH.name, minWidth: COL_WIDTH.name, zIndex: 10 }} />
-                <Column header="계열" rowSpan={2} style={{ width: COL_WIDTH.track, minWidth: COL_WIDTH.track }} />
+                <Column header="학생 정보 (이름 / 학년 / 학교)" rowSpan={2} frozen style={{ width: COL_WIDTH.name, minWidth: COL_WIDTH.name, zIndex: 30 }} />
+                <Column header="계열" rowSpan={2} frozen style={{ width: COL_WIDTH.track, minWidth: COL_WIDTH.track, zIndex: 30, left: COL_WIDTH.name }} />
                 <Column header="선택과목 (1·2·3)" rowSpan={2} style={{ width: COL_WIDTH.electives, minWidth: COL_WIDTH.electives }} />
                 <Column header="2-1 중간" colSpan={6} />
                 <Column header="2-1 기말" colSpan={6} />
                 <Column header="1학기 종합등급" colSpan={6} />
                 <Column header="2-2 중간" colSpan={6} />
                 <Column header="2-2 기말" colSpan={6} />
+                <Column header="2학기 종합등급" colSpan={6} />
             </Row>
             <Row>
                 {/* 2-1 중간 */}
@@ -941,6 +988,14 @@ const ScoreListPage = () => {
                 <Column header="선택1" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} />
                 <Column header="선택2" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} />
                 <Column header="선택3" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} />
+
+                {/* 2학기 종합등급 */}
+                <Column header="수학" style={{ width: COL_WIDTH.subject, minWidth: COL_WIDTH.subject }} />
+                <Column header="국어" style={{ width: COL_WIDTH.subject, minWidth: COL_WIDTH.subject }} />
+                <Column header="영어" style={{ width: COL_WIDTH.subject, minWidth: COL_WIDTH.subject }} />
+                <Column header="선택1" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} />
+                <Column header="선택2" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} />
+                <Column header="선택3" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} />
             </Row>
         </ColumnGroup>
     );
@@ -949,29 +1004,76 @@ const ScoreListPage = () => {
 
     return (
         <div className="grid">
-            {/* 🚀 오른쪽 가로 스크롤 시 고정(frozen) 학생 정보 컬럼 뒤로 스크롤 요소들이 들어가도록 z-index 및 배경 스타일 보강 */}
+            {/* 🚀 가로/세로 스크롤 시 테이블 헤더 및 고정(frozen) 컬럼 겹침 방지 완벽 대응 스타일 */}
             <style>{`
-                .score-datatable .p-datatable-thead > tr > th.p-datatable-frozen-column {
+                /* 1. 테이블 래퍼 스크롤 기준 설정 */
+                .score-datatable .p-datatable-wrapper {
+                    position: relative;
+                }
+
+                /* 2. 테이블 헤더(thead) 전체 상단 고정 및 본문보다 높은 z-index */
+                .score-datatable .p-datatable-thead {
                     position: sticky !important;
-                    left: 0 !important;
+                    top: 0 !important;
+                    z-index: 20 !important;
+                }
+
+                /* 3. 모든 헤더 th에 불투명 배경색 적용 (스크롤 시 본문 내용이 비치지 않음) */
+                .score-datatable .p-datatable-thead > tr > th {
+                    background-color: var(--surface-100, #f1f5f9) !important;
+                    color: var(--text-color, #1e293b) !important;
+                    text-align: center;
+                    vertical-align: middle;
+                }
+
+                /* 4. 고정 컬럼 헤더 (학생 정보 & 계열) */
+                .score-datatable .p-datatable-thead > tr > th.p-frozen-column {
+                    position: sticky !important;
+                    top: 0 !important;
+                    z-index: 30 !important;
+                    background-color: var(--surface-200, #e2e8f0) !important;
+                    text-align: center;
+                    vertical-align: middle;
+                }
+                .score-datatable .p-datatable-thead > tr > th.p-frozen-column:nth-child(1) {
+                    left: 0px !important;
+                }
+                .score-datatable .p-datatable-thead > tr > th.p-frozen-column:nth-child(2) {
+                    left: 240px !important;
+                    box-shadow: 3px 0 6px rgba(0, 0, 0, 0.08) !important;
+                    border-right: 1px solid var(--surface-border, #cbd5e1) !important;
+                }
+
+                /* 5. PrimeReact 다단헤더 버그 방지: Row 2에 주입되는 잘못된 left: 0px 리셋 */
+                .score-datatable .p-datatable-thead > tr:nth-child(2) > th:not(.p-frozen-column) {
+                    left: auto !important;
+                    position: static !important;
+                }
+
+                /* 6. 고정 컬럼 본문 셀: 학생 정보(0px) 및 계열(240px) */
+                .score-datatable .p-datatable-tbody > tr > td.p-frozen-column {
+                    position: sticky !important;
                     z-index: 10 !important;
-                    background-color: var(--surface-50, #f8fafc) !important;
-                }
-                .score-datatable .p-datatable-tbody > tr > td.p-datatable-frozen-column {
-                    position: sticky !important;
-                    left: 0 !important;
-                    z-index: 5 !important;
                     background-color: var(--surface-card, #ffffff) !important;
-                    box-shadow: 2px 0 6px rgba(0, 0, 0, 0.06);
                 }
-                .score-datatable .p-datatable-tbody > tr > td:not(.p-datatable-frozen-column) {
+                .score-datatable .p-datatable-tbody > tr > td.p-frozen-column:nth-child(1) {
+                    left: 0px !important;
+                }
+                .score-datatable .p-datatable-tbody > tr > td.p-frozen-column:nth-child(2) {
+                    left: 240px !important;
+                    box-shadow: 3px 0 6px rgba(0, 0, 0, 0.08) !important;
+                    border-right: 1px solid var(--surface-border, #cbd5e1) !important;
+                }
+
+                /* 7. 일반 본문 셀 및 내부 요소: z-index를 1로 유지하여 고정 컬럼(10) 및 헤더(20, 30) 뒤로 스크롤 */
+                .score-datatable .p-datatable-tbody > tr > td:not(.p-frozen-column) {
                     position: relative;
                     z-index: 1 !important;
                 }
-                .score-datatable .p-datatable-tbody > tr > td:not(.p-datatable-frozen-column) .p-dropdown,
-                .score-datatable .p-datatable-tbody > tr > td:not(.p-datatable-frozen-column) .p-tag,
-                .score-datatable .p-datatable-tbody > tr > td:not(.p-datatable-frozen-column) .p-button,
-                .score-datatable .p-datatable-tbody > tr > td:not(.p-datatable-frozen-column) input {
+                .score-datatable .p-datatable-tbody > tr > td:not(.p-frozen-column) .p-dropdown,
+                .score-datatable .p-datatable-tbody > tr > td:not(.p-frozen-column) .p-tag,
+                .score-datatable .p-datatable-tbody > tr > td:not(.p-frozen-column) .p-button,
+                .score-datatable .p-datatable-tbody > tr > td:not(.p-frozen-column) input {
                     position: relative;
                     z-index: 1 !important;
                 }
@@ -1088,7 +1190,7 @@ const ScoreListPage = () => {
                                 headerColumnGroup={headerGroupGrade1}
                                 scrollable
                                 scrollHeight="calc(100vh - 280px)"
-                                tableStyle={{ minWidth: '2800px' }}
+                                tableStyle={{ minWidth: '3300px' }}
                                 filters={filters}
                                 globalFilterFields={['name', 'school', 'grade', 'track']}
                                 loading={loading}
@@ -1102,7 +1204,7 @@ const ScoreListPage = () => {
                                 <Column
                                     field="name"
                                     frozen
-                                    style={{ width: COL_WIDTH.name, minWidth: COL_WIDTH.name, zIndex: 5, backgroundColor: "var(--surface-card, #ffffff)" }}
+                                    style={{ width: COL_WIDTH.name, minWidth: COL_WIDTH.name, zIndex: 10, backgroundColor: 'var(--surface-card, #ffffff)' }}
                                     body={(row: StudentScoreRow) => (
                                         <div className="flex align-items-center justify-content-between gap-1 px-1 py-1">
                                             <div className="flex align-items-center flex-wrap gap-1">
@@ -1147,7 +1249,8 @@ const ScoreListPage = () => {
                                 {/* 계열 컬럼 (1학년: 일반 태그) */}
                                 <Column
                                     field="track"
-                                    style={{ width: COL_WIDTH.track, minWidth: COL_WIDTH.track }}
+                                    frozen
+                                    style={{ width: COL_WIDTH.track, minWidth: COL_WIDTH.track, zIndex: 10, left: COL_WIDTH.name, backgroundColor: 'var(--surface-card, #ffffff)' }}
                                     body={(row: StudentScoreRow) => (
                                         <div className="flex justify-content-center align-items-center">
                                             <Tag value="일반" className="font-semibold text-xs px-2" style={{ backgroundColor: 'var(--surface-200)', color: 'var(--text-color)' }} />
@@ -1193,6 +1296,13 @@ const ScoreListPage = () => {
                                 <Column field="scores.1-2-final.society" style={{ width: COL_WIDTH.subject, minWidth: COL_WIDTH.subject }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['1-2-final']?.society} studentId={row.studentId} termKey="1-2-final" subjectKey="society" onCellChange={handleScoreInputChange} />} />
                                 <Column field="scores.1-2-final.history" style={{ width: COL_WIDTH.subject, minWidth: COL_WIDTH.subject }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['1-2-final']?.history} studentId={row.studentId} termKey="1-2-final" subjectKey="history" onCellChange={handleScoreInputChange} />} />
                                 <Column field="scores.1-2-final.science" style={{ width: COL_WIDTH.subject, minWidth: COL_WIDTH.subject }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['1-2-final']?.science} studentId={row.studentId} termKey="1-2-final" subjectKey="science" onCellChange={handleScoreInputChange} />} />
+
+                                {/* 2학기 종합등급 */}
+                                <Column field="scores.1-2-overall.math" style={{ width: COL_WIDTH.subject, minWidth: COL_WIDTH.subject }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['1-2-overall']?.math} studentId={row.studentId} termKey="1-2-overall" subjectKey="math" onCellChange={handleScoreInputChange} />} />
+                                <Column field="scores.1-2-overall.korean" style={{ width: COL_WIDTH.subject, minWidth: COL_WIDTH.subject }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['1-2-overall']?.korean} studentId={row.studentId} termKey="1-2-overall" subjectKey="korean" onCellChange={handleScoreInputChange} />} />
+                                <Column field="scores.1-2-overall.english" style={{ width: COL_WIDTH.subject, minWidth: COL_WIDTH.subject }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['1-2-overall']?.english} studentId={row.studentId} termKey="1-2-overall" subjectKey="english" onCellChange={handleScoreInputChange} />} />
+                                <Column field="scores.1-2-overall.society" style={{ width: COL_WIDTH.subject, minWidth: COL_WIDTH.subject }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['1-2-overall']?.society} studentId={row.studentId} termKey="1-2-overall" subjectKey="society" onCellChange={handleScoreInputChange} />} />
+                                <Column field="scores.1-2-overall.science" style={{ width: COL_WIDTH.subject, minWidth: COL_WIDTH.subject }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['1-2-overall']?.science} studentId={row.studentId} termKey="1-2-overall" subjectKey="science" onCellChange={handleScoreInputChange} />} />
                             </DataTable>
                         ) : (
                             <DataTable
@@ -1200,7 +1310,7 @@ const ScoreListPage = () => {
                                 headerColumnGroup={headerGroupGrade2}
                                 scrollable
                                 scrollHeight="calc(100vh - 280px)"
-                                tableStyle={{ minWidth: '3000px' }}
+                                tableStyle={{ minWidth: '3600px' }}
                                 filters={filters}
                                 globalFilterFields={['name', 'school', 'grade', 'track']}
                                 loading={loading}
@@ -1214,7 +1324,7 @@ const ScoreListPage = () => {
                                 <Column
                                     field="name"
                                     frozen
-                                    style={{ width: COL_WIDTH.name, minWidth: COL_WIDTH.name, zIndex: 5, backgroundColor: "var(--surface-card, #ffffff)" }}
+                                    style={{ width: COL_WIDTH.name, minWidth: COL_WIDTH.name, zIndex: 10, backgroundColor: 'var(--surface-card, #ffffff)' }}
                                     body={(row: StudentScoreRow) => (
                                         <div className="flex align-items-center justify-content-between gap-1 px-1 py-1">
                                             <div className="flex align-items-center flex-wrap gap-1">
@@ -1259,7 +1369,8 @@ const ScoreListPage = () => {
                                 {/* 계열: 2학년 문과/이과 드롭다운 */}
                                 <Column
                                     field="track"
-                                    style={{ width: COL_WIDTH.track, minWidth: COL_WIDTH.track, zIndex: 1 }}
+                                    frozen
+                                    style={{ width: COL_WIDTH.track, minWidth: COL_WIDTH.track, zIndex: 10, left: COL_WIDTH.name, backgroundColor: 'var(--surface-card, #ffffff)' }}
                                     body={(row: StudentScoreRow) => (
                                         <div className="p-1 flex justify-content-center" style={{ position: "relative", zIndex: 1 }}>
                                             <Dropdown
@@ -1375,6 +1486,14 @@ const ScoreListPage = () => {
                                 <Column field="scores.2-2-final.elective1_score" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-2-final']?.elective1_score} studentId={row.studentId} termKey="2-2-final" subjectKey="elective1_score" subLabel={getStudentElectives(row).elective1} onCellChange={handleScoreInputChange} />} />
                                 <Column field="scores.2-2-final.elective2_score" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-2-final']?.elective2_score} studentId={row.studentId} termKey="2-2-final" subjectKey="elective2_score" subLabel={getStudentElectives(row).elective2} onCellChange={handleScoreInputChange} />} />
                                 <Column field="scores.2-2-final.elective3_score" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-2-final']?.elective3_score} studentId={row.studentId} termKey="2-2-final" subjectKey="elective3_score" subLabel={getStudentElectives(row).elective3} onCellChange={handleScoreInputChange} />} />
+
+                                {/* 2학기 종합등급 */}
+                                <Column field="scores.2-2-overall.math" style={{ width: COL_WIDTH.subject, minWidth: COL_WIDTH.subject }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-2-overall']?.math} studentId={row.studentId} termKey="2-2-overall" subjectKey="math" onCellChange={handleScoreInputChange} />} />
+                                <Column field="scores.2-2-overall.korean" style={{ width: COL_WIDTH.subject, minWidth: COL_WIDTH.subject }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-2-overall']?.korean} studentId={row.studentId} termKey="2-2-overall" subjectKey="korean" onCellChange={handleScoreInputChange} />} />
+                                <Column field="scores.2-2-overall.english" style={{ width: COL_WIDTH.subject, minWidth: COL_WIDTH.subject }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-2-overall']?.english} studentId={row.studentId} termKey="2-2-overall" subjectKey="english" onCellChange={handleScoreInputChange} />} />
+                                <Column field="scores.2-2-overall.elective1_score" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-2-overall']?.elective1_score} studentId={row.studentId} termKey="2-2-overall" subjectKey="elective1_score" subLabel={getStudentElectives(row).elective1} onCellChange={handleScoreInputChange} />} />
+                                <Column field="scores.2-2-overall.elective2_score" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-2-overall']?.elective2_score} studentId={row.studentId} termKey="2-2-overall" subjectKey="elective2_score" subLabel={getStudentElectives(row).elective2} onCellChange={handleScoreInputChange} />} />
+                                <Column field="scores.2-2-overall.elective3_score" style={{ width: COL_WIDTH.elective, minWidth: COL_WIDTH.elective }} body={(row: StudentScoreRow) => <ScoreCellInput initialValue={row.scores?.['2-2-overall']?.elective3_score} studentId={row.studentId} termKey="2-2-overall" subjectKey="elective3_score" subLabel={getStudentElectives(row).elective3} onCellChange={handleScoreInputChange} />} />
                             </DataTable>
                         )}
                     </div>

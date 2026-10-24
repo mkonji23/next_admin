@@ -18,6 +18,7 @@ export interface TodayStudyTimeData {
     studentId: string;
     date: string;
     totalSeconds: number;
+    overallTotalSeconds?: number;
     goalSeconds: number;
     firstStartedAt: string | Date | null;
     lastEndedAt: string | Date | null;

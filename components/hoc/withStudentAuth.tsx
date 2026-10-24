@@ -299,12 +299,16 @@ const withStudentAuth = <P extends object>(
                             id="passwordInput"
                             ref={passwordInputRef}
                             type="password"
-                            placeholder="비밀번호를 입력하세요"
+                            placeholder="비밀번호(숫자 4자리)를 입력하세요"
                             value={password}
-                            onChange={(e) => setPassword(e.target.value)}
+                            onChange={(e) => setPassword(e.target.value.replace(/[^0-9]/g, '').slice(0, 4))}
                             onKeyDown={(e) => e.key === 'Enter' && handlePasswordSubmit()}
                             enterKeyHint="go"
                             inputMode="numeric"
+                            pattern="[0-9]*"
+                            autoComplete="one-time-code"
+                            keyfilter="num"
+                            maxLength={4}
                             className={`surface-border focus:border-blue-400 ${error ? 'p-invalid' : ''}`}
                             disabled={loading}
                         />
@@ -341,15 +345,23 @@ const withStudentAuth = <P extends object>(
                             maxLength={4}
                             placeholder="숫자 4자리를 입력하세요"
                             value={password}
-                            onChange={(e) => setPassword(e.target.value.replace(/[^0-9]/g, ''))}
+                            onChange={(e) => setPassword(e.target.value.replace(/[^0-9]/g, '').slice(0, 4))}
                             onKeyDown={(e) => e.key === 'Enter' && handlePasswordCreate()}
                             keyfilter="num"
                             inputMode="numeric"
                             pattern="[0-9]*"
+                            autoComplete="one-time-code"
                             enterKeyHint="done"
                             className={`surface-border focus:border-green-400 ${error ? 'p-invalid' : ''}`}
                             disabled={loading}
                             feedback={false}
+                            pt={{
+                                input: {
+                                    inputMode: 'numeric',
+                                    pattern: '[0-9]*',
+                                    autoComplete: 'one-time-code'
+                                }
+                            }}
                         />
                     </div>
                 </div>

@@ -38,6 +38,7 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
         loading,
         isRunning,
         todayTotalSeconds,
+        overallTotalSeconds,
         currentSessionSeconds,
         todayData,
         startStudy,
@@ -49,8 +50,8 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
     });
 
     const activeTotalSeconds = todayTotalSeconds + (isRunning ? currentSessionSeconds : 0);
+    const activeOverallSeconds = (overallTotalSeconds || 0) + (isRunning ? currentSessionSeconds : 0);
     const totalTimeDisplay = formatTime(activeTotalSeconds);
-    const sessionTimeDisplay = formatTime(currentSessionSeconds);
 
     // 한국어 오전/오후 시간 포맷팅 헬퍼
     const formatKoreanTime = (dt: string | Date | dayjs.Dayjs | null | undefined, includeSeconds = false) => {
@@ -68,9 +69,9 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
         return `${ampm} ${hour12}:${minute}`;
     };
 
-    // 초를 "총 X시간 Y분 Z초" 한글 텍스트로 변환하는 헬퍼
-    const formatDurationKorean = (totalSeconds: number) => {
-        if (!totalSeconds || totalSeconds <= 0) return '총 0초';
+    // 초를 "X시간 Y분 Z초" 한글 텍스트로 변환하는 헬퍼
+    const formatDurationText = (totalSeconds: number) => {
+        if (!totalSeconds || totalSeconds <= 0) return '0초';
         const h = Math.floor(totalSeconds / 3600);
         const m = Math.floor((totalSeconds % 3600) / 60);
         const s = totalSeconds % 60;
@@ -80,18 +81,23 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
         if (m > 0) parts.push(`${m}분`);
         if (s > 0 || parts.length === 0) parts.push(`${s}초`);
 
-        return `총 ${parts.join(' ')}`;
+        return parts.join(' ');
     };
 
     return (
         <Card className="mb-4 shadow-2 border-round-2xl surface-card overflow-hidden">
             <div className="flex flex-column gap-3">
-                {/* 상단 헤더: 타이틀, 현재시간 & 상태 태그 */}
+                {/* 상단 헤더: 타이틀, 전체 총 공부시간, 현재시간 & 상태 태그 */}
                 <div className="flex align-items-center justify-content-between border-bottom-1 surface-border pb-2">
                     <div className="flex flex-column gap-1">
-                        <div className="flex align-items-center gap-2">
-                            <i className="pi pi-stopwatch text-primary text-xl" />
-                            <span className="font-bold text-lg text-900">오늘의 순공시간</span>
+                        <div className="flex flex-wrap align-items-baseline gap-2">
+                            <div className="flex align-items-center gap-2">
+                                <i className="pi pi-stopwatch text-primary text-xl" />
+                                <span className="font-bold text-lg text-900">순공 타이머</span>
+                            </div>
+                            <span className="text-xs text-500 font-normal">
+                                (전체 {formatDurationText(activeOverallSeconds)})
+                            </span>
                         </div>
                         {/* 현재 시간 표시 (오전/오후 분까지만 표시) */}
                         <div className="flex align-items-center gap-1 text-xs text-600">
@@ -234,7 +240,7 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                 {/* 타임라인 상단 요약 바 */}
                 <div className="flex align-items-center justify-content-between p-2 mb-2 surface-100 border-round text-xs font-semibold">
                     <span className="text-600">오늘 누적 공부시간</span>
-                    <span className="text-primary font-bold text-sm">{formatDurationKorean(activeTotalSeconds)}</span>
+                    <span className="text-primary font-bold text-sm">총 {formatDurationText(activeTotalSeconds)}</span>
                 </div>
 
                 <div className="flex flex-column gap-2 pt-1 max-h-20rem overflow-y-auto">
@@ -267,7 +273,7 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                                     {/* 오른쪽: 총 공부시간 한글 텍스트 */}
                                     <div className="text-right white-space-nowrap">
                                         <Tag
-                                            value={formatDurationKorean(sess.durationSeconds)}
+                                            value={`총 ${formatDurationText(sess.durationSeconds)}`}
                                             severity="info"
                                             className="font-bold text-xs px-2 py-1"
                                         />

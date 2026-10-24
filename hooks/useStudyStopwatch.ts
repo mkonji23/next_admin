@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useHttp } from '@/util/axiosInstance';
-import { TodayStudyTimeData, StudyEndReason } from '@/types/studyTime';
+import { TodayStudyTimeData, StudyEndReason, StudySession } from '@/types/studyTime';
 import dayjs from 'dayjs';
 
 interface UseStudyStopwatchProps {
@@ -16,6 +16,7 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
     const [todayData, setTodayData] = useState<TodayStudyTimeData | null>(null);
     const [isRunning, setIsRunning] = useState<boolean>(false);
     const [todayTotalSeconds, setTodayTotalSeconds] = useState<number>(0);
+    const [overallTotalSeconds, setOverallTotalSeconds] = useState<number>(0);
     const [currentSessionSeconds, setCurrentSessionSeconds] = useState<number>(0);
 
     const activeSessionIdRef = useRef<string | null>(null);
@@ -24,6 +25,7 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
     const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const isRunningRef = useRef<boolean>(false);
     const currentSessionSecondsRef = useRef<number>(0);
+    const startPromiseRef = useRef<Promise<any> | null>(null);
 
     // 콜백 함수 ref 보관 (부모 컴포넌트 리렌더 시 불필요한 useEffect 재실행 및 무한루프 방지)
     const onBackgroundPausedRef = useRef(onBackgroundPaused);
@@ -40,47 +42,53 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
         currentSessionSecondsRef.current = currentSessionSeconds;
     }, [currentSessionSeconds]);
 
-    // 1. 오늘의 순공시간 데이터 조회 (studentId에만 의존)
-    const fetchTodayData = useCallback(async () => {
-        if (!studentId) return;
-        setLoading(true);
-        try {
-            const todayStr = dayjs().format('YYYY-MM-DD');
-            const res = await http.get('/choiMath/studyTime/getToday', {
-                params: { studentId, date: todayStr },
-                disableLoading: true,
-            });
+    // 1. 오늘의 순공시간 데이터 조회 (불필요한 http 등 객체 의존성 제거하여 무한루프 방지)
+    const fetchTodayData = useCallback(
+        async (showLoading = true) => {
+            if (!studentId) return;
+            if (showLoading) setLoading(true);
+            try {
+                const todayStr = dayjs().format('YYYY-MM-DD');
+                const res = await http.get('/choiMath/studyTime/getToday', {
+                    params: { studentId, date: todayStr },
+                    disableLoading: true,
+                });
 
-            const data: TodayStudyTimeData = res.data;
-            setTodayData(data);
-            setTodayTotalSeconds(data.totalSeconds || 0);
+                const data: TodayStudyTimeData = res.data;
+                setTodayData(data);
+                setTodayTotalSeconds(data.totalSeconds || 0);
+                setOverallTotalSeconds(data.overallTotalSeconds || 0);
 
-            // 이전 접속 시 비정상 종료 등으로 활성 세션이 남아있다면 복원
-            if (data.activeSession && !data.activeSession.endedAt) {
-                activeSessionIdRef.current = data.activeSession.sessionId;
-                ticketRef.current = data.activeSession.currentTicket || null;
-                const elapsedSinceStart = Math.floor(
-                    (Date.now() - new Date(data.activeSession.startedAt).getTime()) / 1000
-                );
-                // 10시간 이상 지났다면 만료로 간주하고 정지 상태 유지
-                if (elapsedSinceStart > 0 && elapsedSinceStart < 36000) {
-                    sessionStartTimeRef.current = Date.now() - (data.activeSession.durationSeconds || 0) * 1000;
-                    setCurrentSessionSeconds(data.activeSession.durationSeconds || 0);
+                // 이전 접속 시 비정상 종료 등으로 활성 세션이 남아있다면 복원
+                if (data.activeSession && !data.activeSession.endedAt) {
+                    activeSessionIdRef.current = data.activeSession.sessionId;
+                    ticketRef.current = data.activeSession.currentTicket || null;
+                    const elapsedSinceStart = Math.floor(
+                        (Date.now() - new Date(data.activeSession.startedAt).getTime()) / 1000
+                    );
+                    // 10시간 이상 지났다면 만료로 간주하고 정지 상태 유지
+                    if (elapsedSinceStart > 0 && elapsedSinceStart < 36000) {
+                        sessionStartTimeRef.current = Date.now() - (data.activeSession.durationSeconds || 0) * 1000;
+                        setCurrentSessionSeconds(data.activeSession.durationSeconds || 0);
+                    }
                 }
+            } catch (err) {
+                console.error('Failed to fetch today study time:', err);
+            } finally {
+                if (showLoading) setLoading(false);
             }
-        } catch (err) {
-            console.error('Failed to fetch today study time:', err);
-        } finally {
-            setLoading(false);
-        }
-    }, [studentId]);
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [studentId]
+    );
 
-    // studentId가 준비되거나 바뀔 때만 1회 실행 (무한루프 원천 차단)
+    // studentId가 준비되거나 변경될 때만 1회 실행 (fetchTodayData 의존성 제거로 무한 렌더링 방지)
     useEffect(() => {
         if (studentId) {
-            fetchTodayData();
+            fetchTodayData(true);
         }
-    }, [studentId, fetchTodayData]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [studentId]);
 
     // 2. 타이머 틱(Tick) 핸들러 (정밀 시간 계산: Date.now() 차이 방식)
     const startTick = useCallback(() => {
@@ -116,58 +124,121 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
         if (!studentId || isRunningRef.current) return;
 
         // 1) UI 타이머를 즉시 시작 (지연 0ms)
-        sessionStartTimeRef.current = Date.now();
+        const nowMs = Date.now();
+        sessionStartTimeRef.current = nowMs;
         setCurrentSessionSeconds(0);
         setIsRunning(true);
         isRunningRef.current = true;
         startTick();
 
+        // 0ms 낙관적 첫 시작 시간 세팅 (비어있는 경우)
+        setTodayData((prev) => {
+            if (!prev) return prev;
+            return {
+                ...prev,
+                firstStartedAt: prev.firstStartedAt || new Date(nowMs),
+            };
+        });
+
         try {
             const todayStr = dayjs().format('YYYY-MM-DD');
-            const res = await http.post(
+            const startPromise = http.post(
                 '/choiMath/studyTime/start',
                 { studentId, date: todayStr },
                 { disableLoading: true }
             );
+            startPromiseRef.current = startPromise;
+
+            const res = await startPromise;
 
             if (res.data?.success) {
                 activeSessionIdRef.current = res.data.sessionId;
                 ticketRef.current = res.data.ticket || null;
             } else {
-                // 서버 오류 시 롤백
+                // 서버 오류 시 롤백 (이미 사용자가 일시정지하지 않은 경우에만)
+                if (isRunningRef.current) {
+                    stopTick();
+                    setIsRunning(false);
+                    isRunningRef.current = false;
+                    sessionStartTimeRef.current = null;
+                }
+            }
+        } catch (err) {
+            console.error('Error starting study session:', err);
+            if (isRunningRef.current) {
                 stopTick();
                 setIsRunning(false);
                 isRunningRef.current = false;
                 sessionStartTimeRef.current = null;
             }
-        } catch (err) {
-            console.error('Error starting study session:', err);
-            // 네트워크 오류 시 롤백
+        } finally {
+            startPromiseRef.current = null;
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [studentId, startTick, stopTick]);
+
+    // 4. 공부 일시정지 (화면 이탈 또는 수동 클릭) - 0ms 즉시 동기화 반영
+    const pauseStudy = useCallback(
+        async (reason: StudyEndReason = 'manual_pause') => {
+            if (!isRunningRef.current && !activeSessionIdRef.current && !startPromiseRef.current) return;
+
+            // 1) 즉시 타이머 정지 및 실제 경과 초 계산
+            const startTime = sessionStartTimeRef.current;
+            const elapsedSec = startTime
+                ? Math.max(0, Math.floor((Date.now() - startTime) / 1000))
+                : currentSessionSecondsRef.current;
+
             stopTick();
             setIsRunning(false);
             isRunningRef.current = false;
             sessionStartTimeRef.current = null;
-        }
-    }, [studentId, startTick, stopTick]);
 
-    // 4. 공부 일시정지 (화면 이탈 또는 수동 클릭)
-    const pauseStudy = useCallback(
-        async (reason: StudyEndReason = 'manual_pause') => {
-            if (!isRunningRef.current && !activeSessionIdRef.current) return;
+            // 2) 0ms 즉각 UI 낙관적 반영 (대형 시계, 전체 총 공부시간, 세션 수, 마지막 종료 시각)
+            setTodayTotalSeconds((prev) => prev + elapsedSec);
+            setOverallTotalSeconds((prev) => (prev || 0) + elapsedSec);
+            setCurrentSessionSeconds(0);
+            currentSessionSecondsRef.current = 0;
 
-            stopTick();
-            setIsRunning(false);
-            isRunningRef.current = false;
+            const now = new Date();
+            setTodayData((prev) => {
+                if (!prev) return prev;
+                const newSession: StudySession = {
+                    sessionId: activeSessionIdRef.current || `sess_${Date.now()}`,
+                    startedAt: startTime ? new Date(startTime) : now,
+                    endedAt: now,
+                    durationSeconds: elapsedSec,
+                    endReason: reason,
+                };
+                const existingSessions = prev.sessions ? [...prev.sessions] : [];
+                return {
+                    ...prev,
+                    totalSeconds: prev.totalSeconds + elapsedSec,
+                    overallTotalSeconds: (prev.overallTotalSeconds || 0) + elapsedSec,
+                    firstStartedAt: prev.firstStartedAt || (startTime ? new Date(startTime) : now),
+                    lastEndedAt: now,
+                    sessionsCount: existingSessions.length + 1,
+                    sessions: [...existingSessions, newSession],
+                    activeSession: null,
+                };
+            });
+
+            // 3) 만약 /start 요청이 아직 진행 중이라면 완료될 때까지 대기하여 세션 ID 확보
+            if (startPromiseRef.current) {
+                try {
+                    await startPromiseRef.current;
+                } catch (e) {
+                    console.warn('Wait for start request error:', e);
+                }
+            }
 
             const sessionId = activeSessionIdRef.current;
-            const sessionSec = currentSessionSecondsRef.current;
             const currentTicket = ticketRef.current;
             const todayStr = dayjs().format('YYYY-MM-DD');
 
             activeSessionIdRef.current = null;
             ticketRef.current = null;
-            sessionStartTimeRef.current = null;
 
+            // 4) 서버에 세션 정산 요청 및 권위(Authoritative) 동기화
             if (studentId && sessionId) {
                 try {
                     const res = await http.post(
@@ -177,7 +248,7 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
                             date: todayStr,
                             sessionId,
                             ticket: currentTicket,
-                            sessionSeconds: sessionSec,
+                            sessionSeconds: elapsedSec,
                             endReason: reason,
                         },
                         { disableLoading: true }
@@ -185,10 +256,11 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
 
                     if (res.data?.success) {
                         setTodayTotalSeconds(res.data.totalSeconds);
-                        setCurrentSessionSeconds(0);
-                        currentSessionSecondsRef.current = 0;
-                        // 데이터 최신화
-                        fetchTodayData();
+                        if (res.data.overallTotalSeconds !== undefined) {
+                            setOverallTotalSeconds(res.data.overallTotalSeconds);
+                        }
+                        // 백그라운드 무소음(Silent) 데이터 동기화
+                        await fetchTodayData(false);
                     }
                 } catch (err) {
                     console.error('Error pausing study session:', err);
@@ -199,6 +271,7 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
                 onBackgroundPausedRef.current(reason);
             }
         },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         [studentId, stopTick, fetchTodayData]
     );
 
@@ -275,6 +348,7 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
         }, 60000);
 
         return () => clearInterval(heartbeatInterval);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isRunning, studentId]);
 
     // 초를 시:분:초 포맷으로 변환하는 유틸리티
@@ -295,6 +369,7 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
         loading,
         isRunning,
         todayTotalSeconds,
+        overallTotalSeconds,
         currentSessionSeconds,
         todayData,
         startStudy,

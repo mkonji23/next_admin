@@ -3,8 +3,7 @@ import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
 import { Tag } from 'primereact/tag';
-import { Chip } from 'primereact/chip';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/useToast';
 import { useHttp } from '@/util/axiosInstance';
 import { useCustomModal } from '@/hooks/useCustomModal';
@@ -20,18 +19,53 @@ const ClassListPage = () => {
     const { showToast } = useToast();
     const http = useHttp();
     const { openModal } = useCustomModal();
-    const { showConfirm } = useConfirm(); // Use useCustomModal
+    const { showConfirm } = useConfirm();
+
+    const getTodayString = () => {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        return `${year}${month}${day}`;
+    };
+
+    const getClassStatus = (cls: Class): '개강전' | '진행중' | '종강' => {
+        if (cls.isClosed) {
+            return '종강';
+        }
+        const today = getTodayString();
+        if (cls.endDate && cls.endDate < today) {
+            return '종강';
+        }
+        if (cls.status === '개강전') {
+            return '개강전';
+        }
+        if (cls.status === '진행중') {
+            return '진행중';
+        }
+        if (!cls.startDate || cls.startDate > today) {
+            return '개강전';
+        }
+        return '진행중';
+    };
 
     const fetchClasses = async () => {
         try {
+            setLoading(true);
             const response = await http.get('/choiMath/class/');
-            setClasses(response.data);
+            const data = (response.data || []).map((cls: Class) => ({
+                ...cls,
+                status: cls.status || getClassStatus(cls)
+            }));
+            setClasses(data);
         } catch (error) {
             showToast({
                 severity: 'error',
                 summary: '조회 실패',
                 detail: '클래스 목록을 불러오는데 실패했습니다.'
             });
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -43,6 +77,41 @@ const ClassListPage = () => {
         const result = await openModal({ id: 'class', pData: { mode: 'new' } });
         if (result) {
             fetchClasses();
+        }
+    };
+
+    const openCreateNextClassDialog = async (closedClass: Class) => {
+        const isCreate = await showConfirm({
+            header: '새 수업 클래스 생성',
+            icon: 'pi pi-plus-circle',
+            acceptClassName: 'p-button-success',
+            message: `'${closedClass.className}' 클래스가 종강되었습니다.\n종강한 클래스 정보와 학생 데이터(${closedClass.students?.length || 0}명)를 이어받아 새로운 수업 클래스를 생성하시겠습니까?`,
+            acceptLabel: '새 클래스 생성',
+            rejectLabel: '닫기'
+        });
+
+        if (isCreate) {
+            const result = await openModal({
+                id: 'class',
+                pData: {
+                    mode: 'new',
+                    class: {
+                        ...closedClass,
+                        classId: '',
+                        className: closedClass.className,
+                        teacher: closedClass.teacher,
+                        students: closedClass.students || [],
+                        description: closedClass.description,
+                        startDate: '',
+                        endDate: '',
+                        isClosed: false,
+                        status: '개강전'
+                    }
+                }
+            });
+            if (result) {
+                fetchClasses();
+            }
         }
     };
 
@@ -60,13 +129,12 @@ const ClassListPage = () => {
             if (!res) return;
 
             setLoading(true);
-            // Send delete requests for all selected classes
             const deletePromises = selectedClasses.map((cls) =>
                 http.post('/choiMath/class/delete', { classId: cls.classId })
             );
             const results = await Promise.all(deletePromises);
 
-            const successfulDeletions = results.filter((res) => res.data.deletedCount > 0).length;
+            const successfulDeletions = results.filter((res) => res.data?.deletedCount > 0).length;
 
             if (successfulDeletions > 0) {
                 showToast({
@@ -75,7 +143,7 @@ const ClassListPage = () => {
                     detail: `${successfulDeletions}개의 클래스가 삭제되었습니다.`
                 });
                 setSelectedClasses([]);
-                fetchClasses(); // Refresh the list
+                fetchClasses();
             } else {
                 showToast({ severity: 'warn', summary: '삭제 실패', detail: '선택된 클래스를 삭제하지 못했습니다.' });
             }
@@ -90,7 +158,6 @@ const ClassListPage = () => {
     const formatDate = (dateString?: string) => {
         if (!dateString) return '-';
         if (dateString.length === 8) {
-            // YYYYMMDD 형식
             return `${dateString.substring(0, 4)}-${dateString.substring(4, 6)}-${dateString.substring(6, 8)}`;
         }
         return dateString;
@@ -104,28 +171,45 @@ const ClassListPage = () => {
         return formatDate(rowData.endDate);
     };
 
-    const isClosedBodyTemplate = (rowData: Class) => {
-        return rowData.isClosed ? <Tag severity="danger" value="종강" /> : <Tag severity="success" value="진행중" />;
+    const statusBodyTemplate = (rowData: Class) => {
+        const status = rowData.status || getClassStatus(rowData);
+        switch (status) {
+            case '종강':
+                return <Tag severity="danger" value="종강" />;
+            case '진행중':
+                return <Tag severity="success" value="진행중" />;
+            case '개강전':
+            default:
+                return <Tag severity="warning" value="개강전" />;
+        }
     };
 
     const handleCloseClass = async (classData: Class) => {
         const isConfirmed = await showConfirm({
             header: '클래스 종강 처리',
-            message: `'${classData.className}' 클래스를 종강 처리하시겠습니까?`
+            icon: 'pi pi-exclamation-triangle',
+            acceptClassName: 'p-button-danger',
+            message: `'${classData.className}' 클래스를 종강 처리하시겠습니까?\n(종강일시가 오늘 날짜로 업데이트됩니다.)`
         });
 
         if (isConfirmed) {
             try {
+                const today = getTodayString();
                 await http.post('/choiMath/class/update', {
                     classId: classData.classId,
-                    isClosed: true
+                    isClosed: true,
+                    endDate: today,
+                    status: '종강'
                 });
                 showToast({
                     severity: 'success',
                     summary: '종강 처리 성공',
-                    detail: '클래스가 종강 처리되었습니다.'
+                    detail: `'${classData.className}' 클래스가 종강 처리되었습니다.`
                 });
-                fetchClasses();
+                await fetchClasses();
+
+                // 종강 후 새로운 수업 클래스 생성 안내 팝업 호출
+                await openCreateNextClassDialog(classData);
             } catch (error: any) {
                 console.error('Error closing class:', error);
                 const errorMessage = error.response?.data?.message || error.message || '종강 처리에 실패했습니다.';
@@ -137,19 +221,25 @@ const ClassListPage = () => {
     const handleOpenClass = async (classData: Class) => {
         const isConfirmed = await showConfirm({
             header: '클래스 개강 처리',
-            message: `'${classData.className}' 클래스를 개강 처리하시겠습니까?`
+            icon: 'pi pi-play',
+            acceptClassName: 'p-button-success',
+            message: `'${classData.className}' 클래스를 개강 처리하시겠습니까?\n(개강일시가 오늘 날짜로 업데이트됩니다.)`
         });
 
         if (isConfirmed) {
             try {
+                const today = getTodayString();
                 await http.post('/choiMath/class/update', {
                     classId: classData.classId,
-                    isClosed: false
+                    isClosed: false,
+                    startDate: today,
+                    endDate: null,
+                    status: '진행중'
                 });
                 showToast({
                     severity: 'success',
                     summary: '개강 처리 성공',
-                    detail: '클래스가 개강 처리되었습니다.'
+                    detail: `'${classData.className}' 클래스가 개강 처리되었습니다.`
                 });
                 fetchClasses();
             } catch (error: any) {
@@ -169,16 +259,21 @@ const ClassListPage = () => {
         try {
             const res = await showConfirm({
                 header: '클래스 종강 처리',
-                message: `${selectedClasses.length}개의 클래스를 종강 처리하시겠습니까?`
+                icon: 'pi pi-exclamation-triangle',
+                acceptClassName: 'p-button-danger',
+                message: `${selectedClasses.length}개의 클래스를 종강 처리하시겠습니까?\n(종강일시가 오늘 날짜로 업데이트됩니다.)`
             });
             if (!res) return;
 
+            const today = getTodayString();
             const updatePromises = selectedClasses
                 .filter((cls) => cls.classId)
                 .map((cls) =>
                     http.post('/choiMath/class/update', {
                         classId: cls.classId,
-                        isClosed: true
+                        isClosed: true,
+                        endDate: today,
+                        status: '종강'
                     })
                 );
 
@@ -188,8 +283,14 @@ const ClassListPage = () => {
                 summary: '종강 처리 성공',
                 detail: `${selectedClasses.length}개의 클래스가 종강 처리되었습니다.`
             });
+
+            const lastSelected = selectedClasses.length === 1 ? selectedClasses[0] : null;
             setSelectedClasses([]);
-            fetchClasses();
+            await fetchClasses();
+
+            if (lastSelected) {
+                await openCreateNextClassDialog(lastSelected);
+            }
         } catch (error: any) {
             console.error('Error closing classes:', error);
             const errorMessage = error.response?.data?.message || error.message || '종강 처리에 실패했습니다.';
@@ -206,16 +307,22 @@ const ClassListPage = () => {
         try {
             const res = await showConfirm({
                 header: '클래스 개강 처리',
-                message: `${selectedClasses.length}개의 클래스를 개강 처리하시겠습니까?`
+                icon: 'pi pi-play',
+                acceptClassName: 'p-button-success',
+                message: `${selectedClasses.length}개의 클래스를 개강 처리하시겠습니까?\n(개강일시가 오늘 날짜로 업데이트됩니다.)`
             });
             if (!res) return;
 
+            const today = getTodayString();
             const updatePromises = selectedClasses
                 .filter((cls) => cls.classId)
                 .map((cls) =>
                     http.post('/choiMath/class/update', {
                         classId: cls.classId,
-                        isClosed: false
+                        isClosed: false,
+                        startDate: today,
+                        endDate: null,
+                        status: '진행중'
                     })
                 );
 
@@ -235,6 +342,7 @@ const ClassListPage = () => {
     };
 
     const actionBodyTemplate = (rowData: Class) => {
+        const status = rowData.status || getClassStatus(rowData);
         return (
             <div className="flex gap-2">
                 <Button
@@ -251,7 +359,28 @@ const ClassListPage = () => {
                     tooltip="수정"
                     tooltipOptions={{ position: 'top' }}
                 />
-                {rowData.isClosed ? (
+                {status === '종강' ? (
+                    <>
+                        <Button
+                            icon="pi pi-play"
+                            rounded
+                            outlined
+                            severity="success"
+                            onClick={() => handleOpenClass(rowData)}
+                            tooltip="재개강"
+                            tooltipOptions={{ position: 'top' }}
+                        />
+                        <Button
+                            icon="pi pi-copy"
+                            rounded
+                            outlined
+                            severity="info"
+                            onClick={() => openCreateNextClassDialog(rowData)}
+                            tooltip="새 수업으로 생성"
+                            tooltipOptions={{ position: 'top' }}
+                        />
+                    </>
+                ) : status === '개강전' ? (
                     <Button
                         icon="pi pi-play"
                         rounded
@@ -290,7 +419,7 @@ const ClassListPage = () => {
                                 <div className="surface-card border-round p-3 shadow-1">
                                     <div className="flex align-items-center gap-2 mb-2">
                                         <i className="pi pi-user text-primary"></i>
-                                        <span className="font-semibold text-lg">{student.name || '이름 없음'}</span>
+                                        <span className="font-semibold text-lg">{student.name || student.userName || '이름 없음'}</span>
                                     </div>
                                     <div className="flex flex-column gap-1">
                                         {student.grade && (
@@ -317,10 +446,10 @@ const ClassListPage = () => {
         );
     };
 
-    const header = (rowData) => {
+    const header = (rowData: any) => {
         return (
             <div className="flex flex-wrap align-items-center justify-content-between gap-2">
-                <span className="text-xl text-900 font-bold">클래스 목록({rowData?.props?.value?.length}개)</span>
+                <span className="text-xl text-900 font-bold">클래스 목록({rowData?.props?.value?.length || classes.length}개)</span>
                 <div className="flex gap-2">
                     <Button
                         icon="pi pi-plus"
@@ -417,8 +546,8 @@ const ClassListPage = () => {
                     body={endDateBodyTemplate}
                     headerStyle={{ minWidth: '150px' }}
                 ></Column>
-                <Column field="isClosed" header="상태" sortable filter body={isClosedBodyTemplate}></Column>
-                <Column body={actionBodyTemplate} header="작업" headerStyle={{ minWidth: '10rem' }}></Column>
+                <Column field="status" header="상태" sortable filter body={statusBodyTemplate}></Column>
+                <Column body={actionBodyTemplate} header="작업" headerStyle={{ minWidth: '12rem' }}></Column>
             </DataTable>
         </div>
     );
