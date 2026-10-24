@@ -18,6 +18,12 @@ export const AppMenuModel: AppMenuItem[] = [
         ]
     },
     {
+        label: 'Score',
+        items: [
+            { label: '성적 관리표', icon: 'pi pi-fw pi-table', to: '/scoreList' }
+        ]
+    },
+    {
         label: 'Praise',
         items: [
             { label: '학생 칭찬 현황(관리자)', icon: 'pi pi-fw pi-star', to: '/admin-student-status' },
@@ -30,7 +36,6 @@ export const AppMenuModel: AppMenuItem[] = [
             { label: '카카오 공유 게시판', icon: 'pi pi-fw pi-share-alt', to: '/kakao-share' },
             { label: '공유 템플릿 관리', icon: 'pi pi-fw pi-copy', to: '/kakao-share-template' },
             { label: '공지사항', icon: 'pi pi-fw pi-bell', to: '/notice' }
-            // { label: '토큰 발급(X)', icon: 'pi pi-fw pi-key', to: '/settings/kakao' }
         ]
     },
     {
@@ -43,15 +48,10 @@ export const AppMenuModel: AppMenuItem[] = [
             { label: '시스템 사용량', icon: 'pi pi-fw pi-chart-pie', to: '/system-usage', isAdmin: true }
         ]
     },
-    // {
-    //     label: 'Support',
-    //     items: [{ label: '피드백 게시판', icon: 'pi pi-fw pi-comments', to: '/feedback' }]
-    // },
     {
         label: 'HELP',
         items: [
             { label: '사용 매뉴얼', icon: 'pi pi-fw pi-book', to: '/manual' }
-            // { label: 'example', icon: 'pi pi-fw pi-home', to: '/dash' }
         ]
     },
     {
