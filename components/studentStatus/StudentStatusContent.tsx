@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useHttp } from '@/util/axiosInstance';
@@ -54,6 +54,7 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
     const { noticeRefreshSignal } = useRefreshStore();
     const [notices, setNotices] = useState<any[]>([]);
     const [hasCheckedNotice, setHasCheckedNotice] = useState(false);
+    const [noticeReadVersion, setNoticeReadVersion] = useState(0);
 
     // 최고 순위 계산 (1~3위)
     const highestRank = useMemo(() => {
@@ -280,9 +281,7 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                 prepareChartData(myData);
 
                 // Fetch notices for student's classes
-                if (myData.classes && myData.classes.length > 0) {
-                    fetchNotices(myData.classes);
-                }
+                fetchNotices(myData?.classes || []);
             } else {
                 setStats(null);
                 setGlobalRank(0);
@@ -295,17 +294,22 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
         }
     };
 
-    const fetchNotices = async (studentClasses: any[]) => {
+    const fetchNotices = async (studentClasses: any[] = []) => {
         try {
-            const studentClassIds = studentClasses.map((c) => c.classId);
+            const studentClassIds = (studentClasses || []).map((c) => c.classId);
 
             const res = await http.get('/choiMath/notice/list', {
-                params: { classIds: { $in: studentClassIds }, isNotice: true },
+                params: { isNotice: true },
                 disableLoading: true
             });
             const allNotices = res.data || [];
-            setNotices(allNotices);
-            return allNotices;
+            // 전체 공지(classIds가 비어있음) + 학생 소속 클래스 공지 포함
+            const targetNotices = allNotices.filter((n: any) => {
+                if (!n.classIds || n.classIds.length === 0) return true;
+                return n.classIds.some((cid: string) => studentClassIds.includes(cid));
+            });
+            setNotices(targetNotices);
+            return targetNotices;
         } catch (error) {
             console.error('Fetch notices error:', error);
             return [];
@@ -313,8 +317,8 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
     };
 
     useEffect(() => {
-        if (noticeRefreshSignal > 0 && stats?.classes) {
-            fetchNotices(stats.classes).then((updatedNotices) => {
+        if (noticeRefreshSignal > 0) {
+            fetchNotices(stats?.classes || []).then((updatedNotices) => {
                 if (updatedNotices.length > 0) {
                     const latest = updatedNotices[0];
                     // 실시간 신호가 오면 읽음 여부와 관계없이 혹은 최신 정보를 즉시 띄워줌
@@ -349,11 +353,17 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
         }
     }, [notices, hasCheckedNotice]);
 
-    const handleShowNotices = () => {
-        openModal({
+    const unreadCount = useMemo(() => {
+        if (typeof window === 'undefined') return 0;
+        return notices.filter((n: any) => !localStorage.getItem(`notice_read_${n.noticeId}`)).length;
+    }, [notices, noticeReadVersion]);
+
+    const handleShowNotices = async () => {
+        await openModal({
             id: 'noticeModal',
             pData: { notices }
         });
+        setNoticeReadVersion((v) => v + 1);
     };
 
     const prepareChartData = (data: any) => {
@@ -789,24 +799,70 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                         </div>
 
                         <div className="flex align-items-center gap-2 ml-auto md:ml-0">
-                            <Button
-                                label="공지사항"
-                                icon="pi pi-bell"
-                                severity="info"
-                                size="small"
-                                className="p-button-outlined border-round-xl p-1 px-2 text-xs"
-                                style={{ height: '32px' }}
-                                onClick={handleShowNotices}
-                            >
-                                {notices.length > 0 && (
+                            <style>{`
+                                @keyframes bell-swing {
+                                    0%, 100% { transform: rotate(0deg); }
+                                    10% { transform: rotate(14deg); }
+                                    20% { transform: rotate(-14deg); }
+                                    30% { transform: rotate(10deg); }
+                                    40% { transform: rotate(-10deg); }
+                                    50% { transform: rotate(6deg); }
+                                    60% { transform: rotate(0deg); }
+                                }
+                                @keyframes glow-pulse {
+                                    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
+                                    70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+                                    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+                                }
+                                .bell-animated {
+                                    display: inline-block;
+                                    transform-origin: top center;
+                                    animation: bell-swing 2s infinite ease-in-out;
+                                }
+                                .notice-btn-highlight {
+                                    background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(249, 115, 22, 0.15)) !important;
+                                    border: 1.5px solid #ef4444 !important;
+                                    color: #ef4444 !important;
+                                }
+                                .notice-badge-glow {
+                                    animation: glow-pulse 1.8s infinite;
+                                }
+                            `}</style>
+                            <div className="relative" style={{ display: 'inline-flex' }}>
+                                <Button
+                                    label="공지사항"
+                                    icon={`pi pi-bell${unreadCount > 0 ? ' bell-animated text-red-500 font-bold' : ''}`}
+                                    severity={unreadCount > 0 ? 'danger' : 'info'}
+                                    size="small"
+                                    className={`border-round-xl p-1 px-2 text-xs font-semibold ${
+                                        unreadCount > 0 ? 'notice-btn-highlight p-button-outlined' : 'p-button-outlined'
+                                    }`}
+                                    style={{ height: '32px' }}
+                                    onClick={handleShowNotices}
+                                />
+                                {unreadCount > 0 && (
                                     <span
-                                        className="ml-1 bg-red-500 border-circle flex align-items-center justify-content-center text-white"
-                                        style={{ width: '16px', height: '16px', fontSize: '10px' }}
+                                        className="notice-badge-glow flex align-items-center justify-content-center text-white font-extrabold"
+                                        style={{
+                                            position: 'absolute',
+                                            top: '-7px',
+                                            right: '-7px',
+                                            minWidth: '22px',
+                                            height: '18px',
+                                            fontSize: '10px',
+                                            background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                                            borderRadius: '9px',
+                                            padding: '0 4px',
+                                            pointerEvents: 'none',
+                                            zIndex: 5,
+                                            letterSpacing: '-0.5px',
+                                            border: '1.5px solid #ffffff'
+                                        }}
                                     >
-                                        {notices.length}
+                                        NEW
                                     </span>
                                 )}
-                            </Button>
+                            </div>
                             <Button
                                 icon="pi pi-sign-out"
                                 severity="secondary"

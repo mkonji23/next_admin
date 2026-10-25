@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Calendar } from 'primereact/calendar';
@@ -51,6 +51,10 @@ const AttendancePage = () => {
     const [classes, setClasses] = useState<ClassOption[]>([]);
     const [globalFilterValue, setGlobalFilterValue] = useState('');
     const [selectedScrollDate, setSelectedScrollDate] = useState<Date | null>(null);
+    const [dailyTotalQuestions, setDailyTotalQuestions] = useState<Record<number, number>>({});
+    const handleTotalQuestionsChange = useCallback((day: number, count: number) => {
+        setDailyTotalQuestions((prev) => ({ ...prev, [day]: count }));
+    }, []);
     const [columnWidths, setColumnWidths] = useState(DEFAULT_COLUMN_WIDTHS);
     const http = useHttp();
     const { showToast } = useToast();
@@ -98,11 +102,13 @@ const AttendancePage = () => {
     const fetchClasses = async () => {
         try {
             const response = await http.get('/choiMath/class/');
-            const classOptions: ClassOption[] = (response.data || []).map((cls: Class) => ({
-                label: cls.className,
-                value: cls.classId,
-                classId: cls.classId
-            }));
+            const classOptions: ClassOption[] = (response.data || [])
+                .filter((cls: Class) => cls.status !== '종강' && !cls.isClosed)
+                .map((cls: Class) => ({
+                    label: cls.className,
+                    value: cls.classId,
+                    classId: cls.classId
+                }));
             setClasses(classOptions);
         } catch (error) {
             console.error('Error fetching classes:', error);
@@ -148,6 +154,22 @@ const AttendancePage = () => {
                 return userData;
             });
 
+            const loadedTotalQuestions: Record<number, number> = {};
+            if (attendanceData.totalQuestions && typeof attendanceData.totalQuestions === 'object') {
+                for (const key of Object.keys(attendanceData.totalQuestions)) {
+                    loadedTotalQuestions[Number(key)] = Number(attendanceData.totalQuestions[key]);
+                }
+            } else if (attendanceData.students) {
+                for (const student of attendanceData.students) {
+                    for (let i = 1; i <= daysInMonth; i++) {
+                        const dayTq = student.attendance?.[i.toString()]?.totalQuestions;
+                        if (dayTq && !loadedTotalQuestions[i]) {
+                            loadedTotalQuestions[i] = Number(dayTq);
+                        }
+                    }
+                }
+            }
+            setDailyTotalQuestions(loadedTotalQuestions);
             setUsers(attendanceUsers);
         },
         [date]
@@ -600,6 +622,8 @@ const AttendancePage = () => {
                             </p>
                         </div>
 
+                        
+
                         <div
                             className="attendance-table-wrapper"
                             ref={tableWrapperRef}
@@ -627,6 +651,8 @@ const AttendancePage = () => {
                                     totalStudents={filteredUsers.length}
                                     columnWidths={columnWidths}
                                     onResizeColumn={handleColumnResize}
+                                    dailyTotalQuestions={dailyTotalQuestions}
+                                    onTotalQuestionsChange={handleTotalQuestionsChange}
                                     fieldNames={{
                                         attendance: '출석',
                                         homework: '숙제',
@@ -657,6 +683,7 @@ const AttendancePage = () => {
                                                         user={filteredUsers[virtualRow.index]}
                                                         daysInMonth={daysInMonth}
                                                         onUpdate={handleUserUpdate}
+                                                        dailyTotalQuestions={dailyTotalQuestions}
                                                     />
                                                 </div>
                                             ))}
@@ -668,6 +695,7 @@ const AttendancePage = () => {
                                                 user={user}
                                                 daysInMonth={daysInMonth}
                                                 onUpdate={handleUserUpdate}
+                                                dailyTotalQuestions={dailyTotalQuestions}
                                             />
                                         ))
                                     )}

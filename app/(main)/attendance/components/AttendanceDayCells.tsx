@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Dropdown, DropdownChangeEvent } from 'primereact/dropdown';
@@ -39,9 +39,10 @@ interface AttendanceDayCellsProps {
     user: User;
     day: number;
     onUpdate: (userId: number, field: string, value: any) => void;
+    totalQuestions?: number;
 }
 
-const AttendanceDayCells = React.memo<AttendanceDayCellsProps>(({ user, day, onUpdate }) => {
+const AttendanceDayCells = React.memo<AttendanceDayCellsProps>(({ user, day, onUpdate, totalQuestions = 0 }) => {
     const attendanceField = `day_${day}_attendance`;
     const homeworkField = `day_${day}_homework`;
     const noteField = `day_${day}_note`;
@@ -278,15 +279,20 @@ const AttendanceDayCells = React.memo<AttendanceDayCellsProps>(({ user, day, onU
                     onClick={handlePraiseToggle}
                 />
             </div>
-            <div className="attendance-cell test-score-cell" role="cell">
+            <div className="attendance-cell test-score-cell" role="cell" style={{ flexDirection: 'column', padding: '2px', gap: '1px' }}>
                 <InputText
                     className="w-full"
                     type="number"
                     value={localTestScore.toString()}
                     onChange={(e) => handleTestScoreChange(e.target.value)}
-                    placeholder="점수"
-                    style={{ textAlign: 'right' }}
+                    placeholder="맞은수"
+                    style={{ textAlign: 'center', fontSize: '0.8rem', padding: '2px 4px' }}
                 />
+                {totalQuestions > 0 && (
+                    <span style={{ fontSize: '0.65rem', color: 'var(--text-color-secondary)', textAlign: 'center', lineHeight: '1' }}>
+                        / {totalQuestions}
+                    </span>
+                )}
             </div>
             <div className="attendance-cell" role="cell">
                 <InputText

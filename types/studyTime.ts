@@ -3,7 +3,8 @@ export type StudyEndReason =
     | 'background_leave'
     | 'window_blur'
     | 'page_closed'
-    | 'auto_closed_on_new_start';
+    | 'auto_closed_on_new_start'
+    | 'auto_1h_pause';
 
 export interface StudySession {
     sessionId: string;

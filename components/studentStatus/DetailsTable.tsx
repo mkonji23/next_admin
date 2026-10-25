@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import { Card } from 'primereact/card';
@@ -16,6 +16,10 @@ interface DetailsTableProps {
 }
 
 const DetailsTable: React.FC<DetailsTableProps> = ({ classes, expandedRows, onRowToggle, classRanks }) => {
+    // 종강된 클래스 제외
+    const activeClasses = (classes || []).filter(
+        (c: any) => c.status !== '종강' && !c.isClosed
+    );
     const getAttendanceSeverity = (status: string) => {
         switch (status) {
             case 'class_present':
@@ -80,6 +84,18 @@ const DetailsTable: React.FC<DetailsTableProps> = ({ classes, expandedRows, onRo
                     />
                     <Column
                         sortable
+                        field="testScore"
+                        headerStyle={{ minWidth: '80px', textAlign: 'center' }}
+                        header="점수"
+                        alignHeader={'center'}
+                        body={(rowData: any) => {
+                            const score = rowData?.testScore;
+                            if (!score && score !== 0) return <span className="text-400">-</span>;
+                            return <span className="font-bold text-primary">{score}점</span>;
+                        }}
+                    />
+                    <Column
+                        sortable
                         field="note"
                         headerStyle={{ minWidth: '120px', textAlign: 'center' }}
                         header="비고"
@@ -95,7 +111,7 @@ const DetailsTable: React.FC<DetailsTableProps> = ({ classes, expandedRows, onRo
             <div className="col-12">
                 <Card title="클래스별 칭찬 및 출석 내역" className="border-none shadow-1 border-round-2xl overflow-hidden">
                     <DataTable
-                        value={classes}
+                        value={activeClasses}
                         expandedRows={expandedRows}
                         onRowToggle={(e) => onRowToggle(e.data)}
                         rowExpansionTemplate={rowExpansionTemplate}

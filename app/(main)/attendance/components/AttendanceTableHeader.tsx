@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Button } from 'primereact/button';
+import { InputText } from 'primereact/inputtext';
 import { DAY_NAMES, HOLIDAYS } from '@/constants/attendance';
 import { Tooltip } from 'primereact/tooltip';
 
@@ -24,6 +25,8 @@ interface AttendanceTableHeaderProps {
     fieldNames: { [key: string]: string };
     columnWidths?: ColumnWidths;
     onResizeColumn?: (fieldKey: string, newWidth: number) => void;
+    dailyTotalQuestions?: Record<number, number>;
+    onTotalQuestionsChange?: (day: number, count: number) => void;
 }
 
 const AttendanceTableHeader: React.FC<AttendanceTableHeaderProps> = ({
@@ -39,7 +42,9 @@ const AttendanceTableHeader: React.FC<AttendanceTableHeaderProps> = ({
         note: '비고'
     },
     columnWidths,
-    onResizeColumn
+    onResizeColumn,
+    dailyTotalQuestions = {},
+    onTotalQuestionsChange
 }) => {
     const monthStr: string = String(month + 1).padStart(2, '0');
     const dayHeaders: number[] = Array.from({ length: daysInMonth }, (_, i) => i + 1);
@@ -184,16 +189,42 @@ const AttendanceTableHeader: React.FC<AttendanceTableHeaderProps> = ({
                                 role="columnheader"
                                 style={subCellStyle}
                             >
-                                <div className="flex align-items-center justify-content-center gap-1">
-                                    {fieldNames[fieldKey]}
-                                    {isNote && (
-                                        <i
-                                            className="note-tooltip-icon pi pi-exclamation-circle text-red-500 cursor-pointer"
-                                            style={{ fontSize: '1.2rem' }}
-                                            data-pr-tooltip="학생이 확인 가능한 필드입니다"
-                                        ></i>
-                                    )}
-                                </div>
+                                {fieldKey === 'testScore' ? (
+                                    <div className="flex flex-column align-items-center justify-content-center gap-1 w-full" style={{ padding: '2px 0' }}>
+                                        <span style={{ fontSize: '12px', fontWeight: 'bold' }}>{fieldNames[fieldKey]}</span>
+                                        <InputText
+                                            type="number"
+                                            value={dailyTotalQuestions[day] ? String(dailyTotalQuestions[day]) : ''}
+                                            onChange={(e) => {
+                                                const val = parseInt(e.target.value, 10);
+                                                onTotalQuestionsChange?.(day, isNaN(val) || val < 0 ? 0 : val);
+                                            }}
+                                            placeholder="전체"
+                                            title={`${day}일 전체 문항수 입력`}
+                                            style={{
+                                                width: '90%',
+                                                maxWidth: '56px',
+                                                height: '22px',
+                                                fontSize: '11px',
+                                                textAlign: 'center',
+                                                padding: '2px'
+                                            }}
+                                            min={0}
+                                            onClick={(e) => e.stopPropagation()}
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className="flex align-items-center justify-content-center gap-1">
+                                        {fieldNames[fieldKey]}
+                                        {isNote && (
+                                            <i
+                                                className="note-tooltip-icon pi pi-exclamation-circle text-red-500 cursor-pointer"
+                                                style={{ fontSize: '1.2rem' }}
+                                                data-pr-tooltip="학생이 확인 가능한 필드입니다"
+                                            ></i>
+                                        )}
+                                    </div>
+                                )}
                                 {onResizeColumn && (
                                     <div
                                         className="col-resizer"

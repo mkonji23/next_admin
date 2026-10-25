@@ -315,6 +315,20 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
         };
     }, []);
 
+    // 6-1. 1시간(3600초) 자동 일시정지
+    useEffect(() => {
+        if (!isRunning || !studentId) return;
+
+        const autoPauseTimer = setTimeout(() => {
+            if (isRunningRef.current) {
+                pauseStudyRef.current('auto_1h_pause');
+            }
+        }, 3600 * 1000);
+
+        return () => clearTimeout(autoPauseTimer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isRunning, studentId]);
+
     // 6. 60초 주기 자동 Heartbeat 싱크 (비정상 브라우저 종료 대비)
     // isRunning 상태 전환 시에만 인터벌 등록/해제되며, 내부 값은 ref로 안전하게 참조
     useEffect(() => {

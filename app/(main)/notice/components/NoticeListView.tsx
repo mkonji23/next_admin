@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
 import { InputText } from 'primereact/inputtext';
+import { Tag } from 'primereact/tag';
 import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
 import dayjs from 'dayjs';
@@ -16,6 +17,9 @@ interface Notice {
     content?: string;
     delta?: any;
     imageUrls?: any[];
+    classIds?: string[];
+    targetClassIds?: string[];
+    targetClassNames?: string[];
 }
 
 interface NoticeListViewProps {
@@ -40,12 +44,25 @@ const NoticeListView: React.FC<NoticeListViewProps> = ({
     onNoticeSuccess
 }) => {
     const [globalFilter, setGlobalFilter] = useState<string>('');
+    const [classes, setClasses] = useState<any[]>([]);
     const http = useHttp();
     const { showToast } = useToast();
 
+    useEffect(() => {
+        const fetchClasses = async () => {
+            try {
+                const response = await http.get('/choiMath/class/', { disableLoading: true });
+                setClasses(response.data || []);
+            } catch (error) {
+                console.error('Fetch classes error in NoticeListView:', error);
+            }
+        };
+        fetchClasses();
+    }, []);
+
     const titleTemplate = (rowData: Notice) => {
         return (
-            <div className="flex align-items-center gap-2" style={{ minWidth: '300px' }}>
+            <div className="flex align-items-center gap-2" style={{ minWidth: '240px' }}>
                 {rowData.isNotice ? (
                     <span className="p-tag p-tag-success">
                         <i className="pi pi-bell mr-1" />
@@ -58,6 +75,35 @@ const NoticeListView: React.FC<NoticeListViewProps> = ({
                     </span>
                 )}
                 <span className="font-semibold">{rowData.title}</span>
+            </div>
+        );
+    };
+
+    const targetClassTemplate = (rowData: Notice) => {
+        const targetIds = rowData.classIds || rowData.targetClassIds || [];
+        if (!targetIds || targetIds.length === 0) {
+            return (
+                <Tag
+                    value="전체"
+                    severity="success"
+                    className="text-xs px-2 py-1 font-semibold"
+                />
+            );
+        }
+
+        return (
+            <div className="flex flex-wrap gap-1 align-items-center" style={{ maxWidth: '280px' }}>
+                {targetIds.map((id) => {
+                    const matched = classes.find((c) => c.classId === id);
+                    return (
+                        <Tag
+                            key={id}
+                            value={matched ? matched.className : id}
+                            severity="info"
+                            className="text-xs px-2 py-1"
+                        />
+                    );
+                })}
             </div>
         );
     };
@@ -174,8 +220,13 @@ const NoticeListView: React.FC<NoticeListViewProps> = ({
                     field="title"
                     header="제목"
                     body={titleTemplate}
-                    headerStyle={{ minWidth: '300px' }}
+                    headerStyle={{ minWidth: '240px' }}
                     sortable
+                ></Column>
+                <Column
+                    header="대상 클래스"
+                    body={targetClassTemplate}
+                    style={{ minWidth: '150px' }}
                 ></Column>
                 <Column field="createdUser" header="작성자" style={{ minWidth: '100px' }} sortable></Column>
                 <Column
