@@ -45,9 +45,11 @@ next_admin/
 │   │   ├── auth/login/     # 로그인
 │   │   └── student-status/ # 학생 전용 현황 및 순공 모드 화면
 ├── components/
+│   ├── modals/             # 전역/관리자 공통 팝업 모달 (@/components/modals/*, modalRegistry 연동)
 │   ├── studentStatus/      # 학생 현황 & 순공 타이머 관련 컴포넌트
+│   │   ├── modals/         # 학생 화면 전용 팝업 모달 (MonthlyStudyHistoryModal, ProfileSelectionDialog 등)
 │   │   ├── StudyStopwatchCard.tsx       # 순공 스톱워치 메인 카드
-│   │   ├── StudyRankingCard.tsx         # 오늘 순공 랭킹 & 나의 순위 카드
+│   │   ├── StudyRankingCard.tsx         # 오늘 순공 랭킹 리더보드 카드
 │   │   └── ...
 │   └── hoc/
 │       └── withStudentAuth.tsx # 학생 토큰/인증 HOC
@@ -100,3 +102,12 @@ next_admin/
     - 기존의 주석, JSDoc, 비즈니스 로직을 임의로 제거하거나 훼손하지 않습니다.
 6. **신규 관리자 페이지 추가 시 필수 등록 (Keep-Alive 탭 시스템)**:
     - `app/(main)/` 경로에 새 관리자 페이지를 추가할 경우, 반드시 [util/routeComponentMap.tsx](file:///c:/Users/min/Desktop/dev/next_admin/util/routeComponentMap.tsx)의 `routeMap`에 해당 경로와 `React.lazy` 임포트를 등록해야 탭 뷰(`TabbedView`)에서 404 에러 없이 정상 렌더링됩니다.
+7. **컴포넌트(Components)와 모달(Modals) 디렉토리 분리 원칙**:
+    - 화면 카드/목록/뷰 등의 순수 컴포넌트(`Card`, `Row`, `Table`, `List`)와 사용자 인터랙션 팝업(`Dialog`, `Modal`)은 반드시 디렉토리를 분리하여 관리합니다.
+    - 관리자 전역 모달은 `components/modals/` 에 위치합니다 (`modalRegistry.tsx` 연동).
+    - 도메인 전용 모달은 해당 도메인 폴더 내 `modals/` 디렉토리에 위치시킵니다 (예: `components/studentStatus/modals/MonthlyStudyHistoryModal.tsx`, `ProfileSelectionDialog.tsx`).
+    - 메인 컴포넌트 내부에 거대한 `<Dialog>` 코드를 인라인으로 포함하지 않고 독립적인 모달 컴포넌트로 분리합니다.
+8. **순공 랭킹 카드(`StudyRankingCard`) UI 및 4개 노출 규칙**:
+    - 불필요한 장식 텍스트나 좌우 2열 분리 박스를 배제하고, 랭킹 리더보드 단일 리스트 뷰로 구성합니다.
+    - 사용자가 TOP 3(1~3위)에 진입하지 못한 경우: **내 데이터(내 순위, 이름, 총 순공시간)를 리스트의 맨 첫 번째 라인에 노출**하고 그 뒤에 1, 2, 3위를 표시하여 **총 4개 행**을 보여줍니다.
+    - 사용자가 이미 TOP 3에 든 경우: 1, 2, 3위 목록 그대로 3개를 표시하며 본인 항목에 `나` 하이라이트를 적용합니다.

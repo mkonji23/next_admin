@@ -17,7 +17,7 @@ import AIStudentComment from './AIStudentComment';
 import StatsCardsRow from './StatsCardsRow';
 import ChartsRow from './ChartsRow';
 import DetailsTable from './DetailsTable';
-import ProfileSelectionDialog from './ProfileSelectionDialog';
+import ProfileSelectionDialog from './modals/ProfileSelectionDialog';
 import StudyStopwatchCard from './StudyStopwatchCard';
 import StudyRankingCard from './StudyRankingCard';
 import useStudentAuthStore from '@/store/useStudentAuthStore';
@@ -910,11 +910,7 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                 <StudyStopwatchCard studentId={finalStudentId} studentName={finalName} />
 
                 {/* 🏆 월별 순공 랭킹 & 나의 순위 / TOP 3 (3등까지) */}
-                <StudyRankingCard
-                    studentId={finalStudentId}
-                    studentName={finalName}
-                    currentMonth={currentDate}
-                />
+                <StudyRankingCard studentId={finalStudentId} studentName={finalName} currentMonth={currentDate} />
 
                 {/* 프로필 선택 다이얼로그 */}
                 <ProfileSelectionDialog
