@@ -82,9 +82,7 @@ export const MonthlyStudyHistoryModal: React.FC<MonthlyStudyHistoryModalProps> =
             header={
                 <div className="flex align-items-center gap-2">
                     <i className="pi pi-calendar-plus text-primary text-xl" />
-                    <span className="font-bold text-lg">
-                        {studentName ? `${studentName} 학생의 ` : ''}월별 순공시간 기록
-                    </span>
+                    <span className="font-bold text-lg">월별 순공시간 기록</span>
                 </div>
             }
             visible={visible}
@@ -94,19 +92,11 @@ export const MonthlyStudyHistoryModal: React.FC<MonthlyStudyHistoryModalProps> =
             onHide={onHide}
             footer={
                 <div className="flex justify-content-end">
-                    <Button
-                        label="닫기"
-                        icon="pi pi-check"
-                        onClick={onHide}
-                        className="p-button-sm"
-                    />
+                    <Button label="닫기" icon="pi pi-check" onClick={onHide} className="p-button-sm" />
                 </div>
             }
         >
             <div className="p-1">
-                <p className="text-xs text-500 mb-3">
-                    스톱워치로 집중하여 기록된 역대 월별 순공시간 통계 목록입니다.
-                </p>
                 <DataTable
                     value={monthlyHistory}
                     loading={loading}
@@ -126,9 +116,6 @@ export const MonthlyStudyHistoryModal: React.FC<MonthlyStudyHistoryModalProps> =
                                 <span className="font-semibold text-900">
                                     {dayjs(rowData.month).format('YYYY년 M월')}
                                 </span>
-                                {rowData.month === targetMonthStr && (
-                                    <Tag severity="success" value="현재선택" className="text-xs px-1 py-0" />
-                                )}
                             </div>
                         )}
                     />
@@ -148,9 +135,7 @@ export const MonthlyStudyHistoryModal: React.FC<MonthlyStudyHistoryModalProps> =
                         align="center"
                         style={{ minWidth: '90px' }}
                         body={(rowData: MonthlySummaryItem) => (
-                            <span className="text-700 font-medium">
-                                {rowData.studyDaysCount || 0}일
-                            </span>
+                            <span className="text-700 font-medium">{rowData.studyDaysCount || 0}일</span>
                         )}
                     />
                     <Column
@@ -169,9 +154,7 @@ export const MonthlyStudyHistoryModal: React.FC<MonthlyStudyHistoryModalProps> =
                         align="center"
                         style={{ minWidth: '85px' }}
                         body={(rowData: MonthlySummaryItem) => (
-                            <span className="text-500 text-sm">
-                                {rowData.sessionsCount || 0}회
-                            </span>
+                            <span className="text-500 text-sm">{rowData.sessionsCount || 0}회</span>
                         )}
                     />
                 </DataTable>
