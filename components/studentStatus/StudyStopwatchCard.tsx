@@ -10,6 +10,7 @@ import { LayoutContext } from '@/layout/context/layoutcontext';
 import { useStudyStopwatch } from '@/hooks/useStudyStopwatch';
 import { StudyEndReason } from '@/types/studyTime';
 import dayjs from 'dayjs';
+import styles from '@/styles/modules/StudyStopwatchCard.module.css';
 
 interface StudyStopwatchCardProps {
     studentId?: string;
@@ -174,272 +175,38 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
 
     const is1hAutoPaused = alertReason === 'auto_1h_pause';
 
-    // 라이트 / 다크 테마별 스타일 정의
-    const cardBg = isDark
-        ? isRunning
-            ? 'linear-gradient(135deg, #143522 0%, #0d2318 60%, #052e16 100%)'
-            : 'linear-gradient(135deg, #1e293b 0%, #0f172a 60%, #1e1b4b 100%)'
-        : isRunning
-        ? 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 60%, #ecfdf5 100%)'
-        : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 60%, #f1f5f9 100%)';
-
-    const cardBorder = isDark
-        ? isRunning
-            ? '1.5px solid rgba(34,197,94,0.35)'
-            : '1.5px solid rgba(99,102,241,0.25)'
-        : isRunning
-        ? '1.5px solid #86efac'
-        : '1.5px solid #e2e8f0';
-
-    const titleColor = isDark ? '#f1f5f9' : '#0f172a';
-    const subtitleColor = isDark ? '#94a3b8' : '#64748b';
-    const headerBorderColor = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)';
-
-    const clockBg = isDark ? 'rgba(0,0,0,0.3)' : isRunning ? 'rgba(255,255,255,0.85)' : 'rgba(241,245,249,0.7)';
-    const clockBorder = isDark
-        ? isRunning
-            ? '1px solid rgba(34,197,94,0.35)'
-            : '1px solid rgba(255,255,255,0.08)'
-        : isRunning
-        ? '1.5px solid #86efac'
-        : '1px solid #e2e8f0';
-    const clockTextColor = isDark ? (isRunning ? '#4ade80' : '#e2e8f0') : isRunning ? '#15803d' : '#1e293b';
-
-    const statsBg = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)';
-    const statsBorder = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)';
-    const statsTextColor = isDark ? '#cbd5e1' : '#1e293b';
-
     return (
         <>
             <Card
-                className="mb-4 shadow-3 border-round-2xl overflow-hidden"
-                style={{
-                    background: cardBg,
-                    border: cardBorder,
-                    transition: 'background 0.5s ease, border 0.5s ease'
-                }}
+                className={`mb-4 shadow-3 border-round-2xl overflow-hidden ${styles.stopwatchCard}`}
+                data-theme={isDark ? 'dark' : 'light'}
+                data-running={isRunning}
             >
                 <Tooltip target=".stopwatch-info-tooltip" position="top" />
-                <style>{`
-                    @keyframes pulse-ring {
-                        0% { box-shadow: 0 0 0 0 rgba(34,197,94,0.4); }
-                        70% { box-shadow: 0 0 0 16px rgba(34,197,94,0); }
-                        100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
-                    }
-                    .stopwatch-running-glow {
-                        animation: pulse-ring 2s infinite;
-                    }
-                    .stopwatch-start-btn {
-                        font-size: 1.15rem !important;
-                        padding: 1rem 2rem !important;
-                        border-radius: 2rem !important;
-                        letter-spacing: 0.05em;
-                        box-shadow: 0 4px 20px rgba(22,163,74,0.3) !important;
-                        transition: transform 0.15s, box-shadow 0.15s !important;
-                    }
-                    .stopwatch-start-btn:not(:disabled):hover {
-                        transform: scale(1.03);
-                        box-shadow: 0 6px 28px rgba(22,163,74,0.45) !important;
-                    }
-                    .stopwatch-pause-btn {
-                        font-size: 1.05rem !important;
-                        padding: 0.85rem 1.8rem !important;
-                        border-radius: 2rem !important;
-                        box-shadow: 0 4px 20px rgba(234,179,8,0.3) !important;
-                    }
-                    @keyframes second-pop-dark {
-                        0% {
-                            transform: scale(1.08);
-                            filter: brightness(1.4) drop-shadow(0 0 24px rgba(74, 222, 128, 0.95));
-                            color: #86efac;
-                        }
-                        45% {
-                            transform: scale(1.02);
-                            filter: brightness(1.15) drop-shadow(0 0 10px rgba(74, 222, 128, 0.5));
-                        }
-                        100% {
-                            transform: scale(1);
-                            filter: brightness(1);
-                            color: inherit;
-                        }
-                    }
-                    @keyframes second-pop-light {
-                        0% {
-                            transform: scale(1.08);
-                            filter: drop-shadow(0 0 18px rgba(22, 163, 74, 0.85));
-                            color: #16a34a;
-                        }
-                        45% {
-                            transform: scale(1.02);
-                            filter: drop-shadow(0 0 8px rgba(22, 163, 74, 0.45));
-                        }
-                        100% {
-                            transform: scale(1);
-                            color: inherit;
-                        }
-                    }
-                    @keyframes fullscreen-colon-pulse {
-                        0%, 100% {
-                            opacity: 1;
-                            transform: scale(1);
-                        }
-                        50% {
-                            opacity: 0.25;
-                            transform: scale(0.92);
-                        }
-                    }
-                    .second-tick-highlight-dark {
-                        animation: second-pop-dark 0.85s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
-                        transform-origin: center center;
-                        will-change: transform, filter, color;
-                    }
-                    .second-tick-highlight-light {
-                        animation: second-pop-light 0.85s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
-                        transform-origin: center center;
-                        will-change: transform, filter, color;
-                    }
-                    .fullscreen-colon-blink {
-                        animation: fullscreen-colon-pulse 1s infinite ease-in-out;
-                        display: inline-block;
-                    }
-                    /* 분 변경 펄스 애니메이션 (초가 59->00으로 넘어갈 때) */
-                    @keyframes minute-pop-dark {
-                        0% {
-                            transform: scale(1.18);
-                            filter: brightness(1.6) drop-shadow(0 0 35px rgba(52, 211, 153, 1));
-                            color: #6ee7b7;
-                        }
-                        40% {
-                            transform: scale(1.06);
-                            filter: brightness(1.3) drop-shadow(0 0 16px rgba(52, 211, 153, 0.7));
-                        }
-                        100% {
-                            transform: scale(1);
-                            filter: brightness(1);
-                            color: inherit;
-                        }
-                    }
-                    @keyframes minute-pop-light {
-                        0% {
-                            transform: scale(1.18);
-                            filter: drop-shadow(0 0 25px rgba(16, 185, 129, 0.95));
-                            color: #059669;
-                        }
-                        40% {
-                            transform: scale(1.06);
-                            filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.5));
-                        }
-                        100% {
-                            transform: scale(1);
-                            color: inherit;
-                        }
-                    }
-                    .minute-tick-highlight-dark {
-                        animation: minute-pop-dark 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-                        transform-origin: center center;
-                        display: inline-block;
-                        will-change: transform, filter, color;
-                    }
-                    .minute-tick-highlight-light {
-                        animation: minute-pop-light 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-                        transform-origin: center center;
-                        display: inline-block;
-                        will-change: transform, filter, color;
-                    }
-                    /* 시간 변경 펄스 애니메이션 (분이 59->00으로 넘어갈 때) */
-                    @keyframes hour-pop-dark {
-                        0% {
-                            transform: scale(1.24);
-                            filter: brightness(1.7) drop-shadow(0 0 45px rgba(250, 204, 21, 1)) drop-shadow(0 0 70px rgba(234, 179, 8, 0.8));
-                            color: #fef08a;
-                        }
-                        35% {
-                            transform: scale(1.08);
-                            filter: brightness(1.4) drop-shadow(0 0 24px rgba(250, 204, 21, 0.7));
-                        }
-                        100% {
-                            transform: scale(1);
-                            filter: brightness(1);
-                            color: inherit;
-                        }
-                    }
-                    @keyframes hour-pop-light {
-                        0% {
-                            transform: scale(1.24);
-                            filter: drop-shadow(0 0 35px rgba(217, 119, 6, 1));
-                            color: #d97706;
-                        }
-                        35% {
-                            transform: scale(1.08);
-                            filter: drop-shadow(0 0 16px rgba(217, 119, 6, 0.6));
-                        }
-                        100% {
-                            transform: scale(1);
-                            color: inherit;
-                        }
-                    }
-                    .hour-tick-highlight-dark {
-                        animation: hour-pop-dark 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-                        transform-origin: center center;
-                        display: inline-block;
-                        will-change: transform, filter, color;
-                    }
-                    .hour-tick-highlight-light {
-                        animation: hour-pop-light 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-                        transform-origin: center center;
-                        display: inline-block;
-                        will-change: transform, filter, color;
-                    }
-                `}</style>
                 <div className="flex flex-column gap-3">
                     {/* 상단 헤더: 타이틀, 전체 총 공부시간, 현재시간 & 상태 태그, 전체화면 버튼 */}
-                    <div
-                        className="flex align-items-center justify-content-between pb-2"
-                        style={{ borderBottom: `1px solid ${headerBorderColor}` }}
-                    >
+                    <div className={`flex align-items-center justify-content-between pb-2 ${styles.cardHeader}`}>
                         <div className="flex flex-column gap-1">
                             <div className="flex flex-wrap align-items-baseline gap-2">
                                 <div
                                     className="flex align-items-center gap-2 stopwatch-info-tooltip cursor-pointer"
                                     data-pr-tooltip="방치 방지를 위해 최대 1시간 연속 측정 후 자동 일시정지되며, 재실행이 필요합니다."
                                 >
-                                    <i
-                                        className="pi pi-stopwatch text-xl"
-                                        style={{
-                                            color: isRunning
-                                                ? isDark
-                                                    ? '#4ade80'
-                                                    : '#16a34a'
-                                                : isDark
-                                                ? '#818cf8'
-                                                : '#6366f1'
-                                        }}
-                                    />
-                                    <span className="font-bold text-lg" style={{ color: titleColor }}>
+                                    <i className={`pi pi-stopwatch text-xl ${styles.cardIcon}`} />
+                                    <span className={`font-bold text-lg ${styles.cardTitle}`}>
                                         순공 타이머
                                     </span>
                                 </div>
-                                <span className="text-xs font-normal" style={{ color: subtitleColor }}>
+                                <span className={`text-xs font-normal ${styles.cardSubtitle}`}>
                                     (전체 {formatDurationText(activeOverallSeconds)})
                                 </span>
                             </div>
                             {/* 현재 시간 표시 */}
-                            <div className="flex align-items-center gap-1 text-xs" style={{ color: subtitleColor }}>
-                                <i
-                                    className="pi pi-clock text-xs"
-                                    style={{
-                                        color: isRunning
-                                            ? isDark
-                                                ? '#4ade80'
-                                                : '#16a34a'
-                                            : isDark
-                                            ? '#818cf8'
-                                            : '#6366f1'
-                                    }}
-                                />
+                            <div className={`flex align-items-center gap-1 text-xs ${styles.cardSubtitle}`}>
+                                <i className={`pi pi-clock text-xs ${styles.cardIcon}`} />
                                 <span>
                                     현재 시간:{' '}
-                                    <strong style={{ color: isDark ? '#e2e8f0' : '#1e293b' }}>
+                                    <strong className={styles.currentTimeText}>
                                         {formatKoreanTime(currentTime, false)}
                                     </strong>
                                 </span>
@@ -456,18 +223,30 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                                     <Tag
                                         severity="success"
                                         value="집중"
-                                        className="font-bold px-2 py-1 cursor-pointer"
-                                        style={{ fontSize: '11px', background: '#16a34a', border: 'none' }}
+                                        className="font-bold px-2 py-1 cursor-pointer white-space-nowrap"
+                                        style={{
+                                            fontSize: '11px',
+                                            background: '#16a34a',
+                                            border: 'none',
+                                            minWidth: '3.8rem',
+                                            display: 'inline-flex',
+                                            justifyContent: 'center',
+                                            whiteSpace: 'nowrap'
+                                        }}
                                     />
                                 ) : (
                                     <Tag
                                         severity={null}
                                         value="일시정지"
-                                        className="font-medium px-2 py-1 cursor-pointer"
+                                        className="font-medium px-2 py-1 cursor-pointer white-space-nowrap"
                                         style={{
                                             fontSize: '11px',
                                             background: isDark ? 'rgba(255,255,255,0.1)' : '#e2e8f0',
-                                            color: isDark ? '#94a3b8' : '#475569'
+                                            color: isDark ? '#94a3b8' : '#475569',
+                                            minWidth: '3.8rem',
+                                            display: 'inline-flex',
+                                            justifyContent: 'center',
+                                            whiteSpace: 'nowrap'
                                         }}
                                     />
                                 )}
@@ -477,7 +256,7 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                                 size="small"
                                 text
                                 rounded
-                                style={{ color: subtitleColor }}
+                                className={styles.cardSubtitle}
                                 tooltip="전체화면 몰입 모드"
                                 tooltipOptions={{ position: 'top' }}
                                 onClick={openFullscreen}
@@ -487,7 +266,7 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                                 size="small"
                                 text
                                 rounded
-                                style={{ color: subtitleColor }}
+                                className={styles.cardSubtitle}
                                 tooltip="오늘의 공부 타임라인"
                                 tooltipOptions={{ position: 'top' }}
                                 onClick={() => setTimelineVisible(true)}
@@ -497,37 +276,27 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
 
                     {/* 중앙: 대형 스톱워치 디스플레이 */}
                     <div
-                        className={`flex flex-column align-items-center justify-content-center py-3 border-round-xl cursor-pointer select-none transition-all transition-duration-200 ${
-                            isRunning ? 'stopwatch-running-glow hover:shadow-3' : 'hover:surface-100 hover:shadow-2'
+                        className={`flex flex-column align-items-center justify-content-center py-3 border-round-xl cursor-pointer select-none transition-all transition-duration-200 ${styles.clockContainer} ${
+                            isRunning ? `${styles.runningGlow} hover:shadow-3` : 'hover:surface-100 hover:shadow-2'
                         }`}
                         style={{
-                            background: clockBg,
-                            border: clockBorder,
-                            transition: 'all 0.3s ease',
                             cursor: !studentId || loading ? 'not-allowed' : 'pointer'
                         }}
                         onClick={handleToggleStudy}
                         title={isRunning ? '클릭하여 일시정지' : '클릭하여 공부 시작'}
                     >
                         <div
-                            className="font-extrabold font-mono transition-transform active:scale-95"
+                            className={`font-extrabold font-mono transition-transform active:scale-95 ${styles.clockText}`}
                             style={{
                                 fontSize: 'clamp(2.5rem, 10vw, 4rem)',
-                                letterSpacing: '4px',
-                                color: clockTextColor,
-                                textShadow: isRunning
-                                    ? isDark
-                                        ? '0 0 20px rgba(74,222,128,0.5)'
-                                        : '0 2px 10px rgba(22,163,74,0.25)'
-                                    : 'none',
-                                transition: 'color 0.5s, text-shadow 0.5s'
+                                letterSpacing: '4px'
                             }}
                         >
                             {totalTimeDisplay.formatted}
                         </div>
                         <span
-                            className="text-xs mt-1 stopwatch-info-tooltip flex align-items-center gap-1"
-                            style={{ color: subtitleColor, letterSpacing: '0.05em' }}
+                            className={`text-xs mt-1 stopwatch-info-tooltip flex align-items-center gap-1 ${styles.cardSubtitle}`}
+                            style={{ letterSpacing: '0.05em' }}
                             data-pr-tooltip="최대 1시간 연속 측정 후 자동 일시정지 (클릭 시 공부 시작/일시정지)"
                         >
                             오늘 누적 공부시간 <i className="pi pi-info-circle text-xs" />
@@ -540,7 +309,7 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                             <Button
                                 label="공부 시작"
                                 icon="pi pi-play"
-                                className="stopwatch-start-btn w-full font-bold"
+                                className={`${styles.startBtn} w-full font-bold`}
                                 style={{
                                     background: 'linear-gradient(135deg, #16a34a, #15803d)',
                                     border: 'none',
@@ -557,7 +326,7 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                                 label="일시정지"
                                 icon="pi pi-pause"
                                 severity="warning"
-                                className="stopwatch-pause-btn w-full font-bold"
+                                className={`${styles.pauseBtn} w-full font-bold`}
                                 style={{ maxWidth: '20rem' }}
                                 onClick={() => pauseStudy('manual_pause')}
                             />
@@ -565,28 +334,25 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                     </div>
 
                     {/* 하단 통계 정보 (최초 시작, 최종 종료, 세션 수) */}
-                    <div
-                        className="grid grid-nogutter border-round-xl p-2 mt-1 text-center text-xs"
-                        style={{ background: statsBg, border: `1px solid ${statsBorder}` }}
-                    >
-                        <div className="col-4" style={{ borderRight: `1px solid ${statsBorder}` }}>
-                            <span className="block mb-1" style={{ color: subtitleColor }}>
+                    <div className={`grid grid-nogutter border-round-xl p-2 mt-1 text-center text-xs ${styles.statsContainer}`}>
+                        <div className={`col-4 ${styles.statsDivider}`}>
+                            <span className={`block mb-1 ${styles.cardSubtitle}`}>
                                 첫 시작
                             </span>
-                            <strong style={{ color: statsTextColor, fontSize: '0.75rem' }}>
+                            <strong className={`text-xs ${styles.statsValue}`}>
                                 {formatKoreanTime(todayData?.firstStartedAt)}
                             </strong>
                         </div>
-                        <div className="col-4" style={{ borderRight: `1px solid ${statsBorder}` }}>
-                            <span className="block mb-1" style={{ color: subtitleColor }}>
+                        <div className={`col-4 ${styles.statsDivider}`}>
+                            <span className={`block mb-1 ${styles.cardSubtitle}`}>
                                 마지막 종료
                             </span>
-                            <strong style={{ color: statsTextColor, fontSize: '0.75rem' }}>
+                            <strong className={`text-xs ${styles.statsValue}`}>
                                 {formatKoreanTime(todayData?.lastEndedAt)}
                             </strong>
                         </div>
                         <div className="col-4">
-                            <span className="block mb-1" style={{ color: subtitleColor }}>
+                            <span className={`block mb-1 ${styles.cardSubtitle}`}>
                                 집중 세션
                             </span>
                             <strong style={{ color: isDark ? '#818cf8' : '#4f46e5', fontSize: '0.75rem' }}>
@@ -600,28 +366,9 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
             {/* 🖥️ [전체 화면 몰입형 스톱워치 뷰] */}
             {isFullscreen && (
                 <div
-                    style={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        width: '100vw',
-                        height: '100vh',
-                        zIndex: 9990,
-                        background: isDark
-                            ? isRunning
-                                ? 'radial-gradient(circle at center, #112d1b 0%, #06150b 60%, #020704 100%)'
-                                : 'radial-gradient(circle at center, #1e293b 0%, #0f172a 60%, #030712 100%)'
-                            : isRunning
-                            ? 'radial-gradient(circle at center, #f0fdf4 0%, #dcfce7 70%, #bbf7d0 100%)'
-                            : 'radial-gradient(circle at center, #ffffff 0%, #f8fafc 70%, #e2e8f0 100%)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'space-between',
-                        padding: 'clamp(1rem, 4vw, 2.5rem)',
-                        boxSizing: 'border-box',
-                        overflow: 'hidden',
-                        transition: 'background 0.6s ease'
-                    }}
+                    className={styles.fullscreenOverlay}
+                    data-theme={isDark ? 'dark' : 'light'}
+                    data-running={isRunning}
                 >
                     {/* 전체화면 상단 바 */}
                     <div className="flex align-items-center justify-content-between w-full">
@@ -644,14 +391,13 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                         <div
                             className="hidden md:flex align-items-center gap-2 px-3 py-1 border-round-3xl text-sm"
                             style={{
-                                background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
-                                color: subtitleColor
+                                background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)'
                             }}
                         >
                             <i className="pi pi-clock" />
                             <span>
                                 현재 시간:{' '}
-                                <strong style={{ color: titleColor }}>{formatKoreanTime(currentTime, true)}</strong>
+                                <strong className={styles.cardTitle}>{formatKoreanTime(currentTime, true)}</strong>
                             </span>
                         </div>
 
@@ -682,20 +428,30 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                                 <Tag
                                     severity="success"
                                     value="공부 중"
-                                    className="font-bold px-3 py-2 text-sm shadow-2 cursor-pointer"
+                                    className="font-bold px-4 py-2 text-sm shadow-2 cursor-pointer white-space-nowrap"
                                     style={{
                                         background: '#16a34a',
-                                        letterSpacing: '1px'
+                                        letterSpacing: '1px',
+                                        minWidth: '6rem',
+                                        display: 'inline-flex',
+                                        justifyContent: 'center',
+                                        textAlign: 'center',
+                                        whiteSpace: 'nowrap'
                                     }}
                                 />
                             ) : (
                                 <Tag
                                     severity={null}
                                     value="일시정지"
-                                    className="font-bold px-3 py-2 text-sm cursor-pointer"
+                                    className="font-bold px-4 py-2 text-sm cursor-pointer white-space-nowrap"
                                     style={{
                                         background: isDark ? 'rgba(255,255,255,0.15)' : '#cbd5e1',
-                                        color: isDark ? '#e2e8f0' : '#334155'
+                                        color: isDark ? '#e2e8f0' : '#334155',
+                                        minWidth: '6rem',
+                                        display: 'inline-flex',
+                                        justifyContent: 'center',
+                                        textAlign: 'center',
+                                        whiteSpace: 'nowrap'
                                     }}
                                 />
                             )}
@@ -703,18 +459,11 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
 
                         {/* 초대형 스톱워치 텍스트 (초마다 리드미컬 하이라이트) */}
                         <div
-                            className="font-extrabold font-mono select-none cursor-pointer flex align-items-center justify-content-center flex-nowrap"
+                            className={`font-extrabold font-mono select-none cursor-pointer flex align-items-center justify-content-center flex-nowrap ${styles.clockText}`}
                             style={{
                                 fontSize: 'clamp(4.2rem, 18vw, 11rem)',
                                 lineHeight: '1',
-                                letterSpacing: 'clamp(2px, 1.2vw, 8px)',
-                                color: clockTextColor,
-                                textShadow: isRunning
-                                    ? isDark
-                                        ? '0 0 40px rgba(74,222,128,0.5), 0 0 80px rgba(34,197,94,0.25)'
-                                        : '0 4px 20px rgba(22,163,74,0.3)'
-                                    : 'none',
-                                transition: 'color 0.5s, text-shadow 0.5s'
+                                letterSpacing: 'clamp(2px, 1.2vw, 8px)'
                             }}
                             onClick={handleToggleStudy}
                             title={isRunning ? '클릭하여 일시정지' : '클릭하여 공부 시작'}
@@ -723,37 +472,31 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                                 key={isRunning && hourPulseKey > 0 ? `hour-${hourPulseKey}` : 'hour-idle'}
                                 className={
                                     isRunning && hourPulseKey > 0
-                                        ? isDark
-                                            ? 'hour-tick-highlight-dark'
-                                            : 'hour-tick-highlight-light'
+                                        ? isDark ? styles.hourTickDark : styles.hourTickLight
                                         : ''
                                 }
                                 style={{ display: 'inline-block' }}
                             >
                                 {totalTimeDisplay.hours}
                             </span>
-                            <span className={isRunning ? 'fullscreen-colon-blink mx-1' : 'mx-1'}>:</span>
+                            <span className={isRunning ? `${styles.colonBlink} mx-1` : 'mx-1'}>:</span>
                             <span
                                 key={isRunning && minutePulseKey > 0 ? `min-${minutePulseKey}` : 'min-idle'}
                                 className={
                                     isRunning && minutePulseKey > 0
-                                        ? isDark
-                                            ? 'minute-tick-highlight-dark'
-                                            : 'minute-tick-highlight-light'
+                                        ? isDark ? styles.minuteTickDark : styles.minuteTickLight
                                         : ''
                                 }
                                 style={{ display: 'inline-block' }}
                             >
                                 {totalTimeDisplay.minutes}
                             </span>
-                            <span className={isRunning ? 'fullscreen-colon-blink mx-1' : 'mx-1'}>:</span>
+                            <span className={isRunning ? `${styles.colonBlink} mx-1` : 'mx-1'}>:</span>
                             <span
                                 key={isRunning ? totalTimeDisplay.seconds : 'paused'}
                                 className={
                                     isRunning
-                                        ? isDark
-                                            ? 'second-tick-highlight-dark'
-                                            : 'second-tick-highlight-light'
+                                        ? isDark ? styles.secondTickDark : styles.secondTickLight
                                         : ''
                                 }
                                 style={{ display: 'inline-block' }}
@@ -767,18 +510,16 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                             <span
                                 className="text-sm font-semibold px-3 py-1 border-round-2xl"
                                 style={{
-                                    background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
-                                    color: subtitleColor
+                                    background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'
                                 }}
                             >
                                 오늘 누적 총 공부시간:{' '}
-                                <strong style={{ color: titleColor }}>{formatDurationText(activeTotalSeconds)}</strong>
+                                <strong className={styles.cardTitle}>{formatDurationText(activeTotalSeconds)}</strong>
                             </span>
                             <span
                                 className="text-sm font-semibold px-3 py-1 border-round-2xl"
                                 style={{
-                                    background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
-                                    color: subtitleColor
+                                    background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'
                                 }}
                             >
                                 오늘 집중 세션:{' '}
@@ -821,7 +562,7 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                             )}
                         </div>
 
-                        <div className="flex align-items-center gap-2 text-xs" style={{ color: subtitleColor }}>
+                        <div className={`flex align-items-center gap-2 text-xs ${styles.cardSubtitle}`}>
                             <i className="pi pi-info-circle text-xs" />
                             <span>방치 방지를 위해 최대 1시간 연속 측정 후 자동 일시정지됩니다.</span>
                         </div>

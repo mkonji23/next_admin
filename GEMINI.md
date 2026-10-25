@@ -1,104 +1,102 @@
-# 프로젝트 개요
+# Next.js Admin (ChoiMath Front-End) AI Agent Harness & Context
 
-이 프로젝트는 `create-next-app`으로 부트스트랩된 Next.js 프로젝트입니다. React와 TypeScript로 빌드되었으며, UI 컴포넌트로는 PrimeReact, 상태 관리에는 Zustand, 백엔드 서비스로는 Supabase를 활용합니다. 파일 구조와 의존성을 볼 때 관리자 대시보드 또는 애플리케이션으로 보입니다.
+이 문서는 Gemini / Antigravity 및 AI 에이전트가 본 프로젝트의 프론트엔드 코드를 이해하고, 수정하며, 자체 검증(Harness)할 수 있도록 정의된 표준 가이드입니다.
 
-## 빌드 및 실행
+---
 
-이 프로젝트는 패키지 매니저로 `yarn`을 사용합니다.
+## 1. 프로젝트 개요 및 기술 스택
 
--   **개발 환경 실행:**
-    개발 서버를 실행하려면 다음 명령어를 사용하세요:
+-   **Framework**: Next.js 15 (App Router 구조, `app/` 디렉토리 기반)
+-   **UI Library**: PrimeReact 10.2.1, PrimeIcons, PrimeFlex 3.3.1
+-   **Styling**:
+    -   전역 SCSS (`styles/layout/layout.scss`)
+    -   컴포넌트별 스타일: **CSS Modules** (`[ComponentName].module.css`) 사용 권장 (인라인 `<style>` 태그 지양)
+-   **Language**: TypeScript (엄격한 타입 체크 `strict: true`, path alias `@/*`)
+-   **State Management**: Zustand, React Activation (Keep-Alive 탭 시스템 `layout/TabbedView.tsx`)
+-   **HTTP Client**: Axios 커스텀 훅 (`@/util/axiosInstance`의 `useHttp()`)
+-   **Date Library**: `dayjs` (전역 날짜 처리 표준)
 
-    ```bash
-    yarn dev
-    ```
+---
 
-    이 명령어는 `http://localhost:4000`에서 애플리케이션을 시작합니다.
+## 2. 하네스(Harness) 검증 및 실행 명령어
 
--   **프로덕션 빌드:**
-    프로덕션용으로 프로젝트를 빌드하려면 다음 명령어를 사용하세요:
+AI 에이전트는 코드 수정 후 반드시 다음 명령어를 통해 정적 타입과 빌드 무결성을 검증해야 합니다.
 
-    ```bash
-    yarn build
-    ```
+### 2.1 개발 서버 실행
 
--   **프로덕션 시작:**
-    빌드 후 프로덕션 서버를 시작하려면 다음 명령어를 사용하세요:
+```bash
+npm run dev
+# 또는 yarn dev (포트: 4000)
+```
 
-    ```bash
-    yarn start
-    ```
+---
 
-    이 명령어 또한 `http://localhost:4000`에서 애플리케이션을 시작합니다.
+## 3. 핵심 디렉토리 및 아키텍처 규칙
 
--   **코드 포맷팅:**
-    Prettier 규칙에 따라 코드를 포맷하려면 다음 명령어를 사용하세요:
+```
+next_admin/
+├── app/
+│   ├── (main)/             # 관리자 인증 기반 대시보드 페이지 (헤더/사이드바/메뉴 레이아웃)
+│   │   ├── attendanceList/
+│   │   ├── praise/         # 칭찬 현황 통계
+│   │   ├── studyTimeStatistics/ # 순수 공부시간 통계
+│   │   └── ...
+│   ├── (full-page)/        # 전체화면 독립 페이지 (사이드바 없음)
+│   │   ├── auth/login/     # 로그인
+│   │   └── student-status/ # 학생 전용 현황 및 순공 모드 화면
+├── components/
+│   ├── studentStatus/      # 학생 현황 & 순공 타이머 관련 컴포넌트
+│   │   ├── StudyStopwatchCard.tsx       # 순공 스톱워치 메인 카드
+│   │   ├── StudyRankingCard.tsx         # 오늘 순공 랭킹 & 나의 순위 카드
+│   │   └── ...
+│   └── hoc/
+│       └── withStudentAuth.tsx # 학생 토큰/인증 HOC
+├── styles/
+│   ├── modules/            # 컴포넌트별 CSS Module 전용 디렉토리 (@/styles/modules/*.module.css)
+│   │   └── StudyStopwatchCard.module.css
+│   └── layout/             # 전역 Sakai 레이아웃 스타일
+├── constants/
+│   ├── menu.ts             # 관리자 대시보드 메뉴 모델 (AppMenuModel)
+│   └── ...
+├── hooks/
+│   ├── useStudyStopwatch.ts # 순공시간 1초 타이머 & 백엔드 동기화 훅
+│   └── useToast.ts
+├── layout/                 # PrimeReact Sakai 기반 레이아웃 시스템
+├── store/                  # Zustand 상태 저장소
+├── types/                  # TypeScript 인터페이스 정의
+└── util/
+    └── axiosInstance.ts    # 백엔드 API 통신 인스턴스 (인증 토큰 자동 주입)
+```
 
-    ```bash
-    yarn format
-    ```
+---
 
--   **린팅:**
-    ESLint로 코드를 린팅하려면 다음 명령어를 사용하세요:
+## 4. 코딩 및 개발 컨벤션 (Agent Rules)
 
-    ```bash
-    yarn lint
-    ```
-
--   **타입 검사:**
-    TypeScript 타입 검사를 수행하려면 다음 명령어를 사용하세요:
-    ```bash
-    yarn check-types
-    ```
-
-## 개발 컨벤션
-
--   **언어:** TypeScript
--   **프레임워크:** Next.js, React
--   **스타일링:** SCSS (`styles/layout/*.scss` 파일 기반) 및 PrimeFlex
--   **UI 라이브러리:** PrimeReact
--   **상태 관리:** Zustand
--   **백엔드/데이터베이스:** Supabase (`@supabase/supabase-js` 의존성으로 확인)
--   **API 호출:** Axios (`axios` 의존성으로 확인)
--   **코드 포맷팅:** Prettier (`.prettierrc.json` 및 `package.json` 스크립트에 설정)
--   **린팅:** ESLint (`.eslintrc.json` 및 `package.json` 스크립트에 설정)
--   **디렉토리 구조:** `app` 디렉토리는 `(full-page)`, `(main)`과 같은 라우트 그룹을 사용하는 Next.js의 앱 라우터 구조를 따릅니다. API 라우트는 `app/api` 아래에 정의됩니다. 또한 `demo`, `hooks`, `layout`, `lib`, `public`, `store`, `styles`, `types`, `util` 디렉토리가 있어 모듈화되고 잘 정리된 코드베이스임을 시사합니다.
-
--   참조파일 api.md 사용 대용량 텍스트입력부분
-
-## manul update
-
--   AppMenu.tsx 기준으로 업데이트 한다.
-
-    // 참고: AppMenu.tsx에 정의된 다른 모든 경로들을 여기에 추가해야 합니다.
-
-## 디렉토리별 메뉴 구성 현황 및 구현 방식
-
-이 프로젝트의 화면은 크게 관리자 사이드바 뷰를 포함하는 `(main)`과 단독 뷰로 동작하는 `(full-page)` 영역으로 나뉘어 관리됩니다. 공용되는 컴포넌트는 `components` 내부에서 별도 구현 후 각각 가져와 사용하는 방식을 따릅니다.
-
-### 1. `app/(main)` 영역 (관리자 대시보드 및 탭 레이아웃 적용)
-- **대상:** 시스템을 관리하는 학원장, 선생님, 조교용 페이지.
-- **특징:**
-  - `layout/AppMenu.tsx` (및 `constants/menu.ts`)에 의해 네비게이션이 노출 및 제어됩니다.
-  - `util/routeComponentMap.tsx`에 경로와 컴포넌트를 명시하여 커스텀 탭 매니저에 의해 맵핑됩니다.
-- **주요 메뉴 구성 (메뉴 트리 기준):**
-  - **Statistics:** `/attendanceList`(출석 통계), `/studentAttendanceStatistics`(학생별 분석), `/praise`(칭찬 현황)
-  - **Attendance:** `/attendance`(출석부), `/weekSchedule`(주간 스케줄), `/assistantTodo`(일자별 업무)
-  - **Share:** `/kakao-share`, `/settings/kakao`
-  - **Settings:** `/studentList`, `/classList`, `/userList`
-  - **Fullpage (Admin):** `/admin-student-status` (학생 본인 현황을 어드민 메뉴 내에서 조회하기 라우트)
-
-### 2. `app/(full-page)` 영역 (단독 뷰 레이아웃 적용)
-- **대상:** 주로 로그인, 외부 제공 화면 또는 학생/학부모 전용 페이지.
-- **특징:**
-  - 관리자 사이드바나 탭이 랜더링되지 않으며 화면 전체를 씁니다.
-  - `middleware.ts` 내부의 정규표현식(`! ...`)에 예외 항목으로 등록하여 토큰 없이 접근할 수 있게 구성해야 합니다.
-- **주요 경로 구성:**
-  - `/auth/login` : 어드민 인증 수단
-  - `/student-status` : 학생 칭찬/출석 현황 외부 조회 뷰. 인증 시 `withStudentAuth` HOC를 통해 학생/학부모를 구별하여 진입을 허용.
-
-### 3. 공유/재활용 뷰의 컴포넌트 분리 (Implementation method)
-- 특정 화면을 관리자는 `(main)`으로 보고, 학생은 `(full-page)`로 접근하여 봐야 하는 경우에는 동일 코드를 중복 작성하지 않습니다.
-- **구현 방식:**
-  - UI 렌더링 코드는 `components/` 하위(예: `components/studentStatus/StudentStatusContent.tsx`)에 컴포넌트화 시켜 완전한 기능을 갖추도록 개발합니다.
-  - 각각의 그룹(`./app/(main)/라우팅/page.tsx`와 `./app/(full-page)/라우팅/page.tsx`)에서는 해당 공통 컴포넌트만을 import 하여 `return <StudentStatusContent />;` 형태로 불러와 일관성을 유지하도록 설계합니다.
+1. **CSS 관리**:
+    - 컴포넌트 내부의 인라인 `<style>{...}</style>` 태그는 사용하지 않습니다.
+    - 컴포넌트별 CSS 모듈은 `styles/modules/` 디렉토리에 모아서 `[ComponentName].module.css`로 분리하고, `@/styles/modules/[ComponentName].module.css`로 import합니다.
+    - PrimeFlex 유틸리티 클래스(`flex`, `gap-2`, `surface-card`, `border-round-xl` 등)를 적극 활용합니다.
+2. **다크 모드 지원**:
+    - `useContext(LayoutContext)`의 `layoutConfig.colorScheme === 'dark'`를 확인하여 다크/라이트 모드 테마를 일관되게 지원합니다.
+3. **API 통신 및 `useHttp()` 무한루프 방지 규칙**:
+    - 항상 `@/util/axiosInstance`의 `useHttp()` 훅을 사용하여 토큰 및 baseURL이 자동 주입되도록 합니다.
+    - **[주의 / 필수] `useHttp()` 의존성 배열 포함 금지**:
+        - `useHttp()`는 호출될 때마다 새로운 `AxiosInstance` 객체(`axios.create`)를 반환합니다.
+        - 따라서 `useEffect`나 `useCallback`의 의존성 배열(`deps`)에 `http` 객체를 그대로 넣으면:
+          `상태 업데이트 ➡️ 리렌더링 ➡️ 새 http 인스턴스 생성 ➡️ useCallback/useEffect 재실행 ➡️ 무한루프`가 발생합니다.
+        - **권장 해결 패턴**:
+          1. `useRef` 패턴:
+             ```tsx
+             const http = useHttp();
+             const httpRef = useRef(http);
+             useEffect(() => { httpRef.current = http; }, [http]);
+             // API 호출 시 httpRef.current.get(...) 사용, useCallback deps에는 studentId 등 순수 식별자만 포함!
+             ```
+          2. 또는 마운트 시 1회 호출인 경우 `// eslint-disable-next-line react-hooks/exhaustive-deps`를 사용하여 `http`를 deps에서 제외합니다.
+    - 백엔드 통신은 `GET`과 `POST`만 사용합니다 (`PUT`, `DELETE` 사용 금지).
+4. **날짜 포맷팅**:
+    - 날짜 및 시간 계산/포맷팅은 반드시 `dayjs` 라이브러리를 사용합니다.
+5. **문서 보존성**:
+    - 기존의 주석, JSDoc, 비즈니스 로직을 임의로 제거하거나 훼손하지 않습니다.
+6. **신규 관리자 페이지 추가 시 필수 등록 (Keep-Alive 탭 시스템)**:
+    - `app/(main)/` 경로에 새 관리자 페이지를 추가할 경우, 반드시 [util/routeComponentMap.tsx](file:///c:/Users/min/Desktop/dev/next_admin/util/routeComponentMap.tsx)의 `routeMap`에 해당 경로와 `React.lazy` 임포트를 등록해야 탭 뷰(`TabbedView`)에서 404 에러 없이 정상 렌더링됩니다.

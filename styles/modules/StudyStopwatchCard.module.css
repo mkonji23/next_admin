@@ -1,0 +1,349 @@
+/* ==========================================================================
+   1. 순공 스톱워치 카드 테마 (Light / Dark & Idle / Running)
+   ========================================================================== */
+
+.stopwatchCard {
+    /* 기본 테마 변수 (라이트모드 + 대기 중) */
+    --card-bg: linear-gradient(135deg, #ffffff 0%, #f8fafc 60%, #f1f5f9 100%);
+    --card-border: 1.5px solid #e2e8f0;
+    --header-border: rgba(0, 0, 0, 0.08);
+    --title-color: #0f172a;
+    --subtitle-color: #64748b;
+    --clock-bg: rgba(241, 245, 249, 0.7);
+    --clock-border: 1px solid #e2e8f0;
+    --clock-color: #1e293b;
+    --clock-shadow: none;
+    --stats-bg: rgba(0, 0, 0, 0.03);
+    --stats-border: rgba(0, 0, 0, 0.06);
+    --stats-text: #1e293b;
+    --icon-color: #6366f1;
+    --time-text: #1e293b;
+
+    background: var(--card-bg) !important;
+    border: var(--card-border) !important;
+    transition: background 0.5s ease, border 0.5s ease;
+}
+
+/* 라이트모드 + 집중 중 (Running) */
+.stopwatchCard[data-running='true'] {
+    --card-bg: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 60%, #ecfdf5 100%);
+    --card-border: 1.5px solid #86efac;
+    --clock-bg: rgba(255, 255, 255, 0.85);
+    --clock-border: 1.5px solid #86efac;
+    --clock-color: #15803d;
+    --clock-shadow: 0 2px 10px rgba(22, 163, 74, 0.25);
+    --icon-color: #16a34a;
+}
+
+/* 다크모드 + 대기 중 (Idle) */
+.stopwatchCard[data-theme='dark'] {
+    --card-bg: linear-gradient(135deg, #1e293b 0%, #0f172a 60%, #1e1b4b 100%);
+    --card-border: 1.5px solid rgba(99, 102, 241, 0.25);
+    --header-border: rgba(255, 255, 255, 0.12);
+    --title-color: #f1f5f9;
+    --subtitle-color: #94a3b8;
+    --clock-bg: rgba(0, 0, 0, 0.3);
+    --clock-border: 1px solid rgba(255, 255, 255, 0.08);
+    --clock-color: #e2e8f0;
+    --clock-shadow: none;
+    --stats-bg: rgba(255, 255, 255, 0.06);
+    --stats-border: rgba(255, 255, 255, 0.1);
+    --stats-text: #cbd5e1;
+    --icon-color: #818cf8;
+    --time-text: #e2e8f0;
+}
+
+/* 다크모드 + 집중 중 (Running) */
+.stopwatchCard[data-theme='dark'][data-running='true'] {
+    --card-bg: linear-gradient(135deg, #143522 0%, #0d2318 60%, #052e16 100%);
+    --card-border: 1.5px solid rgba(34, 197, 94, 0.35);
+    --clock-border: 1px solid rgba(34, 197, 94, 0.35);
+    --clock-color: #4ade80;
+    --clock-shadow: 0 0 20px rgba(74, 222, 128, 0.5);
+    --icon-color: #4ade80;
+}
+
+/* 내부 하위 요소 스타일 바인딩 클래스 */
+.cardHeader {
+    border-bottom: 1px solid var(--header-border) !important;
+}
+
+.cardTitle {
+    color: var(--title-color) !important;
+}
+
+.cardSubtitle {
+    color: var(--subtitle-color) !important;
+}
+
+.cardIcon {
+    color: var(--icon-color) !important;
+}
+
+.currentTimeText {
+    color: var(--time-text) !important;
+}
+
+.clockContainer {
+    background: var(--clock-bg) !important;
+    border: var(--clock-border) !important;
+    transition: all 0.3s ease;
+}
+
+.clockText {
+    color: var(--clock-color) !important;
+    text-shadow: var(--clock-shadow) !important;
+    transition: color 0.5s, text-shadow 0.5s;
+}
+
+.statsContainer {
+    background: var(--stats-bg) !important;
+    border: 1px solid var(--stats-border) !important;
+}
+
+.statsDivider {
+    border-right: 1px solid var(--stats-border) !important;
+}
+
+.statsValue {
+    color: var(--stats-text) !important;
+}
+
+/* ==========================================================================
+   2. 전체화면 몰입 모드 오버레이 테마
+   ========================================================================== */
+
+.fullscreenOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9990;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: clamp(1rem, 4vw, 2.5rem);
+    box-sizing: border-box;
+    overflow: hidden;
+    transition: background 0.6s ease;
+    background: radial-gradient(circle at center, #ffffff 0%, #f8fafc 70%, #e2e8f0 100%);
+}
+
+.fullscreenOverlay[data-running='true'] {
+    background: radial-gradient(circle at center, #f0fdf4 0%, #dcfce7 70%, #bbf7d0 100%);
+}
+
+.fullscreenOverlay[data-theme='dark'] {
+    background: radial-gradient(circle at center, #1e293b 0%, #0f172a 60%, #030712 100%);
+}
+
+.fullscreenOverlay[data-theme='dark'][data-running='true'] {
+    background: radial-gradient(circle at center, #112d1b 0%, #06150b 60%, #020704 100%);
+}
+
+.fullscreenClockText {
+    color: var(--clock-color) !important;
+    text-shadow: var(--clock-shadow) !important;
+    transition: color 0.5s, text-shadow 0.5s;
+}
+
+/* ==========================================================================
+   3. 버튼 & 펄스 애니메이션
+   ========================================================================== */
+
+@keyframes pulse-ring {
+    0% {
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 16px rgba(34, 197, 94, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+    }
+}
+
+.runningGlow {
+    animation: pulse-ring 2s infinite;
+}
+
+.startBtn {
+    font-size: 1.15rem !important;
+    padding: 1rem 2rem !important;
+    border-radius: 2rem !important;
+    letter-spacing: 0.05em;
+    box-shadow: 0 4px 20px rgba(22, 163, 74, 0.3) !important;
+    transition: transform 0.15s, box-shadow 0.15s !important;
+}
+
+.startBtn:not(:disabled):hover {
+    transform: scale(1.03);
+    box-shadow: 0 6px 28px rgba(22, 163, 74, 0.45) !important;
+}
+
+.pauseBtn {
+    font-size: 1.05rem !important;
+    padding: 0.85rem 1.8rem !important;
+    border-radius: 2rem !important;
+    box-shadow: 0 4px 20px rgba(234, 179, 8, 0.3) !important;
+}
+
+/* 초(Second) 변경 펄스 애니메이션 */
+@keyframes second-pop-dark {
+    0% {
+        transform: scale(1.08);
+        filter: brightness(1.4) drop-shadow(0 0 24px rgba(74, 222, 128, 0.95));
+        color: #86efac;
+    }
+    45% {
+        transform: scale(1.02);
+        filter: brightness(1.15) drop-shadow(0 0 10px rgba(74, 222, 128, 0.5));
+    }
+    100% {
+        transform: scale(1);
+        filter: brightness(1);
+        color: inherit;
+    }
+}
+
+@keyframes second-pop-light {
+    0% {
+        transform: scale(1.08);
+        filter: drop-shadow(0 0 18px rgba(22, 163, 74, 0.85));
+        color: #16a34a;
+    }
+    45% {
+        transform: scale(1.02);
+        filter: drop-shadow(0 0 8px rgba(22, 163, 74, 0.45));
+    }
+    100% {
+        transform: scale(1);
+        color: inherit;
+    }
+}
+
+.secondTickDark {
+    animation: second-pop-dark 0.85s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+    transform-origin: center center;
+    will-change: transform, filter, color;
+}
+
+.secondTickLight {
+    animation: second-pop-light 0.85s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+    transform-origin: center center;
+    will-change: transform, filter, color;
+}
+
+/* 콜론(:) 깜빡임 */
+@keyframes fullscreen-colon-pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.25;
+        transform: scale(0.92);
+    }
+}
+
+.colonBlink {
+    animation: fullscreen-colon-pulse 1s infinite ease-in-out;
+    display: inline-block;
+}
+
+/* 분(Minute) 변경 펄스 애니메이션 (초가 59->00으로 넘어갈 때) */
+@keyframes minute-pop-dark {
+    0% {
+        transform: scale(1.18);
+        filter: brightness(1.6) drop-shadow(0 0 35px rgba(52, 211, 153, 1));
+        color: #6ee7b7;
+    }
+    40% {
+        transform: scale(1.06);
+        filter: brightness(1.3) drop-shadow(0 0 16px rgba(52, 211, 153, 0.7));
+    }
+    100% {
+        transform: scale(1);
+        filter: brightness(1);
+        color: inherit;
+    }
+}
+
+@keyframes minute-pop-light {
+    0% {
+        transform: scale(1.18);
+        filter: drop-shadow(0 0 25px rgba(16, 185, 129, 0.95));
+        color: #059669;
+    }
+    40% {
+        transform: scale(1.06);
+        filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.5));
+    }
+    100% {
+        transform: scale(1);
+        color: inherit;
+    }
+}
+
+.minuteTickDark {
+    animation: minute-pop-dark 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    transform-origin: center center;
+    display: inline-block;
+    will-change: transform, filter, color;
+}
+
+.minuteTickLight {
+    animation: minute-pop-light 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    transform-origin: center center;
+    display: inline-block;
+    will-change: transform, filter, color;
+}
+
+/* 시간(Hour) 변경 펄스 애니메이션 (분이 59->00으로 넘어갈 때) */
+@keyframes hour-pop-dark {
+    0% {
+        transform: scale(1.24);
+        filter: brightness(1.7) drop-shadow(0 0 45px rgba(250, 204, 21, 1)) drop-shadow(0 0 70px rgba(234, 179, 8, 0.8));
+        color: #fef08a;
+    }
+    35% {
+        transform: scale(1.08);
+        filter: brightness(1.4) drop-shadow(0 0 24px rgba(250, 204, 21, 0.7));
+    }
+    100% {
+        transform: scale(1);
+        filter: brightness(1);
+        color: inherit;
+    }
+}
+
+@keyframes hour-pop-light {
+    0% {
+        transform: scale(1.24);
+        filter: drop-shadow(0 0 35px rgba(217, 119, 6, 1));
+        color: #d97706;
+    }
+    35% {
+        transform: scale(1.08);
+        filter: drop-shadow(0 0 16px rgba(217, 119, 6, 0.6));
+    }
+    100% {
+        transform: scale(1);
+        color: inherit;
+    }
+}
+
+.hourTickDark {
+    animation: hour-pop-dark 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    transform-origin: center center;
+    display: inline-block;
+    will-change: transform, filter, color;
+}
+
+.hourTickLight {
+    animation: hour-pop-light 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    transform-origin: center center;
+    display: inline-block;
+    will-change: transform, filter, color;
+}

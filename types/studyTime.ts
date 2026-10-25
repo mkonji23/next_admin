@@ -55,3 +55,26 @@ export interface StudyRankingItem {
     firstStartedAt?: string | Date | null;
     lastEndedAt?: string | Date | null;
 }
+
+export interface DailyStudyRecord {
+    date: string;
+    totalSeconds: number;
+    sessionsCount: number;
+    firstStartedAt: string | Date | null;
+    lastEndedAt: string | Date | null;
+    sessions?: StudySession[];
+}
+
+export interface StudyTimeStatisticsItem {
+    studentId: string;
+    name: string;
+    school?: string;
+    grade?: string | number;
+    className?: string;
+    totalSeconds: number;
+    studyDaysCount: number;
+    totalSessionsCount: number;
+    averageSecondsPerDay: number;
+    rank: number;
+    dailyRecords: DailyStudyRecord[];
+}

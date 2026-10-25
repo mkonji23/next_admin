@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useHttp } from '@/util/axiosInstance';
@@ -19,6 +19,7 @@ import ChartsRow from './ChartsRow';
 import DetailsTable from './DetailsTable';
 import ProfileSelectionDialog from './ProfileSelectionDialog';
 import StudyStopwatchCard from './StudyStopwatchCard';
+import StudyRankingCard from './StudyRankingCard';
 import useStudentAuthStore from '@/store/useStudentAuthStore';
 import { useRefreshStore } from '@/store/useRefreshStore';
 import { useCustomModal } from '@/hooks/useCustomModal';
@@ -907,6 +908,13 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
 
                 {/* ⏱️ 순공시간 스톱워치 위젯 */}
                 <StudyStopwatchCard studentId={finalStudentId} studentName={finalName} />
+
+                {/* 🏆 월별 순공 랭킹 & 나의 순위 / TOP 3 (3등까지) */}
+                <StudyRankingCard
+                    studentId={finalStudentId}
+                    studentName={finalName}
+                    currentMonth={currentDate}
+                />
 
                 {/* 프로필 선택 다이얼로그 */}
                 <ProfileSelectionDialog

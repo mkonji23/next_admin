@@ -8,6 +8,7 @@ const routeMap: { [key: string]: React.LazyExoticComponent<React.ComponentType<a
     '/attendanceList': React.lazy(() => import('@/app/(main)/attendanceList/page')),
     '/studentAttendanceStatistics': React.lazy(() => import('@/app/(main)/studentAttendanceStatistics/page')),
     '/praise': React.lazy(() => import('@/app/(main)/praise/page')),
+    '/studyTimeStatistics': React.lazy(() => import('@/app/(main)/studyTimeStatistics/page')),
     '/attendance': React.lazy(() => import('@/app/(main)/attendance/page')),
     '/weekSchedule': React.lazy(() => import('@/app/(main)/weekSchedule/page')),
     '/scoreList': React.lazy(() => import('@/app/(main)/scoreList/page')),
