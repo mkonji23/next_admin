@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useContext } from 'react';
+import React, { useState, useEffect, useCallback, useContext, useRef } from 'react';
 import { Card } from 'primereact/card';
 import { Button } from 'primereact/button';
 import { Tag } from 'primereact/tag';
@@ -58,6 +58,32 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
     const activeTotalSeconds = todayTotalSeconds + (isRunning ? currentSessionSeconds : 0);
     const activeOverallSeconds = (overallTotalSeconds || 0) + (isRunning ? currentSessionSeconds : 0);
     const totalTimeDisplay = formatTime(activeTotalSeconds);
+
+    // 초/분이 넘어갈 때 분/시간 단위 펄스 애니메이션 트리거 키
+    const prevMinuteRef = useRef<string>(totalTimeDisplay.minutes);
+    const prevHourRef = useRef<string>(totalTimeDisplay.hours);
+    const [minutePulseKey, setMinutePulseKey] = useState<number>(0);
+    const [hourPulseKey, setHourPulseKey] = useState<number>(0);
+
+    useEffect(() => {
+        if (!isRunning) {
+            prevMinuteRef.current = totalTimeDisplay.minutes;
+            prevHourRef.current = totalTimeDisplay.hours;
+            return;
+        }
+
+        // 초가 59 -> 00으로 넘어가서 분이 변경되었을 때
+        if (prevMinuteRef.current !== totalTimeDisplay.minutes) {
+            setMinutePulseKey((prev) => prev + 1);
+            prevMinuteRef.current = totalTimeDisplay.minutes;
+        }
+
+        // 분이 59 -> 00으로 넘어가서 시간이 변경되었을 때
+        if (prevHourRef.current !== totalTimeDisplay.hours) {
+            setHourPulseKey((prev) => prev + 1);
+            prevHourRef.current = totalTimeDisplay.hours;
+        }
+    }, [isRunning, totalTimeDisplay.minutes, totalTimeDisplay.hours]);
 
     // 한국어 오전/오후 시간 포맷팅 헬퍼
     const formatKoreanTime = (dt: string | Date | dayjs.Dayjs | null | undefined, includeSeconds = false) => {
@@ -220,6 +246,149 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                         padding: 0.85rem 1.8rem !important;
                         border-radius: 2rem !important;
                         box-shadow: 0 4px 20px rgba(234,179,8,0.3) !important;
+                    }
+                    @keyframes second-pop-dark {
+                        0% {
+                            transform: scale(1.08);
+                            filter: brightness(1.4) drop-shadow(0 0 24px rgba(74, 222, 128, 0.95));
+                            color: #86efac;
+                        }
+                        45% {
+                            transform: scale(1.02);
+                            filter: brightness(1.15) drop-shadow(0 0 10px rgba(74, 222, 128, 0.5));
+                        }
+                        100% {
+                            transform: scale(1);
+                            filter: brightness(1);
+                            color: inherit;
+                        }
+                    }
+                    @keyframes second-pop-light {
+                        0% {
+                            transform: scale(1.08);
+                            filter: drop-shadow(0 0 18px rgba(22, 163, 74, 0.85));
+                            color: #16a34a;
+                        }
+                        45% {
+                            transform: scale(1.02);
+                            filter: drop-shadow(0 0 8px rgba(22, 163, 74, 0.45));
+                        }
+                        100% {
+                            transform: scale(1);
+                            color: inherit;
+                        }
+                    }
+                    @keyframes fullscreen-colon-pulse {
+                        0%, 100% {
+                            opacity: 1;
+                            transform: scale(1);
+                        }
+                        50% {
+                            opacity: 0.25;
+                            transform: scale(0.92);
+                        }
+                    }
+                    .second-tick-highlight-dark {
+                        animation: second-pop-dark 0.85s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+                        transform-origin: center center;
+                        will-change: transform, filter, color;
+                    }
+                    .second-tick-highlight-light {
+                        animation: second-pop-light 0.85s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+                        transform-origin: center center;
+                        will-change: transform, filter, color;
+                    }
+                    .fullscreen-colon-blink {
+                        animation: fullscreen-colon-pulse 1s infinite ease-in-out;
+                        display: inline-block;
+                    }
+                    /* 분 변경 펄스 애니메이션 (초가 59->00으로 넘어갈 때) */
+                    @keyframes minute-pop-dark {
+                        0% {
+                            transform: scale(1.18);
+                            filter: brightness(1.6) drop-shadow(0 0 35px rgba(52, 211, 153, 1));
+                            color: #6ee7b7;
+                        }
+                        40% {
+                            transform: scale(1.06);
+                            filter: brightness(1.3) drop-shadow(0 0 16px rgba(52, 211, 153, 0.7));
+                        }
+                        100% {
+                            transform: scale(1);
+                            filter: brightness(1);
+                            color: inherit;
+                        }
+                    }
+                    @keyframes minute-pop-light {
+                        0% {
+                            transform: scale(1.18);
+                            filter: drop-shadow(0 0 25px rgba(16, 185, 129, 0.95));
+                            color: #059669;
+                        }
+                        40% {
+                            transform: scale(1.06);
+                            filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.5));
+                        }
+                        100% {
+                            transform: scale(1);
+                            color: inherit;
+                        }
+                    }
+                    .minute-tick-highlight-dark {
+                        animation: minute-pop-dark 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                        transform-origin: center center;
+                        display: inline-block;
+                        will-change: transform, filter, color;
+                    }
+                    .minute-tick-highlight-light {
+                        animation: minute-pop-light 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                        transform-origin: center center;
+                        display: inline-block;
+                        will-change: transform, filter, color;
+                    }
+                    /* 시간 변경 펄스 애니메이션 (분이 59->00으로 넘어갈 때) */
+                    @keyframes hour-pop-dark {
+                        0% {
+                            transform: scale(1.24);
+                            filter: brightness(1.7) drop-shadow(0 0 45px rgba(250, 204, 21, 1)) drop-shadow(0 0 70px rgba(234, 179, 8, 0.8));
+                            color: #fef08a;
+                        }
+                        35% {
+                            transform: scale(1.08);
+                            filter: brightness(1.4) drop-shadow(0 0 24px rgba(250, 204, 21, 0.7));
+                        }
+                        100% {
+                            transform: scale(1);
+                            filter: brightness(1);
+                            color: inherit;
+                        }
+                    }
+                    @keyframes hour-pop-light {
+                        0% {
+                            transform: scale(1.24);
+                            filter: drop-shadow(0 0 35px rgba(217, 119, 6, 1));
+                            color: #d97706;
+                        }
+                        35% {
+                            transform: scale(1.08);
+                            filter: drop-shadow(0 0 16px rgba(217, 119, 6, 0.6));
+                        }
+                        100% {
+                            transform: scale(1);
+                            color: inherit;
+                        }
+                    }
+                    .hour-tick-highlight-dark {
+                        animation: hour-pop-dark 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                        transform-origin: center center;
+                        display: inline-block;
+                        will-change: transform, filter, color;
+                    }
+                    .hour-tick-highlight-light {
+                        animation: hour-pop-light 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                        transform-origin: center center;
+                        display: inline-block;
+                        will-change: transform, filter, color;
                     }
                 `}</style>
                 <div className="flex flex-column gap-3">
@@ -532,17 +701,17 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                             )}
                         </div>
 
-                        {/* 초대형 스톱워치 텍스트 */}
+                        {/* 초대형 스톱워치 텍스트 (초마다 리드미컬 하이라이트) */}
                         <div
-                            className="font-extrabold font-mono select-none cursor-pointer transition-transform active:scale-95"
+                            className="font-extrabold font-mono select-none cursor-pointer flex align-items-center justify-content-center flex-nowrap"
                             style={{
                                 fontSize: 'clamp(4.2rem, 18vw, 11rem)',
                                 lineHeight: '1',
-                                letterSpacing: 'clamp(4px, 2vw, 12px)',
+                                letterSpacing: 'clamp(2px, 1.2vw, 8px)',
                                 color: clockTextColor,
                                 textShadow: isRunning
                                     ? isDark
-                                        ? '0 0 40px rgba(74,222,128,0.6), 0 0 80px rgba(34,197,94,0.3)'
+                                        ? '0 0 40px rgba(74,222,128,0.5), 0 0 80px rgba(34,197,94,0.25)'
                                         : '0 4px 20px rgba(22,163,74,0.3)'
                                     : 'none',
                                 transition: 'color 0.5s, text-shadow 0.5s'
@@ -550,7 +719,47 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                             onClick={handleToggleStudy}
                             title={isRunning ? '클릭하여 일시정지' : '클릭하여 공부 시작'}
                         >
-                            {totalTimeDisplay.formatted}
+                            <span
+                                key={isRunning && hourPulseKey > 0 ? `hour-${hourPulseKey}` : 'hour-idle'}
+                                className={
+                                    isRunning && hourPulseKey > 0
+                                        ? isDark
+                                            ? 'hour-tick-highlight-dark'
+                                            : 'hour-tick-highlight-light'
+                                        : ''
+                                }
+                                style={{ display: 'inline-block' }}
+                            >
+                                {totalTimeDisplay.hours}
+                            </span>
+                            <span className={isRunning ? 'fullscreen-colon-blink mx-1' : 'mx-1'}>:</span>
+                            <span
+                                key={isRunning && minutePulseKey > 0 ? `min-${minutePulseKey}` : 'min-idle'}
+                                className={
+                                    isRunning && minutePulseKey > 0
+                                        ? isDark
+                                            ? 'minute-tick-highlight-dark'
+                                            : 'minute-tick-highlight-light'
+                                        : ''
+                                }
+                                style={{ display: 'inline-block' }}
+                            >
+                                {totalTimeDisplay.minutes}
+                            </span>
+                            <span className={isRunning ? 'fullscreen-colon-blink mx-1' : 'mx-1'}>:</span>
+                            <span
+                                key={isRunning ? totalTimeDisplay.seconds : 'paused'}
+                                className={
+                                    isRunning
+                                        ? isDark
+                                            ? 'second-tick-highlight-dark'
+                                            : 'second-tick-highlight-light'
+                                        : ''
+                                }
+                                style={{ display: 'inline-block' }}
+                            >
+                                {totalTimeDisplay.seconds}
+                            </span>
                         </div>
 
                         {/* 전체 총 공부시간 및 세션 요약 */}
