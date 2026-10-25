@@ -12,6 +12,12 @@
   pointer-events: auto; /* 모든 인터랙션 차단 */
 }
 
+/* 순공모드 전체화면(z-index: 9990) 위로 모달/팝업 최상위 레이어 지원 */
+.p-dialog-mask {
+    /* PrimeReact zIndex 기본 계산 보장 */
+}
+
+
 /* PrimeReact Calendar Global Styling */
 .p-datepicker-calendar {
     /* 일요일 (첫 번째 열) */

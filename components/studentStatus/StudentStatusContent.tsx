@@ -53,6 +53,7 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
     const { openModal } = useCustomModal();
     const { noticeRefreshSignal } = useRefreshStore();
     const [notices, setNotices] = useState<any[]>([]);
+    const [allStudentClassIds, setAllStudentClassIds] = useState<string[]>([]);
     const [hasCheckedNotice, setHasCheckedNotice] = useState(false);
     const [noticeReadVersion, setNoticeReadVersion] = useState(0);
 
@@ -296,18 +297,39 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
 
     const fetchNotices = async (studentClasses: any[] = []) => {
         try {
-            const studentClassIds = (studentClasses || []).map((c) => c.classId);
+            const classIdsFromStats = (studentClasses || []).map((c) => c.classId).filter(Boolean);
+
+            // 출석부 통계 외에 학생의 실제 전체 소속 클래스 조회 (출석부가 아직 없는 반도 포함)
+            let actualClassIds = [...classIdsFromStats];
+            try {
+                const classRes = await http.get('/choiMath/class/', { disableLoading: true });
+                const allClasses = classRes.data || [];
+                const matchedClasses = allClasses.filter((c: any) =>
+                    c.students?.some((s: any) => {
+                        const sid = typeof s === 'string' ? s : s.studentId;
+                        return sid === finalStudentId;
+                    })
+                );
+                const matchedClassIds = matchedClasses.map((c: any) => c.classId).filter(Boolean);
+                actualClassIds = Array.from(new Set([...actualClassIds, ...matchedClassIds]));
+            } catch (err) {
+                console.error('Failed to fetch actual student classes:', err);
+            }
+
+            setAllStudentClassIds(actualClassIds);
 
             const res = await http.get('/choiMath/notice/list', {
                 params: { isNotice: true },
                 disableLoading: true
             });
             const allNotices = res.data || [];
+
             // 전체 공지(classIds가 비어있음) + 학생 소속 클래스 공지 포함
             const targetNotices = allNotices.filter((n: any) => {
                 if (!n.classIds || n.classIds.length === 0) return true;
-                return n.classIds.some((cid: string) => studentClassIds.includes(cid));
+                return n.classIds.some((cid: string) => actualClassIds.includes(cid));
             });
+
             setNotices(targetNotices);
             return targetNotices;
         } catch (error) {
@@ -326,7 +348,8 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                         id: 'noticeModal',
                         pData: {
                             notices: updatedNotices,
-                            initialNoticeId: latest.noticeId
+                            initialNoticeId: latest.noticeId,
+                            studentClassIds: allStudentClassIds
                         }
                     });
                     setHasCheckedNotice(true);
@@ -345,7 +368,8 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                     id: 'noticeModal',
                     pData: {
                         notices: notices,
-                        initialNoticeId: latest.noticeId
+                        initialNoticeId: latest.noticeId,
+                        studentClassIds: allStudentClassIds
                     }
                 });
             }
@@ -361,7 +385,10 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
     const handleShowNotices = async () => {
         await openModal({
             id: 'noticeModal',
-            pData: { notices }
+            pData: {
+                notices,
+                studentClassIds: allStudentClassIds
+            }
         });
         setNoticeReadVersion((v) => v + 1);
     };

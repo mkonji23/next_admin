@@ -52,7 +52,17 @@ export default function RootLayout({ children }: RootLayoutProps) {
             <body>
                 <DynamicManifest />
                 <KakaoScript />
-                <PrimeReactProvider>
+                <PrimeReactProvider
+                    value={{
+                        zIndex: {
+                            modal: 11000,
+                            overlay: 10000,
+                            menu: 10000,
+                            tooltip: 12000,
+                            toast: 13000
+                        }
+                    }}
+                >
                     <PrimeReactLocaleSetup />
                     <LayoutProvider>
                         <ToastProvider>

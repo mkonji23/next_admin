@@ -127,9 +127,23 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
     }, [isFullscreen]);
 
     // 공부 시작 클릭 시: 스톱워치 가동 + 전체화면 모드 자동 전환
-    const handleStartStudy = async () => {
-        await startStudy();
+    const handleStartStudy = () => {
+        startStudy();
         openFullscreen();
+    };
+
+    // 시간 또는 태그 클릭 시 공부 시작/일시정지 토글
+    const handleToggleStudy = () => {
+        if (loading || !studentId) return;
+        if (isRunning) {
+            pauseStudy('manual_pause');
+        } else {
+            if (isFullscreen) {
+                startStudy();
+            } else {
+                handleStartStudy();
+            }
+        }
     };
 
     const is1hAutoPaused = alertReason === 'auto_1h_pause';
@@ -264,25 +278,31 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                         </div>
 
                         <div className="flex align-items-center gap-2">
-                            {isRunning ? (
-                                <Tag
-                                    severity="success"
-                                    value="🔥 집중"
-                                    className="font-bold px-2 py-1"
-                                    style={{ fontSize: '11px', background: '#16a34a', border: 'none' }}
-                                />
-                            ) : (
-                                <Tag
-                                    severity={null}
-                                    value="일시정지"
-                                    className="font-medium px-2 py-1"
-                                    style={{
-                                        fontSize: '11px',
-                                        background: isDark ? 'rgba(255,255,255,0.1)' : '#e2e8f0',
-                                        color: isDark ? '#94a3b8' : '#475569'
-                                    }}
-                                />
-                            )}
+                            <div
+                                onClick={handleToggleStudy}
+                                className="cursor-pointer select-none transition-transform active:scale-95"
+                                title={isRunning ? '클릭하여 일시정지' : '클릭하여 공부 시작'}
+                            >
+                                {isRunning ? (
+                                    <Tag
+                                        severity="success"
+                                        value="집중"
+                                        className="font-bold px-2 py-1 cursor-pointer"
+                                        style={{ fontSize: '11px', background: '#16a34a', border: 'none' }}
+                                    />
+                                ) : (
+                                    <Tag
+                                        severity={null}
+                                        value="일시정지"
+                                        className="font-medium px-2 py-1 cursor-pointer"
+                                        style={{
+                                            fontSize: '11px',
+                                            background: isDark ? 'rgba(255,255,255,0.1)' : '#e2e8f0',
+                                            color: isDark ? '#94a3b8' : '#475569'
+                                        }}
+                                    />
+                                )}
+                            </div>
                             <Button
                                 icon="pi pi-expand"
                                 size="small"
@@ -308,17 +328,20 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
 
                     {/* 중앙: 대형 스톱워치 디스플레이 */}
                     <div
-                        className={`flex flex-column align-items-center justify-content-center py-3 border-round-xl ${
-                            isRunning ? 'stopwatch-running-glow' : ''
+                        className={`flex flex-column align-items-center justify-content-center py-3 border-round-xl cursor-pointer select-none transition-all transition-duration-200 ${
+                            isRunning ? 'stopwatch-running-glow hover:shadow-3' : 'hover:surface-100 hover:shadow-2'
                         }`}
                         style={{
                             background: clockBg,
                             border: clockBorder,
-                            transition: 'all 0.5s ease'
+                            transition: 'all 0.3s ease',
+                            cursor: !studentId || loading ? 'not-allowed' : 'pointer'
                         }}
+                        onClick={handleToggleStudy}
+                        title={isRunning ? '클릭하여 일시정지' : '클릭하여 공부 시작'}
                     >
                         <div
-                            className="font-extrabold font-mono"
+                            className="font-extrabold font-mono transition-transform active:scale-95"
                             style={{
                                 fontSize: 'clamp(2.5rem, 10vw, 4rem)',
                                 letterSpacing: '4px',
@@ -334,9 +357,9 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                             {totalTimeDisplay.formatted}
                         </div>
                         <span
-                            className="text-xs mt-1 stopwatch-info-tooltip cursor-pointer flex align-items-center gap-1"
+                            className="text-xs mt-1 stopwatch-info-tooltip flex align-items-center gap-1"
                             style={{ color: subtitleColor, letterSpacing: '0.05em' }}
-                            data-pr-tooltip="최대 1시간 연속 측정 후 자동 일시정지 (1시간마다 재실행 필요)"
+                            data-pr-tooltip="최대 1시간 연속 측정 후 자동 일시정지 (클릭 시 공부 시작/일시정지)"
                         >
                             오늘 누적 공부시간 <i className="pi pi-info-circle text-xs" />
                         </span>
@@ -414,7 +437,7 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                         left: 0,
                         width: '100vw',
                         height: '100vh',
-                        zIndex: 9999,
+                        zIndex: 9990,
                         background: isDark
                             ? isRunning
                                 ? 'radial-gradient(circle at center, #112d1b 0%, #06150b 60%, #020704 100%)'
@@ -481,12 +504,16 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
 
                     {/* 전체화면 중앙: 초대형 시계 & 상태 */}
                     <div className="flex flex-column align-items-center justify-content-center my-auto text-center">
-                        <div className="mb-3">
+                        <div
+                            className="mb-3 cursor-pointer select-none transition-transform active:scale-95"
+                            onClick={handleToggleStudy}
+                            title={isRunning ? '클릭하여 일시정지' : '클릭하여 공부 시작'}
+                        >
                             {isRunning ? (
                                 <Tag
                                     severity="success"
                                     value="공부 중"
-                                    className="font-bold px-3 py-2 text-sm shadow-2"
+                                    className="font-bold px-3 py-2 text-sm shadow-2 cursor-pointer"
                                     style={{
                                         background: '#16a34a',
                                         letterSpacing: '1px'
@@ -496,7 +523,7 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                                 <Tag
                                     severity={null}
                                     value="일시정지"
-                                    className="font-bold px-3 py-2 text-sm"
+                                    className="font-bold px-3 py-2 text-sm cursor-pointer"
                                     style={{
                                         background: isDark ? 'rgba(255,255,255,0.15)' : '#cbd5e1',
                                         color: isDark ? '#e2e8f0' : '#334155'
@@ -507,7 +534,7 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
 
                         {/* 초대형 스톱워치 텍스트 */}
                         <div
-                            className="font-extrabold font-mono select-none"
+                            className="font-extrabold font-mono select-none cursor-pointer transition-transform active:scale-95"
                             style={{
                                 fontSize: 'clamp(4.2rem, 18vw, 11rem)',
                                 lineHeight: '1',
@@ -520,6 +547,8 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                                     : 'none',
                                 transition: 'color 0.5s, text-shadow 0.5s'
                             }}
+                            onClick={handleToggleStudy}
+                            title={isRunning ? '클릭하여 일시정지' : '클릭하여 공부 시작'}
                         >
                             {totalTimeDisplay.formatted}
                         </div>
