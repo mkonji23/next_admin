@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Tag } from 'primereact/tag';
+import { Dropdown } from 'primereact/dropdown';
 import { useHttp } from '@/util/axiosInstance';
 import dayjs from 'dayjs';
 
@@ -25,7 +26,6 @@ interface MonthlyStudyHistoryModalProps {
     targetMonthStr?: string;
 }
 
-// 초를 "X시간 Y분 Z초" 텍스트로 변환하는 헬퍼
 const formatDuration = (totalSec: number) => {
     if (!totalSec || totalSec <= 0) return '0초';
     const h = Math.floor(totalSec / 3600);
@@ -54,6 +54,7 @@ export const MonthlyStudyHistoryModal: React.FC<MonthlyStudyHistoryModalProps> =
 
     const [monthlyHistory, setMonthlyHistory] = useState<MonthlySummaryItem[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
+    const [selectedYear, setSelectedYear] = useState<string>('all');
 
     const fetchMonthlyHistory = useCallback(async () => {
         if (!studentId) return;
@@ -77,11 +78,24 @@ export const MonthlyStudyHistoryModal: React.FC<MonthlyStudyHistoryModalProps> =
         }
     }, [visible, fetchMonthlyHistory]);
 
+    // 연도 필터 옵션
+    const yearOptions = useMemo(() => {
+        const years = Array.from(new Set(monthlyHistory.map((item) => item.month?.split('-')[0]).filter(Boolean)));
+        years.sort((a, b) => b.localeCompare(a));
+        return [{ label: '전체 연도', value: 'all' }, ...years.map((y) => ({ label: `${y}년`, value: y }))];
+    }, [monthlyHistory]);
+
+    // 연도 필터 적용
+    const filteredList = useMemo(() => {
+        if (selectedYear === 'all') return monthlyHistory;
+        return monthlyHistory.filter((item) => item.month?.startsWith(selectedYear));
+    }, [monthlyHistory, selectedYear]);
+
     return (
         <Dialog
             header={
                 <div className="flex align-items-center gap-2">
-                    <i className="pi pi-calendar-plus text-primary text-xl" />
+                    <i className="pi pi-calendar text-primary text-xl" />
                     <span className="font-bold text-lg">월별 순공시간 기록</span>
                 </div>
             }
@@ -98,17 +112,20 @@ export const MonthlyStudyHistoryModal: React.FC<MonthlyStudyHistoryModalProps> =
         >
             <div className="p-1">
                 <DataTable
-                    value={monthlyHistory}
+                    value={filteredList}
                     loading={loading}
-                    emptyMessage="기록된 월별 순공시간 내역이 없습니다."
+                    emptyMessage="기록된 순공시간 내역이 없습니다."
                     stripedRows
                     responsiveLayout="scroll"
                     size="small"
                     className="p-datatable-sm"
+                    sortField="month"
+                    sortOrder={-1}
                 >
                     <Column
                         field="month"
                         header="기준 월"
+                        sortable
                         style={{ minWidth: '130px' }}
                         body={(rowData: MonthlySummaryItem) => (
                             <div className="flex align-items-center gap-2">
@@ -122,6 +139,7 @@ export const MonthlyStudyHistoryModal: React.FC<MonthlyStudyHistoryModalProps> =
                     <Column
                         field="totalSeconds"
                         header="총 순공시간"
+                        sortable
                         style={{ minWidth: '120px' }}
                         body={(rowData: MonthlySummaryItem) => (
                             <span className="font-bold text-green-600 dark:text-green-400">
@@ -132,8 +150,9 @@ export const MonthlyStudyHistoryModal: React.FC<MonthlyStudyHistoryModalProps> =
                     <Column
                         field="studyDaysCount"
                         header="학습 일수"
+                        sortable
                         align="center"
-                        style={{ minWidth: '90px' }}
+                        style={{ minWidth: '120px' }}
                         body={(rowData: MonthlySummaryItem) => (
                             <span className="text-700 font-medium">{rowData.studyDaysCount || 0}일</span>
                         )}
@@ -141,7 +160,8 @@ export const MonthlyStudyHistoryModal: React.FC<MonthlyStudyHistoryModalProps> =
                     <Column
                         field="averageSecondsPerDay"
                         header="일평균 순공"
-                        style={{ minWidth: '110px' }}
+                        sortable
+                        style={{ minWidth: '120px' }}
                         body={(rowData: MonthlySummaryItem) => (
                             <span className="text-600 text-sm">
                                 {formatDuration(rowData.averageSecondsPerDay || 0)}
@@ -151,8 +171,9 @@ export const MonthlyStudyHistoryModal: React.FC<MonthlyStudyHistoryModalProps> =
                     <Column
                         field="sessionsCount"
                         header="집중 세션"
+                        sortable
                         align="center"
-                        style={{ minWidth: '85px' }}
+                        style={{ minWidth: '110px' }}
                         body={(rowData: MonthlySummaryItem) => (
                             <span className="text-500 text-sm">{rowData.sessionsCount || 0}회</span>
                         )}
