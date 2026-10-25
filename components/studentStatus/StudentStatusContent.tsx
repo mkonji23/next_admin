@@ -686,7 +686,7 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                         rounded
                         text
                         onClick={() => setCurrentDate(dayjs())}
-                        tooltip="이번 달로 이동"
+                        // tooltip="이번 달로 이동"
                     />
                     <Button
                         icon={isDark ? 'pi pi-sun' : 'pi pi-moon'}
@@ -694,7 +694,7 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                         rounded
                         text
                         onClick={toggleDarkMode}
-                        tooltip={isDark ? '라이트 모드' : '다크 모드'}
+                        // tooltip={isDark ? '라이트 모드' : '다크 모드'}
                     />
                 </div>
 
