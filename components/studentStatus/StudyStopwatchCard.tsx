@@ -50,7 +50,9 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
         todayData,
         startStudy,
         pauseStudy,
-        formatTime
+        formatTime,
+        isWakeLockActive,
+        suppressPauseTemporarily
     } = useStudyStopwatch({
         studentId,
         onBackgroundPaused: handleBackgroundPaused
@@ -117,8 +119,33 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
         return parts.join(' ');
     };
 
+    // 축소 모드 복귀 시 스크롤 위치를 스톱워치 카드로 이동시키기 위한 Ref
+    const cardContainerRef = useRef<HTMLDivElement>(null);
+
+    // 스톱워치 카드로 부드럽게 스크롤 이동
+    const scrollToStopwatch = useCallback(() => {
+        if (typeof window === 'undefined') return;
+
+        const performScroll = () => {
+            if (!cardContainerRef.current) return;
+            const rect = cardContainerRef.current.getBoundingClientRect();
+            // 상단 여백 20px 고려하여 스톱워치 카드가 시야에 완벽하게 들어오도록 위치 계산
+            const targetTop = window.scrollY + rect.top - 20;
+            window.scrollTo({
+                top: Math.max(0, targetTop),
+                behavior: 'smooth'
+            });
+        };
+
+        // 모바일 가로/세로 전환 및 브라우저 UI 툴바 애니메이션 안정화 고려하여 3회 보장
+        requestAnimationFrame(performScroll);
+        setTimeout(performScroll, 100);
+        setTimeout(performScroll, 300);
+    }, []);
+
     // 전체화면 진입 / 나가기 핸들러
     const openFullscreen = useCallback(() => {
+        suppressPauseTemporarily(2000);
         setIsFullscreen(true);
         if (typeof window !== 'undefined') {
             window.history.pushState({ popup: 'stopwatchFullscreen' }, '');
@@ -126,9 +153,11 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                 document.documentElement.requestFullscreen?.().catch(() => {});
             } catch (_) {}
         }
-    }, []);
+    }, [suppressPauseTemporarily]);
 
     const closeFullscreen = useCallback(() => {
+        // 축소 모드 전환 중(가로/세로 회전, UI 복원, 히스토리 이동 등) 일시정지 오작동 방지
+        suppressPauseTemporarily(2500);
         setIsFullscreen(false);
         if (typeof window !== 'undefined') {
             if (window.history.state?.popup === 'stopwatchFullscreen') {
@@ -140,18 +169,56 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                 } catch (_) {}
             }
         }
-    }, []);
+        scrollToStopwatch();
+    }, [suppressPauseTemporarily, scrollToStopwatch]);
 
-    // 모바일 뒤로가기 버튼 처리
+    // 모바일 뒤로가기 버튼(popstate) 처리
     useEffect(() => {
         const handlePopState = () => {
             if (isFullscreen) {
+                suppressPauseTemporarily(2500);
                 setIsFullscreen(false);
+                if (document.fullscreenElement) {
+                    try {
+                        document.exitFullscreen?.().catch(() => {});
+                    } catch (_) {}
+                }
+                scrollToStopwatch();
             }
         };
         window.addEventListener('popstate', handlePopState);
         return () => window.removeEventListener('popstate', handlePopState);
-    }, [isFullscreen]);
+    }, [isFullscreen, suppressPauseTemporarily, scrollToStopwatch]);
+
+    // 브라우저 자체 전체화면 변경(fullscreenchange - 제스처, ESC 등) 처리
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            const isDocFullscreen = Boolean(document.fullscreenElement);
+            if (!isDocFullscreen && isFullscreen) {
+                suppressPauseTemporarily(2500);
+                setIsFullscreen(false);
+                if (window.history.state?.popup === 'stopwatchFullscreen') {
+                    window.history.back();
+                }
+                scrollToStopwatch();
+            }
+        };
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        return () => {
+            document.removeEventListener('fullscreenchange', handleFullscreenChange);
+            document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+        };
+    }, [isFullscreen, suppressPauseTemporarily, scrollToStopwatch]);
+
+    // isFullscreen이 true -> false로 변경될 때 스크롤 복귀 보장
+    const prevIsFullscreenRef = useRef(isFullscreen);
+    useEffect(() => {
+        if (prevIsFullscreenRef.current && !isFullscreen) {
+            scrollToStopwatch();
+        }
+        prevIsFullscreenRef.current = isFullscreen;
+    }, [isFullscreen, scrollToStopwatch]);
 
     // 공부 시작 클릭 시: 스톱워치 가동 + 전체화면 모드 자동 전환
     const handleStartStudy = () => {
@@ -177,8 +244,9 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
 
     return (
         <>
-            <Card
-                className={`mb-4 shadow-3 border-round-2xl overflow-hidden ${styles.stopwatchCard}`}
+            <div ref={cardContainerRef} className="w-full">
+                <Card
+                    className={`mb-4 shadow-3 border-round-2xl overflow-hidden ${styles.stopwatchCard}`}
                 data-theme={isDark ? 'dark' : 'light'}
                 data-running={isRunning}
             >
@@ -300,6 +368,11 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                             data-pr-tooltip="최대 1시간 연속 측정 후 자동 일시정지 (클릭 시 공부 시작/일시정지)"
                         >
                             오늘 누적 공부시간 <i className="pi pi-info-circle text-xs" />
+                            {isRunning && (
+                                <span className="ml-1 text-green-600 font-semibold flex align-items-center gap-1">
+                                    • <i className="pi pi-sun text-xs" /> 화면 켜짐 유지 중
+                                </span>
+                            )}
                         </span>
                     </div>
 
@@ -362,6 +435,7 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                     </div>
                 </div>
             </Card>
+            </div>
 
             {/* 🖥️ [전체 화면 몰입형 스톱워치 뷰] */}
             {isFullscreen && (
@@ -385,6 +459,20 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                                     {studentName ? `${studentName} 학생의 순공 모드` : '순공 집중 모드'}
                                 </span>
                             </div>
+
+                            {isRunning && (
+                                <div
+                                    className="flex align-items-center gap-1 px-3 py-1 border-round-3xl text-xs font-semibold"
+                                    style={{
+                                        background: isDark ? 'rgba(34, 197, 94, 0.15)' : 'rgba(34, 197, 94, 0.1)',
+                                        color: isDark ? '#4ade80' : '#15803d',
+                                        border: isDark ? '1px solid rgba(74, 222, 128, 0.25)' : '1px solid rgba(34, 197, 94, 0.2)'
+                                    }}
+                                >
+                                    <i className="pi pi-sun text-xs" />
+                                    <span>화면 켜짐 유지 중</span>
+                                </div>
+                            )}
                         </div>
 
                         {/* 중앙 현재 시간 (태블릿/PC) */}
@@ -604,13 +692,15 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                     ) : (
                         <>
                             <i className="pi pi-exclamation-triangle text-yellow-500 text-4xl mb-1" />
-                            <span className="font-bold text-base text-900">스톱워치가 자동으로 멈췄습니다!</span>
+                            <span className="font-bold text-base text-900">스톱워치가 일시정지되었습니다!</span>
                             <p className="text-xs text-600 m-0 line-height-3">
-                                모바일 화면을 끄거나 다른 앱으로 전환하면
+                                타이머 작동 중에는 휴대폰 화면이 꺼지지 않도록 유지됩니다.
                                 <br />
-                                순수 공부시간 측정이 자동으로 중단됩니다.
+                                다른 앱으로 전환하거나 전원 버튼을 눌러 화면을 끄면
                                 <br />
-                                공부를 다시 시작하려면 아래 버튼을 눌러주세요.
+                                순수 공부시간 측정이 자동으로 일시정지됩니다.
+                                <br />
+                                공부를 계속하려면 아래 버튼을 눌러주세요.
                             </p>
                         </>
                     )}

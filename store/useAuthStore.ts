@@ -65,6 +65,7 @@ const useAuthStore = create<UserInfo>()((set) => ({
         setStoredUserInfo(data);
         Cookies.set('token', data.token, {
             expires: 1,
+            path: '/',
             secure: process.env.NEXT_PUBLIC_TYPE !== 'dev',
             sameSite: 'Strict' // CSRF 방어
         });
@@ -72,7 +73,7 @@ const useAuthStore = create<UserInfo>()((set) => ({
     clearInfo: () => {
         set({ userInfo: { email: '', createdDate: '', token: '' } });
         removeStoredUserInfo();
-        Cookies.remove('token');
+        Cookies.remove('token', { path: '/' });
     },
     initializeFromStorage: () => {
         const stored = getStoredUserInfo();

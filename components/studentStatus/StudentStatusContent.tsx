@@ -302,15 +302,13 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
             // 출석부 통계 외에 학생의 실제 전체 소속 클래스 조회 (출석부가 아직 없는 반도 포함)
             let actualClassIds = [...classIdsFromStats];
             try {
-                const classRes = await http.get('/choiMath/class/', { disableLoading: true });
-                const allClasses = classRes.data || [];
-                const matchedClasses = allClasses.filter((c: any) =>
-                    c.students?.some((s: any) => {
-                        const sid = typeof s === 'string' ? s : s.studentId;
-                        return sid === finalStudentId;
-                    })
-                );
-                const matchedClassIds = matchedClasses.map((c: any) => c.classId).filter(Boolean);
+                // 학생 전용 안전 API: 본인이 속한 클래스 정보만 조회 (민감 정보 및 타학생 목록 노출 차단)
+                const classRes = await http.get('/choiMath/student/myClasses', {
+                    params: { studentId: finalStudentId },
+                    disableLoading: true
+                });
+                const myClasses = classRes.data || [];
+                const matchedClassIds = (Array.isArray(myClasses) ? myClasses : []).map((c: any) => c.classId).filter(Boolean);
                 actualClassIds = Array.from(new Set([...actualClassIds, ...matchedClassIds]));
             } catch (err) {
                 console.error('Failed to fetch actual student classes:', err);

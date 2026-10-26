@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useHttp } from '@/util/axiosInstance';
 import { TodayStudyTimeData, StudyEndReason, StudySession } from '@/types/studyTime';
+import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
 import dayjs from 'dayjs';
 
 interface UseStudyStopwatchProps {
@@ -19,6 +20,9 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
     const [overallTotalSeconds, setOverallTotalSeconds] = useState<number>(0);
     const [currentSessionSeconds, setCurrentSessionSeconds] = useState<number>(0);
 
+    // 🔒 [화면 켜짐 유지] 스톱워치 실행 중 모바일/태블릿 화면 자동 잠금(절전 모드) 방지
+    const { isActive: isWakeLockActive, isSupported: isWakeLockSupported } = useScreenWakeLock(isRunning);
+
     const activeSessionIdRef = useRef<string | null>(null);
     const ticketRef = useRef<string | null>(null);
     const sessionStartTimeRef = useRef<number | null>(null);
@@ -26,6 +30,13 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
     const isRunningRef = useRef<boolean>(false);
     const currentSessionSecondsRef = useRef<number>(0);
     const startPromiseRef = useRef<Promise<any> | null>(null);
+
+    // 화면 회전, 전체화면 축소/확대 등 UI 모드 전환 중 일시적인 브라우저 blur/visibilitychange 오작동 방지용 타임스탬프
+    const ignorePauseUntilRef = useRef<number>(0);
+
+    const suppressPauseTemporarily = useCallback((durationMs = 2000) => {
+        ignorePauseUntilRef.current = Math.max(ignorePauseUntilRef.current, Date.now() + durationMs);
+    }, []);
 
     // 콜백 함수 ref 보관 (부모 컴포넌트 리렌더 시 불필요한 useEffect 재실행 및 무한루프 방지)
     const onBackgroundPausedRef = useRef(onBackgroundPaused);
@@ -286,6 +297,7 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
     useEffect(() => {
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'hidden') {
+                if (Date.now() < ignorePauseUntilRef.current) return;
                 if (isRunningRef.current) {
                     pauseStudyRef.current('background_leave');
                 }
@@ -293,25 +305,63 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
         };
 
         const handleWindowBlur = () => {
+            if (Date.now() < ignorePauseUntilRef.current) return;
+            // 모바일 및 태블릿 환경(iPadOS Safari 포함)에서는 blur 이벤트로 인한 오작동 일시정지 방지
+            const isMobile = typeof navigator !== 'undefined' && (
+                /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+            );
+            if (isMobile) return;
+
             if (isRunningRef.current) {
                 pauseStudyRef.current('window_blur');
             }
         };
 
         const handlePageHide = () => {
+            if (Date.now() < ignorePauseUntilRef.current) return;
             if (isRunningRef.current) {
                 pauseStudyRef.current('page_closed');
             }
         };
 
+        // 가로/세로 화면 회전 및 브라우저 UI 툴바 리사이즈 시 일시정지 억제
+        const handleOrientationOrResize = () => {
+            ignorePauseUntilRef.current = Math.max(ignorePauseUntilRef.current, Date.now() + 1500);
+        };
+
+        const handleFullscreenChange = () => {
+            ignorePauseUntilRef.current = Math.max(ignorePauseUntilRef.current, Date.now() + 2000);
+        };
+
         document.addEventListener('visibilitychange', handleVisibilityChange);
         window.addEventListener('blur', handleWindowBlur);
         window.addEventListener('pagehide', handlePageHide);
+        window.addEventListener('orientationchange', handleOrientationOrResize);
+        window.addEventListener('resize', handleOrientationOrResize);
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+
+        if (typeof screen !== 'undefined' && screen.orientation) {
+            try {
+                screen.orientation.addEventListener('change', handleOrientationOrResize);
+            } catch (_) {}
+        }
 
         return () => {
             document.removeEventListener('visibilitychange', handleVisibilityChange);
             window.removeEventListener('blur', handleWindowBlur);
             window.removeEventListener('pagehide', handlePageHide);
+            window.removeEventListener('orientationchange', handleOrientationOrResize);
+            window.removeEventListener('resize', handleOrientationOrResize);
+            document.removeEventListener('fullscreenchange', handleFullscreenChange);
+            document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+
+            if (typeof screen !== 'undefined' && screen.orientation) {
+                try {
+                    screen.orientation.removeEventListener('change', handleOrientationOrResize);
+                } catch (_) {}
+            }
         };
     }, []);
 
@@ -390,5 +440,8 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
         pauseStudy,
         refetch: fetchTodayData,
         formatTime,
+        isWakeLockActive,
+        isWakeLockSupported,
+        suppressPauseTemporarily,
     };
 };
