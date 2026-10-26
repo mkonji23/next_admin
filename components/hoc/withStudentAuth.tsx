@@ -57,6 +57,7 @@ const withStudentAuth = <P extends object>(
             } else {
                 setIsAuthorized(false);
                 setStudentAuthData(null);
+                setAuthState('INITIAL');
             }
         }, [studentToken, storedStudentAuthData]);
 

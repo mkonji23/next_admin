@@ -7,10 +7,21 @@ import { useToast } from '@/hooks/useToast';
 import { useRouter } from 'next/navigation';
 import useStudentAuthStore from '@/store/useStudentAuthStore';
 
+// 여러 동시 요청 시 중복 refresh 호출 및 무한 루프 방지를 위한 싱글톤 Promise
+let studentRefreshPromise: Promise<string | null> | null = null;
+
+const getBaseURL = () => {
+    // 프록시 사용 시 브라우저 쿠키(httpOnly)가 동일 출처로 안전하게 전달됨
+    if (process.env.NEXT_PUBLIC_USE_DIRECT_URL === 'true' && process.env.NEXT_PUBLIC_BACKEND_URL) {
+        return process.env.NEXT_PUBLIC_BACKEND_URL;
+    }
+    return '/v1/api';
+};
+
 export const useHttp = (): AxiosInstance => {
     const { showToast } = useToast();
     const axiosInstance = axios.create({
-        baseURL: process.env.NEXT_PUBLIC_TYPE === 'dev' ? '/v1/api' : process.env.NEXT_PUBLIC_BACKEND_URL,
+        baseURL: getBaseURL(),
         withCredentials: true, // 도메인 다른경우 필요한 옵션
         timeout: 30000,
         headers: {
@@ -77,33 +88,59 @@ export const useHttp = (): AxiosInstance => {
                 error.response?.data?.message === 'jwt expired' ||
                 error.response?.data?.error === 'jwt expired';
 
+            // refreshToken 요청 자체가 실패한 경우 재시도 금지 및 세션 정리
+            if (originalRequest?.url?.includes('/refreshToken')) {
+                const { clearStudentAuth } = useStudentAuthStore.getState();
+                clearStudentAuth();
+                return Promise.reject(error);
+            }
+
             // 학생용 토큰 만료 처리
             if (isTokenExpired && isStudentRequest && !originalRequest._retry) {
                 originalRequest._retry = true;
+
+                if (!studentRefreshPromise) {
+                    studentRefreshPromise = (async () => {
+                        try {
+                            const refreshBaseUrl = axiosInstance.defaults.baseURL || '/v1/api';
+                            const refreshUrl = `${refreshBaseUrl.replace(/\/$/, '')}/choiMath/student/refreshToken`;
+                            const res = await axios.post(
+                                refreshUrl,
+                                {},
+                                { withCredentials: true }
+                            );
+
+                            if (res.data && res.data.studentToken) {
+                                const { studentToken, student } = res.data;
+
+                                // 스토어 업데이트 (Zustand & Cookie)
+                                const { setStudentAuth } = useStudentAuthStore.getState();
+                                setStudentAuth(studentToken, student);
+                                return studentToken;
+                            }
+                            return null;
+                        } catch (refreshErr) {
+                            const { clearStudentAuth } = useStudentAuthStore.getState();
+                            clearStudentAuth();
+                            throw refreshErr;
+                        } finally {
+                            studentRefreshPromise = null;
+                        }
+                    })();
+                }
+
                 try {
-                    // Refresh Token으로 새 Access Token 요청
-                    const res = await axios.post(
-                        `${axiosInstance.defaults.baseURL}/choiMath/student/refreshToken`,
-                        {},
-                        { withCredentials: true }
-                    );
-
-                    if (res.data && res.data.studentToken) {
-                        const { studentToken, student } = res.data;
-
-                        // 스토어 업데이트 (Zustand & Cookie)
-                        const { setStudentAuth } = useStudentAuthStore.getState();
-                        setStudentAuth(studentToken, student);
-
-                        // 실패했던 원래 요청 재시도
-                        originalRequest.headers['x-student-log'] = `Bearer ${studentToken}`;
+                    const newStudentToken = await studentRefreshPromise;
+                    if (newStudentToken) {
+                        originalRequest.headers['x-student-log'] = `Bearer ${newStudentToken}`;
                         return axiosInstance(originalRequest);
+                    } else {
+                        const { clearStudentAuth } = useStudentAuthStore.getState();
+                        clearStudentAuth();
+                        return Promise.reject('student session expired');
                     }
                 } catch (refreshError) {
-                    // Refresh도 실패 시 세션 종료
-                    const { clearStudentAuth } = useStudentAuthStore.getState();
-                    clearStudentAuth();
-                    return Promise.reject('student session expired');
+                    return Promise.reject(refreshError);
                 }
             }
 

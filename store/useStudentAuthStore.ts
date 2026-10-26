@@ -28,13 +28,22 @@ const useStudentAuthStore = create<StudentAuthState>()(
                 set({ studentToken: token, studentAuthData: data });
                 Cookies.set('x-student-log', token, {
                     expires: 1,
-                    secure: process.env.NEXT_PUBLIC_TYPE !== 'dev',
-                    sameSite: 'Strict'
+                    path: '/',
+                    secure: process.env.NODE_ENV === 'production',
+                    sameSite: 'Lax'
                 });
             },
             clearStudentAuth: () => {
                 set({ studentToken: null, studentAuthData: null });
+                Cookies.remove('x-student-log', { path: '/' });
                 Cookies.remove('x-student-log');
+                if (typeof window !== 'undefined') {
+                    try {
+                        localStorage.removeItem('student-auth-storage');
+                    } catch (e) {
+                        console.error('Failed to clear student-auth-storage:', e);
+                    }
+                }
             }
         }),
         {

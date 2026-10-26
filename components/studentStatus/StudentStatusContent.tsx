@@ -557,7 +557,12 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
 
         setChartData({ classesHomework, classesAttendance });
     };
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        try {
+            await http.post('/choiMath/student/logout', {}, { disableLoading: true });
+        } catch (e) {
+            console.error('Logout request error:', e);
+        }
         clearStudentAuth();
         window.location.reload();
     };

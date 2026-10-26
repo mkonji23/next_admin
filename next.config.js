@@ -17,10 +17,15 @@ const nextConfig = {
         ignoreBuildErrors: true
     },
     async rewrites() {
+        const rawBackendUrl =
+            process.env.NEXT_PUBLIC_BACKEND_URL ||
+            (process.env.NEXT_PUBLIC_TYPE === 'dev' ? 'http://localhost:3000' : 'https://serve-less.vercel.app');
+        const cleanBackendUrl = rawBackendUrl.replace(/\/api\/?$/, '').replace(/\/$/, '');
+
         return [
             {
                 source: '/v1/api/:path*', // 클라이언트에서 호출하는 경로
-                destination: 'http://localhost:3000/api/:path*' // 실제 API 서버 주소
+                destination: `${cleanBackendUrl}/api/:path*` // 실제 API 서버 주소 (동적 백엔드 프록시)
             }
         ];
     }
