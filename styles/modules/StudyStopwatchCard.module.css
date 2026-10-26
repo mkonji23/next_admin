@@ -148,6 +148,31 @@
     transition: color 0.5s, text-shadow 0.5s;
 }
 
+/* 가로형 몰입 모드 전용 패딩 및 높이 최적화 */
+.fullscreenOverlay[data-orientation='landscape'] {
+    padding: clamp(0.5rem, 2.5vh, 1.5rem) clamp(1rem, 3vw, 2.5rem) !important;
+}
+
+/* 기기가 세로인데 가로형을 선택했을 때 90도 회전 Fallback */
+.rotateLandscape {
+    width: 100vh !important;
+    height: 100vw !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) rotate(90deg) !important;
+    transform-origin: center center !important;
+}
+
+/* 기기가 가로인데 세로형을 선택했을 때 역회전 Fallback */
+.rotatePortrait {
+    width: 100vh !important;
+    height: 100vw !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) rotate(-90deg) !important;
+    transform-origin: center center !important;
+}
+
 /* ==========================================================================
    3. 버튼 & 펄스 애니메이션
    ========================================================================== */

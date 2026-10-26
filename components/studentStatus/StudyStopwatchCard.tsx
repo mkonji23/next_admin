@@ -27,6 +27,33 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
     const [timelineVisible, setTimelineVisible] = useState<boolean>(false);
     const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
+    // 전체화면 가로형/세로형 모드 관리 ('landscape' | 'portrait')
+    type OrientationMode = 'landscape' | 'portrait';
+    const [orientationMode, setOrientationMode] = useState<OrientationMode>(() => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('stopwatch_orientation_mode');
+            if (saved === 'portrait' || saved === 'landscape') return saved;
+        }
+        return 'landscape'; // 기본 탁상시계 몰입 모드: 가로형
+    });
+    const [isDeviceLandscape, setIsDeviceLandscape] = useState<boolean>(false);
+
+    // 디바이스의 실제 회전 상태 실시간 감지
+    useEffect(() => {
+        const checkDeviceOrientation = () => {
+            if (typeof window !== 'undefined') {
+                setIsDeviceLandscape(window.innerWidth > window.innerHeight);
+            }
+        };
+        checkDeviceOrientation();
+        window.addEventListener('resize', checkDeviceOrientation);
+        window.addEventListener('orientationchange', checkDeviceOrientation);
+        return () => {
+            window.removeEventListener('resize', checkDeviceOrientation);
+            window.removeEventListener('orientationchange', checkDeviceOrientation);
+        };
+    }, []);
+
     // 실시간 현재시간 1초 주기 갱신
     useEffect(() => {
         const timer = setInterval(() => {
@@ -143,23 +170,48 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
         setTimeout(performScroll, 300);
     }, []);
 
-    // 전체화면 진입 / 나가기 핸들러
-    const openFullscreen = useCallback(() => {
-        suppressPauseTemporarily(2000);
-        setIsFullscreen(true);
+    // 가로형 / 세로형 모드 변경 및 Native Screen Orientation Lock 제어
+    const changeOrientationMode = useCallback(async (mode: OrientationMode) => {
+        setOrientationMode(mode);
         if (typeof window !== 'undefined') {
-            window.history.pushState({ popup: 'stopwatchFullscreen' }, '');
-            try {
-                document.documentElement.requestFullscreen?.().catch(() => {});
-            } catch (_) {}
+            localStorage.setItem('stopwatch_orientation_mode', mode);
+            if (typeof screen !== 'undefined' && screen.orientation && typeof screen.orientation.lock === 'function') {
+                try {
+                    await screen.orientation.lock(mode);
+                } catch (_) {
+                    // 브라우저 정책으로 lock이 거부되어도 CSS Fallback 모드로 완벽 대응
+                }
+            }
         }
-    }, [suppressPauseTemporarily]);
+    }, []);
+
+    // 전체화면 진입 / 나가기 핸들러
+    const openFullscreen = useCallback(
+        async (mode?: OrientationMode) => {
+            const targetMode = mode || orientationMode;
+            suppressPauseTemporarily(2500);
+            setIsFullscreen(true);
+            if (typeof window !== 'undefined') {
+                window.history.pushState({ popup: 'stopwatchFullscreen' }, '');
+                try {
+                    await document.documentElement.requestFullscreen?.().catch(() => {});
+                } catch (_) {}
+                changeOrientationMode(targetMode);
+            }
+        },
+        [orientationMode, suppressPauseTemporarily, changeOrientationMode]
+    );
 
     const closeFullscreen = useCallback(() => {
         // 축소 모드 전환 중(가로/세로 회전, UI 복원, 히스토리 이동 등) 일시정지 오작동 방지
         suppressPauseTemporarily(2500);
         setIsFullscreen(false);
         if (typeof window !== 'undefined') {
+            if (typeof screen !== 'undefined' && screen.orientation?.unlock) {
+                try {
+                    screen.orientation.unlock();
+                } catch (_) {}
+            }
             if (window.history.state?.popup === 'stopwatchFullscreen') {
                 window.history.back();
             }
@@ -226,20 +278,6 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
         openFullscreen();
     };
 
-    // 시간 또는 태그 클릭 시 공부 시작/일시정지 토글
-    const handleToggleStudy = () => {
-        if (loading || !studentId) return;
-        if (isRunning) {
-            pauseStudy('manual_pause');
-        } else {
-            if (isFullscreen) {
-                startStudy();
-            } else {
-                handleStartStudy();
-            }
-        }
-    };
-
     const is1hAutoPaused = alertReason === 'auto_1h_pause';
 
     return (
@@ -247,416 +285,494 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
             <div ref={cardContainerRef} className="w-full">
                 <Card
                     className={`mb-4 shadow-3 border-round-2xl overflow-hidden ${styles.stopwatchCard}`}
-                data-theme={isDark ? 'dark' : 'light'}
-                data-running={isRunning}
-            >
-                <Tooltip target=".stopwatch-info-tooltip" position="top" />
-                <div className="flex flex-column gap-3">
-                    {/* 상단 헤더: 타이틀, 전체 총 공부시간, 현재시간 & 상태 태그, 전체화면 버튼 */}
-                    <div className={`flex align-items-center justify-content-between pb-2 ${styles.cardHeader}`}>
-                        <div className="flex flex-column gap-1">
-                            <div className="flex flex-wrap align-items-baseline gap-2">
-                                <div
-                                    className="flex align-items-center gap-2 stopwatch-info-tooltip cursor-pointer"
-                                    data-pr-tooltip="방치 방지를 위해 최대 1시간 연속 측정 후 자동 일시정지되며, 재실행이 필요합니다."
-                                >
-                                    <i className={`pi pi-stopwatch text-xl ${styles.cardIcon}`} />
-                                    <span className={`font-bold text-lg ${styles.cardTitle}`}>
-                                        순공 타이머
-                                    </span>
-                                </div>
-                                <span className={`text-xs font-normal ${styles.cardSubtitle}`}>
-                                    (전체 {formatDurationText(activeOverallSeconds)})
-                                </span>
-                            </div>
-                            {/* 현재 시간 표시 */}
-                            <div className={`flex align-items-center gap-1 text-xs ${styles.cardSubtitle}`}>
-                                <i className={`pi pi-clock text-xs ${styles.cardIcon}`} />
-                                <span>
-                                    현재 시간:{' '}
-                                    <strong className={styles.currentTimeText}>
-                                        {formatKoreanTime(currentTime, false)}
-                                    </strong>
-                                </span>
-                            </div>
-                        </div>
-
-                        <div className="flex align-items-center gap-2">
-                            <div
-                                onClick={handleToggleStudy}
-                                className="cursor-pointer select-none transition-transform active:scale-95"
-                                title={isRunning ? '클릭하여 일시정지' : '클릭하여 공부 시작'}
-                            >
-                                {isRunning ? (
-                                    <Tag
-                                        severity="success"
-                                        value="집중"
-                                        className="font-bold px-2 py-1 cursor-pointer white-space-nowrap"
-                                        style={{
-                                            fontSize: '11px',
-                                            background: '#16a34a',
-                                            border: 'none',
-                                            minWidth: '3.8rem',
-                                            display: 'inline-flex',
-                                            justifyContent: 'center',
-                                            whiteSpace: 'nowrap'
-                                        }}
-                                    />
-                                ) : (
-                                    <Tag
-                                        severity={null}
-                                        value="일시정지"
-                                        className="font-medium px-2 py-1 cursor-pointer white-space-nowrap"
-                                        style={{
-                                            fontSize: '11px',
-                                            background: isDark ? 'rgba(255,255,255,0.1)' : '#e2e8f0',
-                                            color: isDark ? '#94a3b8' : '#475569',
-                                            minWidth: '3.8rem',
-                                            display: 'inline-flex',
-                                            justifyContent: 'center',
-                                            whiteSpace: 'nowrap'
-                                        }}
-                                    />
-                                )}
-                            </div>
-                            <Button
-                                icon="pi pi-expand"
-                                size="small"
-                                text
-                                rounded
-                                className={styles.cardSubtitle}
-                                tooltip="전체화면 몰입 모드"
-                                tooltipOptions={{ position: 'top' }}
-                                onClick={openFullscreen}
-                            />
-                            <Button
-                                icon="pi pi-list"
-                                size="small"
-                                text
-                                rounded
-                                className={styles.cardSubtitle}
-                                tooltip="오늘의 공부 타임라인"
-                                tooltipOptions={{ position: 'top' }}
-                                onClick={() => setTimelineVisible(true)}
-                            />
-                        </div>
-                    </div>
-
-                    {/* 중앙: 대형 스톱워치 디스플레이 */}
-                    <div
-                        className={`flex flex-column align-items-center justify-content-center py-3 border-round-xl cursor-pointer select-none transition-all transition-duration-200 ${styles.clockContainer} ${
-                            isRunning ? `${styles.runningGlow} hover:shadow-3` : 'hover:surface-100 hover:shadow-2'
-                        }`}
-                        style={{
-                            cursor: !studentId || loading ? 'not-allowed' : 'pointer'
-                        }}
-                        onClick={handleToggleStudy}
-                        title={isRunning ? '클릭하여 일시정지' : '클릭하여 공부 시작'}
-                    >
-                        <div
-                            className={`font-extrabold font-mono transition-transform active:scale-95 ${styles.clockText}`}
-                            style={{
-                                fontSize: 'clamp(2.5rem, 10vw, 4rem)',
-                                letterSpacing: '4px'
-                            }}
-                        >
-                            {totalTimeDisplay.formatted}
-                        </div>
-                        <span
-                            className={`text-xs mt-1 stopwatch-info-tooltip flex align-items-center gap-1 ${styles.cardSubtitle}`}
-                            style={{ letterSpacing: '0.05em' }}
-                            data-pr-tooltip="최대 1시간 연속 측정 후 자동 일시정지 (클릭 시 공부 시작/일시정지)"
-                        >
-                            오늘 누적 공부시간 <i className="pi pi-info-circle text-xs" />
-                            {isRunning && (
-                                <span className="ml-1 text-green-600 font-semibold flex align-items-center gap-1">
-                                    • <i className="pi pi-sun text-xs" /> 화면 켜짐 유지 중
-                                </span>
-                            )}
-                        </span>
-                    </div>
-
-                    {/* 하단 컨트롤 버튼 */}
-                    <div className="flex justify-content-center gap-3">
-                        {!isRunning ? (
-                            <Button
-                                label="공부 시작"
-                                icon="pi pi-play"
-                                className={`${styles.startBtn} w-full font-bold`}
-                                style={{
-                                    background: 'linear-gradient(135deg, #16a34a, #15803d)',
-                                    border: 'none',
-                                    color: '#fff',
-                                    maxWidth: '20rem'
-                                }}
-                                onClick={handleStartStudy}
-                                disabled={loading || !studentId}
-                                tooltip="클릭 시 전체화면 집중 모드로 전환됩니다. (최대 1시간 측정)"
-                                tooltipOptions={{ position: 'top' }}
-                            />
-                        ) : (
-                            <Button
-                                label="일시정지"
-                                icon="pi pi-pause"
-                                severity="warning"
-                                className={`${styles.pauseBtn} w-full font-bold`}
-                                style={{ maxWidth: '20rem' }}
-                                onClick={() => pauseStudy('manual_pause')}
-                            />
-                        )}
-                    </div>
-
-                    {/* 하단 통계 정보 (최초 시작, 최종 종료, 세션 수) */}
-                    <div className={`grid grid-nogutter border-round-xl p-2 mt-1 text-center text-xs ${styles.statsContainer}`}>
-                        <div className={`col-4 ${styles.statsDivider}`}>
-                            <span className={`block mb-1 ${styles.cardSubtitle}`}>
-                                첫 시작
-                            </span>
-                            <strong className={`text-xs ${styles.statsValue}`}>
-                                {formatKoreanTime(todayData?.firstStartedAt)}
-                            </strong>
-                        </div>
-                        <div className={`col-4 ${styles.statsDivider}`}>
-                            <span className={`block mb-1 ${styles.cardSubtitle}`}>
-                                마지막 종료
-                            </span>
-                            <strong className={`text-xs ${styles.statsValue}`}>
-                                {formatKoreanTime(todayData?.lastEndedAt)}
-                            </strong>
-                        </div>
-                        <div className="col-4">
-                            <span className={`block mb-1 ${styles.cardSubtitle}`}>
-                                집중 세션
-                            </span>
-                            <strong style={{ color: isDark ? '#818cf8' : '#4f46e5', fontSize: '0.75rem' }}>
-                                {todayData?.sessionsCount || 0}회
-                            </strong>
-                        </div>
-                    </div>
-                </div>
-            </Card>
-            </div>
-
-            {/* 🖥️ [전체 화면 몰입형 스톱워치 뷰] */}
-            {isFullscreen && (
-                <div
-                    className={styles.fullscreenOverlay}
                     data-theme={isDark ? 'dark' : 'light'}
                     data-running={isRunning}
                 >
-                    {/* 전체화면 상단 바 */}
-                    <div className="flex align-items-center justify-content-between w-full">
-                        <div className="flex align-items-center gap-2">
-                            <div
-                                className="flex align-items-center gap-2 px-3 py-1 border-round-3xl"
-                                style={{
-                                    background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
-                                    color: isDark ? '#f1f5f9' : '#0f172a'
-                                }}
-                            >
-                                <i className="pi pi-user text-sm" />
-                                <span className="font-bold text-sm">
-                                    {studentName ? `${studentName} 학생의 순공 모드` : '순공 집중 모드'}
-                                </span>
+                    <Tooltip target=".stopwatch-info-tooltip" position="top" />
+                    <div className="flex flex-column gap-3">
+                        {/* 상단 헤더: 타이틀, 전체 총 공부시간, 현재시간 & 상태 태그, 전체화면 버튼 */}
+                        <div className={`flex align-items-center justify-content-between pb-2 ${styles.cardHeader}`}>
+                            <div className="flex flex-column gap-1">
+                                <div className="flex flex-wrap align-items-baseline gap-2">
+                                    <div
+                                        className="flex align-items-center gap-2 stopwatch-info-tooltip cursor-pointer"
+                                        data-pr-tooltip="방치 방지를 위해 최대 1시간 연속 측정 후 자동 일시정지되며, 재실행이 필요합니다."
+                                    >
+                                        <i className={`pi pi-stopwatch text-xl ${styles.cardIcon}`} />
+                                        <span className={`font-bold text-lg ${styles.cardTitle}`}>순공 타이머</span>
+                                    </div>
+                                    <span className={`text-xs font-normal ${styles.cardSubtitle}`}>
+                                        (전체 {formatDurationText(activeOverallSeconds)})
+                                    </span>
+                                </div>
+                                {/* 현재 시간 표시 */}
+                                <div className={`flex align-items-center gap-1 text-xs ${styles.cardSubtitle}`}>
+                                    <i className={`pi pi-clock text-xs ${styles.cardIcon}`} />
+                                    <span>
+                                        현재 시간:{' '}
+                                        <strong className={styles.currentTimeText}>
+                                            {formatKoreanTime(currentTime, false)}
+                                        </strong>
+                                    </span>
+                                </div>
                             </div>
 
-                            {isRunning && (
-                                <div
-                                    className="flex align-items-center gap-1 px-3 py-1 border-round-3xl text-xs font-semibold"
-                                    style={{
-                                        background: isDark ? 'rgba(34, 197, 94, 0.15)' : 'rgba(34, 197, 94, 0.1)',
-                                        color: isDark ? '#4ade80' : '#15803d',
-                                        border: isDark ? '1px solid rgba(74, 222, 128, 0.25)' : '1px solid rgba(34, 197, 94, 0.2)'
-                                    }}
-                                >
-                                    <i className="pi pi-sun text-xs" />
-                                    <span>화면 켜짐 유지 중</span>
+                            <div className="flex align-items-center gap-2">
+                                <div className="select-none">
+                                    {isRunning ? (
+                                        <Tag
+                                            severity="success"
+                                            value="집중"
+                                            className="font-bold px-2 py-1 white-space-nowrap"
+                                            style={{
+                                                fontSize: '11px',
+                                                background: '#16a34a',
+                                                border: 'none',
+                                                minWidth: '3.8rem',
+                                                display: 'inline-flex',
+                                                justifyContent: 'center',
+                                                whiteSpace: 'nowrap'
+                                            }}
+                                        />
+                                    ) : (
+                                        <Tag
+                                            severity={null}
+                                            value="일시정지"
+                                            className="font-medium px-2 py-1 white-space-nowrap"
+                                            style={{
+                                                fontSize: '11px',
+                                                background: isDark ? 'rgba(255,255,255,0.1)' : '#e2e8f0',
+                                                color: isDark ? '#94a3b8' : '#475569',
+                                                minWidth: '3.8rem',
+                                                display: 'inline-flex',
+                                                justifyContent: 'center',
+                                                whiteSpace: 'nowrap'
+                                            }}
+                                        />
+                                    )}
                                 </div>
-                            )}
-                        </div>
-
-                        {/* 중앙 현재 시간 (태블릿/PC) */}
-                        <div
-                            className="hidden md:flex align-items-center gap-2 px-3 py-1 border-round-3xl text-sm"
-                            style={{
-                                background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)'
-                            }}
-                        >
-                            <i className="pi pi-clock" />
-                            <span>
-                                현재 시간:{' '}
-                                <strong className={styles.cardTitle}>{formatKoreanTime(currentTime, true)}</strong>
-                            </span>
-                        </div>
-
-                        {/* 우측 닫기 / 축소 버튼 */}
-                        <div className="flex align-items-center gap-2">
-                            <Button
-                                icon="pi pi-window-minimize"
-                                label="축소 보기"
-                                className="p-button-sm border-round-3xl font-semibold"
-                                style={{
-                                    background: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.07)',
-                                    color: isDark ? '#e2e8f0' : '#1e293b',
-                                    border: 'none'
-                                }}
-                                onClick={closeFullscreen}
-                            />
-                        </div>
-                    </div>
-
-                    {/* 전체화면 중앙: 초대형 시계 & 상태 */}
-                    <div className="flex flex-column align-items-center justify-content-center my-auto text-center">
-                        <div
-                            className="mb-3 cursor-pointer select-none transition-transform active:scale-95"
-                            onClick={handleToggleStudy}
-                            title={isRunning ? '클릭하여 일시정지' : '클릭하여 공부 시작'}
-                        >
-                            {isRunning ? (
-                                <Tag
-                                    severity="success"
-                                    value="공부 중"
-                                    className="font-bold px-4 py-2 text-sm shadow-2 cursor-pointer white-space-nowrap"
-                                    style={{
-                                        background: '#16a34a',
-                                        letterSpacing: '1px',
-                                        minWidth: '6rem',
-                                        display: 'inline-flex',
-                                        justifyContent: 'center',
-                                        textAlign: 'center',
-                                        whiteSpace: 'nowrap'
-                                    }}
+                                <Button
+                                    icon="pi pi-expand"
+                                    size="small"
+                                    text
+                                    rounded
+                                    className={styles.cardSubtitle}
+                                    tooltipOptions={{ position: 'top' }}
+                                    onClick={() => openFullscreen()}
                                 />
-                            ) : (
-                                <Tag
-                                    severity={null}
-                                    value="일시정지"
-                                    className="font-bold px-4 py-2 text-sm cursor-pointer white-space-nowrap"
-                                    style={{
-                                        background: isDark ? 'rgba(255,255,255,0.15)' : '#cbd5e1',
-                                        color: isDark ? '#e2e8f0' : '#334155',
-                                        minWidth: '6rem',
-                                        display: 'inline-flex',
-                                        justifyContent: 'center',
-                                        textAlign: 'center',
-                                        whiteSpace: 'nowrap'
-                                    }}
+                                <Button
+                                    icon="pi pi-list"
+                                    size="small"
+                                    text
+                                    rounded
+                                    className={styles.cardSubtitle}
+                                    tooltipOptions={{ position: 'top' }}
+                                    onClick={() => setTimelineVisible(true)}
                                 />
-                            )}
+                            </div>
                         </div>
 
-                        {/* 초대형 스톱워치 텍스트 (초마다 리드미컬 하이라이트) */}
+                        {/* 중앙: 대형 스톱워치 디스플레이 */}
                         <div
-                            className={`font-extrabold font-mono select-none cursor-pointer flex align-items-center justify-content-center flex-nowrap ${styles.clockText}`}
-                            style={{
-                                fontSize: 'clamp(4.2rem, 18vw, 11rem)',
-                                lineHeight: '1',
-                                letterSpacing: 'clamp(2px, 1.2vw, 8px)'
-                            }}
-                            onClick={handleToggleStudy}
-                            title={isRunning ? '클릭하여 일시정지' : '클릭하여 공부 시작'}
+                            className={`flex flex-column align-items-center justify-content-center py-3 border-round-xl select-none transition-all transition-duration-200 ${
+                                styles.clockContainer
+                            } ${isRunning ? `${styles.runningGlow}` : ''}`}
                         >
-                            <span
-                                key={isRunning && hourPulseKey > 0 ? `hour-${hourPulseKey}` : 'hour-idle'}
-                                className={
-                                    isRunning && hourPulseKey > 0
-                                        ? isDark ? styles.hourTickDark : styles.hourTickLight
-                                        : ''
-                                }
-                                style={{ display: 'inline-block' }}
-                            >
-                                {totalTimeDisplay.hours}
-                            </span>
-                            <span className={isRunning ? `${styles.colonBlink} mx-1` : 'mx-1'}>:</span>
-                            <span
-                                key={isRunning && minutePulseKey > 0 ? `min-${minutePulseKey}` : 'min-idle'}
-                                className={
-                                    isRunning && minutePulseKey > 0
-                                        ? isDark ? styles.minuteTickDark : styles.minuteTickLight
-                                        : ''
-                                }
-                                style={{ display: 'inline-block' }}
-                            >
-                                {totalTimeDisplay.minutes}
-                            </span>
-                            <span className={isRunning ? `${styles.colonBlink} mx-1` : 'mx-1'}>:</span>
-                            <span
-                                key={isRunning ? totalTimeDisplay.seconds : 'paused'}
-                                className={
-                                    isRunning
-                                        ? isDark ? styles.secondTickDark : styles.secondTickLight
-                                        : ''
-                                }
-                                style={{ display: 'inline-block' }}
-                            >
-                                {totalTimeDisplay.seconds}
-                            </span>
-                        </div>
-
-                        {/* 전체 총 공부시간 및 세션 요약 */}
-                        <div className="flex flex-wrap align-items-center justify-content-center gap-3 mt-4">
-                            <span
-                                className="text-sm font-semibold px-3 py-1 border-round-2xl"
+                            <div
+                                className={`font-extrabold font-mono ${styles.clockText}`}
                                 style={{
-                                    background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'
+                                    fontSize: 'clamp(2.5rem, 10vw, 4rem)',
+                                    letterSpacing: '4px'
                                 }}
                             >
-                                오늘 누적 총 공부시간:{' '}
-                                <strong className={styles.cardTitle}>{formatDurationText(activeTotalSeconds)}</strong>
-                            </span>
-                            <span
-                                className="text-sm font-semibold px-3 py-1 border-round-2xl"
-                                style={{
-                                    background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'
-                                }}
-                            >
-                                오늘 집중 세션:{' '}
-                                <strong style={{ color: isDark ? '#818cf8' : '#4f46e5' }}>
-                                    {todayData?.sessionsCount || 0}회
-                                </strong>
-                            </span>
+                                {totalTimeDisplay.formatted}
+                            </div>
+                            <div className="flex align-items-center justify-content-center gap-1 mt-1">
+                                <span
+                                    className={`text-xs stopwatch-info-tooltip flex align-items-center gap-1 ${styles.cardSubtitle}`}
+                                    style={{ letterSpacing: '0.05em' }}
+                                    data-pr-tooltip="최대 1시간 연속 측정 후 자동 일시정지됩니다."
+                                >
+                                    오늘 누적 공부시간 <i className="pi pi-info-circle text-xs" />
+                                </span>
+                                {isRunning && (
+                                    <span
+                                        className="ml-2 inline-flex align-items-center justify-content-center cursor-pointer text-green-600 border-circle hover:surface-200 transition-colors"
+                                        data-pr-tooltip="화면 켜짐 유지 중 (자동 잠금 방지)"
+                                        style={{ width: '22px', height: '22px' }}
+                                        title="화면 켜짐 유지 중 (자동 잠금 방지)"
+                                    >
+                                        <i className="pi pi-sun text-xs text-green-600" />
+                                    </span>
+                                )}
+                            </div>
                         </div>
-                    </div>
 
-                    {/* 전체화면 하단 컨트롤 버튼 */}
-                    <div className="flex flex-column align-items-center gap-3 w-full">
-                        <div className="flex justify-content-center w-full" style={{ maxWidth: '420px' }}>
+                        {/* 하단 컨트롤 버튼 */}
+                        <div className="flex justify-content-center gap-3">
                             {!isRunning ? (
                                 <Button
                                     label="공부 시작"
                                     icon="pi pi-play"
-                                    className="w-full font-extrabold py-3 shadow-4 border-round-3xl text-lg"
+                                    className={`${styles.startBtn} w-full font-bold`}
                                     style={{
                                         background: 'linear-gradient(135deg, #16a34a, #15803d)',
                                         border: 'none',
-                                        color: '#fff'
+                                        color: '#fff',
+                                        maxWidth: '20rem'
                                     }}
-                                    onClick={startStudy}
+                                    onClick={handleStartStudy}
                                     disabled={loading || !studentId}
+                                    tooltip="클릭 시 전체화면 집중 모드로 전환됩니다. (최대 1시간 측정)"
+                                    tooltipOptions={{ position: 'top' }}
                                 />
                             ) : (
                                 <Button
                                     label="일시정지"
                                     icon="pi pi-pause"
                                     severity="warning"
-                                    className="w-full font-extrabold py-3 shadow-4 border-round-3xl text-lg"
-                                    style={{
-                                        background: 'linear-gradient(135deg, #eab308, #ca8a04)',
-                                        border: 'none',
-                                        color: '#fff'
-                                    }}
+                                    className={`${styles.pauseBtn} w-full font-bold`}
+                                    style={{ maxWidth: '20rem' }}
                                     onClick={() => pauseStudy('manual_pause')}
                                 />
                             )}
                         </div>
 
-                        <div className={`flex align-items-center gap-2 text-xs ${styles.cardSubtitle}`}>
-                            <i className="pi pi-info-circle text-xs" />
-                            <span>방치 방지를 위해 최대 1시간 연속 측정 후 자동 일시정지됩니다.</span>
+                        {/* 하단 통계 정보 (최초 시작, 최종 종료, 세션 수) */}
+                        <div
+                            className={`grid grid-nogutter border-round-xl p-2 mt-1 text-center text-xs ${styles.statsContainer}`}
+                        >
+                            <div className={`col-4 ${styles.statsDivider}`}>
+                                <span className={`block mb-1 ${styles.cardSubtitle}`}>첫 시작</span>
+                                <strong className={`text-xs ${styles.statsValue}`}>
+                                    {formatKoreanTime(todayData?.firstStartedAt)}
+                                </strong>
+                            </div>
+                            <div className={`col-4 ${styles.statsDivider}`}>
+                                <span className={`block mb-1 ${styles.cardSubtitle}`}>마지막 종료</span>
+                                <strong className={`text-xs ${styles.statsValue}`}>
+                                    {formatKoreanTime(todayData?.lastEndedAt)}
+                                </strong>
+                            </div>
+                            <div className="col-4">
+                                <span className={`block mb-1 ${styles.cardSubtitle}`}>집중 세션</span>
+                                <strong style={{ color: isDark ? '#818cf8' : '#4f46e5', fontSize: '0.75rem' }}>
+                                    {todayData?.sessionsCount || 0}회
+                                </strong>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                </Card>
+            </div>
+
+            {/* 🖥️ [전체 화면 몰입형 스톱워치 뷰] */}
+            {isFullscreen &&
+                (() => {
+                    // 기기가 세로인데 가로형을 선택했거나, 가로인데 세로형을 선택했을 때 스마트 CSS 회전 지원
+                    const isForceLandscape = !isDeviceLandscape && orientationMode === 'landscape';
+                    const isForcePortrait = isDeviceLandscape && orientationMode === 'portrait';
+                    const rotationClass = isForceLandscape
+                        ? styles.rotateLandscape
+                        : isForcePortrait
+                        ? styles.rotatePortrait
+                        : '';
+
+                    return (
+                        <div
+                            className={`${styles.fullscreenOverlay} ${rotationClass}`}
+                            data-theme={isDark ? 'dark' : 'light'}
+                            data-running={isRunning}
+                            data-orientation={orientationMode}
+                        >
+                            {/* 전체화면 상단 바 */}
+                            <div className="flex align-items-center justify-content-between w-full gap-2">
+                                {/* 좌측: 학생 이름 (잘림 방지) & 화면 켜짐 유지 아이콘 */}
+                                <div className="flex align-items-center gap-1 md:gap-2 flex-shrink-0">
+                                    <div
+                                        className="flex align-items-center gap-1 md:gap-2 px-2 md:px-3 py-1 border-round-3xl flex-shrink-0 white-space-nowrap"
+                                        style={{
+                                            background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                                            color: isDark ? '#f1f5f9' : '#0f172a'
+                                        }}
+                                    >
+                                        <i className="pi pi-user text-xs md:text-sm" />
+                                        <span className="font-bold text-xs md:text-sm white-space-nowrap">
+                                            {studentName ? `${studentName} 학생` : '순공 집중'}
+                                        </span>
+                                    </div>
+
+                                    {/* 화면 켜짐 유지 중: 아이콘만 노출 + 툴팁 처리 */}
+                                    {isRunning && (
+                                        <div
+                                            className="flex align-items-center justify-content-center border-circle cursor-pointer transition-colors flex-shrink-0"
+                                            data-pr-tooltip="화면 켜짐 유지 중 (자동 잠금 방지)"
+                                            title="화면 켜짐 유지 중 (자동 잠금 방지)"
+                                            style={{
+                                                width: '28px',
+                                                height: '28px',
+                                                background: isDark
+                                                    ? 'rgba(34, 197, 94, 0.2)'
+                                                    : 'rgba(34, 197, 94, 0.12)',
+                                                color: isDark ? '#4ade80' : '#15803d',
+                                                border: isDark
+                                                    ? '1px solid rgba(74, 222, 128, 0.3)'
+                                                    : '1px solid rgba(34, 197, 94, 0.25)'
+                                            }}
+                                        >
+                                            <i className="pi pi-sun text-xs" />
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 중앙 현재 시간 (모바일/태블릿/PC 모두 실시간 노출) */}
+                                <div
+                                    className="flex align-items-center gap-1 px-2 md:px-3 py-1 border-round-3xl text-xs md:text-sm flex-shrink-0 white-space-nowrap"
+                                    style={{
+                                        background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)'
+                                    }}
+                                >
+                                    <i className="pi pi-clock text-xs" />
+                                    <span className="hidden sm:inline">현재 시간: </span>
+                                    <strong className={styles.cardTitle}>{formatKoreanTime(currentTime, true)}</strong>
+                                </div>
+
+                                {/* 우측: 가로형/세로형 선택 토글 (세로형일 땐 아이콘만, 가로형일 땐 텍스트 포함) & 축소 버튼 */}
+                                <div className="flex align-items-center gap-1 md:gap-2 flex-shrink-0">
+                                    <div
+                                        className="flex align-items-center p-1 border-round-3xl"
+                                        style={{
+                                            background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                                            gap: '2px'
+                                        }}
+                                    >
+                                        <Button
+                                            icon="pi pi-desktop"
+                                            label={orientationMode === 'portrait' ? undefined : '가로형'}
+                                            size="small"
+                                            className="border-round-3xl text-xs font-bold"
+                                            style={{
+                                                padding: orientationMode === 'portrait' ? '4px 8px' : '4px 10px',
+                                                height: '28px',
+                                                fontSize: '11px',
+                                                border: 'none',
+                                                background:
+                                                    orientationMode === 'landscape'
+                                                        ? isDark
+                                                            ? '#22c55e'
+                                                            : '#16a34a'
+                                                        : 'transparent',
+                                                color:
+                                                    orientationMode === 'landscape'
+                                                        ? '#ffffff'
+                                                        : isDark
+                                                        ? '#94a3b8'
+                                                        : '#64748b'
+                                            }}
+                                            onClick={() => changeOrientationMode('landscape')}
+                                            tooltipOptions={{ position: 'bottom' }}
+                                            aria-label="가로형"
+                                        />
+                                        <Button
+                                            icon="pi pi-mobile"
+                                            label={orientationMode === 'portrait' ? undefined : '세로형'}
+                                            size="small"
+                                            className="border-round-3xl text-xs font-bold"
+                                            style={{
+                                                padding: orientationMode === 'portrait' ? '4px 8px' : '4px 10px',
+                                                height: '28px',
+                                                fontSize: '11px',
+                                                border: 'none',
+                                                background:
+                                                    orientationMode === 'portrait'
+                                                        ? isDark
+                                                            ? '#22c55e'
+                                                            : '#16a34a'
+                                                        : 'transparent',
+                                                color:
+                                                    orientationMode === 'portrait'
+                                                        ? '#ffffff'
+                                                        : isDark
+                                                        ? '#94a3b8'
+                                                        : '#64748b'
+                                            }}
+                                            onClick={() => changeOrientationMode('portrait')}
+                                            tooltipOptions={{ position: 'bottom' }}
+                                            aria-label="세로형"
+                                        />
+                                    </div>
+
+                                    <Button
+                                        icon="pi pi-window-minimize"
+                                        rounded
+                                        size="small"
+                                        style={{
+                                            width: '32px',
+                                            height: '32px',
+                                            background: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.07)',
+                                            color: isDark ? '#e2e8f0' : '#1e293b',
+                                            border: 'none'
+                                        }}
+                                        onClick={closeFullscreen}
+                                        tooltipOptions={{ position: 'bottom' }}
+                                        aria-label="축소 보기"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* 전체화면 중앙: 초대형 시계 & 상태 */}
+                            <div className="flex flex-column align-items-center justify-content-center my-auto text-center">
+                                <div className="mb-3 select-none">
+                                    {isRunning ? (
+                                        <Tag
+                                            severity="success"
+                                            value="공부 중"
+                                            className="font-bold px-4 py-2 text-sm shadow-2 white-space-nowrap"
+                                            style={{
+                                                background: '#16a34a',
+                                                letterSpacing: '1px',
+                                                minWidth: '6rem',
+                                                display: 'inline-flex',
+                                                justifyContent: 'center',
+                                                textAlign: 'center',
+                                                whiteSpace: 'nowrap'
+                                            }}
+                                        />
+                                    ) : (
+                                        <Tag
+                                            severity={null}
+                                            value="일시정지"
+                                            className="font-bold px-4 py-2 text-sm white-space-nowrap"
+                                            style={{
+                                                background: isDark ? 'rgba(255,255,255,0.15)' : '#cbd5e1',
+                                                color: isDark ? '#e2e8f0' : '#334155',
+                                                minWidth: '6rem',
+                                                display: 'inline-flex',
+                                                justifyContent: 'center',
+                                                textAlign: 'center',
+                                                whiteSpace: 'nowrap'
+                                            }}
+                                        />
+                                    )}
+                                </div>
+
+                                {/* 초대형 스톱워치 텍스트 (초마다 리드미컬 하이라이트) */}
+                                <div
+                                    className={`font-extrabold font-mono select-none flex align-items-center justify-content-center flex-nowrap ${styles.clockText}`}
+                                    style={{
+                                        fontSize:
+                                            orientationMode === 'landscape'
+                                                ? 'clamp(3.8rem, 16vh, 9.5rem)'
+                                                : 'clamp(4.2rem, 18vw, 11rem)',
+                                        lineHeight: '1',
+                                        letterSpacing: 'clamp(2px, 1.2vw, 8px)'
+                                    }}
+                                >
+                                    <span
+                                        key={isRunning && hourPulseKey > 0 ? `hour-${hourPulseKey}` : 'hour-idle'}
+                                        className={
+                                            isRunning && hourPulseKey > 0
+                                                ? isDark
+                                                    ? styles.hourTickDark
+                                                    : styles.hourTickLight
+                                                : ''
+                                        }
+                                        style={{ display: 'inline-block' }}
+                                    >
+                                        {totalTimeDisplay.hours}
+                                    </span>
+                                    <span className={isRunning ? `${styles.colonBlink} mx-1` : 'mx-1'}>:</span>
+                                    <span
+                                        key={isRunning && minutePulseKey > 0 ? `min-${minutePulseKey}` : 'min-idle'}
+                                        className={
+                                            isRunning && minutePulseKey > 0
+                                                ? isDark
+                                                    ? styles.minuteTickDark
+                                                    : styles.minuteTickLight
+                                                : ''
+                                        }
+                                        style={{ display: 'inline-block' }}
+                                    >
+                                        {totalTimeDisplay.minutes}
+                                    </span>
+                                    <span className={isRunning ? `${styles.colonBlink} mx-1` : 'mx-1'}>:</span>
+                                    <span
+                                        key={isRunning ? totalTimeDisplay.seconds : 'paused'}
+                                        className={
+                                            isRunning ? (isDark ? styles.secondTickDark : styles.secondTickLight) : ''
+                                        }
+                                        style={{ display: 'inline-block' }}
+                                    >
+                                        {totalTimeDisplay.seconds}
+                                    </span>
+                                </div>
+
+                                {/* 전체 총 공부시간 및 세션 요약 */}
+                                <div className="flex flex-wrap align-items-center justify-content-center gap-3 mt-4">
+                                    <span
+                                        className="text-sm font-semibold px-3 py-1 border-round-2xl"
+                                        style={{
+                                            background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'
+                                        }}
+                                    >
+                                        오늘 누적 총 공부시간:{' '}
+                                        <strong className={styles.cardTitle}>
+                                            {formatDurationText(activeTotalSeconds)}
+                                        </strong>
+                                    </span>
+                                    <span
+                                        className="text-sm font-semibold px-3 py-1 border-round-2xl"
+                                        style={{
+                                            background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'
+                                        }}
+                                    >
+                                        오늘 집중 세션:{' '}
+                                        <strong style={{ color: isDark ? '#818cf8' : '#4f46e5' }}>
+                                            {todayData?.sessionsCount || 0}회
+                                        </strong>
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* 전체화면 하단 컨트롤 버튼 */}
+                            <div className="flex flex-column align-items-center gap-2 md:gap-3 w-full">
+                                <div className="flex justify-content-center w-full" style={{ maxWidth: '420px' }}>
+                                    {!isRunning ? (
+                                        <Button
+                                            label="공부 시작"
+                                            icon="pi pi-play"
+                                            className="w-full font-extrabold py-2 md:py-3 shadow-4 border-round-3xl text-base md:text-lg"
+                                            style={{
+                                                background: 'linear-gradient(135deg, #16a34a, #15803d)',
+                                                border: 'none',
+                                                color: '#fff'
+                                            }}
+                                            onClick={startStudy}
+                                            disabled={loading || !studentId}
+                                        />
+                                    ) : (
+                                        <Button
+                                            label="일시정지"
+                                            icon="pi pi-pause"
+                                            severity="warning"
+                                            className="w-full font-extrabold py-2 md:py-3 shadow-4 border-round-3xl text-base md:text-lg"
+                                            style={{
+                                                background: 'linear-gradient(135deg, #eab308, #ca8a04)',
+                                                border: 'none',
+                                                color: '#fff'
+                                            }}
+                                            onClick={() => pauseStudy('manual_pause')}
+                                        />
+                                    )}
+                                </div>
+
+                                <div className={`flex align-items-center gap-2 text-xs ${styles.cardSubtitle}`}>
+                                    <i className="pi pi-info-circle text-xs" />
+                                    <span>방치 방지를 위해 최대 1시간 연속 측정 후 자동 일시정지됩니다.</span>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })()}
 
             {/* 자동 일시정지 알림 팝업 */}
             <Dialog
