@@ -26,7 +26,6 @@ import { useCustomModal } from '@/hooks/useCustomModal';
 import { LayoutContext } from '@/layout/context/layoutcontext';
 import { useContext } from 'react';
 import { PrimeReactContext } from 'primereact/api';
-
 interface StudentStatusContentProps {
     studentAuthData?: StudentAuthData;
 }
