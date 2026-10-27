@@ -706,6 +706,21 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                                     </span>
                                 </div>
 
+                                {/* 1시간 자동 일시정지 안내 배너 */}
+                                {!isRunning && alertReason === 'auto_1h_pause' && (
+                                    <div
+                                        className="flex align-items-center justify-content-center gap-2 p-2 px-3 border-round-2xl mt-3 text-xs md:text-sm font-bold shadow-2 animate-fadein"
+                                        style={{
+                                            background: isDark ? 'rgba(34, 197, 94, 0.2)' : '#dcfce7',
+                                            color: isDark ? '#4ade80' : '#15803d',
+                                            border: isDark ? '1px solid rgba(74, 222, 128, 0.4)' : '1px solid #86efac'
+                                        }}
+                                    >
+                                        <i className="pi pi-check-circle" />
+                                        <span>1시간 집중 완료! 휴식 후 아래 버튼을 눌러 이어서 공부하세요.</span>
+                                    </div>
+                                )}
+
                                 {/* 전체 총 공부시간 및 세션 요약 */}
                                 <div className="flex flex-wrap align-items-center justify-content-center gap-3 mt-4">
                                     <span
@@ -746,7 +761,10 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                                                 border: 'none',
                                                 color: '#fff'
                                             }}
-                                            onClick={startStudy}
+                                            onClick={() => {
+                                                setAlertVisible(false);
+                                                startStudy();
+                                            }}
                                             disabled={loading || !studentId}
                                         />
                                     ) : (
@@ -778,6 +796,7 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
             <Dialog
                 visible={alertVisible}
                 onHide={() => setAlertVisible(false)}
+                baseZIndex={11000}
                 header={is1hAutoPaused ? '1시간 연속 공부 안내' : '화면 이탈 감지'}
                 style={{ width: '90vw', maxWidth: '380px' }}
                 modal

@@ -81,7 +81,7 @@ export const StudyRankingCard: React.FC<StudyRankingCardProps> = ({
         ? Math.max(serverMySeconds, serverMySeconds + currentActiveSeconds)
         : serverMySeconds;
 
-    const fetchRankings = useCallback(async () => {
+    const fetchRankings = useCallback(async (retryCount = 0) => {
         if (!studentId) return;
         setLoading(true);
         try {
@@ -95,12 +95,17 @@ export const StudyRankingCard: React.FC<StudyRankingCardProps> = ({
             });
 
             const data = res.data || {};
-            setTopRankers(data.rankings || []);
-            setMyRank(data.myRank || null);
-            setServerMySeconds(data.myTotalSeconds || 0);
-            setLastUpdatedTime(dayjs().format('HH:mm:ss'));
+            if (data.rankings) {
+                setTopRankers(data.rankings || []);
+                setMyRank(data.myRank || null);
+                setServerMySeconds(data.myTotalSeconds || 0);
+                setLastUpdatedTime(dayjs().format('HH:mm:ss'));
+            }
         } catch (error) {
             console.error('Error fetching monthly study rankings:', error);
+            if (retryCount < 2) {
+                setTimeout(() => fetchRankings(retryCount + 1), 1500);
+            }
         } finally {
             setLoading(false);
         }
@@ -251,7 +256,7 @@ export const StudyRankingCard: React.FC<StudyRankingCardProps> = ({
                         rounded
                         severity="secondary"
                         loading={loading}
-                        onClick={fetchRankings}
+                        onClick={() => fetchRankings()}
                         tooltip="순위 새로고침"
                         tooltipOptions={{ position: 'top' }}
                     />

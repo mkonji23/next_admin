@@ -55,7 +55,7 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
 
     // 1. 오늘의 순공시간 데이터 조회 (불필요한 http 등 객체 의존성 제거하여 무한루프 방지)
     const fetchTodayData = useCallback(
-        async (showLoading = true) => {
+        async (showLoading = true, retryCount = 0) => {
             if (!studentId) return;
             if (showLoading) setLoading(true);
             try {
@@ -66,9 +66,13 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
                 });
 
                 const data: TodayStudyTimeData = res.data;
-                setTodayData(data);
-                setTodayTotalSeconds(data.totalSeconds || 0);
-                setOverallTotalSeconds(data.overallTotalSeconds || 0);
+                if (data && typeof data.totalSeconds === 'number') {
+                    setTodayData(data);
+                    setTodayTotalSeconds(data.totalSeconds || 0);
+                    if (data.overallTotalSeconds !== undefined) {
+                        setOverallTotalSeconds(data.overallTotalSeconds || 0);
+                    }
+                }
 
                 // 이전 접속 시 비정상 종료 등으로 활성 세션이 남아있다면 복원
                 if (data.activeSession && !data.activeSession.endedAt) {
@@ -85,6 +89,9 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
                 }
             } catch (err) {
                 console.error('Failed to fetch today study time:', err);
+                if (retryCount < 2) {
+                    setTimeout(() => fetchTodayData(false, retryCount + 1), 1500);
+                }
             } finally {
                 if (showLoading) setLoading(false);
             }
