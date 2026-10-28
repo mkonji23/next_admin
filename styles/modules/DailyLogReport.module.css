@@ -15,6 +15,7 @@
     line-height: 1.65;
     font-size: 0.95rem;
     color: var(--text-color, #1e293b);
+    overflow-x: auto;
 }
 
 .markdownBody h1 {
@@ -59,6 +60,7 @@
 
 .markdownBody table {
     width: 100%;
+    min-width: 680px;
     border-collapse: collapse;
     margin-top: 1rem;
     margin-bottom: 1.5rem;
@@ -73,6 +75,32 @@
     padding: 0.75rem 1rem;
     border: 1px solid var(--surface-border, #e2e8f0);
     text-align: left;
+}
+
+/* 1번째 열: 학생명 또는 순위/학급명 등 넉넉하게 확장 */
+.markdownBody th:first-child,
+.markdownBody td:first-child {
+    white-space: nowrap;
+    min-width: 100px;
+}
+
+/* 2번째 열: 학교 / 학년 또는 학생명 넉넉하게 확장 및 줄바꿈 방지 */
+.markdownBody th:nth-child(2),
+.markdownBody td:nth-child(2) {
+    white-space: nowrap;
+    min-width: 150px;
+}
+
+/* 3번째 열: 수강 학급/학급/경로 등 긴 텍스트 열의 기본 가독성 너비 */
+.markdownBody th:nth-child(3),
+.markdownBody td:nth-child(3) {
+    min-width: 160px;
+}
+
+/* 4번째 이후 수치/횟수/비율 열: 줄바꿈 방지 */
+.markdownBody th:nth-child(n+4),
+.markdownBody td:nth-child(n+4) {
+    white-space: nowrap;
 }
 
 .markdownBody th {
@@ -125,4 +153,30 @@
     background-color: var(--surface-50, #f8fafc);
     color: var(--text-color-secondary, #64748b);
     border-radius: 0 4px 4px 0;
+}
+
+
+.copyIconButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    color: var(--text-color-secondary, #64748b);
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+    background: transparent;
+    border: none;
+    padding: 0;
+}
+
+.copyIconButton:hover {
+    background-color: var(--surface-200, #e2e8f0);
+    color: var(--primary-color, #3b82f6);
+    transform: scale(1.1);
+}
+
+.copyIconButton:active {
+    transform: scale(0.95);
 }

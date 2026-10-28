@@ -4,7 +4,6 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Card } from 'primereact/card';
 import { Button } from 'primereact/button';
 import { Calendar } from 'primereact/calendar';
-import { Tag } from 'primereact/tag';
 import { TabView, TabPanel } from 'primereact/tabview';
 import { Tooltip } from 'primereact/tooltip';
 import { useHttp } from '@/util/axiosInstance';
@@ -77,8 +76,51 @@ interface DailyReportItem {
 
 interface DailyReportDetail extends DailyReportItem {
     markdownContent: string;
+    studentMarkdownContent?: string;
+    logMarkdownContent?: string;
     source?: string;
 }
+
+/**
+ * 기존 DB 도큐먼트에 분리된 마크다운 필드가 없을 때를 위한 fallback 파싱 함수
+ */
+const splitMarkdownFallback = (fullMd: string, dateStr: string) => {
+    if (!fullMd) return { fallbackStudentMd: '', fallbackLogMd: '' };
+
+    const studentMatch = fullMd.match(/##\s+(?:📅\s*)?1\.\s*출석/i);
+    const logMatch = fullMd.match(/##\s+(?:👥\s*)?5\.\s*시스템\s*로그/i);
+
+    const studentIdx = studentMatch?.index ?? -1;
+    const logIdx = logMatch?.index ?? -1;
+
+    let studentBody = '';
+    let logBody = '';
+
+    if (studentIdx !== -1 && logIdx !== -1 && logIdx > studentIdx) {
+        studentBody = fullMd.slice(studentIdx, logIdx).trim();
+        logBody = fullMd.slice(logIdx).trim();
+    } else if (logIdx !== -1) {
+        studentBody = fullMd.slice(0, logIdx).trim();
+        logBody = fullMd.slice(logIdx).trim();
+    } else {
+        studentBody = fullMd;
+        logBody = fullMd;
+    }
+
+    const fallbackStudentMd =
+        `# 🎓 일일 학생 종합 분석 보고서 (${dateStr})\n\n` +
+        `> **ChoiMath 학사 종합 분석 리포트**  \n` +
+        `> **기준 일자**: ${dateStr} | **분석 범위**: 당월 출석/과제, 학년도 성적, 순공 시간\n\n` +
+        studentBody;
+
+    const fallbackLogMd =
+        `# 🖥️ 일일 시스템 로그 종합 분석 보고서 (${dateStr})\n\n` +
+        `> **ChoiMath 시스템 운영·API 종합 리포트**  \n` +
+        `> **기준 일자**: ${dateStr} | **분석 범위**: 일일 시스템 로그, 사용자 접속 활동, 엔드포인트 호출, 에러 추적\n\n` +
+        logBody;
+
+    return { fallbackStudentMd, fallbackLogMd };
+};
 
 const DailyLogReportPage = () => {
     const http = useHttp();
@@ -94,6 +136,7 @@ const DailyLogReportPage = () => {
     const [currentReport, setCurrentReport] = useState<DailyReportDetail | null>(null);
     const [loadingDetail, setLoadingDetail] = useState<boolean>(false);
     const [generating, setGenerating] = useState<boolean>(false);
+    const [activeTabIndex, setActiveTabIndex] = useState<number>(0);
 
     // 날짜 문자열 포맷팅
     const selectedDateStr = useMemo(() => {
@@ -159,17 +202,22 @@ const DailyLogReportPage = () => {
     const handleGenerateToday = async () => {
         setGenerating(true);
         try {
-            const res = await httpRef.current.post('/system/dailyReports/generate', {}, { disableLoading: true });
+            const targetMonth = dayjs(selectedDate).format('YYYY-MM');
+            const targetDate = dayjs(selectedDate).format('YYYY-MM-DD');
+            const res = await httpRef.current.post(
+                '/system/dailyReports/generate',
+                { month: targetMonth, date: targetDate },
+                { disableLoading: true }
+            );
             if (res.data?.success) {
+                const count = res.data.result?.count || 1;
                 showToast({
                     severity: 'success',
-                    summary: '보고서 생성 완료',
-                    detail: '출석·과제·성적·로그 일일 통합 분석 보고서가 성공적으로 생성 및 저장되었습니다.'
+                    summary: '보고서 분석 완료',
+                    detail: `${targetMonth}월 리포트 (${count}건)가 성공적으로 생성 및 갱신되었습니다.`
                 });
-                const today = new Date();
-                setSelectedDate(today);
                 await fetchReportList();
-                await fetchReportDetail(dayjs(today).format('YYYY-MM-DD'));
+                await fetchReportDetail(targetDate);
             }
         } catch (err) {
             console.error('Failed to trigger daily analysis:', err);
@@ -183,27 +231,74 @@ const DailyLogReportPage = () => {
         }
     };
 
-    // 마크다운 전문 복사
-    const handleCopyMarkdown = () => {
-        if (!currentReport?.markdownContent) return;
-        navigator.clipboard.writeText(currentReport.markdownContent);
+    // 마크다운 복사 핸들러
+    const handleCopyMarkdown = (content: string, reportName: string) => {
+        if (!content) return;
+        navigator.clipboard.writeText(content);
         showToast({
             severity: 'info',
             summary: '복사 완료',
-            detail: '마크다운 리포트 내용이 클립보드에 복사되었습니다.'
+            detail: `${reportName} 마크다운이 클립보드에 복사되었습니다.`
         });
     };
 
-    // 마크다운 HTML 파싱
-    const renderedHtml = useMemo(() => {
-        if (!currentReport?.markdownContent) return '';
+    // 마크다운 원본 추출
+    const fullMarkdown = useMemo(() => currentReport?.markdownContent || '', [currentReport?.markdownContent]);
+
+    const { fallbackStudentMd, fallbackLogMd } = useMemo(() => {
+        if (!currentReport?.markdownContent) return { fallbackStudentMd: '', fallbackLogMd: '' };
+        return splitMarkdownFallback(currentReport.markdownContent, selectedDateStr);
+    }, [currentReport?.markdownContent, selectedDateStr]);
+
+    const studentMarkdown = useMemo(() => {
+        return currentReport?.studentMarkdownContent || fallbackStudentMd;
+    }, [currentReport?.studentMarkdownContent, fallbackStudentMd]);
+
+    const logMarkdown = useMemo(() => {
+        return currentReport?.logMarkdownContent || fallbackLogMd;
+    }, [currentReport?.logMarkdownContent, fallbackLogMd]);
+
+    // 마크다운 HTML 파싱 (3개 탭 각각)
+    const renderedFullHtml = useMemo(() => {
+        if (!fullMarkdown) return '';
         try {
-            return marked.parse(currentReport.markdownContent) as string;
+            return marked.parse(fullMarkdown) as string;
         } catch (e) {
-            console.error('Markdown parse error:', e);
-            return currentReport.markdownContent;
+            console.error('Markdown parse error (Full):', e);
+            return fullMarkdown;
         }
-    }, [currentReport?.markdownContent]);
+    }, [fullMarkdown]);
+
+    const renderedStudentHtml = useMemo(() => {
+        if (!studentMarkdown) return '';
+        try {
+            return marked.parse(studentMarkdown) as string;
+        } catch (e) {
+            console.error('Markdown parse error (Student):', e);
+            return studentMarkdown;
+        }
+    }, [studentMarkdown]);
+
+    const renderedLogHtml = useMemo(() => {
+        if (!logMarkdown) return '';
+        try {
+            return marked.parse(logMarkdown) as string;
+        } catch (e) {
+            console.error('Markdown parse error (Log):', e);
+            return logMarkdown;
+        }
+    }, [logMarkdown]);
+
+    // 현재 활성화된 탭의 마크다운과 타이틀
+    const currentActiveTab = useMemo(() => {
+        if (activeTabIndex === 1) {
+            return { title: '학생 종합 분석 리포트', markdown: studentMarkdown };
+        }
+        if (activeTabIndex === 2) {
+            return { title: '로그 종합 분석 리포트', markdown: logMarkdown };
+        }
+        return { title: '종합 분석 리포트', markdown: fullMarkdown };
+    }, [activeTabIndex, studentMarkdown, logMarkdown, fullMarkdown]);
 
     const summary = currentReport?.summary;
 
@@ -224,7 +319,6 @@ const DailyLogReportPage = () => {
                         <div>
                             <div className="flex align-items-center gap-2">
                                 <h1 className="m-0 text-xl font-bold text-900">일일 통합 분석 보고서</h1>
-                                {currentReport && <Tag severity="success" value="MongoDB 저장 완료" className="text-xs" />}
                             </div>
                             <span className="text-xs text-500">
                                 성적·출석·과제수행 분석 및 일일 시스템 로그 종합 리포트
@@ -250,17 +344,6 @@ const DailyLogReportPage = () => {
                             />
                         </div>
 
-                        {/* 복사 버튼 */}
-                        <Button
-                            icon="pi pi-copy"
-                            label="마크다운 복사"
-                            size="small"
-                            outlined
-                            disabled={!currentReport}
-                            onClick={handleCopyMarkdown}
-                            className="p-button-sm font-semibold"
-                        />
-
                         {/* 지금 분석 실행 버튼 */}
                         <Button
                             icon="pi pi-refresh"
@@ -269,7 +352,7 @@ const DailyLogReportPage = () => {
                             severity="success"
                             loading={generating}
                             onClick={handleGenerateToday}
-                            tooltip="성적, 출석, 과제, 순공 및 로그 데이터를 즉시 재분석하여 MongoDB에 저장합니다."
+                            tooltip="선택한 월에서 아직 생성되지 않은 모든 일일 리포트를 분석하여 MongoDB에 저장합니다."
                             tooltipOptions={{ position: 'top' }}
                             className="p-button-sm font-bold"
                         />
@@ -431,50 +514,121 @@ const DailyLogReportPage = () => {
                         <span className="font-semibold text-sm">{selectedDateStr} 보고서를 불러오는 중입니다...</span>
                     </div>
                 ) : currentReport ? (
-                    <TabView>
-                        {/* 탭 1: 서식 적용된 마크다운 뷰어 */}
-                        <TabPanel
-                            header={
-                                <div className="flex align-items-center gap-2">
-                                    <i className="pi pi-desktop text-primary" />
-                                    <span className="font-bold">종합 분석 리포트 전문</span>
-                                </div>
-                            }
-                        >
-                            <div
-                                className={`pt-2 ${styles.markdownBody}`}
-                                dangerouslySetInnerHTML={{ __html: renderedHtml }}
-                            />
-                        </TabPanel>
-
-                        {/* 탭 2: 원본 마크다운 뷰어 */}
-                        <TabPanel
-                            header={
-                                <div className="flex align-items-center gap-2">
-                                    <i className="pi pi-code text-indigo-500" />
-                                    <span className="font-bold">원본 마크다운 (Raw)</span>
-                                </div>
-                            }
-                        >
-                            <div className="flex justify-content-between align-items-center mb-2 pt-2">
-                                <span className="text-xs text-600 font-semibold">마크다운 전문 코드:</span>
+                    <div>
+                        {/* 보고서 상단 타이틀 및 복사 아이콘 바 */}
+                        <div className="flex flex-wrap justify-content-between align-items-center gap-2 mb-3 pb-3 border-bottom-1 surface-border">
+                            <div className="flex align-items-center gap-2">
+                                <i className="pi pi-file text-xl text-primary" />
+                                <span className="text-base md:text-lg font-bold text-900">
+                                    {selectedDateStr} {currentActiveTab.title}
+                                </span>
+                                {/* 보고서 옆 카피 아이콘 버튼 */}
+                                <button
+                                    type="button"
+                                    className={styles.copyIconButton}
+                                    title={`${currentActiveTab.title} 마크다운 복사`}
+                                    onClick={() => handleCopyMarkdown(currentActiveTab.markdown, currentActiveTab.title)}
+                                >
+                                    <i className="pi pi-copy text-base text-700 hover:text-primary" />
+                                </button>
+                            </div>
+                            <div className="flex align-items-center gap-2">
                                 <Button
                                     icon="pi pi-copy"
-                                    label="복사"
+                                    label="현재 탭 마크다운 복사"
                                     size="small"
                                     text
-                                    onClick={handleCopyMarkdown}
-                                    className="p-button-sm"
+                                    severity="secondary"
+                                    className="p-button-sm text-xs font-semibold"
+                                    onClick={() => handleCopyMarkdown(currentActiveTab.markdown, currentActiveTab.title)}
                                 />
                             </div>
-                            <pre
-                                className="m-0 p-3 border-round surface-900 text-gray-100 font-mono text-xs overflow-auto select-all"
-                                style={{ maxHeight: '650px', lineHeight: '1.5' }}
+                        </div>
+
+                        {/* 3개 탭: 종합 분석 리포트 / 학생 종합 분석 리포트 / 로그 종합 분석 리포트 */}
+                        <TabView
+                            activeIndex={activeTabIndex}
+                            onTabChange={(e) => setActiveTabIndex(e.index)}
+                        >
+                            {/* 탭 1: 종합 분석 리포트 */}
+                            <TabPanel
+                                header={
+                                    <div className="flex align-items-center gap-2">
+                                        <i className="pi pi-desktop text-primary font-bold" />
+                                        <span className="font-bold">종합 분석 리포트</span>
+                                        <button
+                                            type="button"
+                                            className={styles.copyIconButton}
+                                            title="종합 분석 리포트 마크다운 복사"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleCopyMarkdown(fullMarkdown, '종합 분석 리포트');
+                                            }}
+                                        >
+                                            <i className="pi pi-copy text-sm" />
+                                        </button>
+                                    </div>
+                                }
                             >
-                                {currentReport.markdownContent}
-                            </pre>
-                        </TabPanel>
-                    </TabView>
+                                <div
+                                    className={`pt-2 ${styles.markdownBody}`}
+                                    dangerouslySetInnerHTML={{ __html: renderedFullHtml }}
+                                />
+                            </TabPanel>
+
+                            {/* 탭 2: 학생 종합 분석 리포트 (학생 성적, 출석 리포트) */}
+                            <TabPanel
+                                header={
+                                    <div className="flex align-items-center gap-2">
+                                        <i className="pi pi-users text-green-600 font-bold" />
+                                        <span className="font-bold">학생 종합 분석 리포트</span>
+                                        <button
+                                            type="button"
+                                            className={styles.copyIconButton}
+                                            title="학생 종합 분석 리포트 마크다운 복사"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleCopyMarkdown(studentMarkdown, '학생 종합 분석 리포트');
+                                            }}
+                                        >
+                                            <i className="pi pi-copy text-sm" />
+                                        </button>
+                                    </div>
+                                }
+                            >
+                                <div
+                                    className={`pt-2 ${styles.markdownBody}`}
+                                    dangerouslySetInnerHTML={{ __html: renderedStudentHtml }}
+                                />
+                            </TabPanel>
+
+                            {/* 탭 3: 로그 종합 분석 리포트 (API 관련 분석자료) */}
+                            <TabPanel
+                                header={
+                                    <div className="flex align-items-center gap-2">
+                                        <i className="pi pi-server text-blue-600 font-bold" />
+                                        <span className="font-bold">로그 종합 분석 리포트</span>
+                                        <button
+                                            type="button"
+                                            className={styles.copyIconButton}
+                                            title="로그 종합 분석 리포트 마크다운 복사"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleCopyMarkdown(logMarkdown, '로그 종합 분석 리포트');
+                                            }}
+                                        >
+                                            <i className="pi pi-copy text-sm" />
+                                        </button>
+                                    </div>
+                                }
+                            >
+                                <div
+                                    className={`pt-2 ${styles.markdownBody}`}
+                                    dangerouslySetInnerHTML={{ __html: renderedLogHtml }}
+                                />
+                            </TabPanel>
+                        </TabView>
+                    </div>
                 ) : (
                     <div className="flex flex-column align-items-center justify-content-center py-8 text-center text-500">
                         <i className="pi pi-info-circle text-4xl mb-3 text-400" />

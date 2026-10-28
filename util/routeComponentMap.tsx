@@ -25,7 +25,8 @@ const routeMap: { [key: string]: React.LazyExoticComponent<React.ComponentType<a
     '/praise-settlement': React.lazy(() => import('@/app/(main)/praise-settlement/page')),
     '/notice': React.lazy(() => import('@/app/(main)/notice/[[...id]]/page')),
     '/system-log': React.lazy(() => import('@/app/(main)/system-log/page')),
-    '/system-usage': React.lazy(() => import('@/app/(main)/system-usage/page'))
+    '/system-usage': React.lazy(() => import('@/app/(main)/system-usage/page')),
+    '/daily-log-report': React.lazy(() => import('@/app/(main)/daily-log-report/page'))
 };
 
 export const getComponentForPath = (path: string): React.ReactNode => {
