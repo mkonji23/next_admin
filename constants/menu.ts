@@ -46,7 +46,8 @@ export const AppMenuModel: AppMenuItem[] = [
             { label: '클래스 목록', icon: 'pi pi-fw pi-book', to: '/classList' },
             { label: '사용자 목록', icon: 'pi pi-fw pi-users', to: '/userList' },
             { label: '시스템 로그', icon: 'pi pi-fw pi-list', to: '/system-log', isAdmin: true },
-            { label: '시스템 사용량', icon: 'pi pi-fw pi-chart-pie', to: '/system-usage', isAdmin: true }
+            { label: '시스템 사용량', icon: 'pi pi-fw pi-chart-pie', to: '/system-usage', isAdmin: true },
+            { label: '일일 분석 보고서', icon: 'pi pi-fw pi-file-edit', to: '/daily-log-report', isAdmin: true }
         ]
     },
     {

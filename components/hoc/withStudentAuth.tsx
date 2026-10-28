@@ -12,6 +12,7 @@ import useStudentAuthStore from '@/store/useStudentAuthStore';
 import { LayoutContext } from '@/layout/context/layoutcontext';
 import { useContext } from 'react';
 import { requestFcmToken } from '@/lib/firebase';
+import Cookies from 'js-cookie';
 
 export interface StudentAuthData {
     studentId?: string;
@@ -28,14 +29,13 @@ const withStudentAuth = <P extends object>(
     const StudentAuthProtectedComponent = (props: P) => {
         const http = useHttp();
         const { showToast } = useToast();
-        const { setStudentAuth, studentAuthData: storedStudentAuthData, studentToken } = useStudentAuthStore();
+        const { setStudentAuth, studentAuthData: storedStudentAuthData, studentToken, clearStudentAuth } = useStudentAuthStore();
         const { layoutConfig } = useContext(LayoutContext);
         const isDark = layoutConfig.colorScheme === 'dark';
 
-        const [isAuthorized, setIsAuthorized] = useState(false);
-        const [studentAuthData, setStudentAuthData] = useState<StudentAuthData | null>(null);
+        const [mounted, setMounted] = useState(false);
 
-        // New state management
+        // State management for login card
         const [authState, setAuthState] = useState<'INITIAL' | 'PASSWORD_VERIFY' | 'PASSWORD_CREATE'>('INITIAL');
         const [foundStudent, setFoundStudent] = useState<Student | null>(null);
         const [password, setPassword] = useState('');
@@ -51,15 +51,59 @@ const withStudentAuth = <P extends object>(
         const [target, setTarget] = useState<'student' | 'parent' | ''>('');
 
         useEffect(() => {
-            if (studentToken && storedStudentAuthData) {
-                setStudentAuthData(storedStudentAuthData);
-                setIsAuthorized(true);
-            } else {
-                setIsAuthorized(false);
-                setStudentAuthData(null);
-                setAuthState('INITIAL');
+            setMounted(true);
+        }, []);
+
+        // 쿠키에 학생 토큰이 없고 스토어에 유효한 토큰이 있으면 쿠키 복구
+        useEffect(() => {
+            if (mounted && studentToken && studentToken !== 'undefined' && studentToken !== 'null') {
+                if (!Cookies.get('x-student-log')) {
+                    Cookies.set('x-student-log', studentToken, {
+                        expires: 1,
+                        path: '/',
+                        secure: process.env.NODE_ENV === 'production',
+                        sameSite: 'Lax'
+                    });
+                }
             }
-        }, [studentToken, storedStudentAuthData]);
+        }, [mounted, studentToken]);
+
+        // 잘못된 형태의 토큰이나 인증 데이터 정리
+        useEffect(() => {
+            if (mounted) {
+                if (
+                    !studentToken ||
+                    studentToken === 'undefined' ||
+                    studentToken === 'null' ||
+                    !storedStudentAuthData ||
+                    !storedStudentAuthData.studentId
+                ) {
+                    if (studentToken || storedStudentAuthData) {
+                        clearStudentAuth();
+                    }
+                }
+            }
+        }, [mounted, studentToken, storedStudentAuthData, clearStudentAuth]);
+
+        // 토큰 및 필수 학생 정보가 모두 존재해야 인증된 것으로 판단
+        const isAuthorized = Boolean(
+            mounted &&
+            studentToken &&
+            studentToken !== 'undefined' &&
+            studentToken !== 'null' &&
+            storedStudentAuthData &&
+            storedStudentAuthData.studentId
+        );
+
+        // 인증이 해제되거나 토큰이 없으면 로그인 폼 상태를 초기화
+        useEffect(() => {
+            if (!isAuthorized) {
+                setAuthState('INITIAL');
+                setPassword('');
+                setFoundStudent(null);
+                setError('');
+            }
+        }, [isAuthorized]);
 
         const handleVerify = async () => {
             if (!name.trim()) {
@@ -147,10 +191,10 @@ const withStudentAuth = <P extends object>(
                 });
 
                 if (res.data.isValid) {
-                    const { studentToken, student: studentData } = res.data;
-                    setStudentAuth(studentToken, studentData);
-                    setStudentAuthData(studentData);
-                    setIsAuthorized(true);
+                    const { studentToken: newToken, student: studentData } = res.data;
+                    setStudentAuth(newToken, studentData);
+                    setFoundStudent(null);
+                    setPassword('');
 
                     // FCM 토큰 요청 및 저장 로직 추가
                     try {
@@ -217,8 +261,8 @@ const withStudentAuth = <P extends object>(
             }
         };
 
-        if (isAuthorized && studentAuthData) {
-            return <WrappedComponent {...props} studentAuthData={studentAuthData} />;
+        if (isAuthorized && storedStudentAuthData) {
+            return <WrappedComponent {...props} studentAuthData={storedStudentAuthData} />;
         }
 
         const renderInitial = () => (

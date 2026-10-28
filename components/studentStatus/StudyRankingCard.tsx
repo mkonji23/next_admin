@@ -103,7 +103,8 @@ export const StudyRankingCard: React.FC<StudyRankingCardProps> = ({
             }
         } catch (error) {
             console.error('Error fetching monthly study rankings:', error);
-            if (retryCount < 2) {
+            const isAuthError = (error as any)?.response?.status === 401 || error === 'student session expired';
+            if (!isAuthError && retryCount < 2) {
                 setTimeout(() => fetchRankings(retryCount + 1), 1500);
             }
         } finally {

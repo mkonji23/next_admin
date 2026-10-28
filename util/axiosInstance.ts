@@ -9,6 +9,19 @@ import useStudentAuthStore from '@/store/useStudentAuthStore';
 
 // 여러 동시 요청 시 중복 refresh 호출 및 무한 루프 방지를 위한 싱글톤 Promise
 let studentRefreshPromise: Promise<string | null> | null = null;
+let lastAuthToastTime = 0;
+
+const showAuthToastOnce = (showToast: any, summary: string, detail: string) => {
+    const now = Date.now();
+    if (now - lastAuthToastTime > 3000) {
+        lastAuthToastTime = now;
+        showToast({
+            severity: 'warn',
+            summary,
+            detail
+        });
+    }
+};
 
 const getBaseURL = () => {
     // 프록시 사용 시 브라우저 쿠키(httpOnly)가 동일 출처로 안전하게 전달됨
@@ -49,7 +62,20 @@ export const useHttp = (): AxiosInstance => {
                 config.headers.Authorization = `Bearer ${token}`; // 헤더에 토큰 추가
             }
 
-            const sToken = Cookies.get('x-student-log');
+            // Student Token: 쿠키 확인 후 없으면 Zustand 스토어에서 복구 및 쿠키 동기화
+            let sToken = Cookies.get('x-student-log');
+            if (!sToken) {
+                const storeToken = useStudentAuthStore.getState().studentToken;
+                if (storeToken && storeToken !== 'undefined' && storeToken !== 'null') {
+                    sToken = storeToken;
+                    Cookies.set('x-student-log', storeToken, {
+                        expires: 1,
+                        path: '/',
+                        secure: process.env.NODE_ENV === 'production',
+                        sameSite: 'Lax'
+                    });
+                }
+            }
             if (sToken) {
                 config.headers['x-student-log'] = `Bearer ${sToken}`; // 헤더에 토큰 추가
             }
@@ -82,7 +108,13 @@ export const useHttp = (): AxiosInstance => {
             }
 
             const originalRequest = error.config;
-            const isStudentRequest = !!originalRequest?.headers['x-student-log'];
+            const isStudentPath =
+                typeof window !== 'undefined' && window.location.pathname.startsWith('/student-status');
+            const isStudentRequest =
+                !!originalRequest?.headers?.['x-student-log'] ||
+                !!Cookies.get('x-student-log') ||
+                !!useStudentAuthStore.getState().studentToken ||
+                isStudentPath;
             const isTokenExpired =
                 error.response?.status === 401 ||
                 error.response?.data?.message === 'jwt expired' ||
@@ -92,6 +124,9 @@ export const useHttp = (): AxiosInstance => {
             if (originalRequest?.url?.includes('/refreshToken')) {
                 const { clearStudentAuth } = useStudentAuthStore.getState();
                 clearStudentAuth();
+                if (isStudentPath) {
+                    showAuthToastOnce(showToast, '로그인 필요', '인증이 만료되었습니다. 다시 로그인해주세요.');
+                }
                 return Promise.reject(error);
             }
 
@@ -137,9 +172,17 @@ export const useHttp = (): AxiosInstance => {
                     } else {
                         const { clearStudentAuth } = useStudentAuthStore.getState();
                         clearStudentAuth();
+                        if (isStudentPath) {
+                            showAuthToastOnce(showToast, '로그인 필요', '인증이 만료되었습니다. 다시 로그인해주세요.');
+                        }
                         return Promise.reject('student session expired');
                     }
                 } catch (refreshError) {
+                    const { clearStudentAuth } = useStudentAuthStore.getState();
+                    clearStudentAuth();
+                    if (isStudentPath) {
+                        showAuthToastOnce(showToast, '로그인 필요', '인증이 만료되었습니다. 다시 로그인해주세요.');
+                    }
                     return Promise.reject(refreshError);
                 }
             }
@@ -154,7 +197,17 @@ export const useHttp = (): AxiosInstance => {
                             summary: error.response?.data?.error || 'error',
                             detail: error.response?.data?.message || ''
                         });
-                    } else if (!isStudentRequest) {
+                    } else if (isStudentRequest) {
+                        const { clearStudentAuth } = useStudentAuthStore.getState();
+                        clearStudentAuth();
+                        if (isStudentPath) {
+                            showAuthToastOnce(
+                                showToast,
+                                '로그인 필요',
+                                '인증이 만료되었거나 권한이 없습니다. 다시 로그인해주세요.'
+                            );
+                        }
+                    } else {
                         // 관리자용 로그인 만료 처리 (필요시 주석 해제)
                         // window.location.href = '/auth/login';
                     }

@@ -89,7 +89,8 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
                 }
             } catch (err) {
                 console.error('Failed to fetch today study time:', err);
-                if (retryCount < 2) {
+                const isAuthError = (err as any)?.response?.status === 401 || err === 'student session expired';
+                if (!isAuthError && retryCount < 2) {
                     setTimeout(() => fetchTodayData(false, retryCount + 1), 1500);
                 }
             } finally {
