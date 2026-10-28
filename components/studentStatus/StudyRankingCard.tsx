@@ -81,48 +81,51 @@ export const StudyRankingCard: React.FC<StudyRankingCardProps> = ({
         ? Math.max(serverMySeconds, serverMySeconds + currentActiveSeconds)
         : serverMySeconds;
 
-    const fetchRankings = useCallback(async (retryCount = 0) => {
-        if (!studentId) return;
-        setLoading(true);
-        try {
-            const res = await httpRef.current.get('/choiMath/studyTime/getRankings', {
-                params: {
-                    month: targetMonthStr,
-                    limit: 3,
-                    studentId
-                },
-                disableLoading: true
-            });
+    const fetchRankings = useCallback(
+        async (retryCount = 0) => {
+            if (!studentId) return;
+            setLoading(true);
+            try {
+                const res = await httpRef.current.get('/choiMath/studyTime/getRankings', {
+                    params: {
+                        month: targetMonthStr,
+                        limit: 3,
+                        studentId
+                    },
+                    disableLoading: true
+                });
 
-            const data = res.data || {};
-            if (data.rankings) {
-                setTopRankers(data.rankings || []);
-                setMyRank(data.myRank || null);
-                setServerMySeconds(data.myTotalSeconds || 0);
-                setLastUpdatedTime(dayjs().format('HH:mm:ss'));
+                const data = res.data || {};
+                if (data.rankings) {
+                    setTopRankers(data.rankings || []);
+                    setMyRank(data.myRank || null);
+                    setServerMySeconds(data.myTotalSeconds || 0);
+                    setLastUpdatedTime(dayjs().format('HH:mm:ss'));
+                }
+            } catch (error) {
+                console.error('Error fetching monthly study rankings:', error);
+                const isAuthError = (error as any)?.response?.status === 401 || error === 'student session expired';
+                if (!isAuthError && retryCount < 2) {
+                    setTimeout(() => fetchRankings(retryCount + 1), 1500);
+                }
+            } finally {
+                setLoading(false);
             }
-        } catch (error) {
-            console.error('Error fetching monthly study rankings:', error);
-            const isAuthError = (error as any)?.response?.status === 401 || error === 'student session expired';
-            if (!isAuthError && retryCount < 2) {
-                setTimeout(() => fetchRankings(retryCount + 1), 1500);
-            }
-        } finally {
-            setLoading(false);
-        }
-    }, [studentId, targetMonthStr]);
+        },
+        [studentId, targetMonthStr]
+    );
 
     // 월(currentMonth) 변경 시 또는 학생 변경 시 즉시 갱신
     useEffect(() => {
         fetchRankings();
     }, [fetchRankings]);
 
-    // 60초마다 실시간 랭킹 자동 리프레시 (이번 달을 보고 있을 때)
+    // 600초마다 실시간 랭킹 자동 리프레시 (이번 달을 보고 있을 때)
     useEffect(() => {
         if (!isCurrentActiveMonth) return;
         const interval = setInterval(() => {
             fetchRankings();
-        }, 60000);
+        }, 600000);
         return () => clearInterval(interval);
     }, [fetchRankings, isCurrentActiveMonth]);
 
@@ -196,10 +199,7 @@ export const StudyRankingCard: React.FC<StudyRankingCardProps> = ({
         }));
     } else {
         // 내가 3등 안에 안 들면: 내 데이터를 첫 번째 라인에 두고, 그 아래에 1, 2, 3등 표시 (총 4개)
-        displayRankings = [
-            myItem,
-            ...topRankers.map((r) => ({ ...r, isMe: false }))
-        ];
+        displayRankings = [myItem, ...topRankers.map((r) => ({ ...r, isMe: false }))];
     }
 
     return (
@@ -216,9 +216,7 @@ export const StudyRankingCard: React.FC<StudyRankingCardProps> = ({
             <div className="flex align-items-center justify-content-between pb-3 mb-3 border-bottom-1 surface-border">
                 <div className="flex align-items-center gap-2">
                     <i className="pi pi-trophy text-yellow-500 text-xl font-bold" />
-                    <span className="font-bold text-base md:text-lg text-900">
-                        {monthDisplayName} 순공 랭킹
-                    </span>
+                    <span className="font-bold text-base md:text-lg text-900">{monthDisplayName} 순공 랭킹</span>
                     <Tag
                         severity="info"
                         value={`${monthDisplayName} 누적`}
