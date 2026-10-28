@@ -12,9 +12,12 @@ interface StatsCardsRowProps {
 }
 
 const StatsCardsRow: React.FC<StatsCardsRowProps> = ({ classes, classRanks, totalPraiseCnt, globalRank }) => {
+    // 종강된 클래스 제외
+    const activeClasses = (classes || []).filter((c: any) => !c.isClosed && c.status !== '종강');
+
     return (
         <div className="grid gap-4 mb-4 pb-2" style={{ margin: 0 }}>
-            {classes?.map((c: any) => {
+            {activeClasses?.map((c: any) => {
                 const praiseCount = c.attendance?.filter((a: any) => a.praise).length || 0;
                 const rank = classRanks[c.classId] || 0;
                 return (

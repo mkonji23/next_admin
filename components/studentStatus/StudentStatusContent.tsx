@@ -54,6 +54,7 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
     const { noticeRefreshSignal } = useRefreshStore();
     const [notices, setNotices] = useState<any[]>([]);
     const [allStudentClassIds, setAllStudentClassIds] = useState<string[]>([]);
+    const [closedClassIds, setClosedClassIds] = useState<Set<string>>(new Set());
     const [hasCheckedNotice, setHasCheckedNotice] = useState(false);
     const [noticeReadVersion, setNoticeReadVersion] = useState(0);
 
@@ -193,25 +194,48 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                 dateTo: currentDate.endOf('month').format('YYYYMMDD')
             };
 
-            const [praiseRes, studentRes] = await Promise.all([
-                http.get('/choiMath/attendance/getPraiseStatistics', { params }),
+            const [praiseRes, studentRes, classRes] = await Promise.all([
+                http.get('/choiMath/attendance/getPraiseStatistics', { params: { ...params, excludeClosed: 'true' } }),
                 http.post('/choiMath/student/verifyStudent', {
                     name: finalName,
                     phoneNumber: finalPhone
+                }),
+                http.get('/choiMath/student/myClasses', {
+                    params: { studentId: finalStudentId },
+                    disableLoading: true
                 })
             ]);
 
             const allData = praiseRes.data || [];
+            const myClassesData = classRes.data || [];
 
-            // 1. 점수가 1개 이상인 학생만 먼저 걸러냅니다.
-            const activeData = allData.filter((item: any) => (item.totalPraiseCnt || 0) > 0);
+            // 종강된 클래스 ID 추출
+            const closedIds = new Set<string>(
+                (Array.isArray(myClassesData) ? myClassesData : [])
+                    .filter((c: any) => c.isClosed === true || c.status === '종강')
+                    .map((c: any) => c.classId)
+                    .filter(Boolean)
+            );
+            setClosedClassIds(closedIds);
 
-            // 2. 점수 내림차순 정렬
+            const isClassActive = (c: any) => !c.isClosed && c.status !== '종강' && !closedIds.has(c.classId);
+
+            // 1. 종강된 수업 제외하여 점수 재계산
+            const filteredAllData = allData.map((item: any) => {
+                const activeClasses = (item.classes || []).filter(isClassActive);
+                const activePraiseCnt = activeClasses.reduce((sum: number, c: any) => sum + (c.totalPraiseCnt || 0), 0);
+                return { ...item, classes: activeClasses, totalPraiseCnt: activePraiseCnt };
+            });
+
+            // 2. 점수가 1개 이상인 학생만 먼저 걸러냅니다.
+            const activeData = filteredAllData.filter((item: any) => (item.totalPraiseCnt || 0) > 0);
+
+            // 3. 점수 내림차순 정렬
             const sortedData = [...activeData].sort(
                 (a: any, b: any) => (b.totalPraiseCnt || 0) - (a.totalPraiseCnt || 0)
             );
 
-            // 3. 공동 순위 부여 (1, 2, 2, 4...)
+            // 4. 공동 순위 부여 (1, 2, 2, 4...)
             let currentRank = 0;
             let lastPraiseCnt = -1;
 
@@ -224,17 +248,22 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                 return { ...item, rank: currentRank };
             });
 
-            // 4. 최종적으로 3등 이내인 학생들만 추출
+            // 5. 최종적으로 3등 이내인 학생들만 추출
             const topRankers = rankedData.filter((item) => item.rank <= 3);
 
             setPraiseTopRankers(topRankers);
 
             const resDetail = await http.get('/choiMath/attendance/getPraiseStatistics', {
-                params: { ...params, studentId: finalStudentId },
+                params: { ...params, studentId: finalStudentId, excludeClosed: 'true' },
                 disableLoading: true
             });
 
-            const myData = resDetail.data[0] || {};
+            const rawMyData = resDetail.data[0] || {};
+            // 종강된 수업 제외한 myData
+            const myActiveClasses = (rawMyData.classes || []).filter(isClassActive);
+            const myActivePraiseCnt = myActiveClasses.reduce((sum: number, c: any) => sum + (c.totalPraiseCnt || 0), 0);
+            const myData = { ...rawMyData, classes: myActiveClasses, totalPraiseCnt: myActivePraiseCnt };
+
             const matchedStudent = studentRes.data;
             if (matchedStudent) {
                 setStudentInfo({ school: matchedStudent.school, grade: matchedStudent.grade });
@@ -247,7 +276,7 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                 const myGlobalScore = myData.totalPraiseCnt || 0;
                 let gRank = 0; // 0점은 순위 없음
                 if (myGlobalScore > 0) {
-                    const allGlobalCounts = allData
+                    const allGlobalCounts = filteredAllData
                         .map((s: any) => s.totalPraiseCnt || 0)
                         .filter((score: number) => score > 0) // 0점 제외
                         .sort((a: number, b: number) => b - a);
@@ -255,7 +284,7 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                 }
                 setGlobalRank(gRank);
 
-                // --- 클래스별 순위 계산 (0점 제외) ---
+                // --- 클래스별 순위 계산 (0점 제외, 종강된 클래스 제외) ---
                 let cRanks: Record<string, number> = {};
                 if (myData.classes && myData.classes.length > 0) {
                     myData.classes.forEach((myClass: any) => {
@@ -264,7 +293,7 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
 
                         let classRank = 0; // 0점은 순위 없음
                         if (myClassScore > 0) {
-                            const allClassCounts = allData
+                            const allClassCounts = filteredAllData
                                 .map((s: any) => {
                                     const c = s.classes?.find((cls: any) => cls.classId === classId);
                                     return c?.attendance?.filter((a: any) => a.praise).length || 0;
@@ -279,7 +308,7 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                 }
                 setClassRanks(cRanks);
 
-                prepareChartData(myData);
+                prepareChartData(myData, closedIds);
 
                 // Fetch notices for student's classes
                 fetchNotices(myData?.classes || []);
@@ -391,7 +420,7 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
         setNoticeReadVersion((v) => v + 1);
     };
 
-    const prepareChartData = (data: any) => {
+    const prepareChartData = (data: any, closedIds?: Set<string>) => {
         const classesHomework: { className: string; hwData: any; hwOptions: any; avgScore: number }[] = [];
         const classesAttendance: {
             className: string;
@@ -408,7 +437,13 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
         let totalHwCount = 0;
 
         if (data.classes && data.classes.length > 0) {
-            data.classes.forEach((c: any) => {
+            // 종강된 클래스 제외
+            const activeClasses = (data.classes || []).filter((c: any) => {
+                if (c.status === '종강' || c.isClosed) return false;
+                if (closedIds && closedIds.has(c.classId)) return false;
+                return true;
+            });
+            activeClasses.forEach((c: any) => {
                 let classPresent = 0,
                     classAbsent = 0,
                     classLate = 0,

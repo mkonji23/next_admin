@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import { Card } from 'primereact/card';
@@ -20,6 +20,7 @@ const DetailsTable: React.FC<DetailsTableProps> = ({ classes, expandedRows, onRo
     const activeClasses = (classes || []).filter(
         (c: any) => c.status !== '종강' && !c.isClosed
     );
+
     const getAttendanceSeverity = (status: string) => {
         switch (status) {
             case 'class_present':
@@ -73,6 +74,7 @@ const DetailsTable: React.FC<DetailsTableProps> = ({ classes, expandedRows, onRo
                         field="praise"
                         header="칭찬여부"
                         align={'center'}
+                        alignHeader={'center'}
                         headerStyle={{ minWidth: '100px' }}
                         body={(rowData: any) =>
                             rowData.praise ? (
@@ -85,12 +87,18 @@ const DetailsTable: React.FC<DetailsTableProps> = ({ classes, expandedRows, onRo
                     <Column
                         sortable
                         field="testScore"
-                        headerStyle={{ minWidth: '80px', textAlign: 'center' }}
+                        headerStyle={{ minWidth: '100px', textAlign: 'center' }}
                         header="점수"
+                        align={'center'}
                         alignHeader={'center'}
                         body={(rowData: any) => {
                             const score = rowData?.testScore;
-                            if (!score && score !== 0) return <span className="text-400">-</span>;
+                            const total = rowData?.totalQuestions;
+                            const hasScore = score !== '' && score !== undefined && score !== null;
+                            if (!hasScore) return <span className="text-400">-</span>;
+                            if (total !== undefined && total !== null && total !== '' && Number(total) > 0) {
+                                return <span className="font-bold text-primary">{score}점 / {total}점</span>;
+                            }
                             return <span className="font-bold text-primary">{score}점</span>;
                         }}
                     />
@@ -99,6 +107,7 @@ const DetailsTable: React.FC<DetailsTableProps> = ({ classes, expandedRows, onRo
                         field="note"
                         headerStyle={{ minWidth: '120px', textAlign: 'center' }}
                         header="비고"
+                        align={'center'}
                         alignHeader={'center'}
                     />
                 </DataTable>
@@ -123,6 +132,8 @@ const DetailsTable: React.FC<DetailsTableProps> = ({ classes, expandedRows, onRo
                         <Column field="className" header="클래스명" sortable />
                         <Column
                             header="칭찬 횟수"
+                            align={'center'}
+                            alignHeader={'center'}
                             body={(rowData) => {
                                 const praiseCount = rowData.attendance?.filter((a: any) => a.praise).length || 0;
                                 return <Tag value={`${praiseCount}회`} severity={praiseCount > 0 ? 'success' : 'info'} />;
@@ -130,6 +141,8 @@ const DetailsTable: React.FC<DetailsTableProps> = ({ classes, expandedRows, onRo
                         />
                         <Column
                             header="순위"
+                            align={'center'}
+                            alignHeader={'center'}
                             body={(rowData) => {
                                 const rank = classRanks[rowData.classId] || 0;
                                 if (rank === 0) return <span>-</span>;
@@ -147,7 +160,7 @@ const DetailsTable: React.FC<DetailsTableProps> = ({ classes, expandedRows, onRo
                                 }
 
                                 return (
-                                    <div className={`flex align-items-center font-bold ${textColor}`}>
+                                    <div className={`flex align-items-center justify-content-center font-bold ${textColor}`}>
                                         {rank}위
                                         {rank <= 3 && <i className="pi pi-trophy ml-1" style={{ color: trophyColor }}></i>}
                                     </div>

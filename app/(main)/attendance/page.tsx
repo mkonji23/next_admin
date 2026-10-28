@@ -290,6 +290,7 @@ const AttendancePage = () => {
             classId: selectedClass,
             year,
             month,
+            totalQuestions: dailyTotalQuestions,
             students: users.map((user) => {
                 const attendance: { [key: string]: any } = {};
                 for (const key in user) {
@@ -303,6 +304,7 @@ const AttendancePage = () => {
                             praise: user[`day_${day}_praise`],
                             lateTime: user[`day_${day}_lateTime`],
                             testScore: user[`day_${day}_testScore`],
+                            totalQuestions: dailyTotalQuestions[Number(day)] || dailyTotalQuestions[day] || undefined,
                             date: `${year}${month}${String(day).padStart(2, '0')}`,
                             statusTime: user.statusTime || new Date()
                         };
