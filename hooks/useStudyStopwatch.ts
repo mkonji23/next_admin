@@ -387,7 +387,7 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isRunning, studentId]);
 
-    // 6. 60초 주기 자동 Heartbeat 싱크 (비정상 브라우저 종료 대비)
+    // 6. 5분(300초) 주기 자동 Heartbeat 싱크 (비정상 브라우저 종료 대비, Vercel/DB 부하 절감)
     // isRunning 상태 전환 시에만 인터벌 등록/해제되며, 내부 값은 ref로 안전하게 참조
     useEffect(() => {
         if (!isRunning || !studentId) return;
@@ -410,14 +410,14 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
                     { disableLoading: true }
                 )
                     .then((res) => {
-                        // 핑퐁 티켓 교체 (다음 60초 싱크용 새 티켓)
+                        // 핑퐁 티켓 교체 (다음 5분 싱크용 새 티켓)
                         if (res.data?.nextTicket) {
                             ticketRef.current = res.data.nextTicket;
                         }
                     })
                     .catch((e) => console.warn('Heartbeat sync warning:', e));
             }
-        }, 60000);
+        }, 300000); // 5분(300초) 주기
 
         return () => clearInterval(heartbeatInterval);
         // eslint-disable-next-line react-hooks/exhaustive-deps
