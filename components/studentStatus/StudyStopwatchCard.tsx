@@ -85,6 +85,37 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
         onBackgroundPaused: handleBackgroundPaused
     });
 
+    // 🔒 [보안 정책] 스톱워치 실행 중 개발자 도구(F12, 단축키) 및 우클릭 차단
+    useEffect(() => {
+        if (!isRunning) return;
+
+        const handleContextMenu = (e: MouseEvent) => {
+            e.preventDefault();
+        };
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'F12') {
+                e.preventDefault();
+                return;
+            }
+            if (e.ctrlKey && e.shiftKey && ['i', 'I', 'j', 'J', 'c', 'C'].includes(e.key)) {
+                e.preventDefault();
+                return;
+            }
+            if (e.ctrlKey && (e.key === 'u' || e.key === 'U')) {
+                e.preventDefault();
+                return;
+            }
+        };
+
+        window.addEventListener('contextmenu', handleContextMenu);
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('contextmenu', handleContextMenu);
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isRunning]);
+
     const activeTotalSeconds = todayTotalSeconds + (isRunning ? currentSessionSeconds : 0);
     const activeOverallSeconds = (overallTotalSeconds || 0) + (isRunning ? currentSessionSeconds : 0);
     const totalTimeDisplay = formatTime(activeTotalSeconds);
@@ -253,6 +284,11 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                     window.history.back();
                 }
                 scrollToStopwatch();
+
+                // 🔒 [보안 강화] 스톱워치 측정 중 전체화면 모드 이탈 시 자동 일시정지 (화면 분할 및 딴짓 방지)
+                if (isRunning) {
+                    pauseStudy('window_blur');
+                }
             }
         };
         document.addEventListener('fullscreenchange', handleFullscreenChange);

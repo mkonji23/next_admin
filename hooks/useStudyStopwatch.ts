@@ -31,6 +31,39 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
     const currentSessionSecondsRef = useRef<number>(0);
     const startPromiseRef = useRef<Promise<any> | null>(null);
 
+    // 🔒 [오디오 포커스 선점] 스톱워치 실행 시 외부 미디어(유튜브/음악 등) 강제 일시정지용 무음 오디오
+    const silentAudioRef = useRef<HTMLAudioElement | null>(null);
+    const isPausingRef = useRef<boolean>(false);
+
+    const playSilentAudio = useCallback(() => {
+        try {
+            if (typeof window === 'undefined') return;
+            if (!silentAudioRef.current) {
+                // 초소형 무음 WAV Base64 (0.1초)
+                const audio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA');
+                audio.loop = true;
+                audio.volume = 0.01;
+                audio.addEventListener('pause', () => {
+                    // 외부 앱(유튜브 등)이 오디오 포커스를 뺏어서 일시정지된 경우
+                    if (isRunningRef.current && !isPausingRef.current) {
+                        pauseStudyRef.current('window_blur');
+                    }
+                });
+                silentAudioRef.current = audio;
+            }
+            silentAudioRef.current.play().catch(() => {});
+        } catch (_) {}
+    }, []);
+
+    const stopSilentAudio = useCallback(() => {
+        if (silentAudioRef.current) {
+            try {
+                silentAudioRef.current.pause();
+                silentAudioRef.current.currentTime = 0;
+            } catch (_) {}
+        }
+    }, []);
+
     // 화면 회전, 전체화면 축소/확대 등 UI 모드 전환 중 일시적인 브라우저 blur/visibilitychange 오작동 방지용 타임스탬프
     const ignorePauseUntilRef = useRef<number>(0);
 
@@ -128,15 +161,16 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
         }
     }, []);
 
-    // 컴포넌트 언마운트 시 인터벌 정리
+    // 컴포넌트 언마운트 시 인터벌 및 오디오 정리
     useEffect(() => {
         return () => {
             if (timerIntervalRef.current) {
                 clearInterval(timerIntervalRef.current);
                 timerIntervalRef.current = null;
             }
+            stopSilentAudio();
         };
-    }, []);
+    }, [stopSilentAudio]);
 
     // 3. 공부 시작 (낙관적 즉시 시작으로 반응속도 극대화)
     const startStudy = useCallback(async () => {
@@ -148,6 +182,8 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
         setCurrentSessionSeconds(0);
         setIsRunning(true);
         isRunningRef.current = true;
+        isPausingRef.current = false;
+        playSilentAudio();
         startTick();
 
         // 0ms 낙관적 첫 시작 시간 세팅 (비어있는 경우)
@@ -202,6 +238,9 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
             if (!isRunningRef.current && !activeSessionIdRef.current && !startPromiseRef.current) return;
 
             // 1) 즉시 타이머 정지 및 실제 경과 초 계산
+            isPausingRef.current = true;
+            stopSilentAudio();
+
             const startTime = sessionStartTimeRef.current;
             const elapsedSec = startTime
                 ? Math.max(0, Math.floor((Date.now() - startTime) / 1000))
@@ -360,6 +399,19 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
         // 가로/세로 화면 회전 및 브라우저 UI 툴바 리사이즈 시 일시정지 억제 (일시적인 blur 방어용)
         const handleOrientationOrResize = () => {
             ignorePauseUntilRef.current = Math.max(ignorePauseUntilRef.current, Date.now() + 1500);
+
+            // 🔒 [2분할 화면 즉각 감지] 모바일에서 화면 높이가 가용 화면의 60% 미만으로 축소 시 (가상 키보드가 아닌 경우)
+            if (isRunningRef.current && typeof window !== 'undefined' && typeof screen !== 'undefined') {
+                const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+                if (isMobile) {
+                    const activeTag = document.activeElement?.tagName?.toLowerCase();
+                    const isInput = activeTag === 'input' || activeTag === 'textarea';
+                    const screenHeight = window.screen.availHeight || window.screen.height;
+                    if (!isInput && screenHeight > 0 && (window.innerHeight / screenHeight) < 0.6) {
+                        pauseStudyRef.current('window_blur');
+                    }
+                }
+            }
         };
 
         const handleFullscreenChange = () => {
