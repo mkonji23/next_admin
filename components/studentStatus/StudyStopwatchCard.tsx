@@ -831,8 +831,6 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                             <p className="text-xs text-600 m-0 line-height-3">
                                 타이머 작동 중에는 휴대폰 화면이 꺼지지 않도록 유지됩니다.
                                 <br />
-                                다른 앱으로 전환하거나 전원 버튼을 눌러 화면을 끄면
-                                <br />
                                 순수 공부시간 측정이 자동으로 일시정지됩니다.
                                 <br />
                                 공부를 계속하려면 아래 버튼을 눌러주세요.

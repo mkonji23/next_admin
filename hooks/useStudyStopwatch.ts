@@ -300,40 +300,64 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
         pauseStudyRef.current = pauseStudy;
     }, [pauseStudy]);
 
-    // 5. ⚡ [핵심] 모바일 백그라운드 진입 / 화면 잠금 / 창 이탈 감지
+    // 5. ⚡ [핵심] 모바일 백그라운드 진입 / 화면 잠금 / 창 이탈 감지 / 2분할 화면 / PIP 감지
     // (의존성 배열을 []로 고정하고 내부에서 pauseStudyRef를 호출하여 이벤트 리스너 재등록에 의한 루프 방지)
     useEffect(() => {
+        let blurTimer: NodeJS.Timeout | null = null;
+
+        const clearBlurTimer = () => {
+            if (blurTimer) {
+                clearTimeout(blurTimer);
+                blurTimer = null;
+            }
+        };
+
+        // 1) 화면에서 완전히 가려졌을 때 (홈 화면, 다른 앱 전체화면 전환, 카메라 앱 실행 등)
+        // 화면 회전/리사이즈 지연(ignorePauseUntilRef)과 무관하게 'hidden' 상태이면 즉시 0ms 정지
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'hidden') {
-                if (Date.now() < ignorePauseUntilRef.current) return;
+                clearBlurTimer();
                 if (isRunningRef.current) {
                     pauseStudyRef.current('background_leave');
                 }
             }
         };
 
+        // 2) 2분할 화면(Split Screen), 팝업 화면, 다른 앱의 PIP 플로팅 창 조작 등 포커스 이탈 감지
+        // 화면 회전/전체화면 전환 중일 때는 억제하며, 모바일 터치 오작동 방지를 위해 1초간 포커스 부재가 지속될 때만 정지
         const handleWindowBlur = () => {
             if (Date.now() < ignorePauseUntilRef.current) return;
-            // 모바일 및 태블릿 환경(iPadOS Safari 포함)에서는 blur 이벤트로 인한 오작동 일시정지 방지
-            const isMobile = typeof navigator !== 'undefined' && (
-                /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
-                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
-            );
-            if (isMobile) return;
 
-            if (isRunningRef.current) {
-                pauseStudyRef.current('window_blur');
-            }
+            clearBlurTimer();
+
+            blurTimer = setTimeout(() => {
+                // 1초 뒤에도 창 포커스가 돌아오지 않았다면 (2분할 화면의 다른 앱 조작, PIP 창 조작 등)
+                if (isRunningRef.current && typeof document !== 'undefined' && !document.hasFocus()) {
+                    pauseStudyRef.current('window_blur');
+                }
+            }, 1000);
         };
 
+        const handleWindowFocus = () => {
+            clearBlurTimer();
+        };
+
+        // 3) 페이지 닫기 / 새로고침 이탈
         const handlePageHide = () => {
-            if (Date.now() < ignorePauseUntilRef.current) return;
+            clearBlurTimer();
             if (isRunningRef.current) {
                 pauseStudyRef.current('page_closed');
             }
         };
 
-        // 가로/세로 화면 회전 및 브라우저 UI 툴바 리사이즈 시 일시정지 억제
+        // 4) 웹 내 동영상 PIP(Picture-in-Picture) 모드 진입 감지
+        const handleEnterPIP = () => {
+            if (isRunningRef.current) {
+                pauseStudyRef.current('window_blur');
+            }
+        };
+
+        // 가로/세로 화면 회전 및 브라우저 UI 툴바 리사이즈 시 일시정지 억제 (일시적인 blur 방어용)
         const handleOrientationOrResize = () => {
             ignorePauseUntilRef.current = Math.max(ignorePauseUntilRef.current, Date.now() + 1500);
         };
@@ -344,11 +368,13 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
 
         document.addEventListener('visibilitychange', handleVisibilityChange);
         window.addEventListener('blur', handleWindowBlur);
+        window.addEventListener('focus', handleWindowFocus);
         window.addEventListener('pagehide', handlePageHide);
         window.addEventListener('orientationchange', handleOrientationOrResize);
         window.addEventListener('resize', handleOrientationOrResize);
         document.addEventListener('fullscreenchange', handleFullscreenChange);
         document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        document.addEventListener('enterpictureinpicture', handleEnterPIP, true);
 
         if (typeof screen !== 'undefined' && screen.orientation) {
             try {
@@ -357,13 +383,16 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
         }
 
         return () => {
+            clearBlurTimer();
             document.removeEventListener('visibilitychange', handleVisibilityChange);
             window.removeEventListener('blur', handleWindowBlur);
+            window.removeEventListener('focus', handleWindowFocus);
             window.removeEventListener('pagehide', handlePageHide);
             window.removeEventListener('orientationchange', handleOrientationOrResize);
             window.removeEventListener('resize', handleOrientationOrResize);
             document.removeEventListener('fullscreenchange', handleFullscreenChange);
             document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+            document.removeEventListener('enterpictureinpicture', handleEnterPIP, true);
 
             if (typeof screen !== 'undefined' && screen.orientation) {
                 try {
