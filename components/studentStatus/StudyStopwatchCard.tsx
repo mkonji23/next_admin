@@ -202,25 +202,29 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
     }, []);
 
     // 가로형 / 세로형 모드 변경 및 Native Screen Orientation Lock 제어
-    const changeOrientationMode = useCallback(async (mode: OrientationMode) => {
-        setOrientationMode(mode);
-        if (typeof window !== 'undefined') {
-            localStorage.setItem('stopwatch_orientation_mode', mode);
-            if (typeof screen !== 'undefined' && screen.orientation && typeof screen.orientation.lock === 'function') {
-                try {
-                    await screen.orientation.lock(mode);
-                } catch (_) {
-                    // 브라우저 정책으로 lock이 거부되어도 CSS Fallback 모드로 완벽 대응
+    const changeOrientationMode = useCallback(
+        async (mode: OrientationMode) => {
+            suppressPauseTemporarily(3000);
+            setOrientationMode(mode);
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('stopwatch_orientation_mode', mode);
+                if (typeof screen !== 'undefined' && screen.orientation && typeof screen.orientation.lock === 'function') {
+                    try {
+                        await screen.orientation.lock(mode);
+                    } catch (_) {
+                        // 브라우저 정책으로 lock이 거부되어도 CSS Fallback 모드로 완벽 대응
+                    }
                 }
             }
-        }
-    }, []);
+        },
+        [suppressPauseTemporarily]
+    );
 
     // 전체화면 진입 / 나가기 핸들러
     const openFullscreen = useCallback(
         async (mode?: OrientationMode) => {
             const targetMode = mode || orientationMode;
-            suppressPauseTemporarily(2500);
+            suppressPauseTemporarily(3000);
             setIsFullscreen(true);
             if (typeof window !== 'undefined') {
                 window.history.pushState({ popup: 'stopwatchFullscreen' }, '');
@@ -235,7 +239,7 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
 
     const closeFullscreen = useCallback(() => {
         // 축소 모드 전환 중(가로/세로 회전, UI 복원, 히스토리 이동 등) 일시정지 오작동 방지
-        suppressPauseTemporarily(2500);
+        suppressPauseTemporarily(3000);
         setIsFullscreen(false);
         if (typeof window !== 'undefined') {
             if (typeof screen !== 'undefined' && screen.orientation?.unlock) {
@@ -259,7 +263,7 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
     useEffect(() => {
         const handlePopState = () => {
             if (isFullscreen) {
-                suppressPauseTemporarily(2500);
+                suppressPauseTemporarily(3000);
                 setIsFullscreen(false);
                 if (document.fullscreenElement) {
                     try {
@@ -278,17 +282,14 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
         const handleFullscreenChange = () => {
             const isDocFullscreen = Boolean(document.fullscreenElement);
             if (!isDocFullscreen && isFullscreen) {
-                suppressPauseTemporarily(2500);
+                suppressPauseTemporarily(3000);
                 setIsFullscreen(false);
                 if (window.history.state?.popup === 'stopwatchFullscreen') {
                     window.history.back();
                 }
                 scrollToStopwatch();
 
-                // 🔒 [보안 강화] 스톱워치 측정 중 전체화면 모드 이탈 시 자동 일시정지 (화면 분할 및 딴짓 방지)
-                if (isRunning) {
-                    pauseStudy('window_blur');
-                }
+                // 🔒 화면 축소 시 스톱워치 멈춤 방지 (측정 계속 유지)
             }
         };
         document.addEventListener('fullscreenchange', handleFullscreenChange);

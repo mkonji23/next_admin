@@ -35,6 +35,13 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
     const silentAudioRef = useRef<HTMLAudioElement | null>(null);
     const isPausingRef = useRef<boolean>(false);
 
+    // 화면 회전, 화면 축소/확대, 전체화면 전환 등 UI 모드 전환 중 일시적인 브라우저 blur/visibilitychange 오작동 방지용 타임스탬프
+    const ignorePauseUntilRef = useRef<number>(0);
+
+    const suppressPauseTemporarily = useCallback((durationMs = 3000) => {
+        ignorePauseUntilRef.current = Math.max(ignorePauseUntilRef.current, Date.now() + durationMs);
+    }, []);
+
     const playSilentAudio = useCallback(() => {
         try {
             if (typeof window === 'undefined') return;
@@ -44,6 +51,8 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
                 audio.loop = true;
                 audio.volume = 0.01;
                 audio.addEventListener('pause', () => {
+                    // 화면 축소, 세로/가로 회전, 전체화면 전환 등 모드 변경 억제 기간 중에는 무시
+                    if (Date.now() < ignorePauseUntilRef.current) return;
                     // 외부 앱(유튜브 등)이 오디오 포커스를 뺏어서 일시정지된 경우
                     if (isRunningRef.current && !isPausingRef.current) {
                         pauseStudyRef.current('window_blur');
@@ -62,13 +71,6 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
                 silentAudioRef.current.currentTime = 0;
             } catch (_) {}
         }
-    }, []);
-
-    // 화면 회전, 전체화면 축소/확대 등 UI 모드 전환 중 일시적인 브라우저 blur/visibilitychange 오작동 방지용 타임스탬프
-    const ignorePauseUntilRef = useRef<number>(0);
-
-    const suppressPauseTemporarily = useCallback((durationMs = 2000) => {
-        ignorePauseUntilRef.current = Math.max(ignorePauseUntilRef.current, Date.now() + durationMs);
     }, []);
 
     // 콜백 함수 ref 보관 (부모 컴포넌트 리렌더 시 불필요한 useEffect 재실행 및 무한루프 방지)
@@ -340,7 +342,7 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
     }, [pauseStudy]);
 
     // 5. ⚡ [핵심] 모바일 백그라운드 진입 / 화면 잠금 / 창 이탈 감지 / 2분할 화면 / PIP 감지
-    // (의존성 배열을 []로 고정하고 내부에서 pauseStudyRef를 호출하여 이벤트 리스너 재등록에 의한 루프 방지)
+    // (화면 축소, 세로/가로형 전환 시 스톱워치 멈춤 방지)
     useEffect(() => {
         let blurTimer: NodeJS.Timeout | null = null;
 
@@ -352,10 +354,11 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
         };
 
         // 1) 화면에서 완전히 가려졌을 때 (홈 화면, 다른 앱 전체화면 전환, 카메라 앱 실행 등)
-        // 화면 회전/리사이즈 지연(ignorePauseUntilRef)과 무관하게 'hidden' 상태이면 즉시 0ms 정지
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'hidden') {
                 clearBlurTimer();
+                // 화면 회전, 세로/가로 전환, 축소 복귀 등 일시적 브라우저 상태 변경 중에는 멈춤 방지
+                if (Date.now() < ignorePauseUntilRef.current) return;
                 if (isRunningRef.current) {
                     pauseStudyRef.current('background_leave');
                 }
@@ -363,18 +366,18 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
         };
 
         // 2) 2분할 화면(Split Screen), 팝업 화면, 다른 앱의 PIP 플로팅 창 조작 등 포커스 이탈 감지
-        // 화면 회전/전체화면 전환 중일 때는 억제하며, 모바일 터치 오작동 방지를 위해 1초간 포커스 부재가 지속될 때만 정지
         const handleWindowBlur = () => {
             if (Date.now() < ignorePauseUntilRef.current) return;
 
             clearBlurTimer();
 
             blurTimer = setTimeout(() => {
-                // 1초 뒤에도 창 포커스가 돌아오지 않았다면 (2분할 화면의 다른 앱 조작, PIP 창 조작 등)
+                // 화면 회전/축소 전환 중이거나 포커스가 돌아온 경우 스톱워치 중지 방지
+                if (Date.now() < ignorePauseUntilRef.current) return;
                 if (isRunningRef.current && typeof document !== 'undefined' && !document.hasFocus()) {
                     pauseStudyRef.current('window_blur');
                 }
-            }, 1000);
+            }, 1500);
         };
 
         const handleWindowFocus = () => {
@@ -384,6 +387,7 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
         // 3) 페이지 닫기 / 새로고침 이탈
         const handlePageHide = () => {
             clearBlurTimer();
+            if (Date.now() < ignorePauseUntilRef.current) return;
             if (isRunningRef.current) {
                 pauseStudyRef.current('page_closed');
             }
@@ -391,31 +395,21 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
 
         // 4) 웹 내 동영상 PIP(Picture-in-Picture) 모드 진입 감지
         const handleEnterPIP = () => {
+            if (Date.now() < ignorePauseUntilRef.current) return;
             if (isRunningRef.current) {
                 pauseStudyRef.current('window_blur');
             }
         };
 
-        // 가로/세로 화면 회전 및 브라우저 UI 툴바 리사이즈 시 일시정지 억제 (일시적인 blur 방어용)
+        // 가로/세로 화면 회전, 화면 축소/확대 및 브라우저 UI 툴바 리사이즈 시 일시정지 억제
         const handleOrientationOrResize = () => {
-            ignorePauseUntilRef.current = Math.max(ignorePauseUntilRef.current, Date.now() + 1500);
-
-            // 🔒 [2분할 화면 즉각 감지] 모바일에서 화면 높이가 가용 화면의 60% 미만으로 축소 시 (가상 키보드가 아닌 경우)
-            if (isRunningRef.current && typeof window !== 'undefined' && typeof screen !== 'undefined') {
-                const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-                if (isMobile) {
-                    const activeTag = document.activeElement?.tagName?.toLowerCase();
-                    const isInput = activeTag === 'input' || activeTag === 'textarea';
-                    const screenHeight = window.screen.availHeight || window.screen.height;
-                    if (!isInput && screenHeight > 0 && (window.innerHeight / screenHeight) < 0.6) {
-                        pauseStudyRef.current('window_blur');
-                    }
-                }
-            }
+            clearBlurTimer();
+            ignorePauseUntilRef.current = Math.max(ignorePauseUntilRef.current, Date.now() + 3000);
         };
 
         const handleFullscreenChange = () => {
-            ignorePauseUntilRef.current = Math.max(ignorePauseUntilRef.current, Date.now() + 2000);
+            clearBlurTimer();
+            ignorePauseUntilRef.current = Math.max(ignorePauseUntilRef.current, Date.now() + 3000);
         };
 
         document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -434,6 +428,14 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
             } catch (_) {}
         }
 
+        let mql: MediaQueryList | null = null;
+        if (typeof window !== 'undefined' && window.matchMedia) {
+            try {
+                mql = window.matchMedia('(orientation: portrait)');
+                mql.addEventListener('change', handleOrientationOrResize);
+            } catch (_) {}
+        }
+
         return () => {
             clearBlurTimer();
             document.removeEventListener('visibilitychange', handleVisibilityChange);
@@ -449,6 +451,12 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
             if (typeof screen !== 'undefined' && screen.orientation) {
                 try {
                     screen.orientation.removeEventListener('change', handleOrientationOrResize);
+                } catch (_) {}
+            }
+
+            if (mql) {
+                try {
+                    mql.removeEventListener('change', handleOrientationOrResize);
                 } catch (_) {}
             }
         };

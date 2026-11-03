@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
 import { Card } from 'primereact/card';
@@ -104,6 +104,86 @@ const withStudentAuth = <P extends object>(
                 setError('');
             }
         }, [isAuthorized]);
+
+        // 🔒 [토큰 헬스체크] 기존에 브라우저를 띄워두었다가 다시 들어왔을 때(탭 복귀, 화면 켬 등)
+        // 기존의 가벼운 학생 API(myClasses)를 호출하여 토큰 만료 여부를 확인하고 만료 시 로그인 화면으로 자동 전환
+        const isCheckingAuthRef = useRef<boolean>(false);
+        const lastAuthCheckTimeRef = useRef<number>(0);
+
+        const checkTokenHealth = useCallback(async () => {
+            if (!studentToken || !storedStudentAuthData?.studentId) return;
+
+            // 5초 이내 중복 호출 방지 및 현재 요청 진행 중인 경우 스킵
+            const now = Date.now();
+            if (isCheckingAuthRef.current || now - lastAuthCheckTimeRef.current < 5000) {
+                return;
+            }
+
+            isCheckingAuthRef.current = true;
+            lastAuthCheckTimeRef.current = now;
+
+            try {
+                // 기존 학생 수강 클래스 조회 API를 가벼운 헬스체크 용도로 호출
+                await http.get('/choiMath/student/myClasses', {
+                    params: { studentId: storedStudentAuthData.studentId },
+                    disableLoading: true
+                });
+            } catch (err: any) {
+                const isAuthError =
+                    err?.response?.status === 401 ||
+                    err === 'student session expired' ||
+                    err?.response?.data?.error === 'jwt expired' ||
+                    err?.response?.data?.message === 'jwt expired' ||
+                    err?.response?.data?.error === 'Unauthorized';
+
+                if (isAuthError) {
+                    clearStudentAuth();
+                    showToast({
+                        severity: 'warn',
+                        summary: '로그인 만료',
+                        detail: '로그인 세션이 만료되었습니다. 다시 로그인해주세요.'
+                    });
+                }
+            } finally {
+                isCheckingAuthRef.current = false;
+            }
+        }, [studentToken, storedStudentAuthData?.studentId, http, clearStudentAuth, showToast]);
+
+        // 브라우저 탭 복귀(visibilitychange, focus, pageshow) 및 마운트 시 헬스체크 등록
+        useEffect(() => {
+            if (!isAuthorized) return;
+
+            // 1) 마운트 시 1회 확인
+            checkTokenHealth();
+
+            // 2) 브라우저 탭/화면 다시 들어왔을 때 감지
+            const handleVisibilityChange = () => {
+                if (document.visibilityState === 'visible') {
+                    checkTokenHealth();
+                }
+            };
+
+            const handleWindowFocus = () => {
+                checkTokenHealth();
+            };
+
+            const handlePageShow = (e: PageTransitionEvent) => {
+                // 뒤로가기/앞으로가기 캐시(bfcache) 복원 포함
+                if (e.persisted || document.visibilityState === 'visible') {
+                    checkTokenHealth();
+                }
+            };
+
+            document.addEventListener('visibilitychange', handleVisibilityChange);
+            window.addEventListener('focus', handleWindowFocus);
+            window.addEventListener('pageshow', handlePageShow);
+
+            return () => {
+                document.removeEventListener('visibilitychange', handleVisibilityChange);
+                window.removeEventListener('focus', handleWindowFocus);
+                window.removeEventListener('pageshow', handlePageShow);
+            };
+        }, [isAuthorized, checkTokenHealth]);
 
         const handleVerify = async () => {
             if (!name.trim()) {
