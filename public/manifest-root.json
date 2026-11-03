@@ -1,16 +1,18 @@
 {
+  "id": "/manual",
   "name": "출석부",
   "short_name": "출석부",
   "description": "학원 관리 시스템",
   "start_url": "/manual",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#fff",
   "theme_color": "#fff",
   "icons": [
-          {
-              "src": "/icons/icon-ios-1024x1024.png",
-              "sizes": "512x512",
-              "type": "image/png"
-          }
-      ]
+    {
+      "src": "/icons/icon-ios-1024x1024.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
 }

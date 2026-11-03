@@ -12,9 +12,9 @@ export function middleware(request: NextRequest) {
 }
 
 // 특정 경로에 대해서만 middleware 적용
-// kakao-share/view 를 제외 목록에 추가하여 인증 없이 접근 허용
+// kakao-share/view, student-status, install 을 제외 목록에 추가하여 인증 없이 접근 허용
 export const config = {
     matcher: [
-        '/((?!api|v1/api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|manifest|sw.js|workbox|icons|themes|layout|auth/login|auth/kakao/callback|demo|kakao-share/view|kakao-share/public-view|student-status).*)'
+        '/((?!api|v1/api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|manifest|sw.js|workbox|icons|themes|layout|auth/login|auth/kakao/callback|demo|kakao-share/view|kakao-share/public-view|student-status|install).*)'
     ]
 };
