@@ -141,7 +141,9 @@ export default function PwaInstallPrompt() {
                     document.execCommand('copy');
                     document.body.removeChild(input);
                 }
-                alert('주소가 복사되었습니다!\n크롬(Chrome)이나 사파리(Safari) 브라우저를 열고 주소창에 붙여넣어 주세요.');
+                alert(
+                    '주소가 복사되었습니다!\n크롬(Chrome)이나 사파리(Safari) 브라우저를 열고 주소창에 붙여넣어 주세요.'
+                );
             }
         } catch (_) {
             alert('주소 복사에 실패했습니다. 브라우저 주소창에서 링크를 복사해 주세요.');
@@ -158,15 +160,13 @@ export default function PwaInstallPrompt() {
 
     if (isStandalone) return null;
 
-    const appIconSrc = isStudentStatus
-        ? '/icons/icon-ios-1024x1024_red.png'
-        : '/icons/icon-ios-1024x1024.png';
+    const appIconSrc = isStudentStatus ? '/icons/icon-ios-1024x1024_red.png' : '/icons/icon-ios-1024x1024.png';
 
     return (
-        <Sidebar 
-            visible={isVisible} 
-            position="bottom" 
-            onHide={handleClose} 
+        <Sidebar
+            visible={isVisible}
+            position="bottom"
+            onHide={handleClose}
             showCloseIcon={false}
             baseZIndex={12000}
             style={{ height: 'auto', borderTopLeftRadius: '20px', borderTopRightRadius: '20px' }}
@@ -185,25 +185,31 @@ export default function PwaInstallPrompt() {
 
                 {/* 2. 간결한 타이틀 */}
                 <h3 className="m-0 mb-1 font-bold text-base text-900">
-                    {isStudentStatus ? '칭찬현황 PWA 앱 설치' : '전용 PWA 앱 설치'}
+                    {isStudentStatus ? '칭찬현황 앱 설치' : '전용 앱 설치'}
                 </h3>
 
                 {/* 3. 간단명료한 본문 안내 (장황함 제거 & 카카오톡 브라우저 대응) */}
                 <div className="m-0 mb-2 text-xs text-700 line-height-3 text-center" style={{ maxWidth: '340px' }}>
                     {isKakao ? (
                         <>
-                            카카오톡에서는 앱 설치가 지원되지 않습니다.<br />
+                            카카오톡에서는 앱 설치가 지원되지 않습니다.
+                            <br />
                             <b>크롬(Chrome)</b>이나 <b>사파리(Safari)</b> 등 인터넷 브라우저로 열어서 설치해 주세요.
                         </>
                     ) : isIos ? (
                         <>
-                            용량을 차지하지 않는 가벼운 웹(PWA) 바로가기 앱입니다.<br />
-                            하단 <b>[공유 <i className="pi pi-share-alt"></i>]</b> &gt; <b>[홈 화면에 추가]</b>를 눌러주세요.
+                            용량을 차지하지 않는 가벼운 웹 바로가기 앱입니다.
+                            <br />
+                            하단{' '}
+                            <b>
+                                [공유 <i className="pi pi-share-alt"></i>]
+                            </b>{' '}
+                            &gt; <b>[홈 화면에 추가]</b>를 눌러주세요.
                         </>
                     ) : (
                         <>
-                            용량을 차지하지 않는 가벼운 웹(PWA) 바로가기 앱입니다.<br />
-                            홈 화면에 추가하여 빠르고 편리하게 확인해 보세요.
+                            용량을 차지하지 않는 가벼운 웹 바로가기 앱입니다.
+                            <br />홈 화면에 추가하여 빠르고 편리하게 확인해 보세요.
                         </>
                     )}
                 </div>
@@ -214,7 +220,10 @@ export default function PwaInstallPrompt() {
                 </p>
 
                 {showManualGuide && !isIos && !isKakao && (
-                    <div className="p-2 border-round surface-200 text-xs text-800 mb-3 w-full text-center" style={{ maxWidth: '340px' }}>
+                    <div
+                        className="p-2 border-round surface-200 text-xs text-800 mb-3 w-full text-center"
+                        style={{ maxWidth: '340px' }}
+                    >
                         💡 브라우저 메뉴(⋮)에서 <b>[앱 설치]</b> 또는 <b>[홈 화면에 추가]</b>를 눌러주세요.
                     </div>
                 )}
