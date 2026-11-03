@@ -34,6 +34,10 @@ export const metadata: Metadata = {
         title: 'AMS',
         statusBarStyle: 'default'
     },
+    icons: {
+        icon: '/icons/icon-ios-1024x1024.png',
+        apple: '/icons/icon-ios-1024x1024.png'
+    },
     formatDetection: {
         telephone: false
     }
