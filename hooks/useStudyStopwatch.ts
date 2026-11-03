@@ -38,6 +38,10 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
     // 화면 회전, 화면 축소/확대, 전체화면 전환 등 UI 모드 전환 중 일시적인 브라우저 blur/visibilitychange 오작동 방지용 타임스탬프
     const ignorePauseUntilRef = useRef<number>(0);
 
+    // 하트비트 즉시 동기화용 참조 (창 포커스 복귀 시 중복 세션 즉각 감지용)
+    const syncHeartbeatRef = useRef<() => Promise<void>>(() => Promise.resolve());
+    const lastHeartbeatTimeRef = useRef<number>(0);
+
     const suppressPauseTemporarily = useCallback((durationMs = 3000) => {
         ignorePauseUntilRef.current = Math.max(ignorePauseUntilRef.current, Date.now() + durationMs);
     }, []);
@@ -321,6 +325,14 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
                         }
                         // 백그라운드 무소음(Silent) 데이터 동기화
                         await fetchTodayData(false);
+
+                        // 만약 서버에서 다른 기기에 의해 이미 마감된 세션으로 통보된 경우
+                        if (res.data?.endReason === 'auto_closed_on_new_start') {
+                            if (onBackgroundPausedRef.current) {
+                                onBackgroundPausedRef.current('auto_closed_on_new_start');
+                            }
+                            return;
+                        }
                     }
                 } catch (err) {
                     console.error('Error pausing study session:', err);
@@ -382,6 +394,9 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
 
         const handleWindowFocus = () => {
             clearBlurTimer();
+            if (isRunningRef.current && activeSessionIdRef.current && syncHeartbeatRef.current) {
+                syncHeartbeatRef.current();
+            }
         };
 
         // 3) 페이지 닫기 / 새로고침 이탈
@@ -476,18 +491,25 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isRunning, studentId]);
 
-    // 6. 5분(300초) 주기 자동 Heartbeat 싱크 (비정상 브라우저 종료 대비, Vercel/DB 부하 절감)
+    // 6. 핑퐁 Heartbeat 싱크 (비정상 브라우저 종료 대비 및 다른 기기 중복 로그인 감지)
     // isRunning 상태 전환 시에만 인터벌 등록/해제되며, 내부 값은 ref로 안전하게 참조
     useEffect(() => {
         if (!isRunning || !studentId) return;
 
-        const heartbeatInterval = setInterval(() => {
+        const performHeartbeatSync = async () => {
             const sessionId = activeSessionIdRef.current;
             const currentTicket = ticketRef.current;
             const sessionSec = currentSessionSecondsRef.current;
-            if (sessionId && sessionSec > 0) {
-                const todayStr = dayjs().format('YYYY-MM-DD');
-                http.post(
+            if (!sessionId || !isRunningRef.current) return;
+
+            // 스팸 방지: 직전 동기화 후 5초 이내 재호출 방지
+            const now = Date.now();
+            if (now - lastHeartbeatTimeRef.current < 5000) return;
+            lastHeartbeatTimeRef.current = now;
+
+            const todayStr = dayjs().format('YYYY-MM-DD');
+            try {
+                const res = await http.post(
                     '/choiMath/studyTime/sync',
                     {
                         studentId,
@@ -497,18 +519,65 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
                         currentSessionSeconds: sessionSec,
                     },
                     { disableLoading: true }
-                )
-                    .then((res) => {
-                        // 핑퐁 티켓 교체 (다음 5분 싱크용 새 티켓)
-                        if (res.data?.nextTicket) {
-                            ticketRef.current = res.data.nextTicket;
-                        }
-                    })
-                    .catch((e) => console.warn('Heartbeat sync warning:', e));
-            }
-        }, 300000); // 5분(300초) 주기
+                );
 
-        return () => clearInterval(heartbeatInterval);
+                // 세션이 이미 종료되었거나 다른 기기에서 새 세션이 시작되어 자동 마감된 경우
+                if (res.data?.sessionEnded) {
+                    stopTick();
+                    setIsRunning(false);
+                    isRunningRef.current = false;
+                    sessionStartTimeRef.current = null;
+                    activeSessionIdRef.current = null;
+                    ticketRef.current = null;
+                    stopSilentAudio();
+
+                    if (typeof res.data.totalSeconds === 'number') {
+                        setTodayTotalSeconds(res.data.totalSeconds);
+                    }
+                    fetchTodayData(false);
+
+                    const endReason = (res.data.endReason as StudyEndReason) || 'auto_closed_on_new_start';
+                    if (onBackgroundPausedRef.current) {
+                        onBackgroundPausedRef.current(endReason);
+                    }
+                    return;
+                }
+
+                // 핑퐁 티켓 교체 (다음 싱크용 새 티켓)
+                if (res.data?.nextTicket) {
+                    ticketRef.current = res.data.nextTicket;
+                }
+            } catch (e: any) {
+                console.warn('Heartbeat sync warning:', e);
+                const errData = e?.response?.data;
+                if (errData?.sessionEnded || errData?.endReason === 'auto_closed_on_new_start') {
+                    stopTick();
+                    setIsRunning(false);
+                    isRunningRef.current = false;
+                    sessionStartTimeRef.current = null;
+                    activeSessionIdRef.current = null;
+                    ticketRef.current = null;
+                    stopSilentAudio();
+
+                    if (typeof errData?.totalSeconds === 'number') {
+                        setTodayTotalSeconds(errData.totalSeconds);
+                    }
+                    fetchTodayData(false);
+
+                    if (onBackgroundPausedRef.current) {
+                        onBackgroundPausedRef.current('auto_closed_on_new_start');
+                    }
+                }
+            }
+        };
+
+        syncHeartbeatRef.current = performHeartbeatSync;
+        const heartbeatInterval = setInterval(performHeartbeatSync, 60000); // 60초(1분) 주기 동기화
+
+        return () => {
+            clearInterval(heartbeatInterval);
+            syncHeartbeatRef.current = () => Promise.resolve();
+        };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isRunning, studentId]);
 

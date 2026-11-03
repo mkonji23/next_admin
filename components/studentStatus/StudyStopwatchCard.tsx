@@ -316,6 +316,7 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
     };
 
     const is1hAutoPaused = alertReason === 'auto_1h_pause';
+    const isConcurrentPaused = alertReason === 'auto_closed_on_new_start';
 
     return (
         <>
@@ -444,6 +445,21 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                                 )}
                             </div>
                         </div>
+
+                        {/* 다른 기기 측정 시작으로 인한 마감 안내 인라인 배너 */}
+                        {!isRunning && alertReason === 'auto_closed_on_new_start' && (
+                            <div
+                                className="flex align-items-center justify-content-center gap-2 p-2 px-3 border-round-xl my-2 text-xs font-bold animate-fadein"
+                                style={{
+                                    background: isDark ? 'rgba(234, 88, 12, 0.2)' : '#ffedd5',
+                                    color: isDark ? '#fb923c' : '#c2410c',
+                                    border: isDark ? '1px solid rgba(251, 146, 60, 0.4)' : '1px solid #fdba74'
+                                }}
+                            >
+                                <i className="pi pi-desktop text-sm" />
+                                <span>다른 기기나 브라우저에서 공부가 시작되어 측정이 자동 마감되었습니다.</span>
+                            </div>
+                        )}
 
                         {/* 하단 컨트롤 버튼 */}
                         <div className="flex justify-content-center gap-3">
@@ -758,6 +774,21 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                                     </div>
                                 )}
 
+                                {/* 다른 기기 측정 시작으로 인한 마감 안내 배너 (전체화면) */}
+                                {!isRunning && alertReason === 'auto_closed_on_new_start' && (
+                                    <div
+                                        className="flex align-items-center justify-content-center gap-2 p-2 px-3 border-round-2xl mt-3 text-xs md:text-sm font-bold shadow-2 animate-fadein"
+                                        style={{
+                                            background: isDark ? 'rgba(234, 88, 12, 0.2)' : '#ffedd5',
+                                            color: isDark ? '#fb923c' : '#c2410c',
+                                            border: isDark ? '1px solid rgba(251, 146, 60, 0.4)' : '1px solid #fdba74'
+                                        }}
+                                    >
+                                        <i className="pi pi-desktop" />
+                                        <span>다른 기기에서 측정이 시작되어 현재 기기 측정이 자동 종료되었습니다.</span>
+                                    </div>
+                                )}
+
                                 {/* 전체 총 공부시간 및 세션 요약 */}
                                 <div className="flex flex-wrap align-items-center justify-content-center gap-3 mt-4">
                                     <span
@@ -834,14 +865,20 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                 visible={alertVisible}
                 onHide={() => setAlertVisible(false)}
                 baseZIndex={11000}
-                header={is1hAutoPaused ? '1시간 연속 공부 안내' : '화면 이탈 감지'}
+                header={
+                    isConcurrentPaused
+                        ? '다른 기기 측정 감지'
+                        : is1hAutoPaused
+                        ? '1시간 연속 공부 안내'
+                        : '화면 이탈 감지'
+                }
                 style={{ width: '90vw', maxWidth: '380px' }}
                 modal
                 footer={
                     <Button
-                        label="다시 집중하기"
+                        label={isConcurrentPaused ? '이 기기에서 다시 시작' : '다시 집중하기'}
                         icon="pi pi-play"
-                        severity="success"
+                        severity={isConcurrentPaused ? 'warning' : 'success'}
                         className="w-full font-bold"
                         onClick={() => {
                             setAlertVisible(false);
@@ -851,7 +888,21 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                 }
             >
                 <div className="flex flex-column align-items-center text-center gap-2 py-2">
-                    {is1hAutoPaused ? (
+                    {isConcurrentPaused ? (
+                        <>
+                            <i className="pi pi-desktop text-orange-500 text-4xl mb-1" />
+                            <span className="font-bold text-base text-900">다른 기기에서 공부가 시작되었습니다!</span>
+                            <p className="text-xs text-600 m-0 line-height-3">
+                                다른 기기 또는 브라우저에서 스톱워치가 시작되어
+                                <br />
+                                <strong>현재 기기의 측정이 자동으로 종료</strong>되었습니다.
+                                <br />
+                                <span className="text-orange-500 font-semibold" style={{ fontSize: '11px' }}>
+                                    (중복 측정으로 시간을 부풀리는 행위는 방지됩니다)
+                                </span>
+                            </p>
+                        </>
+                    ) : is1hAutoPaused ? (
                         <>
                             <i className="pi pi-clock text-green-500 text-4xl mb-1" />
                             <span className="font-bold text-base text-900">1시간 집중을 완료했습니다!</span>
@@ -900,6 +951,7 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                         todayData.sessions.map((sess, idx) => {
                             const isPausedByLeave = sess.endReason === 'background_leave';
                             const isAuto1h = sess.endReason === 'auto_1h_pause';
+                            const isConcurrent = sess.endReason === 'auto_closed_on_new_start';
                             return (
                                 <div
                                     key={sess.sessionId || idx}
@@ -923,6 +975,11 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                                             {isAuto1h && (
                                                 <span className="text-green-600" style={{ fontSize: '10px' }}>
                                                     * 1시간 경과로 자동 일시정지
+                                                </span>
+                                            )}
+                                            {isConcurrent && (
+                                                <span className="text-orange-600" style={{ fontSize: '10px' }}>
+                                                    * 다른 기기 측정 시작으로 자동 마감
                                                 </span>
                                             )}
                                         </div>
