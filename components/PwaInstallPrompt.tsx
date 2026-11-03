@@ -29,7 +29,6 @@ export default function PwaInstallPrompt() {
 
         if (isAppMode) return true;
 
-        // student-status에서 설치 완료 이력이 있는 경우
         if (localStorage.getItem('pwa_installed_student_status') === 'true') {
             return true;
         }
@@ -49,7 +48,6 @@ export default function PwaInstallPrompt() {
             return;
         }
 
-        // 디바이스 및 브라우저 환경 감지
         const userAgent = window.navigator.userAgent.toLowerCase();
         const isIosDevice = /iphone|ipad|ipod/.test(userAgent);
         const isKakaoTalk = /kakaotalk/i.test(userAgent);
@@ -57,13 +55,12 @@ export default function PwaInstallPrompt() {
         setIsKakao(isKakaoTalk);
 
         if (isStudentStatus) {
-            // 칭찬현황 페이지 진입 시: 설치될 때까지 항상 팝업 노출 (hasSeenPwaPrompt 무시)
+            // 칭찬현황 페이지 진입 시 설치될 때까지 항상 팝업 표시
             const timer = setTimeout(() => {
                 setIsVisible(true);
             }, 700);
             return () => clearTimeout(timer);
         } else {
-            // 기타 페이지: 기존처럼 hasSeenPwaPrompt가 없는 경우에만 1회 안내
             const hasSeenPrompt = localStorage.getItem('hasSeenPwaPrompt');
             if (!hasSeenPrompt && isIosDevice) {
                 const timer = setTimeout(() => setIsVisible(true), 3000);
@@ -75,14 +72,13 @@ export default function PwaInstallPrompt() {
     // PWA 설치 이벤트(beforeinstallprompt) 및 설치 완료(appinstalled) 이벤트 리스너 등록
     useEffect(() => {
         const handleBeforeInstallPrompt = (e: Event) => {
-            e.preventDefault(); // 기본 브라우저 프롬프트(미니 인포바 등) 차단
+            e.preventDefault();
             setDeferredPrompt(e);
             deferredPromptRef.current = e;
 
             if (checkIsAppInstalled()) return;
 
             if (isStudentStatus) {
-                // 칭찬현황에서는 진입 시 항상 표시
                 setIsVisible(true);
             } else {
                 const hasSeenPrompt = localStorage.getItem('hasSeenPwaPrompt');
@@ -93,7 +89,6 @@ export default function PwaInstallPrompt() {
         };
 
         const handleAppInstalled = () => {
-            console.log('PWA app installed successfully');
             setIsStandalone(true);
             setIsVisible(false);
             localStorage.setItem('pwa_installed_student_status', 'true');
@@ -114,28 +109,42 @@ export default function PwaInstallPrompt() {
         const promptEvent = deferredPrompt || deferredPromptRef.current;
         if (promptEvent) {
             try {
-                // 커스텀 설치 프롬프트 띄우기
                 promptEvent.prompt();
                 const { outcome } = await promptEvent.userChoice;
 
                 if (outcome === 'accepted') {
-                    console.log('User accepted the install prompt');
                     localStorage.setItem('pwa_installed_student_status', 'true');
                     setIsStandalone(true);
                     setIsVisible(false);
-                } else {
-                    console.log('User dismissed the install prompt');
                 }
             } catch (err) {
-                console.error('Install prompt error:', err);
                 setShowManualGuide(true);
             }
 
             setDeferredPrompt(null);
             deferredPromptRef.current = null;
         } else {
-            // 브라우저에서 beforeinstallprompt 이벤트를 지원하지 않거나 이미 소비된 경우 수동 가이드 안내
             setShowManualGuide(true);
+        }
+    };
+
+    const handleCopyUrl = async () => {
+        try {
+            if (typeof window !== 'undefined') {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(window.location.href);
+                } else {
+                    const input = document.createElement('input');
+                    input.value = window.location.href;
+                    document.body.appendChild(input);
+                    input.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(input);
+                }
+                alert('주소가 복사되었습니다!\n크롬(Chrome)이나 사파리(Safari) 브라우저를 열고 주소창에 붙여넣어 주세요.');
+            }
+        } catch (_) {
+            alert('주소 복사에 실패했습니다. 브라우저 주소창에서 링크를 복사해 주세요.');
         }
     };
 
@@ -145,7 +154,6 @@ export default function PwaInstallPrompt() {
         if (!isStudentStatus) {
             localStorage.setItem('hasSeenPwaPrompt', 'true');
         }
-        // 칭찬현황(student-status)에서는 영구 차단 플래그를 저장하지 않으므로 설치 전까지 다음 진입 시 다시 뜸
     };
 
     if (isStandalone) return null;
@@ -161,59 +169,58 @@ export default function PwaInstallPrompt() {
             onHide={handleClose} 
             showCloseIcon={false}
             baseZIndex={12000}
-            style={{ height: 'auto', borderTopLeftRadius: '24px', borderTopRightRadius: '24px' }}
+            style={{ height: 'auto', borderTopLeftRadius: '20px', borderTopRightRadius: '20px' }}
             className="p-3 m-0"
         >
             <div className="flex flex-column align-items-center text-center">
-                {/* 1. 앱 아이콘 노출 */}
+                {/* 1. 앱 아이콘 */}
                 <img
                     src={appIconSrc}
                     alt="App Icon"
-                    width={64}
-                    height={64}
-                    className="border-round-2xl shadow-3 mb-2"
+                    width={56}
+                    height={56}
+                    className="border-round-xl shadow-2 mb-2"
                     style={{ objectFit: 'cover' }}
                 />
 
-                <h3 className="m-0 mb-1 font-bold text-lg text-900">
-                    {isStudentStatus ? '칭찬현황 전용 PWA 앱 설치' : '빠르고 편리한 전용 PWA 앱 설치'}
+                {/* 2. 간결한 타이틀 */}
+                <h3 className="m-0 mb-1 font-bold text-base text-900">
+                    {isStudentStatus ? '칭찬현황 PWA 앱 설치' : '전용 PWA 앱 설치'}
                 </h3>
 
-                {/* 2. 실제 스토어 앱이 아닌 웹 PWA 앱임을 명확히 인지시키는 문구 */}
-                <p className="m-0 mb-2 text-xs text-600 line-height-3" style={{ maxWidth: '340px' }}>
-                    앱스토어에서 다운로드하는 무거운 앱이 아닌, 기기 용량을 차지하지 않는 <b>초경량 PWA(홈 화면 바로가기 앱)</b>입니다.
-                </p>
-
-                {/* 3. 기기별 설치 방법 안내 */}
-                <div className="p-2 px-3 border-round-xl surface-100 text-xs text-700 mb-2 w-full text-center line-height-3" style={{ maxWidth: '380px' }}>
+                {/* 3. 간단명료한 본문 안내 (장황함 제거 & 카카오톡 브라우저 대응) */}
+                <div className="m-0 mb-2 text-xs text-700 line-height-3 text-center" style={{ maxWidth: '340px' }}>
                     {isKakao ? (
                         <>
-                            카카오톡 브라우저에서는 우측 하단/상단 <b>[···]</b> 메뉴 &gt; <b>[다른 브라우저로 열기]</b>를 선택하셔야 홈 화면에 추가할 수 있습니다.
+                            카카오톡에서는 앱 설치가 지원되지 않습니다.<br />
+                            <b>크롬(Chrome)</b>이나 <b>사파리(Safari)</b> 등 인터넷 브라우저로 열어서 설치해 주세요.
                         </>
                     ) : isIos ? (
                         <>
-                            하단 브라우저 메뉴에서 <i className="pi pi-share-alt mx-1 text-primary"></i> <b>[공유]</b> 버튼을 누른 후 <b>[홈 화면에 추가]</b>를 선택해 주세요!
+                            용량을 차지하지 않는 가벼운 웹(PWA) 바로가기 앱입니다.<br />
+                            하단 <b>[공유 <i className="pi pi-share-alt"></i>]</b> &gt; <b>[홈 화면에 추가]</b>를 눌러주세요.
                         </>
                     ) : (
                         <>
-                            버튼 한 번으로 홈 화면에 전용 앱을 추가하여 순공 스톱워치와 칭찬현황을 바로 열어보세요.
+                            용량을 차지하지 않는 가벼운 웹(PWA) 바로가기 앱입니다.<br />
+                            홈 화면에 추가하여 빠르고 편리하게 확인해 보세요.
                         </>
                     )}
                 </div>
 
-                {/* 4. 설치할 때까지 계속 팝업이 뜬다는 안내 문구 */}
-                <div className="flex align-items-center justify-content-center gap-1 text-xs text-orange-600 font-semibold mb-3">
-                    <i className="pi pi-info-circle text-xs" />
-                    <span>홈 화면에 앱을 추가(설치)할 때까지 접속 시 계속 팝업이 뜹니다.</span>
-                </div>
+                {/* 4. 설치 전까지 계속 뜬다는 간결한 안내 */}
+                <p className="m-0 mb-3 text-xs text-orange-600 font-medium">
+                    * 홈 화면에 앱을 설치(추가)할 때까지 접속 시 계속 뜹니다.
+                </p>
 
-                {showManualGuide && !isIos && (
-                    <div className="p-2 border-round surface-200 text-xs text-800 mb-3 w-full text-center" style={{ maxWidth: '380px' }}>
-                        💡 브라우저 우측 상단 메뉴(⋮)에서 <b>[앱 설치]</b> 또는 <b>[홈 화면에 추가]</b>를 눌러주세요.
+                {showManualGuide && !isIos && !isKakao && (
+                    <div className="p-2 border-round surface-200 text-xs text-800 mb-3 w-full text-center" style={{ maxWidth: '340px' }}>
+                        💡 브라우저 메뉴(⋮)에서 <b>[앱 설치]</b> 또는 <b>[홈 화면에 추가]</b>를 눌러주세요.
                     </div>
                 )}
 
-                <div className="flex w-full gap-2" style={{ maxWidth: '380px' }}>
+                {/* 5. 버튼 구성 */}
+                <div className="flex w-full gap-2" style={{ maxWidth: '340px' }}>
                     <Button
                         label={isIos ? '확인' : '닫기'}
                         severity="secondary"
@@ -221,13 +228,22 @@ export default function PwaInstallPrompt() {
                         className="flex-1 font-bold"
                         onClick={handleClose}
                     />
-                    {!isIos && (
+                    {isKakao ? (
                         <Button
-                            label="PWA 앱 설치하기"
-                            icon="pi pi-download"
+                            label="링크 복사하기"
+                            icon="pi pi-copy"
                             className="flex-1 font-bold"
-                            onClick={handleInstallClick}
+                            onClick={handleCopyUrl}
                         />
+                    ) : (
+                        !isIos && (
+                            <Button
+                                label="앱 설치하기"
+                                icon="pi pi-download"
+                                className="flex-1 font-bold"
+                                onClick={handleInstallClick}
+                            />
+                        )
                     )}
                 </div>
             </div>
