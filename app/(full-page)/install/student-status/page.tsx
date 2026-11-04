@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from 'primereact/button';
 import Link from 'next/link';
@@ -10,7 +10,12 @@ export default function InstallStudentStatusPage() {
     const [isStandalone, setIsStandalone] = useState(false);
     const [isIos, setIsIos] = useState(false);
     const [isKakao, setIsKakao] = useState(false);
+    const [isFirefox, setIsFirefox] = useState(false);
+    const [isSamsung, setIsSamsung] = useState(false);
     const [isInAppBrowser, setIsInAppBrowser] = useState(false);
+    const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+    const deferredPromptRef = useRef<any>(null);
+    const [showManualGuide, setShowManualGuide] = useState(false);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -32,12 +37,64 @@ export default function InstallStudentStatusPage() {
         const userAgent = window.navigator.userAgent.toLowerCase();
         const isIosDevice = /iphone|ipad|ipod/.test(userAgent);
         const isKakaoTalk = /kakaotalk/i.test(userAgent);
+        const isFx = /firefox|fxios/i.test(userAgent);
+        const isSamsungBrowser = /samsungbrowser/i.test(userAgent);
         const isOtherInApp = /line|inapp|instagram|fbav|daumapps/i.test(userAgent);
 
         setIsIos(isIosDevice);
         setIsKakao(isKakaoTalk);
+        setIsFirefox(isFx);
+        setIsSamsung(isSamsungBrowser);
         setIsInAppBrowser(isKakaoTalk || isOtherInApp);
     }, [router]);
+
+    // PWA 설치 이벤트 등록
+    useEffect(() => {
+        const handleBeforeInstallPrompt = (e: Event) => {
+            e.preventDefault();
+            setDeferredPrompt(e);
+            deferredPromptRef.current = e;
+        };
+
+        const handleAppInstalled = () => {
+            setIsStandalone(true);
+            setDeferredPrompt(null);
+            deferredPromptRef.current = null;
+            router.replace('/student-status');
+        };
+
+        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        window.addEventListener('appinstalled', handleAppInstalled);
+
+        return () => {
+            window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+            window.removeEventListener('appinstalled', handleAppInstalled);
+        };
+    }, [router]);
+
+    // 앱 설치하기 버튼 클릭 처리
+    const handleInstallClick = async () => {
+        if (isIos) {
+            alert('아이폰(iOS)은 사파리 브라우저 하단 [공유] 버튼 > [홈 화면에 추가]를 눌러주세요.');
+            return;
+        }
+
+        const promptEvent = deferredPrompt || deferredPromptRef.current;
+        if (promptEvent) {
+            try {
+                promptEvent.prompt();
+                const { outcome } = await promptEvent.userChoice;
+                if (outcome === 'accepted') {
+                    setDeferredPrompt(null);
+                    deferredPromptRef.current = null;
+                }
+            } catch (err) {
+                setShowManualGuide(true);
+            }
+        } else {
+            setShowManualGuide(true);
+        }
+    };
 
     // 카카오톡 및 인앱 브라우저 탈출 -> 외부 브라우저(크롬, 사파리, 삼성인터넷 등)로 즉시 실행
     const handleOpenExternalBrowser = () => {
@@ -85,7 +142,7 @@ export default function InstallStudentStatusPage() {
         return (
             <div className="flex align-items-center justify-content-center min-h-screen surface-ground p-4">
                 <div className="text-center text-700">
-                    <i className="pi pi-spin pi-spinner text-3xl mb-3 text-orange-500" />
+                    <i className="pi pi-spin pi-spinner text-3xl mb-3 text-primary" />
                     <p className="font-bold">칭찬현황 앱으로 이동 중입니다...</p>
                 </div>
             </div>
@@ -98,10 +155,10 @@ export default function InstallStudentStatusPage() {
                 className="surface-card p-4 md:p-5 border-round-3xl shadow-4 text-center w-full"
                 style={{ maxWidth: '420px' }}
             >
-                {/* 1. 앱 아이콘 (빨간색 전용 아이콘) */}
+                {/* 1. 앱 아이콘 */}
                 <div className="flex justify-content-center mb-3">
                     <img
-                        src="/icons/icon-ios-1024x1024_red.png"
+                        src="/icons/icon-192x192_red.png"
                         alt="칭찬현황 아이콘"
                         width={84}
                         height={84}
@@ -113,7 +170,9 @@ export default function InstallStudentStatusPage() {
                 {/* 2. 타이틀 & 설명 */}
                 <h2 className="text-xl md:text-2xl font-bold text-900 m-0 mb-2">칭찬현황 전용 앱 설치</h2>
                 <p className="text-sm text-600 line-height-3 m-0 mb-4">
-                    스마트폰 용량을 차지하지 않는 가벼운 홈 화면 바로가기 웹앱입니다.
+                    저장공간을 거의 차지하지 않는 가벼운 홈 화면 바로가기 웹앱입니다.
+                    <br />
+                    설치 후 홈 화면 아이콘으로 편리하게 칭찬현황을 이용하세요.
                 </p>
 
                 {/* 3. 환경별 설치 안내 박스 */}
@@ -145,7 +204,7 @@ export default function InstallStudentStatusPage() {
                                 <i className="pi pi-android" />
                                 <span>안드로이드 / PC 브라우저 설치 방법</span>
                             </div>
-                            화면 하단 팝업의 <b>[앱 설치하기]</b>를 누르시거나, 브라우저 메뉴(<b>⋮</b> 또는 <b>≡</b>) &gt;{' '}
+                            아래 <b>[앱 설치하기]</b>를 누르시거나, 브라우저 메뉴(<b>⋮</b> 또는 <b>≡</b>) &gt;{' '}
                             <b>[앱 설치]</b> 또는 <b>[홈 화면에 추가]</b>를 눌러주세요.
                             <br />
                             <span className="text-500 font-semibold">(크롬, 삼성인터넷, 네이버 웨일, 엣지 모두 지원됩니다)</span>
@@ -153,27 +212,44 @@ export default function InstallStudentStatusPage() {
                     )}
                 </div>
 
+                {/* 수동 가이드 (프롬프트 미지원 또는 미발생 시) */}
+                {showManualGuide && !isInAppBrowser && (
+                    <div className="p-3 border-round-xl surface-200 text-xs text-800 mb-4 text-center line-height-3">
+                        {isSamsung ? (
+                            <>💡 삼성인터넷 하단 메뉴(<b>≡</b>) &gt; <b>[현재 페이지 추가]</b> &gt; <b>[홈 화면]</b>을 눌러주세요.</>
+                        ) : isFirefox ? (
+                            <>💡 파이어폭스 우측 메뉴(<b>⋮</b>) &gt; <b>[설치]</b> 또는 <b>[홈 화면에 추가]</b>를 눌러주세요.</>
+                        ) : isIos ? (
+                            <>💡 사파리 브라우저 하단 <b>[공유]</b> &gt; <b>[홈 화면에 추가]</b>를 눌러주세요.</>
+                        ) : (
+                            <>💡 브라우저 우측 상단 메뉴(<b>⋮</b>)에서 <b>[앱 설치]</b> 또는 <b>[홈 화면에 추가]</b>를 눌러주세요.</>
+                        )}
+                        <br />
+                        <span className="text-orange-600 font-semibold" style={{ fontSize: '11px' }}>
+                            (이미 설치된 경우 홈 화면의 <b>'칭찬현황'</b> 아이콘으로 열어주세요)
+                        </span>
+                    </div>
+                )}
+
                 {/* 4. 액션 버튼 */}
                 <div className="flex flex-column gap-2">
                     {isInAppBrowser ? (
-                        <>
-                            <Button
-                                label="외부 브라우저(크롬 등)로 바로 열기"
-                                icon="pi pi-external-link"
-                                severity="primary"
-                                className="w-full font-bold py-3 border-round-xl shadow-2"
-                                onClick={handleOpenExternalBrowser}
-                            />
-                            <Button
-                                label="설치 링크 복사하기"
-                                icon="pi pi-copy"
-                                outlined
-                                severity="secondary"
-                                className="w-full font-medium py-2 border-round-xl text-xs"
-                                onClick={handleCopyUrl}
-                            />
-                        </>
-                    ) : null}
+                        <Button
+                            label="외부 브라우저(크롬 등)로 바로 열기"
+                            icon="pi pi-external-link"
+                            severity="primary"
+                            className="w-full font-bold py-3 border-round-xl shadow-2"
+                            onClick={handleOpenExternalBrowser}
+                        />
+                    ) : (
+                        <Button
+                            label="앱 설치하기"
+                            icon="pi pi-download"
+                            severity="primary"
+                            className="w-full font-bold py-3 border-round-xl shadow-2"
+                            onClick={handleInstallClick}
+                        />
+                    )}
 
                     <Link href="/student-status" className="no-underline w-full">
                         <Button

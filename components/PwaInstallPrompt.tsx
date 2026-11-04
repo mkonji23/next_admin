@@ -279,23 +279,13 @@ export default function PwaInstallPrompt() {
                 {/* 5. 주요 액션 버튼 구성 */}
                 <div className="flex flex-column gap-2 w-full" style={{ maxWidth: '340px' }}>
                     {isInAppBrowser ? (
-                        <>
-                            <Button
-                                label="외부 브라우저로 열기 (크롬/기본)"
-                                icon="pi pi-external-link"
-                                severity="primary"
-                                className="w-full font-bold py-3 border-round-xl shadow-2"
-                                onClick={handleOpenExternalBrowser}
-                            />
-                            <Button
-                                label="설치 링크 복사하기"
-                                icon="pi pi-copy"
-                                outlined
-                                severity="secondary"
-                                className="w-full font-medium py-2 border-round-xl text-xs"
-                                onClick={handleCopyUrl}
-                            />
-                        </>
+                        <Button
+                            label="외부 브라우저로 열기 (크롬/기본)"
+                            icon="pi pi-external-link"
+                            severity="primary"
+                            className="w-full font-bold py-3 border-round-xl shadow-2"
+                            onClick={handleOpenExternalBrowser}
+                        />
                     ) : isIos || isFirefox ? (
                         <Button
                             label="웹으로 바로 이동"
