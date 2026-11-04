@@ -5,6 +5,7 @@ import { useHttp } from '@/util/axiosInstance';
 import { TodayStudyTimeData, StudyEndReason, StudySession } from '@/types/studyTime';
 import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
 import dayjs from 'dayjs';
+import Cookies from 'js-cookie';
 
 interface UseStudyStopwatchProps {
     studentId?: string;
@@ -496,11 +497,21 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
     useEffect(() => {
         if (!isRunning || !studentId) return;
 
+        // 🔒 관리자(ADMIN) 계정인 경우 순공 세션 실시간 핑퐁 sync 불필요 및 400 에러 방지를 위해 스킵
+        const isAdmin = typeof window !== 'undefined' && Boolean(Cookies.get('token'));
+        if (isAdmin) {
+            syncHeartbeatRef.current = () => Promise.resolve();
+            return;
+        }
+
         const performHeartbeatSync = async () => {
             const sessionId = activeSessionIdRef.current;
             const currentTicket = ticketRef.current;
             const sessionSec = currentSessionSecondsRef.current;
             if (!sessionId || !isRunningRef.current) return;
+
+            // 관리자 재확인 (동적 로그인 상태 변경 대응)
+            if (typeof window !== 'undefined' && Boolean(Cookies.get('token'))) return;
 
             // 스팸 방지: 직전 동기화 후 5초 이내 재호출 방지
             const now = Date.now();
