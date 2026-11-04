@@ -10,6 +10,7 @@ export default function InstallStudentStatusPage() {
     const [isStandalone, setIsStandalone] = useState(false);
     const [isIos, setIsIos] = useState(false);
     const [isKakao, setIsKakao] = useState(false);
+    const [isInAppBrowser, setIsInAppBrowser] = useState(false);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -29,9 +30,34 @@ export default function InstallStudentStatusPage() {
         }
 
         const userAgent = window.navigator.userAgent.toLowerCase();
-        setIsIos(/iphone|ipad|ipod/.test(userAgent));
-        setIsKakao(/kakaotalk/i.test(userAgent));
+        const isIosDevice = /iphone|ipad|ipod/.test(userAgent);
+        const isKakaoTalk = /kakaotalk/i.test(userAgent);
+        const isOtherInApp = /line|inapp|instagram|fbav|daumapps/i.test(userAgent);
+
+        setIsIos(isIosDevice);
+        setIsKakao(isKakaoTalk);
+        setIsInAppBrowser(isKakaoTalk || isOtherInApp);
     }, [router]);
+
+    // 카카오톡 및 인앱 브라우저 탈출 -> 외부 브라우저(크롬, 사파리, 삼성인터넷 등)로 즉시 실행
+    const handleOpenExternalBrowser = () => {
+        if (typeof window === 'undefined') return;
+        const currentUrl = window.location.href;
+        const userAgent = window.navigator.userAgent.toLowerCase();
+
+        if (/kakaotalk/i.test(userAgent)) {
+            window.location.href = `kakaotalk://web/openExternal?url=${encodeURIComponent(currentUrl)}`;
+            return;
+        }
+
+        if (/android/i.test(userAgent)) {
+            const cleanUrl = currentUrl.replace(/^https?:\/\//i, '');
+            window.location.href = `intent://${cleanUrl}#Intent;scheme=https;package=com.android.chrome;end`;
+            return;
+        }
+
+        handleCopyUrl();
+    };
 
     const handleCopyUrl = async () => {
         try {
@@ -47,7 +73,7 @@ export default function InstallStudentStatusPage() {
                     document.body.removeChild(input);
                 }
                 alert(
-                    '설치 주소가 복사되었습니다!\n크롬(Chrome)이나 사파리(Safari) 브라우저를 열고 주소창에 붙여넣어 주세요.'
+                    '설치 주소가 복사되었습니다!\n크롬(Chrome), 삼성인터넷, 사파리(Safari) 등 기본 브라우저를 열고 주소창에 붙여넣어 주세요.'
                 );
             }
         } catch (_) {
@@ -92,14 +118,13 @@ export default function InstallStudentStatusPage() {
 
                 {/* 3. 환경별 설치 안내 박스 */}
                 <div className="p-3 border-round-2xl surface-100 text-xs text-700 mb-4 text-left line-height-3 border-1 surface-border">
-                    {isKakao ? (
+                    {isInAppBrowser ? (
                         <>
                             <div className="flex align-items-center gap-2 font-bold text-orange-600 mb-1">
                                 <i className="pi pi-exclamation-triangle" />
-                                <span>카카오톡 인앱 브라우저 안내</span>
+                                <span>메신저 인앱 브라우저 안내</span>
                             </div>
-                            카카오톡 내부에서는 홈 화면 추가가 지원되지 않습니다. 아래 <b>[링크 복사하기]</b>를 눌러{' '}
-                            <b>크롬(Chrome)</b>이나 <b>사파리(Safari)</b>에서 열어주세요.
+                            카카오톡 등 메신저 내부에서는 보안 정책상 홈 화면 추가가 지원되지 않습니다. 아래 <b>[외부 브라우저로 열기]</b>를 누르면 크롬/사파리로 바로 열려 손쉽게 설치할 수 있습니다.
                         </>
                     ) : isIos ? (
                         <>
@@ -118,24 +143,36 @@ export default function InstallStudentStatusPage() {
                         <>
                             <div className="flex align-items-center gap-2 font-bold text-900 mb-1">
                                 <i className="pi pi-android" />
-                                <span>안드로이드 / 크롬 설치 방법</span>
+                                <span>안드로이드 / PC 브라우저 설치 방법</span>
                             </div>
-                            화면 하단 팝업의 <b>[앱 설치하기]</b>를 누르시거나, 브라우저 우측 상단 메뉴(<b>⋮</b>) &gt;{' '}
+                            화면 하단 팝업의 <b>[앱 설치하기]</b>를 누르시거나, 브라우저 메뉴(<b>⋮</b> 또는 <b>≡</b>) &gt;{' '}
                             <b>[앱 설치]</b> 또는 <b>[홈 화면에 추가]</b>를 눌러주세요.
+                            <br />
+                            <span className="text-500 font-semibold">(크롬, 삼성인터넷, 네이버 웨일, 엣지 모두 지원됩니다)</span>
                         </>
                     )}
                 </div>
 
                 {/* 4. 액션 버튼 */}
                 <div className="flex flex-column gap-2">
-                    {isKakao ? (
-                        <Button
-                            label="설치 링크 복사하기"
-                            icon="pi pi-copy"
-                            severity="warning"
-                            className="w-full font-bold py-3 border-round-xl"
-                            onClick={handleCopyUrl}
-                        />
+                    {isInAppBrowser ? (
+                        <>
+                            <Button
+                                label="외부 브라우저(크롬 등)로 바로 열기"
+                                icon="pi pi-external-link"
+                                severity="primary"
+                                className="w-full font-bold py-3 border-round-xl shadow-2"
+                                onClick={handleOpenExternalBrowser}
+                            />
+                            <Button
+                                label="설치 링크 복사하기"
+                                icon="pi pi-copy"
+                                outlined
+                                severity="secondary"
+                                className="w-full font-medium py-2 border-round-xl text-xs"
+                                onClick={handleCopyUrl}
+                            />
+                        </>
                     ) : null}
 
                     <Link href="/student-status" className="no-underline w-full">
