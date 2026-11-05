@@ -26,7 +26,7 @@ import { useConfirm } from '@/hooks/useConfirm';
 dayjs.extend(relativeTime);
 dayjs.locale('ko');
 
-const getNotificationIcon = (type: string): string => {
+const getNotificationIcon = (type?: string): string => {
     switch (type) {
         case 'SHARE_CREATED':
             return 'pi pi-share-alt';
@@ -39,7 +39,8 @@ const getNotificationIcon = (type: string): string => {
     }
 };
 
-const formatNotificationTime = (date: string): string => {
+const formatNotificationTime = (date?: string): string => {
+    if (!date) return '';
     const now = dayjs();
     const notificationTime = dayjs(date);
     const diffMinutes = now.diff(notificationTime, 'minute');
@@ -160,7 +161,7 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
         notificationPanelRef.current?.hide();
     };
 
-    const formatNotificationContent = (content: string) => {
+    const formatNotificationContent = (content?: string) => {
         if (!content) return '';
 
         let displayContent: React.ReactNode[] = [];

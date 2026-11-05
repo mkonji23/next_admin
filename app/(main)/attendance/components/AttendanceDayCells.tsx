@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Dropdown, DropdownChangeEvent } from 'primereact/dropdown';
@@ -46,6 +46,7 @@ const AttendanceDayCells = React.memo<AttendanceDayCellsProps>(({ user, day, onU
     const attendanceField = `day_${day}_attendance`;
     const homeworkField = `day_${day}_homework`;
     const noteField = `day_${day}_note`;
+    const reinforceField = `day_${day}_reinforce`;
     const specialNoteField = `specialNote`;
     const praiseField = `day_${day}_praise`;
     const lateTimeField = `day_${day}_lateTime`;
@@ -56,6 +57,7 @@ const AttendanceDayCells = React.memo<AttendanceDayCellsProps>(({ user, day, onU
     const [localAttendance, setLocalAttendance] = useState<string>((user[attendanceField] as string) || 'none');
     const [localHomework, setLocalHomework] = useState<number>((user[homeworkField] as number) || 0);
     const [localNote, setLocalNote] = useState<string>((user[noteField] as string) || '');
+    const [localReinforce, setLocalReinforce] = useState<string>((user[reinforceField] as string) || '');
     const [localSpecialNote, setLocalSpecialNote] = useState<string>((user[specialNoteField] as string) || '');
     const [localPraise, setLocalPraise] = useState<boolean>(!!user[praiseField]);
     const [localLateTime, setLocalLateTime] = useState<number | null>((user[lateTimeField] as number) || null);
@@ -72,6 +74,10 @@ const AttendanceDayCells = React.memo<AttendanceDayCellsProps>(({ user, day, onU
     const debouncedNoteUpdate = useMemo(
         () => debounce((value: any) => onUpdate(user.id, noteField, value), 300),
         [user.id, noteField, onUpdate]
+    );
+    const debouncedReinforceUpdate = useMemo(
+        () => debounce((value: any) => onUpdate(user.id, reinforceField, value), 300),
+        [user.id, reinforceField, onUpdate]
     );
     const debouncedSpecialNoteUpdate = useMemo(
         () => debounce((value: any) => onUpdate(user.id, specialNoteField, value), 300),
@@ -121,6 +127,43 @@ const AttendanceDayCells = React.memo<AttendanceDayCellsProps>(({ user, day, onU
         },
         [debouncedNoteUpdate]
     );
+
+    const handleReinforceChange = useCallback(
+        (value: string) => {
+            setLocalReinforce(value);
+            debouncedReinforceUpdate(value);
+        },
+        [debouncedReinforceUpdate]
+    );
+
+    const handleReinforceBlur = useCallback(() => {
+        debouncedReinforceUpdate.cancel?.();
+        onUpdate(user.id, reinforceField, localReinforce);
+    }, [user.id, reinforceField, localReinforce, onUpdate, debouncedReinforceUpdate]);
+
+    const handleNoteBlur = useCallback(() => {
+        debouncedNoteUpdate.cancel?.();
+        onUpdate(user.id, noteField, localNote);
+    }, [user.id, noteField, localNote, onUpdate, debouncedNoteUpdate]);
+
+    const handleSpecialNoteBlur = useCallback(() => {
+        debouncedSpecialNoteUpdate.cancel?.();
+        onUpdate(user.id, specialNoteField, localSpecialNote);
+    }, [user.id, specialNoteField, localSpecialNote, onUpdate, debouncedSpecialNoteUpdate]);
+
+    const handleTestScoreBlur = useCallback(() => {
+        debouncedTestScoreUpdate.cancel?.();
+        onUpdate(user.id, testScoreField, localTestScore);
+    }, [user.id, testScoreField, localTestScore, onUpdate, debouncedTestScoreUpdate]);
+
+    useEffect(() => {
+        return () => {
+            debouncedReinforceUpdate.cancel?.();
+            debouncedNoteUpdate.cancel?.();
+            debouncedSpecialNoteUpdate.cancel?.();
+            debouncedTestScoreUpdate.cancel?.();
+        };
+    }, [debouncedReinforceUpdate, debouncedNoteUpdate, debouncedSpecialNoteUpdate, debouncedTestScoreUpdate]);
 
     const handleSpecialNoteChange = useCallback(
         (value: string) => {
@@ -190,15 +233,46 @@ const AttendanceDayCells = React.memo<AttendanceDayCellsProps>(({ user, day, onU
 
     const isLate = localAttendance === 'late';
 
+    const userAttendance = (user[attendanceField] as string) || 'none';
+    const userHomework = (user[homeworkField] as number) || 0;
+    const userNote = (user[noteField] as string) || '';
+    const userReinforce = (user[reinforceField] as string) || '';
+    const userSpecialNote = (user[specialNoteField] as string) || '';
+    const userPraise = !!user[praiseField];
+    const userTestScore = (user[testScoreField] as number) || 0;
+    const userLateTime = (user[lateTimeField] as number) || null;
+
     useEffect(() => {
-        setLocalAttendance((user[attendanceField] as string) || 'none');
-        setLocalHomework((user[homeworkField] as number) || 0);
-        setLocalNote((user[noteField] as string) || '');
-        setLocalSpecialNote((user[specialNoteField] as string) || '');
-        setLocalPraise(!!user[praiseField]);
-        setLocalTestScore((user[testScoreField] as number) || 0);
-        setLocalLateTime((user[lateTimeField] as number) || null);
-    }, [user, attendanceField, homeworkField, noteField, specialNoteField, praiseField, testScoreField, lateTimeField]);
+        setLocalAttendance(userAttendance);
+    }, [user.id, userAttendance]);
+
+    useEffect(() => {
+        setLocalHomework(userHomework);
+    }, [user.id, userHomework]);
+
+    useEffect(() => {
+        setLocalNote(userNote);
+    }, [user.id, userNote]);
+
+    useEffect(() => {
+        setLocalReinforce(userReinforce);
+    }, [user.id, userReinforce]);
+
+    useEffect(() => {
+        setLocalSpecialNote(userSpecialNote);
+    }, [user.id, userSpecialNote]);
+
+    useEffect(() => {
+        setLocalPraise(userPraise);
+    }, [user.id, userPraise]);
+
+    useEffect(() => {
+        setLocalTestScore(userTestScore);
+    }, [user.id, userTestScore]);
+
+    useEffect(() => {
+        setLocalLateTime(userLateTime);
+    }, [user.id, userLateTime]);
 
     return (
         <div className="attendance-day-group" role="group" aria-label={`${day}일 출석 정보`}>
@@ -285,6 +359,12 @@ const AttendanceDayCells = React.memo<AttendanceDayCellsProps>(({ user, day, onU
                     type="number"
                     value={localTestScore.toString()}
                     onChange={(e) => handleTestScoreChange(e.target.value)}
+                    onBlur={handleTestScoreBlur}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                            (e.target as HTMLElement).blur();
+                        }
+                    }}
                     placeholder="맞은수"
                     style={{ textAlign: 'center', fontSize: '0.8rem', padding: '2px 4px' }}
                 />
@@ -299,6 +379,12 @@ const AttendanceDayCells = React.memo<AttendanceDayCellsProps>(({ user, day, onU
                     className="w-full"
                     value={localNote || ''}
                     onChange={(e) => handleNoteChange(e.target.value)}
+                    onBlur={handleNoteBlur}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                            (e.target as HTMLElement).blur();
+                        }
+                    }}
                     placeholder=""
                     title={localNote || ''}
                 />
@@ -306,8 +392,30 @@ const AttendanceDayCells = React.memo<AttendanceDayCellsProps>(({ user, day, onU
             <div className="attendance-cell" role="cell">
                 <InputText
                     className="w-full"
+                    value={localReinforce || ''}
+                    onChange={(e) => handleReinforceChange(e.target.value)}
+                    onBlur={handleReinforceBlur}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                            (e.target as HTMLElement).blur();
+                        }
+                    }}
+                    placeholder=""
+                    title={localReinforce || ''}
+                    aria-label={`${user.name} ${day}일 클/보`}
+                />
+            </div>
+            <div className="attendance-cell" role="cell">
+                <InputText
+                    className="w-full"
                     value={localSpecialNote || ''}
                     onChange={(e) => handleSpecialNoteChange(e.target.value)}
+                    onBlur={handleSpecialNoteBlur}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                            (e.target as HTMLElement).blur();
+                        }
+                    }}
                     placeholder=""
                     title={localSpecialNote || ''}
                 />

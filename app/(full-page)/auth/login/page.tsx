@@ -192,7 +192,7 @@ const LoginPage = () => {
                                 value={email}
                                 id="email1"
                                 type="text"
-                                inputMode="latin"
+                                inputMode="text"
                                 placeholder="아이디"
                                 className="w-full md:w-30rem mb-5"
                                 style={{ padding: '1rem' }}

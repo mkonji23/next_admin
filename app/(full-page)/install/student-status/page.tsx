@@ -160,10 +160,10 @@ export default function InstallStudentStatusPage() {
                     <img
                         src="/icons/icon-192x192_red.png"
                         alt="칭찬현황 아이콘"
-                        width={84}
-                        height={84}
-                        className="border-round-2xl shadow-3"
-                        style={{ objectFit: 'cover' }}
+                        width={64}
+                        height={64}
+                        className="border-round-2xl shadow-2 bg-white border-1 surface-border p-1"
+                        style={{ objectFit: 'contain' }}
                     />
                 </div>
 
@@ -237,7 +237,6 @@ export default function InstallStudentStatusPage() {
                         <Button
                             label="외부 브라우저(크롬 등)로 바로 열기"
                             icon="pi pi-external-link"
-                            severity="primary"
                             className="w-full font-bold py-3 border-round-xl shadow-2"
                             onClick={handleOpenExternalBrowser}
                         />
@@ -245,7 +244,6 @@ export default function InstallStudentStatusPage() {
                         <Button
                             label="앱 설치하기"
                             icon="pi pi-download"
-                            severity="primary"
                             className="w-full font-bold py-3 border-round-xl shadow-2"
                             onClick={handleInstallClick}
                         />

@@ -4,8 +4,8 @@ export interface Notification {
     createdAt: string;
     content: string;
     isRead: boolean;
-    createdAt: Date;
-    detail: NotificationDetail;
+    type?: string;
+    detail?: NotificationDetail;
 }
 
 export interface PusherMessage {

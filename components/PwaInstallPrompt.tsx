@@ -208,10 +208,10 @@ export default function PwaInstallPrompt() {
                 <img
                     src={appIconSrc}
                     alt={`${appName} 아이콘`}
-                    width={64}
-                    height={64}
-                    className="border-round-2xl shadow-3 mb-2"
-                    style={{ objectFit: 'cover' }}
+                    width={50}
+                    height={50}
+                    className="border-round-2xl shadow-2 mb-2 bg-white border-1 surface-border p-1"
+                    style={{ objectFit: 'contain' }}
                 />
 
                 {/* 2. 간결한 타이틀 */}
@@ -282,7 +282,6 @@ export default function PwaInstallPrompt() {
                         <Button
                             label="외부 브라우저로 열기 (크롬/기본)"
                             icon="pi pi-external-link"
-                            severity="primary"
                             className="w-full font-bold py-3 border-round-xl shadow-2"
                             onClick={handleOpenExternalBrowser}
                         />

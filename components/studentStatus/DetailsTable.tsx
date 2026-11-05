@@ -104,11 +104,30 @@ const DetailsTable: React.FC<DetailsTableProps> = ({ classes, expandedRows, onRo
                     />
                     <Column
                         sortable
+                        field="reinforce"
+                        headerStyle={{ minWidth: '120px', textAlign: 'center' }}
+                        header="클래스보강"
+                        align={'center'}
+                        alignHeader={'center'}
+                        body={(rowData: any) => {
+                            const val = rowData?.reinforce ?? rowData?.classReinforce ?? '';
+                            return val ? (
+                                <span className="font-medium text-700">{val}</span>
+                            ) : (
+                                <span className="text-400">-</span>
+                            );
+                        }}
+                    />
+                    <Column
+                        sortable
                         field="note"
                         headerStyle={{ minWidth: '120px', textAlign: 'center' }}
                         header="비고"
                         align={'center'}
                         alignHeader={'center'}
+                        body={(rowData: any) =>
+                            rowData?.note ? <span>{rowData.note}</span> : <span className="text-400">-</span>
+                        }
                     />
                 </DataTable>
             </div>

@@ -30,5 +30,5 @@ export interface ShareItem {
     isAuto?: boolean;
     autoYear?: string;
     autoMonth?: string;
-    autoWeek: string;
+    autoWeek?: string;
 }

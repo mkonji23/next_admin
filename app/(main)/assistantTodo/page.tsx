@@ -62,7 +62,7 @@ const AssistantTodoPage = () => {
     // 알림 기반 자동 새로고침 로직
     useEffect(() => {
         const latest = notifications[0];
-        if (latest && latest.type === 'TODO_CREATED' && latest._id !== lastNotiId.current) {
+        if (latest && (latest.type === 'TODO_CREATED' || latest.detail?.type === 'TODO_CREATED') && latest._id !== lastNotiId.current) {
             lastNotiId.current = latest._id;
             fetchTodos();
         }

@@ -376,7 +376,7 @@ const ProfilePage = () => {
                                            placeholder="#RRGGBB 또는 색상 이름"
                                         />
                                         <ColorPicker
-                                           value={selectedTagColor ? selectedTagColor.replace('#', '') : null}
+                                           value={selectedTagColor ? selectedTagColor.replace('#', '') : undefined}
                                            onChange={(e) => setSelectedTagColor(e.value ? `#${e.value}` : undefined)}
                                            format="hex"
                                            appendTo="self"

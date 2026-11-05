@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Calendar } from 'primereact/calendar';
@@ -40,6 +40,7 @@ const DEFAULT_COLUMN_WIDTHS = {
     praise: 70,
     testScore: 70,
     note: 100,        // 줄어든 비고(노트) 너비 (기존 160px -> 100px)
+    reinforce: 100,   // '클/보'(클래스보강) 너비 (비고와 동일한 기본 100px)
     specialNote: 240  // 늘어난 특이사항 너비 (기존 160px -> 240px)
 };
 
@@ -47,6 +48,10 @@ const AttendancePage = () => {
     const { showConfirm } = useConfirm();
     const [date, setDate] = useState<Date | null>(null);
     const [users, setUsers] = useState<User[]>([]);
+    const usersRef = useRef<User[]>([]);
+    useEffect(() => {
+        usersRef.current = users;
+    }, [users]);
     const [selectedClass, setSelectedClass] = useState<string | null>(null);
     const [classes, setClasses] = useState<ClassOption[]>([]);
     const [globalFilterValue, setGlobalFilterValue] = useState('');
@@ -69,7 +74,11 @@ const AttendancePage = () => {
             if (saved) {
                 try {
                     const parsed = JSON.parse(saved);
-                    setColumnWidths((prev) => ({ ...prev, ...parsed }));
+                    setColumnWidths((prev) => ({
+                        ...prev,
+                        ...parsed,
+                        reinforce: parsed.reinforce && parsed.reinforce >= 60 ? parsed.reinforce : DEFAULT_COLUMN_WIDTHS.reinforce
+                    }));
                 } catch (e) {
                     console.error('Failed to load saved column widths', e);
                 }
@@ -146,6 +155,7 @@ const AttendancePage = () => {
                     userData[`day_${i}_attendance`] = dayData?.status || 'none';
                     userData[`day_${i}_homework`] = dayData?.homework || 0;
                     userData[`day_${i}_note`] = dayData?.note || '';
+                    userData[`day_${i}_reinforce`] = dayData?.reinforce ?? dayData?.classReinforce ?? '';
                     userData[`specialNote`] = student?.specialNote || '';
                     userData[`day_${i}_praise`] = !!dayData?.praise;
                     userData[`day_${i}_lateTime`] = typeof dayData?.lateTime === 'number' ? dayData.lateTime : null;
@@ -170,6 +180,7 @@ const AttendancePage = () => {
                 }
             }
             setDailyTotalQuestions(loadedTotalQuestions);
+            usersRef.current = attendanceUsers;
             setUsers(attendanceUsers);
         },
         [date]
@@ -197,12 +208,16 @@ const AttendancePage = () => {
         } catch (error: any) {
             const errorMessage = error.response?.data?.message || '출석부를 불러오는데 실패했습니다.';
             showToast({ severity: 'error', summary: '조회 실패', detail: errorMessage });
+            usersRef.current = [];
             setUsers([]);
         }
     };
     useEffect(() => {
         if (!selectedClass || !date) {
-            if (users.length > 0) setUsers([]);
+            if (users.length > 0) {
+                usersRef.current = [];
+                setUsers([]);
+            }
             return;
         }
 
@@ -222,6 +237,7 @@ const AttendancePage = () => {
                     columnWidths.praise +
                     columnWidths.testScore +
                     columnWidths.note +
+                    (columnWidths.reinforce || 100) +
                     columnWidths.specialNote;
                 const scrollPos = (day - 1) * dayWidth;
 
@@ -261,9 +277,8 @@ const AttendancePage = () => {
     }, [users, handleMoveToday]);
 
     const handleUserUpdate = useCallback((userId: number, field: string, value: any) => {
-        setUsers((currentUsers) =>
-            currentUsers.map((user) => (user.id === userId ? { ...user, [field]: value } : user))
-        );
+        usersRef.current = usersRef.current.map((user) => (user.id === userId ? { ...user, [field]: value } : user));
+        setUsers(usersRef.current);
     }, []);
 
     const handleClassChange = (e: DropdownChangeEvent) => setSelectedClass(e.value as string);
@@ -285,13 +300,14 @@ const AttendancePage = () => {
 
         const year = date.getFullYear().toString();
         const month = String(date.getMonth() + 1).padStart(2, '0');
+        const currentUsers = usersRef.current && usersRef.current.length > 0 ? usersRef.current : users;
 
         return {
             classId: selectedClass,
             year,
             month,
             totalQuestions: dailyTotalQuestions,
-            students: users.map((user) => {
+            students: currentUsers.map((user) => {
                 const attendance: { [key: string]: any } = {};
                 for (const key in user) {
                     if (key.startsWith('day_') && key.endsWith('_attendance')) {
@@ -300,6 +316,7 @@ const AttendancePage = () => {
                             status: user[key],
                             homework: user[`day_${day}_homework`],
                             note: user[`day_${day}_note`],
+                            reinforce: user[`day_${day}_reinforce`] || '',
                             // specialNote: user[`specialNote`],
                             praise: user[`day_${day}_praise`],
                             lateTime: user[`day_${day}_lateTime`],
@@ -323,11 +340,14 @@ const AttendancePage = () => {
     };
 
     const handleAllPresent = () => {
-        if (!users) return;
+        const baseUsers = usersRef.current && usersRef.current.length > 0 ? usersRef.current : users;
+        if (!baseUsers || baseUsers.length === 0) return;
         // console.log('users', users);
         const today = dayjs().format('D');
         const dayAttendance = `day_${today}_attendance`;
-        setUsers(users.map((item) => ({ ...item, [dayAttendance]: 'class_present', statusTime: new Date() })));
+        const updatedUsers = baseUsers.map((item) => ({ ...item, [dayAttendance]: 'class_present', statusTime: new Date() }));
+        usersRef.current = updatedUsers;
+        setUsers(updatedUsers);
         handleMoveToday();
         showToast({
             severity: 'success',
@@ -368,8 +388,8 @@ const AttendancePage = () => {
     const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
     const year = date.getFullYear();
     const month = date.getMonth();
-    const singleDayTemplate = `var(--col-attendance, ${columnWidths.attendance}px) var(--col-homework, ${columnWidths.homework}px) var(--col-praise, ${columnWidths.praise}px) var(--col-testScore, ${columnWidths.testScore}px) var(--col-note, ${columnWidths.note}px) var(--col-specialNote, ${columnWidths.specialNote}px)`;
-    // 컬럼 width적용 (출석, 숙제, 칭찬, 점수, 비고(칭찬), 비고(특이사항))
+    const singleDayTemplate = `var(--col-attendance, ${columnWidths.attendance}px) var(--col-homework, ${columnWidths.homework}px) var(--col-praise, ${columnWidths.praise}px) var(--col-testScore, ${columnWidths.testScore}px) var(--col-note, ${columnWidths.note}px) var(--col-reinforce, ${columnWidths.reinforce || 100}px) var(--col-specialNote, ${columnWidths.specialNote}px)`;
+    // 컬럼 width적용 (출석, 숙제, 칭찬, 점수, 비고, 클/보, 특이사항)
     const dayColumnTemplates = Array.from({ length: daysInMonth }, () => singleDayTemplate).join(' ');
     return (
         <>
@@ -389,10 +409,9 @@ const AttendancePage = () => {
                     padding: 8px; border: 1px solid var(--surface-border); border-bottom: 2px solid var(--primary-color);
                     text-align: center; font-weight: bold; grid-row: span 2;
                     color: var(--text-color);
-                    position: relative;
                 }
                 .attendance-header-day-group {
-                    grid-column: span 6;
+                    grid-column: span 7;
                     padding: 8px; border: 1px solid var(--surface-border); border-bottom: 1px solid var(--surface-border);
                     text-align: center; font-weight: bold;
                     color: var(--text-color);
@@ -413,6 +432,14 @@ const AttendancePage = () => {
                     user-select: none;
                     touch-action: none;
                     z-index: 15;
+                }
+                .col-resizer::after {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    right: -5px;
+                    width: 16px;
+                    height: 100%;
                 }
                 .col-resizer:hover, .col-resizer:active {
                     background-color: var(--primary-color, #3b82f6);
@@ -445,6 +472,8 @@ const AttendancePage = () => {
                 
                 .attendance-table-wrapper {
                     overflow-x: auto;
+                    -webkit-overflow-scrolling: touch;
+                    overscroll-behavior-x: contain;
                     overflow-y: ${shouldUseVirtualScroll ? 'auto' : 'visible'};
                     max-height: ${shouldUseVirtualScroll ? '600px' : 'none'};
                     border: 1px solid var(--surface-border);
@@ -637,13 +666,14 @@ const AttendancePage = () => {
                                 role="table"
                                 aria-label="출석부"
                                 style={{
-                                    '--col-name': `${columnWidths.name}px`,
-                                    '--col-attendance': `${columnWidths.attendance}px`,
-                                    '--col-homework': `${columnWidths.homework}px`,
-                                    '--col-praise': `${columnWidths.praise}px`,
-                                    '--col-testScore': `${columnWidths.testScore}px`,
-                                    '--col-note': `${columnWidths.note}px`,
-                                    '--col-specialNote': `${columnWidths.specialNote}px`
+                                    '--col-name': `${columnWidths.name || 150}px`,
+                                    '--col-attendance': `${columnWidths.attendance || 140}px`,
+                                    '--col-homework': `${columnWidths.homework || 120}px`,
+                                    '--col-praise': `${columnWidths.praise || 70}px`,
+                                    '--col-testScore': `${columnWidths.testScore || 70}px`,
+                                    '--col-note': `${columnWidths.note || 100}px`,
+                                    '--col-reinforce': `${columnWidths.reinforce || 100}px`,
+                                    '--col-specialNote': `${columnWidths.specialNote || 240}px`
                                 } as React.CSSProperties}
                             >
                                 <AttendanceTableHeader
@@ -661,6 +691,7 @@ const AttendancePage = () => {
                                         praise: '칭찬',
                                         testScore: '점수',
                                         note: '비고',
+                                        reinforce: '클/보',
                                         specialNote: '특이사항'
                                     }}
                                 />

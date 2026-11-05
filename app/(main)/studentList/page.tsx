@@ -19,7 +19,9 @@ const StudentListPage = () => {
     const [students, setStudents] = useState<Student[]>([]);
     const [selectedStudents, setSelectedStudents] = useState<Student[]>([]);
     const [expandedRows, setExpandedRows] = useState<any>({});
-    const [filters, setFilters] = useState({
+    const [filters, setFilters] = useState<{
+        global: { value: string | null; matchMode: FilterMatchMode };
+    }>({
         global: { value: null, matchMode: FilterMatchMode.CONTAINS }
     });
     const [globalFilterValue, setGlobalFilterValue] = useState('');

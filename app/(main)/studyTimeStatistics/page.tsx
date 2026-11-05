@@ -12,6 +12,7 @@ import { FilterMatchMode } from 'primereact/api';
 import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
 import { StudyTimeStatisticsItem, DailyStudyRecord } from '@/types/studyTime';
+import MonthlyPraiseRewardDialog from '@/components/studyTime/MonthlyPraiseRewardDialog';
 import dayjs from 'dayjs';
 
 // 초를 "X시간 Y분 Z초" 한글 텍스트로 변환하는 헬퍼
@@ -123,6 +124,7 @@ const StudyTimeStatisticsPage = () => {
     const [classes, setClasses] = useState<any[]>([]);
     const [selectedClass, setSelectedClass] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    const [rewardDialogVisible, setRewardDialogVisible] = useState(false);
     const [expandedRows, setExpandedRows] = useState<any>({});
     const [filters, setFilters] = useState<DataTableFilterMeta>({
         global: { value: null, matchMode: FilterMatchMode.CONTAINS }

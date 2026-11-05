@@ -56,7 +56,7 @@ const StudentAttendanceStatisticsPage = () => {
             attendancePieData: ChartData;
             attendancePieOptions: ChartOptions;
             homeworkDoughnutData: ChartData;
-            homeworkDoughnutOptions: ChartOptions;
+            homeworkDoughnutOptions: ChartOptions<'doughnut'>;
         }[]
     >([]);
     const http = useHttp();
@@ -112,7 +112,7 @@ const StudentAttendanceStatisticsPage = () => {
             attendancePieData: ChartData;
             attendancePieOptions: ChartOptions;
             homeworkDoughnutData: ChartData;
-            homeworkDoughnutOptions: ChartOptions;
+            homeworkDoughnutOptions: ChartOptions<'doughnut'>;
         }[] = [];
 
         aggregatedStats.forEach((aggStats, classId) => {
@@ -191,7 +191,7 @@ const StudentAttendanceStatisticsPage = () => {
                 ]
             };
 
-            const doughnutOptions: ChartOptions = {
+            const doughnutOptions: ChartOptions<'doughnut'> = {
                 cutout: '60%',
                 plugins: {
                     legend: {

@@ -258,7 +258,7 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
             }
             return item;
         });
-        editData && setEditData((prev) => ({ ...prev, shareImageUrls: delShareImageUrls }));
+        editData && setEditData((prev) => (prev ? { ...prev, shareImageUrls: delShareImageUrls } : prev));
     };
 
     return (

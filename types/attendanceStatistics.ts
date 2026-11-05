@@ -96,6 +96,7 @@ export interface AttendanceDetail {
     status: string;
     homework: number;
     note: string;
+    reinforce?: string;
     statusTime: string;
     date: string;
 }

@@ -43,10 +43,10 @@ const SystemLogPage = () => {
     const [totalServerCount, setTotalServerCount] = useState<number>(0);
     const [loading, setLoading] = useState(false);
 
-    // 기간 검색 상태 (기본값: 오늘 00:00:00 ~ 오늘 23:59:59)
+    // 기간 검색 상태 (기본값: 현재 월 기준 한달 - 1일 00:00:00 ~ 말일 23:59:59)
     const [dateRange, setDateRange] = useState<any[]>([
-        dayjs().startOf('day').toDate(),
-        dayjs().endOf('day').toDate()
+        dayjs().startOf('month').startOf('day').toDate(),
+        dayjs().endOf('month').endOf('day').toDate()
     ]);
 
     // 조회 건수 옵션 (0: 기간 내 전체)
@@ -532,6 +532,40 @@ const SystemLogPage = () => {
                         placeholder="기간 및 시간 선택"
                         className="p-inputtext-sm w-full sm:w-24rem"
                     />
+                    <div className="flex gap-1">
+                        <Button
+                            type="button"
+                            label="이번 달"
+                            icon="pi pi-calendar"
+                            size="small"
+                            outlined
+                            className="text-xs py-1 px-2"
+                            onClick={() => {
+                                setDateRange([
+                                    dayjs().startOf('month').startOf('day').toDate(),
+                                    dayjs().endOf('month').endOf('day').toDate()
+                                ]);
+                            }}
+                            tooltip="현재 월 1일 ~ 말일로 설정"
+                            tooltipOptions={{ position: 'top' }}
+                        />
+                        <Button
+                            type="button"
+                            label="오늘"
+                            size="small"
+                            outlined
+                            severity="secondary"
+                            className="text-xs py-1 px-2"
+                            onClick={() => {
+                                setDateRange([
+                                    dayjs().startOf('day').toDate(),
+                                    dayjs().endOf('day').toDate()
+                                ]);
+                            }}
+                            tooltip="오늘 하루로 설정"
+                            tooltipOptions={{ position: 'top' }}
+                        />
+                    </div>
                 </div>
 
                 {/* 2. 조회 건수 (Limit) 선택 드롭다운 */}

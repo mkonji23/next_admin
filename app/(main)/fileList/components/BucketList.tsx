@@ -67,7 +67,7 @@ const BucketList = ({ initialData }: ClientComponentProps) => {
 
     // 트리구조
     const buildTree = async (files: FileData[], parentKey: string = '0'): Promise<TreeNode[]> => {
-        const tree = [];
+        const tree: TreeNode[] = [];
 
         for (const [index, file] of files.entries()) {
             const nodeKey = `${parentKey}-${index}`;

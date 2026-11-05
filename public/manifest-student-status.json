@@ -6,7 +6,7 @@
   "start_url": "/student-status",
   "scope": "/student-status",
   "display": "standalone",
-  "background_color": "#faebd7",
+  "background_color": "#ffffff",
   "theme_color": "#ffffff",
   "icons": [
     {

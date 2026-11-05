@@ -153,7 +153,7 @@ const UsageBarCard = ({ icon, label, usedLabel, limitLabel, pct, note, isFixed }
                             <i className={`${icon} text-lg`} style={{ color: barColor }} />
                         </div>
                         <span className="font-semibold text-900">{label}</span>
-                        {isFixed && <Tag value="고정" severity="secondary" className="text-xs" />}
+                        {isFixed && <Tag value="고정" severity="info" className="text-xs" />}
                     </div>
                     {isWarning && (
                         <Tag

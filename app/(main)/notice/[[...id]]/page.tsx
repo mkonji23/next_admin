@@ -23,7 +23,8 @@ interface Notice {
     targetClassNames?: string[];
 }
 
-const NoticePage = ({ path }: { path?: string }) => {
+const NoticePage = (props: any) => {
+    const path: string | undefined = props?.path;
     const [notices, setNotices] = useState<Notice[]>([]);
     const [selectedNotices, setSelectedNotices] = useState<Notice[]>([]);
     const [loading, setLoading] = useState(false);

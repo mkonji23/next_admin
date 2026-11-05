@@ -13,7 +13,8 @@ import { ShareItem } from '../types';
 import useAuthStore from '@/store/useAuthStore';
 import { useRefreshStore } from '@/store/useRefreshStore';
 
-const KakaoSharePage = ({ path }: { path?: string }) => {
+const KakaoSharePage = (props: any) => {
+    const path: string | undefined = props?.path;
     const { userInfo } = useAuthStore();
     const { refreshSignal, initRefresh } = useRefreshStore();
     const [isCopy, setIsCopy] = useState<boolean>(false);

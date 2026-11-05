@@ -33,7 +33,7 @@ const AttendanceListPage = () => {
     const [chartData, setChartData] = useState<ChartData | null>(null);
     const [chartOptions, setChartOptions] = useState<ChartOptions | null>(null);
     const [homeworkChartData, setHomeworkChartData] = useState<ChartData | null>(null);
-    const [homeworkChartOptions, setHomeworkChartOptions] = useState<ChartOptions | null>(null);
+    const [homeworkChartOptions, setHomeworkChartOptions] = useState<ChartOptions<'doughnut'> | null>(null);
     const http = useHttp();
     const { showToast } = useToast();
     const { layoutConfig } = useContext(LayoutContext);
@@ -123,7 +123,7 @@ const AttendanceListPage = () => {
                 ]
             };
 
-            const doughnutOptions: ChartOptions = {
+            const doughnutOptions: ChartOptions<'doughnut'> = {
                 cutout: '60%',
                 plugins: {
                     legend: {
@@ -164,9 +164,9 @@ const AttendanceListPage = () => {
             // 다건 조회 (전체 클래스) - 기존 Stacked Bar + Line
             const labels = statistics!.classes!.map((cls) => cls.className);
             const presentData = statistics!.classes!.map((cls) => cls.statistics?.present || 0);
-            const absentData = statistics!.classes?.map((cls) => cls.statistics?.absent || 0);
-            const lateData = statistics!.classes?.map((cls) => cls.statistics?.late || 0);
-            const homeworkRates = statistics!.classes?.map((cls) => cls.statistics?.homeworkRate || 0);
+            const absentData = statistics!.classes!.map((cls) => cls.statistics?.absent || 0);
+            const lateData = statistics!.classes!.map((cls) => cls.statistics?.late || 0);
+            const homeworkRates = statistics!.classes!.map((cls) => cls.statistics?.homeworkRate || 0);
 
             const data: ChartData = {
                 labels: labels,

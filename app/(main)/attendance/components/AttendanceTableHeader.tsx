@@ -13,8 +13,9 @@ export interface ColumnWidths {
     praise: number;
     testScore: number;
     note: number;
+    reinforce?: number;
     specialNote: number;
-    [key: string]: number;
+    [key: string]: number | undefined;
 }
 
 interface AttendanceTableHeaderProps {
@@ -39,7 +40,9 @@ const AttendanceTableHeader: React.FC<AttendanceTableHeaderProps> = ({
         homework: '숙제',
         praise: '칭찬',
         testScore: '점수',
-        note: '비고'
+        note: '비고',
+        reinforce: '클/보',
+        specialNote: '특이사항'
     },
     columnWidths,
     onResizeColumn,
@@ -50,12 +53,10 @@ const AttendanceTableHeader: React.FC<AttendanceTableHeaderProps> = ({
     const dayHeaders: number[] = Array.from({ length: daysInMonth }, (_, i) => i + 1);
     const fieldKeys = Object.keys(fieldNames);
 
-    const handleMouseDown = (e: React.MouseEvent, fieldKey: string) => {
+    const startResize = (clientX: number, fieldKey: string) => {
         if (!onResizeColumn || !columnWidths) return;
-        e.preventDefault();
-        e.stopPropagation();
 
-        const startX = e.clientX;
+        const startX = clientX;
         const startWidth = columnWidths[fieldKey] || 100;
 
         const minWidths: Record<string, number> = {
@@ -65,6 +66,7 @@ const AttendanceTableHeader: React.FC<AttendanceTableHeaderProps> = ({
             praise: 50,
             testScore: 50,
             note: 60,
+            reinforce: 60,
             specialNote: 100
         };
         const minW = minWidths[fieldKey] || 50;
@@ -78,17 +80,17 @@ const AttendanceTableHeader: React.FC<AttendanceTableHeaderProps> = ({
         const curPr = columnWidths.praise || 70;
         const curTs = columnWidths.testScore || 70;
         const curNt = columnWidths.note || 100;
+        const curRf = columnWidths.reinforce || 100;
         const curSp = columnWidths.specialNote || 240;
 
-        const initialDayWidth = curAtt + curHw + curPr + curTs + curNt + curSp;
+        const initialDayWidth = curAtt + curHw + curPr + curTs + curNt + curRf + curSp;
         let lastNewWidth = startWidth;
 
         document.body.style.cursor = 'col-resize';
         document.body.style.userSelect = 'none';
 
-        const onMouseMove = (moveEvent: MouseEvent) => {
-            moveEvent.preventDefault();
-            const deltaX = moveEvent.clientX - startX;
+        const updateWidth = (currentX: number) => {
+            const deltaX = currentX - startX;
             const newWidth = Math.max(minW, startWidth + deltaX);
             lastNewWidth = newWidth;
 
@@ -104,17 +106,52 @@ const AttendanceTableHeader: React.FC<AttendanceTableHeaderProps> = ({
             }
         };
 
-        const onMouseUp = () => {
+        const onMouseMove = (moveEvent: MouseEvent) => {
+            moveEvent.preventDefault();
+            updateWidth(moveEvent.clientX);
+        };
+
+        const onTouchMove = (moveEvent: TouchEvent) => {
+            if (moveEvent.touches.length > 0) {
+                moveEvent.preventDefault();
+                updateWidth(moveEvent.touches[0].clientX);
+            }
+        };
+
+        const cleanup = () => {
             document.body.style.cursor = '';
             document.body.style.userSelect = '';
             window.removeEventListener('mousemove', onMouseMove);
             window.removeEventListener('mouseup', onMouseUp);
+            window.removeEventListener('touchmove', onTouchMove);
+            window.removeEventListener('touchend', onTouchEnd);
+            window.removeEventListener('touchcancel', onTouchEnd);
 
             onResizeColumn(fieldKey, lastNewWidth);
         };
 
+        const onMouseUp = () => cleanup();
+        const onTouchEnd = () => cleanup();
+
         window.addEventListener('mousemove', onMouseMove);
         window.addEventListener('mouseup', onMouseUp);
+        window.addEventListener('touchmove', onTouchMove, { passive: false });
+        window.addEventListener('touchend', onTouchEnd);
+        window.addEventListener('touchcancel', onTouchEnd);
+    };
+
+    const handleMouseDown = (e: React.MouseEvent, fieldKey: string) => {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        e.stopPropagation();
+        startResize(e.clientX, fieldKey);
+    };
+
+    const handleTouchStart = (e: React.TouchEvent, fieldKey: string) => {
+        if (e.touches.length === 1) {
+            e.stopPropagation();
+            startResize(e.touches[0].clientX, fieldKey);
+        }
     };
 
     return (
@@ -130,6 +167,7 @@ const AttendanceTableHeader: React.FC<AttendanceTableHeaderProps> = ({
                         <div
                             className="col-resizer"
                             onMouseDown={(e) => handleMouseDown(e, 'name')}
+                            onTouchStart={(e) => handleTouchStart(e, 'name')}
                             title="드래그하여 이름 열 너비 조절"
                         />
                     )}
@@ -229,6 +267,7 @@ const AttendanceTableHeader: React.FC<AttendanceTableHeaderProps> = ({
                                     <div
                                         className="col-resizer"
                                         onMouseDown={(e) => handleMouseDown(e, fieldKey)}
+                                        onTouchStart={(e) => handleTouchStart(e, fieldKey)}
                                         title={`드래그하여 ${fieldNames[fieldKey]} 열 너비 조절`}
                                     />
                                 )}
