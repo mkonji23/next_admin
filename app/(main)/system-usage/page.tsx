@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from 'primereact/button';
+import { Calendar } from 'primereact/calendar';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Tag } from 'primereact/tag';
@@ -275,6 +276,9 @@ const SystemUsagePage = () => {
     const http = useHttp();
     const { showToast } = useToast();
 
+    // 조회 기준 월 (기본값: 오늘 기준 이번 달)
+    const [selectedMonth, setSelectedMonth] = useState<Date>(dayjs().toDate());
+
     const [imageKitData, setImageKitData] = useState<ImageKitUsage | null>(null);
     const [vercelData, setVercelData] = useState<VercelUsage | null>(null);
     const [mongoData, setMongoData] = useState<MongoUsage | null>(null);
@@ -282,12 +286,28 @@ const SystemUsagePage = () => {
     const [loadingVercel, setLoadingVercel] = useState(false);
     const [loadingMongo, setLoadingMongo] = useState(false);
 
-    // ImageKit 사용량 조회 (최근 30일 기준)
-    const fetchImageKitUsage = useCallback(async () => {
+    // 날짜 관련 파생 변수
+    const isCurrentMonth = dayjs(selectedMonth).isSame(dayjs(), 'month');
+    const monthLabel = dayjs(selectedMonth).format('YYYY년 MM월');
+    const monthStartDayjs = dayjs(selectedMonth).startOf('month');
+    const monthEndDayjs = dayjs(selectedMonth).endOf('month');
+
+    // 화면 표시용 기간 안내 문자열
+    const displayPeriod = isCurrentMonth
+        ? `${monthStartDayjs.format('YYYY.MM.01')} ~ ${dayjs().format('YYYY.MM.DD')} (진행중)`
+        : `${monthStartDayjs.format('YYYY.MM.01')} ~ ${monthEndDayjs.format('YYYY.MM.DD')} (마감)`;
+
+    // ImageKit 사용량 조회 (선택된 월 기준)
+    const fetchImageKitUsage = useCallback(async (month: Date) => {
         try {
             setLoadingIK(true);
-            const startDate = dayjs().subtract(30, 'day').format('YYYY-MM-DD');
-            const endDate = dayjs().add(1, 'day').format('YYYY-MM-DD');
+            const isCurr = dayjs(month).isSame(dayjs(), 'month');
+            const startDate = dayjs(month).startOf('month').format('YYYY-MM-DD');
+            // ImageKit API의 endDate는 exclusive(미포함)이므로 당월은 내일, 과거 월은 다음 달 1일로 설정
+            const endDate = isCurr
+                ? dayjs().add(1, 'day').format('YYYY-MM-DD')
+                : dayjs(month).startOf('month').add(1, 'month').format('YYYY-MM-DD');
+
             const res = await http.get('/system/usage/imagekit', { params: { startDate, endDate } });
             setImageKitData(res.data);
         } catch {
@@ -295,20 +315,28 @@ const SystemUsagePage = () => {
         } finally {
             setLoadingIK(false);
         }
-    }, []);
+    }, [http, showToast]);
 
-    const fetchVercelUsage = useCallback(async () => {
+    // Vercel 사용량 조회 (선택된 월 기준)
+    const fetchVercelUsage = useCallback(async (month: Date) => {
         try {
             setLoadingVercel(true);
-            const res = await http.get('/system/usage/vercel');
+            const isCurr = dayjs(month).isSame(dayjs(), 'month');
+            const from = dayjs(month).startOf('month').toISOString();
+            const to = isCurr
+                ? dayjs().toISOString()
+                : dayjs(month).endOf('month').toISOString();
+
+            const res = await http.get('/system/usage/vercel', { params: { from, to } });
             setVercelData(res.data);
         } catch {
             showToast({ severity: 'warn', summary: '알림', detail: 'Vercel 사용량 조회 실패 (토큰 확인 필요)' });
         } finally {
             setLoadingVercel(false);
         }
-    }, []);
+    }, [http, showToast]);
 
+    // MongoDB 사용량 조회 (실시간 DB 스토리지 기준)
     const fetchMongoUsage = useCallback(async () => {
         try {
             setLoadingMongo(true);
@@ -319,15 +347,32 @@ const SystemUsagePage = () => {
         } finally {
             setLoadingMongo(false);
         }
-    }, []);
+    }, [http, showToast]);
 
-    const fetchAll = useCallback(() => {
-        fetchImageKitUsage();
-        fetchVercelUsage();
+    const fetchAll = useCallback((targetMonth?: Date) => {
+        const target = targetMonth || selectedMonth;
+        fetchImageKitUsage(target);
+        fetchVercelUsage(target);
         fetchMongoUsage();
-    }, [fetchImageKitUsage, fetchVercelUsage, fetchMongoUsage]);
+    }, [selectedMonth, fetchImageKitUsage, fetchVercelUsage, fetchMongoUsage]);
 
-    useEffect(() => { fetchAll(); }, []);
+    useEffect(() => {
+        fetchAll(selectedMonth);
+    }, [selectedMonth, fetchAll]);
+
+    // 월 이동 핸들러
+    const handlePrevMonth = () => {
+        setSelectedMonth((prev) => dayjs(prev).subtract(1, 'month').toDate());
+    };
+
+    const handleNextMonth = () => {
+        if (isCurrentMonth || dayjs(selectedMonth).isAfter(dayjs(), 'month')) return;
+        setSelectedMonth((prev) => dayjs(prev).add(1, 'month').toDate());
+    };
+
+    const handleCurrentMonth = () => {
+        setSelectedMonth(dayjs().toDate());
+    };
 
     // ─── 경고 항목 계산 ─────────────────────────────────────────────────────
     const ikWarnings = imageKitData ? [
@@ -376,19 +421,74 @@ const SystemUsagePage = () => {
                             <h4 className="m-0 mb-1">시스템 사용량 모니터링</h4>
                             <div className="flex flex-wrap align-items-center gap-2 mt-1">
                                 <span className="text-500 text-sm">ImageKit · Vercel · MongoDB 리소스 현황</span>
-                                <Tag value="최근 30일 기준" severity="info" />
+                                <Tag value={`${monthLabel} 기준`} severity="info" />
+                                {isCurrentMonth ? (
+                                    <Tag value="당월 누적 (진행중)" severity="success" />
+                                ) : (
+                                    <Tag value="월간 마감 집계" severity="secondary" />
+                                )}
                                 <Tag value="IK Free" severity="warning" />
                                 <Tag value="Vercel Hobby" severity="warning" />
                                 <Tag value="MongoDB Free" severity="warning" />
                             </div>
                         </div>
-                        <div className="flex align-items-center gap-2">
+
+                        {/* 월 선택 컨트롤 & 새로고침 */}
+                        <div className="flex flex-wrap align-items-center gap-2">
+                            <div className="flex align-items-center gap-1 border-1 surface-border border-round px-2 py-1 surface-card shadow-1">
+                                <Button
+                                    icon="pi pi-chevron-left"
+                                    rounded
+                                    text
+                                    size="small"
+                                    severity="secondary"
+                                    onClick={handlePrevMonth}
+                                    tooltip="이전 달"
+                                    tooltipOptions={{ position: 'bottom' }}
+                                />
+                                <Calendar
+                                    value={selectedMonth}
+                                    onChange={(e) => e.value && setSelectedMonth(e.value as Date)}
+                                    view="month"
+                                    dateFormat="yy년 mm월"
+                                    inputClassName="border-none font-bold text-center cursor-pointer p-1 text-900 bg-transparent"
+                                    style={{ width: '110px' }}
+                                    readOnlyInput
+                                    maxDate={new Date()}
+                                    tooltip="조회 월 선택"
+                                    tooltipOptions={{ position: 'bottom' }}
+                                />
+                                <Button
+                                    icon="pi pi-chevron-right"
+                                    rounded
+                                    text
+                                    size="small"
+                                    severity="secondary"
+                                    onClick={handleNextMonth}
+                                    disabled={isCurrentMonth || dayjs(selectedMonth).isAfter(dayjs(), 'month')}
+                                    tooltip="다음 달"
+                                    tooltipOptions={{ position: 'bottom' }}
+                                />
+                            </div>
+
+                            {!isCurrentMonth && (
+                                <Button
+                                    label="이번 달"
+                                    icon="pi pi-calendar"
+                                    size="small"
+                                    severity="info"
+                                    outlined
+                                    onClick={handleCurrentMonth}
+                                />
+                            )}
+
                             <Button
                                 icon="pi pi-refresh"
                                 label="새로고침"
-                                onClick={fetchAll}
+                                onClick={() => fetchAll(selectedMonth)}
                                 loading={loadingIK || loadingVercel || loadingMongo}
                                 className="p-button-outlined"
+                                size="small"
                             />
                         </div>
                     </div>
@@ -414,8 +514,8 @@ const SystemUsagePage = () => {
                 icon="pi pi-image"
                 iconColor="#6366f1"
                 title="ImageKit 사용량"
-                badge={imageKitData && <Tag value={`${imageKitData.startDate} ~ ${imageKitData.endDate}`} severity="info" className="ml-1" />}
-                subTitle="Free 플랜 월간 한도 대비 (80% 이상 경고)"
+                badge={<Tag value={`${monthLabel} (${displayPeriod})`} severity="info" className="ml-1" />}
+                subTitle={`Free 플랜 월간 한도 대비 (80% 이상 경고) · ${monthLabel} 누적 집계`}
             />
 
             {loadingIK ? <LoadingCard color="#6366f1" /> : imageKitData ? (
@@ -438,8 +538,8 @@ const SystemUsagePage = () => {
                 icon="pi pi-cloud"
                 iconColor="var(--text-color, #000000)"
                 title="Vercel 사용량"
-                badge={vercelData && <Tag value={`${dayjs(vercelData.from).format('MM/DD')} ~ ${dayjs(vercelData.to).format('MM/DD')}`} severity="info" className="ml-1" />}
-                subTitle="Hobby 플랜 월간 한도 대비 (80% 이상 경고) · VERCEL_ACCESS_TOKEN 필요"
+                badge={vercelData && <Tag value={`${dayjs(vercelData.from).format('YYYY.MM.DD')} ~ ${dayjs(vercelData.to).format('YYYY.MM.DD')}`} severity="info" className="ml-1" />}
+                subTitle={`Hobby 플랜 월간 한도 대비 (80% 이상 경고) · ${monthLabel} 리소스 현황 · VERCEL_ACCESS_TOKEN 필요`}
             />
 
             {loadingVercel ? <LoadingCard color="var(--text-color, #000000)" /> : vercelData ? (
@@ -491,8 +591,10 @@ const SystemUsagePage = () => {
                         <div className="card mb-0 h-full">
                             <div className="flex justify-content-between mb-2">
                                 <div>
-                                    <span className="block text-500 font-medium mb-1">최근 배포 이력</span>
-                                    <div className="text-900 font-medium text-xl">{vercelData.deploymentCount ?? 0}회 배포 감지</div>
+                                    <span className="block text-500 font-medium mb-1">{monthLabel} 배포 및 빌드</span>
+                                    <div className="text-900 font-medium text-xl">
+                                        {vercelData.buildCount !== undefined ? `${vercelData.buildCount}회 빌드 감지` : `${vercelData.deploymentCount ?? 0}회 배포 감지`}
+                                    </div>
                                 </div>
                                 <div
                                     className="flex align-items-center justify-content-center border-round"
@@ -617,7 +719,7 @@ const SystemUsagePage = () => {
                         <div className="card surface-50 border-1 surface-border">
                             <div className="flex align-items-center gap-2 mb-2">
                                 <i className="pi pi-info-circle text-primary" />
-                                <span className="font-semibold text-sm text-900">Vercel Hobby Plan 리소스 한도 (최근 30일)</span>
+                                <span className="font-semibold text-sm text-900">Vercel Hobby Plan 리소스 한도 ({monthLabel})</span>
                             </div>
                             <div className="flex flex-wrap gap-3 text-sm text-600">
                                 {[
@@ -666,8 +768,13 @@ const SystemUsagePage = () => {
                 icon="pi pi-server"
                 iconColor="#22c55e"
                 title="MongoDB 사용량"
-                badge={mongoData && <Tag value={mongoData.dbName} severity="success" className="ml-1" />}
-                subTitle="Atlas Free Tier 스토리지 512 MB 기준 — 80% 이상 경고"
+                badge={
+                    <>
+                        {mongoData && <Tag value={mongoData.dbName} severity="success" className="ml-1" />}
+                        <Tag value="실시간 스토리지" severity="secondary" className="ml-1" />
+                    </>
+                }
+                subTitle="Atlas Free Tier 스토리지 512 MB 기준 — 80% 이상 경고 (실시간 DB 인스턴스 현황)"
             />
 
             {loadingMongo ? <LoadingCard color="#22c55e" /> : mongoData ? (
@@ -680,7 +787,7 @@ const SystemUsagePage = () => {
                             usedLabel={bytesToReadable(mongoData.storageSize)}
                             limitLabel="512 MB"
                             pct={mongoStoragePct}
-                            note={`${mongoData.storageSize.toLocaleString()} bytes`}
+                            note={`${mongoData.storageSize.toLocaleString()} bytes (실시간)`}
                             isFixed
                         />
                     </div>
@@ -694,7 +801,7 @@ const SystemUsagePage = () => {
                     {/* 컬렉션 테이블 */}
                     <div className="col-12">
                         <div className="card">
-                            <h6 className="mt-0 mb-3">컬렉션별 상세 현황</h6>
+                            <h6 className="mt-0 mb-3">컬렉션별 상세 현황 (실시간)</h6>
                             <DataTable
                                 value={mongoData.collections}
                                 paginator rows={15} rowsPerPageOptions={[15, 30, 50]}
