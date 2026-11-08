@@ -315,7 +315,7 @@ const SystemUsagePage = () => {
         } finally {
             setLoadingIK(false);
         }
-    }, [http, showToast]);
+    }, []);
 
     // Vercel 사용량 조회 (선택된 월 기준)
     const fetchVercelUsage = useCallback(async (month: Date) => {
@@ -334,7 +334,7 @@ const SystemUsagePage = () => {
         } finally {
             setLoadingVercel(false);
         }
-    }, [http, showToast]);
+    }, []);
 
     // MongoDB 사용량 조회 (실시간 DB 스토리지 기준)
     const fetchMongoUsage = useCallback(async () => {
@@ -347,7 +347,7 @@ const SystemUsagePage = () => {
         } finally {
             setLoadingMongo(false);
         }
-    }, [http, showToast]);
+    }, []);
 
     const fetchAll = useCallback((targetMonth?: Date) => {
         const target = targetMonth || selectedMonth;
@@ -358,7 +358,7 @@ const SystemUsagePage = () => {
 
     useEffect(() => {
         fetchAll(selectedMonth);
-    }, [selectedMonth, fetchAll]);
+    }, [selectedMonth]);
 
     // 월 이동 핸들러
     const handlePrevMonth = () => {
