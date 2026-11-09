@@ -138,6 +138,9 @@ const DailyLogReportPage = () => {
     const [generating, setGenerating] = useState<boolean>(false);
     const [activeTabIndex, setActiveTabIndex] = useState<number>(0);
 
+    const initialCheckRef = useRef<boolean>(false);
+    const isFirstMount = useRef<boolean>(true);
+
     // 날짜 문자열 포맷팅
     const selectedDateStr = useMemo(() => {
         return dayjs(selectedDate).format('YYYY-MM-DD');
@@ -152,19 +155,12 @@ const DailyLogReportPage = () => {
             });
             const reports: DailyReportItem[] = res.data?.reports || [];
             setReportList(reports);
-
-            // 목록 중 가장 최근 보고서가 있고 선택된 날짜에 보고서가 없으면 최신 보고서 날짜로 맞춤
-            if (reports.length > 0) {
-                const dates = reports.map((r) => r.date);
-                const currentStr = dayjs(selectedDate).format('YYYY-MM-DD');
-                if (!dates.includes(currentStr)) {
-                    setSelectedDate(dayjs(reports[0].date).toDate());
-                }
-            }
+            return reports;
         } catch (err) {
             console.error('Failed to fetch daily reports list:', err);
+            return [];
         }
-    }, [selectedDate]);
+    }, []);
 
     // 2. 특정 날짜의 상세 보고서 조회
     const fetchReportDetail = useCallback(async (targetDateStr: string) => {
@@ -186,13 +182,76 @@ const DailyLogReportPage = () => {
         }
     }, []);
 
-    // 초기 마운트 시 목록 로드
+    // 화면 진입 시: 오늘 날짜 리포트가 없으면 1회 자동 생성
     useEffect(() => {
-        fetchReportList();
-    }, [fetchReportList]);
+        if (initialCheckRef.current) return;
+        initialCheckRef.current = true;
 
-    // 선택된 날짜 변경 시 해당 보고서 상세 로드
+        const checkAndInitTodayReport = async () => {
+            const todayStr = dayjs().format('YYYY-MM-DD');
+            const todayMonth = dayjs().format('YYYY-MM');
+
+            try {
+                // 1) 최근 보고서 목록 조회
+                const reports = await fetchReportList();
+                const hasToday = reports.some((r) => r.date === todayStr);
+
+                if (!hasToday) {
+                    // 오늘 리포트가 없으면 1회 자동 생성
+                    setGenerating(true);
+                    showToast({
+                        severity: 'info',
+                        summary: '리포트 자동 생성',
+                        detail: `오늘(${todayStr}) 리포트가 없어 자동 분석 및 생성을 진행합니다.`
+                    });
+
+                    try {
+                        const genRes = await httpRef.current.post(
+                            '/system/dailyReports/generate',
+                            { month: todayMonth, date: todayStr },
+                            { disableLoading: true }
+                        );
+
+                        if (genRes.data?.success) {
+                            showToast({
+                                severity: 'success',
+                                summary: '자동 생성 완료',
+                                detail: `오늘(${todayStr}) 일일 리포트 생성이 완료되었습니다.`
+                            });
+                            await fetchReportList();
+                            await fetchReportDetail(todayStr);
+                        } else {
+                            await fetchReportDetail(todayStr);
+                        }
+                    } catch (genErr) {
+                        console.error('Failed to auto-generate today report:', genErr);
+                        showToast({
+                            severity: 'warn',
+                            summary: '자동 생성 실패',
+                            detail: '오늘 일일 리포트 자동 생성 중 오류가 발생했습니다.'
+                        });
+                        await fetchReportDetail(todayStr);
+                    } finally {
+                        setGenerating(false);
+                    }
+                } else {
+                    // 오늘 리포트가 이미 존재하는 경우 상세 조회
+                    await fetchReportDetail(todayStr);
+                }
+            } catch (err) {
+                console.error('Failed during initial report check:', err);
+            }
+        };
+
+        checkAndInitTodayReport();
+    }, [fetchReportList, fetchReportDetail, showToast]);
+
+    // 선택된 날짜 변경 시 해당 보고서 상세 로드 (초기 마운트 이후 변경 시에만)
     useEffect(() => {
+        if (isFirstMount.current) {
+            isFirstMount.current = false;
+            return;
+        }
         if (selectedDateStr) {
             fetchReportDetail(selectedDateStr);
         }
@@ -388,7 +447,7 @@ const DailyLogReportPage = () => {
             </Card>
 
             {/* 주요 핵심 5대 도메인 KPI 요약 카드 */}
-            {summary && (
+            {!generating && summary && (
                 <div className="grid">
                     {/* 1. 출석 현황 KPI */}
                     <div className="col-12 sm:col-6 lg:col">
@@ -508,7 +567,17 @@ const DailyLogReportPage = () => {
 
             {/* 본문 보고서 뷰어 카드 */}
             <Card className="shadow-2 border-round-xl">
-                {loadingDetail ? (
+                {generating ? (
+                    <div className="flex flex-column align-items-center justify-content-center py-8 text-center text-500">
+                        <i className="pi pi-spin pi-spinner text-3xl mb-3 text-primary" />
+                        <span className="font-semibold text-sm">
+                            {selectedDateStr} 일일 분석 보고서를 생성하는 중입니다...
+                        </span>
+                        <span className="text-xs text-400 mt-2">
+                            성적, 출석, 과제, 순공 시간 및 시스템 로그를 통합 분석하고 있습니다.
+                        </span>
+                    </div>
+                ) : loadingDetail ? (
                     <div className="flex flex-column align-items-center justify-content-center py-8 text-center text-500">
                         <i className="pi pi-spin pi-spinner text-3xl mb-3 text-primary" />
                         <span className="font-semibold text-sm">{selectedDateStr} 보고서를 불러오는 중입니다...</span>

@@ -425,7 +425,7 @@ const SystemUsagePage = () => {
                                 {isCurrentMonth ? (
                                     <Tag value="당월 누적 (진행중)" severity="success" />
                                 ) : (
-                                    <Tag value="월간 마감 집계" severity="secondary" />
+                                    <Tag value="월간 마감 집계" severity="info" />
                                 )}
                                 <Tag value="IK Free" severity="warning" />
                                 <Tag value="Vercel Hobby" severity="warning" />
@@ -531,7 +531,7 @@ const SystemUsagePage = () => {
 
             <div className="col-12"><Divider /></div>
 
-            {/* ══════════════════════════════════════════════════════════════
+            {/* ════════════════ ══════════════════════════════════════════════
                 SECTION 2: Vercel (Hobby Plan)
             ══════════════════════════════════════════════════════════════ */}
             <SectionHeader
