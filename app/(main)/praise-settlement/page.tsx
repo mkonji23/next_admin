@@ -12,7 +12,6 @@ import { Column } from 'primereact/column';
 import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
 import dayjs from 'dayjs';
-import MonthlyPraiseRewardDialog from '@/components/studyTime/MonthlyPraiseRewardDialog';
 
 interface StudentSettlement {
     studentId: string;
@@ -34,8 +33,6 @@ const PraiseSettlementPage = () => {
     const [loading, setLoading] = useState(false);
     const [reportVisible, setReportVisible] = useState(false);
     const [reportDelta, setReportDelta] = useState<any>(null);
-    const [rewardDialogVisible, setRewardDialogVisible] = useState(false);
-    const [settlementConfirmVisible, setSettlementConfirmVisible] = useState(false);
 
     const http = useHttp();
     const { showToast } = useToast();
@@ -252,7 +249,7 @@ const PraiseSettlementPage = () => {
                                     label="결산하기"
                                     icon="pi pi-check-circle"
                                     className="p-button-primary font-bold shadow-1"
-                                    onClick={() => setSettlementConfirmVisible(true)}
+                                    onClick={calculateSettlement}
                                     loading={loading}
                                 />
                             </div>
@@ -379,74 +376,6 @@ const PraiseSettlementPage = () => {
                     style={{ height: '500px' }}
                 />
             </Dialog>
-
-            {/* 결산 전 순공 칭찬 지급 확인 다이얼로그 */}
-            <Dialog
-                header={
-                    <div className="flex align-items-center gap-2">
-                        <i className="pi pi-question-circle text-primary text-xl" />
-                        <span className="font-bold text-lg">칭찬 결산 진행 안내</span>
-                    </div>
-                }
-                visible={settlementConfirmVisible}
-                onHide={() => setSettlementConfirmVisible(false)}
-                style={{ width: '580px', maxWidth: '95vw' }}
-                breakpoints={{ '640px': '98vw' }}
-                className="border-round-2xl shadow-6"
-                footer={
-                    <div className="flex align-items-center justify-content-end gap-2 w-full pt-2 flex-nowrap">
-                        <Button
-                            label="취소"
-                            icon="pi pi-times"
-                            outlined
-                            severity="secondary"
-                            onClick={() => setSettlementConfirmVisible(false)}
-                            className="w-auto font-medium text-sm white-space-nowrap px-3"
-                        />
-                        <Button
-                            label="지급 없이 바로 결산"
-                            icon="pi pi-arrow-right"
-                            severity="secondary"
-                            outlined
-                            onClick={() => {
-                                setSettlementConfirmVisible(false);
-                                calculateSettlement();
-                            }}
-                            className="w-auto font-medium text-sm white-space-nowrap px-3"
-                        />
-                        <Button
-                            label="순공시간 칭찬 지급 후 결산"
-                            icon="pi pi-gift"
-                            severity="success"
-                            className="w-auto font-bold text-sm shadow-1 white-space-nowrap px-3"
-                            onClick={() => {
-                                setSettlementConfirmVisible(false);
-                                setRewardDialogVisible(true);
-                            }}
-                        />
-                    </div>
-                }
-            >
-                <div className="flex flex-column gap-3 py-2">
-                    <div className="flex align-items-start gap-3 p-3 surface-50 border-round-xl border-1 surface-border">
-                        <i className="pi pi-gift text-3xl text-primary mt-1" />
-                        <div className="flex flex-column gap-1">
-                            <span className="font-bold text-900 text-base">결산 전 순공시간 칭찬을 지급하시겠습니까?</span>
-                            <span className="text-sm text-600 line-height-3">
-                                결산 기준 월({dayjs(endDate).format('YYYY년 MM월')})의 순공시간 칭찬을 먼저 지급하시면, 해당 칭찬이 결산 결과에 자동으로 합산 반영됩니다.
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </Dialog>
-
-            {/* 월간 순공 칭찬 지급 모달 */}
-            <MonthlyPraiseRewardDialog
-                visible={rewardDialogVisible}
-                initialMonth={dayjs(endDate).format('YYYY-MM')}
-                onHide={() => setRewardDialogVisible(false)}
-                onSuccess={calculateSettlement}
-            />
         </div>
     );
 };

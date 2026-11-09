@@ -27,6 +27,7 @@ const ProfileSelectionDialog: React.FC<ProfileSelectionDialogProps> = ({
             draggable={false}
             resizable={false}
             dismissableMask
+            blockScroll
         >
             <div className="grid justify-content-center gap-3 py-3">
                 {profileIcons.map((icon, idx) => (

@@ -23,6 +23,7 @@ const routeMap: { [key: string]: React.LazyExoticComponent<React.ComponentType<a
     '/assistantTodo': React.lazy(() => import('@/app/(main)/assistantTodo/page')),
     '/admin-student-status': React.lazy(() => import('@/app/(main)/admin-student-status/page')),
     '/praise-settlement': React.lazy(() => import('@/app/(main)/praise-settlement/page')),
+    '/study-time-settlement': React.lazy(() => import('@/app/(main)/study-time-settlement/page')),
     '/notice': React.lazy(() => import('@/app/(main)/notice/[[...id]]/page')),
     '/system-log': React.lazy(() => import('@/app/(main)/system-log/page')),
     '/system-usage': React.lazy(() => import('@/app/(main)/system-usage/page')),

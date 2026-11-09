@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useContext, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useContext, useRef, useMemo } from 'react';
 import { Card } from 'primereact/card';
 import { Tag } from 'primereact/tag';
 import { Button } from 'primereact/button';
@@ -9,6 +9,7 @@ import { LayoutContext } from '@/layout/context/layoutcontext';
 import { useHttp } from '@/util/axiosInstance';
 import dayjs, { Dayjs } from 'dayjs';
 import MonthlyStudyHistoryModal from './modals/MonthlyStudyHistoryModal';
+import { getCurrentWeekInfo } from '@/util/studyTimeWeekUtils';
 
 interface StudyRankingCardProps {
     studentId?: string;
@@ -71,27 +72,29 @@ export const StudyRankingCard: React.FC<StudyRankingCardProps> = ({
     // 월별 순공시간 목록 팝업(Modal) 상태
     const [monthlyModalOpen, setMonthlyModalOpen] = useState<boolean>(false);
 
-    // 선택된 월 문자열 (YYYY-MM) 및 한글 월 이름 (예: "10월")
+    // 선택된 월 문자열 (YYYY-MM)
     const targetMonthStr = dayjs(currentMonth || dayjs()).format('YYYY-MM');
-    const monthDisplayName = dayjs(currentMonth || dayjs()).format('M월');
 
-    // 현재 선택된 월이 이번 달인 경우 실시간 스톱워치 초 반영
-    const isCurrentActiveMonth = dayjs().format('YYYY-MM') === targetMonthStr;
-    const effectiveMySeconds = isCurrentActiveMonth
-        ? Math.max(serverMySeconds, serverMySeconds + currentActiveSeconds)
-        : serverMySeconds;
+    // 현재 기준 주차 정보 (월요일 ~ 일요일 7일)
+    const currentWeek = useMemo(() => getCurrentWeekInfo(), []);
+
+    // 실시간 순공 시간 합산
+    const effectiveMySeconds = Math.max(serverMySeconds, serverMySeconds + currentActiveSeconds);
 
     const fetchRankings = useCallback(
         async (retryCount = 0) => {
             if (!studentId) return;
             setLoading(true);
             try {
+                const params: any = {
+                    limit: 3,
+                    studentId,
+                    dateFrom: currentWeek.startDate,
+                    dateTo: currentWeek.endDate
+                };
+
                 const res = await httpRef.current.get('/choiMath/studyTime/getRankings', {
-                    params: {
-                        month: targetMonthStr,
-                        limit: 3,
-                        studentId
-                    },
+                    params,
                     disableLoading: true
                 });
 
@@ -103,7 +106,7 @@ export const StudyRankingCard: React.FC<StudyRankingCardProps> = ({
                     setLastUpdatedTime(dayjs().format('HH:mm:ss'));
                 }
             } catch (error) {
-                console.error('Error fetching monthly study rankings:', error);
+                console.error('Error fetching study rankings:', error);
                 const isAuthError = (error as any)?.response?.status === 401 || error === 'student session expired';
                 if (!isAuthError && retryCount < 2) {
                     setTimeout(() => fetchRankings(retryCount + 1), 1500);
@@ -112,22 +115,21 @@ export const StudyRankingCard: React.FC<StudyRankingCardProps> = ({
                 setLoading(false);
             }
         },
-        [studentId, targetMonthStr]
+        [studentId, currentWeek]
     );
 
-    // 월(currentMonth) 변경 시 또는 학생 변경 시 즉시 갱신
+    // 컴포넌트 마운트 및 의존성 변경 시 갱신
     useEffect(() => {
         fetchRankings();
     }, [fetchRankings]);
 
-    // 600초마다 실시간 랭킹 자동 리프레시 (이번 달을 보고 있을 때)
+    // 600초마다 실시간 랭킹 자동 리프레시
     useEffect(() => {
-        if (!isCurrentActiveMonth) return;
         const interval = setInterval(() => {
             fetchRankings();
         }, 600000);
         return () => clearInterval(interval);
-    }, [fetchRankings, isCurrentActiveMonth]);
+    }, [fetchRankings]);
 
     // 트로피 및 랭킹 컬러 헬퍼
     const getTrophyMeta = (rank: number) => {
@@ -214,14 +216,14 @@ export const StudyRankingCard: React.FC<StudyRankingCardProps> = ({
 
             {/* 카드 상단 타이틀 바 */}
             <div className="flex align-items-center justify-content-between pb-3 mb-3 border-bottom-1 surface-border">
-                <div className="flex align-items-center gap-2">
+                <div className="flex align-items-center gap-2 flex-wrap">
                     <i className="pi pi-trophy text-yellow-500 text-xl font-bold" />
-                    <span className="font-bold text-base md:text-lg text-900">{monthDisplayName} 순공 랭킹</span>
-                    <Tag
-                        severity="info"
-                        value={`${monthDisplayName} 누적`}
-                        className="text-xs px-2 py-0 border-round-lg font-bold"
-                    />
+                    <span className="font-bold text-base md:text-lg text-900">
+                        {currentWeek.fullLabel} 순공 랭킹
+                    </span>
+                    <span className="text-xs md:text-sm font-semibold text-600 bg-surface-100 dark:bg-surface-800 px-2 py-1 border-round-lg">
+                        ({currentWeek.periodLabel})
+                    </span>
                 </div>
 
                 <div className="flex align-items-center gap-2">
@@ -229,12 +231,12 @@ export const StudyRankingCard: React.FC<StudyRankingCardProps> = ({
                         <span className="text-xs text-400 hidden sm:inline">갱신: {lastUpdatedTime}</span>
                     )}
                     <Button
-                        label="월별 순공 기록"
+                        label="월별 순공시간 목록"
                         icon="pi pi-calendar"
                         size="small"
                         outlined
                         severity="secondary"
-                        className="text-xs hidden md:inline-flex"
+                        className="text-xs hidden md:inline-flex font-semibold"
                         onClick={() => setMonthlyModalOpen(true)}
                     />
                     <Button
@@ -244,7 +246,7 @@ export const StudyRankingCard: React.FC<StudyRankingCardProps> = ({
                         rounded
                         severity="secondary"
                         className="inline-flex md:hidden"
-                        tooltip="월별 기록 보기"
+                        tooltip="월별 순공시간 목록"
                         tooltipOptions={{ position: 'top' }}
                         onClick={() => setMonthlyModalOpen(true)}
                     />
@@ -333,9 +335,9 @@ export const StudyRankingCard: React.FC<StudyRankingCardProps> = ({
                 ) : (
                     <div className="text-center py-4 text-500 text-xs">
                         <i className="pi pi-sparkles text-yellow-500 text-xl block mb-2" />
-                        아직 {monthDisplayName}의 순공 기록이 없습니다.
+                        아직 이번 주({currentWeek.weekLabel})의 순공 기록이 없습니다.
                         <br />
-                        {monthDisplayName} 첫 번째 1위 주인공이 되어보세요! 🚀
+                        이번 주({currentWeek.weekLabel}) 첫 번째 1위 주인공이 되어보세요! 🚀
                     </div>
                 )}
             </div>

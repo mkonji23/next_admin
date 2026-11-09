@@ -19,6 +19,7 @@ const SpecialStudentPopup: React.FC<SpecialStudentPopupProps> = ({ visible, onHi
             style={{ width: '90vw', maxWidth: '600px' }}
             contentStyle={{ padding: 0, borderRadius: '24px', overflow: 'hidden' }}
             dismissableMask
+            blockScroll
         >
             <div className="relative">
                 <img

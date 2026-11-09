@@ -9,7 +9,7 @@ import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
-import { PraiseClass, PraiseDetail, PraiseStatistics } from '@/types/attendanceStatistics';
+import { PraiseClass, PraiseDetail, PraiseStatistics, PraiseBonusItem } from '@/types/attendanceStatistics';
 import dayjs from 'dayjs';
 import { Tag } from 'primereact/tag';
 import { FilterMatchMode } from 'primereact/api';
@@ -73,25 +73,131 @@ const StudentDetailView = ({ data }: { data: PraiseStatistics }) => {
     const [expandedRows, setExpandedRows] = useState<any>({});
 
     return (
-        <div className="p-3">
-            <h5>{data.name} 학생 상세 내역</h5>
-            <DataTable
-                value={data?.classes}
-                expandedRows={expandedRows}
-                onRowToggle={(e) => setExpandedRows(e.data)}
-                rowExpansionTemplate={(rowData) => <PraiseClassDataTable data={rowData} />}
-                dataKey="classId"
-                emptyMessage="관련 클래스 정보가 없습니다."
-            >
-                <Column expander style={{ width: '3em' }} />
-                <Column
-                    field="className"
-                    header="클래스명"
-                    sortable
-                    body={(rowData: PraiseClass) => rowData.className}
-                    headerStyle={{ minWidth: '150px' }}
-                />
-            </DataTable>
+        <div className="p-3 surface-50 dark:surface-900 border-round-xl border-1 surface-border m-2">
+            <div className="flex flex-wrap align-items-center justify-content-between gap-2 mb-3 pb-2 border-bottom-1 surface-border">
+                <div className="flex align-items-center gap-2">
+                    <i className="pi pi-user text-primary text-lg" />
+                    <span className="font-bold text-base text-900">{data.name} 학생 칭찬 상세 내역</span>
+                </div>
+                <div className="flex align-items-center gap-3 text-sm">
+                    <span className="text-600">
+                        출석 칭찬: <strong className="text-900">{data.attendancePraiseCnt || 0}개</strong>
+                    </span>
+                    <span className="text-600">
+                        공부시간 칭찬: <strong className="text-green-600">{data.bonusPraiseCnt || 0}개</strong>
+                    </span>
+                    <span className="text-600">
+                        총 칭찬: <strong className="text-primary font-bold">{data.totalPraiseCnt || 0}개</strong>
+                    </span>
+                </div>
+            </div>
+
+            {/* 1. 클래스별 출석 칭찬 */}
+            <div className="mb-3">
+                <div className="flex align-items-center gap-2 mb-2">
+                    <i className="pi pi-book text-500 text-xs" />
+                    <span className="font-semibold text-sm text-700">클래스별 출석 칭찬</span>
+                </div>
+                <DataTable
+                    value={data?.classes}
+                    expandedRows={expandedRows}
+                    onRowToggle={(e) => setExpandedRows(e.data)}
+                    rowExpansionTemplate={(rowData) => <PraiseClassDataTable data={rowData} />}
+                    dataKey="classId"
+                    size="small"
+                    className="p-datatable-sm"
+                    emptyMessage="관련 클래스 정보가 없습니다."
+                >
+                    <Column expander style={{ width: '3em' }} />
+                    <Column
+                        field="className"
+                        header="클래스명"
+                        sortable
+                        body={(rowData: PraiseClass) => rowData.className}
+                        headerStyle={{ minWidth: '150px' }}
+                    />
+                    <Column
+                        field="totalPraiseCnt"
+                        header="획득 칭찬"
+                        align="center"
+                        style={{ width: '120px' }}
+                        body={(rowData: PraiseClass) => (
+                            <span className="font-semibold text-sm text-700">
+                                {rowData.totalPraiseCnt || 0}개
+                            </span>
+                        )}
+                    />
+                </DataTable>
+            </div>
+
+            {/* 2. 공부시간 결산 칭찬 */}
+            {data.bonusList && data.bonusList.length > 0 && (
+                <div className="mt-3">
+                    <div className="flex align-items-center gap-2 mb-2">
+                        <i className="pi pi-stopwatch text-green-600 text-xs" />
+                        <span className="font-semibold text-sm text-700">공부시간 결산 칭찬 내역</span>
+                        <Tag severity="success" value={`총 ${data.bonusPraiseCnt || 0}개`} className="text-xs" />
+                    </div>
+                    <DataTable
+                        value={data.bonusList}
+                        size="small"
+                        className="p-datatable-sm"
+                        emptyMessage="공부시간 칭찬 내역이 없습니다."
+                    >
+                        <Column
+                            header="지급 일시"
+                            style={{ minWidth: '140px' }}
+                            body={(b: PraiseBonusItem) => (
+                                <span className="text-xs text-600">
+                                    {b.createdAt ? dayjs(b.createdAt).format('YYYY-MM-DD HH:mm') : '-'}
+                                </span>
+                            )}
+                        />
+                        <Column
+                            header="결산 기간 / 사유"
+                            style={{ minWidth: '200px' }}
+                            body={(b: PraiseBonusItem) => (
+                                <span className="font-medium text-sm text-800">
+                                    {b.reason || b.settledPeriodKey || b.targetMonth || '순공 칭찬'}
+                                </span>
+                            )}
+                        />
+                        <Column
+                            header="순위"
+                            align="center"
+                            style={{ width: '90px' }}
+                            body={(b: PraiseBonusItem) =>
+                                b.rank ? (
+                                    <Tag
+                                        value={`${b.rank}등`}
+                                        severity={b.rank === 1 ? 'warning' : b.rank === 2 ? 'success' : 'info'}
+                                        className="text-xs font-bold"
+                                    />
+                                ) : (
+                                    '-'
+                                )
+                            }
+                        />
+                        <Column
+                            header="지급 칭찬"
+                            align="center"
+                            style={{ width: '100px' }}
+                            body={(b: PraiseBonusItem) => (
+                                <span className="font-bold text-sm text-green-600">
+                                    +{b.praiseCount}개
+                                </span>
+                            )}
+                        />
+                        <Column
+                            header="지급자"
+                            style={{ width: '100px' }}
+                            body={(b: PraiseBonusItem) => (
+                                <span className="text-xs text-500">{b.grantedBy || 'ADMIN'}</span>
+                            )}
+                        />
+                    </DataTable>
+                </div>
+            )}
         </div>
     );
 };
@@ -321,7 +427,20 @@ const PraiseStatisticsPage = () => {
                         sortOrder={-1}
                     >
                         <Column expander style={{ width: '3em' }} />
-                        <Column field="name" header="학생 이름" sortable headerStyle={{ minWidth: '150px' }} />
+                        <Column
+                            field="name"
+                            header="학생 이름"
+                            sortable
+                            headerStyle={{ minWidth: '140px' }}
+                            body={(rowData) => (
+                                <div className="flex flex-column">
+                                    <span className="font-bold text-900">{rowData.name}</span>
+                                    <span className="text-xs text-500">
+                                        {[rowData.school, rowData.grade].filter(Boolean).join(' ') || ''}
+                                    </span>
+                                </div>
+                            )}
+                        />
                         <Column
                             header="순위"
                             body={(rowData) => {
@@ -352,13 +471,48 @@ const PraiseStatisticsPage = () => {
                             sortField="totalPraiseCnt"
                         />
                         <Column
+                            field="attendancePraiseCnt"
+                            header="출석 칭찬"
+                            sortable
+                            align="center"
+                            headerStyle={{ minWidth: '110px' }}
+                            body={(rowData) => (
+                                <span className="text-700 font-semibold">
+                                    {rowData.attendancePraiseCnt || 0}개
+                                </span>
+                            )}
+                        />
+                        <Column
+                            field="bonusPraiseCnt"
+                            header="공부시간 칭찬"
+                            sortable
+                            align="center"
+                            headerStyle={{ minWidth: '130px' }}
+                            body={(rowData) => {
+                                const bonus = rowData.bonusPraiseCnt || 0;
+                                return bonus > 0 ? (
+                                    <div className="flex align-items-center justify-content-center gap-1">
+                                        <Tag
+                                            severity="success"
+                                            value={`+${bonus}개`}
+                                            icon="pi pi-stopwatch"
+                                            className="font-bold text-xs shadow-1"
+                                        />
+                                    </div>
+                                ) : (
+                                    <span className="text-400 text-sm">0개</span>
+                                );
+                            }}
+                        />
+                        <Column
                             field="totalPraiseCnt"
                             header="총 칭찬 개수"
                             sortable
+                            headerStyle={{ minWidth: '130px' }}
                             body={(rowData) => (
                                 <div className="flex align-items-center gap-2">
-                                    <span className="font-bold text-xl">{rowData.totalPraiseCnt}</span>
-                                    <i className="pi pi-star-fill text-yellow-500" />
+                                    <span className="font-bold text-xl text-primary">{rowData.totalPraiseCnt}개</span>
+                                    <i className="pi pi-star-fill text-yellow-500 text-lg" />
                                 </div>
                             )}
                         />

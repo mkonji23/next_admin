@@ -14,6 +14,9 @@ import { useToast } from '@/hooks/useToast';
 import { StudyTimeStatisticsItem, DailyStudyRecord } from '@/types/studyTime';
 import MonthlyPraiseRewardDialog from '@/components/studyTime/MonthlyPraiseRewardDialog';
 import dayjs from 'dayjs';
+import isoWeek from 'dayjs/plugin/isoWeek';
+
+dayjs.extend(isoWeek);
 
 // 초를 "X시간 Y분 Z초" 한글 텍스트로 변환하는 헬퍼
 const formatDurationText = (totalSeconds: number) => {
@@ -117,8 +120,9 @@ const StudentDailyDetailView = ({ data }: { data: StudyTimeStatisticsItem }) => 
 
 const StudyTimeStatisticsPage = () => {
     const [statistics, setStatistics] = useState<StudyTimeStatisticsItem[]>([]);
-    const [startDate, setStartDate] = useState<Date>(dayjs().startOf('month').toDate());
-    const [endDate, setEndDate] = useState<Date>(dayjs().endOf('month').toDate());
+    // 오늘 날짜 기준 이번 주의 월요일 ~ 일요일 기본 날짜 세팅
+    const [startDate, setStartDate] = useState<Date>(dayjs().startOf('isoWeek').toDate());
+    const [endDate, setEndDate] = useState<Date>(dayjs().endOf('isoWeek').toDate());
     const [students, setStudents] = useState<any[]>([]);
     const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
     const [classes, setClasses] = useState<any[]>([]);
@@ -167,11 +171,11 @@ const StudyTimeStatisticsPage = () => {
         }
     };
 
-    const fetchStudyTimeStatistics = async () => {
+    const fetchStudyTimeStatistics = async (customStart?: Date, customEnd?: Date) => {
         setLoading(true);
         try {
-            const dateFrom = dayjs(startDate).format('YYYY-MM-DD');
-            const dateTo = dayjs(endDate).format('YYYY-MM-DD');
+            const dateFrom = dayjs(customStart || startDate).format('YYYY-MM-DD');
+            const dateTo = dayjs(customEnd || endDate).format('YYYY-MM-DD');
 
             const params: any = {
                 dateFrom,
@@ -200,6 +204,31 @@ const StudyTimeStatisticsPage = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    // 빠른 기간 선택 프리셋
+    const handleSetThisWeek = () => {
+        const start = dayjs().startOf('isoWeek').toDate();
+        const end = dayjs().endOf('isoWeek').toDate();
+        setStartDate(start);
+        setEndDate(end);
+        fetchStudyTimeStatistics(start, end);
+    };
+
+    const handleSetPrevWeek = () => {
+        const start = dayjs().subtract(1, 'week').startOf('isoWeek').toDate();
+        const end = dayjs().subtract(1, 'week').endOf('isoWeek').toDate();
+        setStartDate(start);
+        setEndDate(end);
+        fetchStudyTimeStatistics(start, end);
+    };
+
+    const handleSetThisMonth = () => {
+        const start = dayjs().startOf('month').toDate();
+        const end = dayjs().endOf('month').toDate();
+        setStartDate(start);
+        setEndDate(end);
+        fetchStudyTimeStatistics(start, end);
     };
 
     const onSearch = () => {
@@ -268,7 +297,36 @@ const StudyTimeStatisticsPage = () => {
             {/* 상단 조회 조건 필터 카드 */}
             <div className="col-12">
                 <div className="card shadow-2 border-round-2xl">
-                    <h5 className="font-bold text-lg mb-3">조회 조건</h5>
+                    <div className="flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                        <h5 className="font-bold text-lg m-0">조회 조건</h5>
+                        <div className="flex align-items-center gap-1">
+                            <span className="text-xs text-500 font-semibold mr-1">빠른 선택:</span>
+                            <Button
+                                label="이번 주 (월~일)"
+                                size="small"
+                                text
+                                severity="secondary"
+                                className="p-1 px-2 text-xs font-semibold border-round-xl surface-100 hover:surface-200"
+                                onClick={handleSetThisWeek}
+                            />
+                            <Button
+                                label="지난 주"
+                                size="small"
+                                text
+                                severity="secondary"
+                                className="p-1 px-2 text-xs font-semibold border-round-xl surface-100 hover:surface-200"
+                                onClick={handleSetPrevWeek}
+                            />
+                            <Button
+                                label="이번 달"
+                                size="small"
+                                text
+                                severity="secondary"
+                                className="p-1 px-2 text-xs font-semibold border-round-xl surface-100 hover:surface-200"
+                                onClick={handleSetThisMonth}
+                            />
+                        </div>
+                    </div>
                     <div className="flex flex-wrap gap-3 align-items-end">
                         <div className="flex flex-column gap-2">
                             <label className="font-bold text-sm text-700">조회 기간 (시작)</label>

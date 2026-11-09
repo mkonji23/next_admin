@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useHttp } from '@/util/axiosInstance';
 import { TodayStudyTimeData, StudyEndReason, StudySession } from '@/types/studyTime';
 import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
+import { getCurrentWeekInfo } from '@/util/studyTimeWeekUtils';
 import dayjs from 'dayjs';
 import Cookies from 'js-cookie';
 
@@ -19,6 +20,9 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
     const [isRunning, setIsRunning] = useState<boolean>(false);
     const [todayTotalSeconds, setTodayTotalSeconds] = useState<number>(0);
     const [overallTotalSeconds, setOverallTotalSeconds] = useState<number>(0);
+    const [weekTotalSeconds, setWeekTotalSeconds] = useState<number>(0);
+    const [weekLabel, setWeekLabel] = useState<string>(() => getCurrentWeekInfo().fullLabel);
+    const [weekPeriod, setWeekPeriod] = useState<string>(() => getCurrentWeekInfo().periodLabel);
     const [currentSessionSeconds, setCurrentSessionSeconds] = useState<number>(0);
 
     // 🔒 [화면 켜짐 유지] 스톱워치 실행 중 모바일/태블릿 화면 자동 잠금(절전 모드) 방지
@@ -111,6 +115,27 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
                     setTodayTotalSeconds(data.totalSeconds || 0);
                     if (data.overallTotalSeconds !== undefined) {
                         setOverallTotalSeconds(data.overallTotalSeconds || 0);
+                    }
+                    if (data.weekTotalSeconds !== undefined) {
+                        setWeekTotalSeconds(data.weekTotalSeconds || 0);
+                        if (data.weekLabel) setWeekLabel(data.weekLabel);
+                        if (data.weekPeriod) setWeekPeriod(data.weekPeriod);
+                    } else {
+                        // 백엔드 fallback (배포 서버에 weekTotalSeconds 필드가 없는 경우)
+                        try {
+                            const weekInfo = getCurrentWeekInfo(todayStr);
+                            setWeekLabel(weekInfo.fullLabel);
+                            setWeekPeriod(weekInfo.periodLabel);
+                            const mRes = await http.get('/choiMath/studyTime/getMonthly', {
+                                params: { studentId, month: dayjs(todayStr).format('YYYY-MM') },
+                                disableLoading: true
+                            });
+                            const dailyList: any[] = mRes.data?.dailyList || [];
+                            const sum = dailyList
+                                .filter((d) => d.date >= weekInfo.startDate && d.date <= weekInfo.endDate)
+                                .reduce((acc, cur) => acc + (Number(cur.totalSeconds) || 0), 0);
+                            setWeekTotalSeconds(sum);
+                        } catch (_) {}
                     }
                 }
 
@@ -611,6 +636,9 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
         isRunning,
         todayTotalSeconds,
         overallTotalSeconds,
+        weekTotalSeconds,
+        weekLabel,
+        weekPeriod,
         currentSessionSeconds,
         todayData,
         startStudy,
