@@ -20,6 +20,10 @@ export interface TodayStudyTimeData {
     date: string;
     totalSeconds: number;
     overallTotalSeconds?: number;
+    weekTotalSeconds?: number;
+    weekLabel?: string;
+    weekPeriod?: string;
+    weekNumber?: number;
     goalSeconds: number;
     firstStartedAt: string | Date | null;
     lastEndedAt: string | Date | null;
@@ -78,3 +82,26 @@ export interface StudyTimeStatisticsItem {
     rank: number;
     dailyRecords: DailyStudyRecord[];
 }
+
+export interface MonthlyWeekSummaryItem {
+    weekKey?: string;
+    weekNumber: number;
+    weekLabel: string;
+    startDate: string;
+    endDate: string;
+    periodLabel: string;
+    totalSeconds: number;
+    studyDaysCount: number;
+    averageSecondsPerDay: number;
+    sessionsCount?: number;
+}
+
+export interface MonthlySummaryHistoryItem {
+    month: string;
+    totalSeconds: number;
+    studyDaysCount: number;
+    averageSecondsPerDay: number;
+    sessionsCount?: number;
+    weeks?: MonthlyWeekSummaryItem[];
+}
+

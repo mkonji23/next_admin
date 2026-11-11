@@ -28,7 +28,8 @@ export const AppMenuModel: AppMenuItem[] = [
         label: 'Praise',
         items: [
             { label: '학생 칭찬 현황(관리자)', icon: 'pi pi-fw pi-star', to: '/admin-student-status' },
-            { label: '칭찬 결산', icon: 'pi pi-fw pi-gift', to: '/praise-settlement' }
+            { label: '칭찬 결산', icon: 'pi pi-fw pi-gift', to: '/praise-settlement' },
+            { label: '공부시간 결산', icon: 'pi pi-fw pi-clock', to: '/study-time-settlement' }
         ]
     },
     {

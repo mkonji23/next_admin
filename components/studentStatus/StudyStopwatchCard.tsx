@@ -73,6 +73,8 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
         isRunning,
         todayTotalSeconds,
         overallTotalSeconds,
+        weekTotalSeconds = 0,
+        weekLabel = '',
         currentSessionSeconds,
         todayData,
         startStudy,
@@ -118,6 +120,7 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
 
     const activeTotalSeconds = todayTotalSeconds + (isRunning ? currentSessionSeconds : 0);
     const activeOverallSeconds = (overallTotalSeconds || 0) + (isRunning ? currentSessionSeconds : 0);
+    const activeWeekSeconds = (weekTotalSeconds || 0) + (isRunning ? currentSessionSeconds : 0);
     const totalTimeDisplay = formatTime(activeTotalSeconds);
 
     // 초/분이 넘어갈 때 분/시간 단위 펄스 애니메이션 트리거 키
@@ -340,7 +343,7 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                                         <span className={`font-bold text-lg ${styles.cardTitle}`}>순공 타이머</span>
                                     </div>
                                     <span className={`text-xs font-normal ${styles.cardSubtitle}`}>
-                                        (전체 {formatDurationText(activeOverallSeconds)})
+                                        ({weekLabel || '이번 주'} {formatDurationText(activeWeekSeconds)})
                                     </span>
                                 </div>
                                 {/* 현재 시간 표시 */}

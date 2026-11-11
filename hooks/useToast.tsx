@@ -16,10 +16,18 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
     const toastRef = useRef<Toast>(null);
 
     const showToast = (props: ToastParam) => {
+        const sanitize = (val: any): string => {
+            if (val === null || val === undefined) return '';
+            if (typeof val === 'object') {
+                return val.message || val.code || val.error || JSON.stringify(val);
+            }
+            return String(val);
+        };
+
         toastRef.current?.show({
             severity: props.severity || 'info',
-            summary: props.summary || 'Confirmed',
-            detail: props.detail || '',
+            summary: sanitize(props.summary) || 'Confirmed',
+            detail: sanitize(props.detail),
             life: props.life || 3000,
             className: 'custom-toast' // 클래스 지정
         });

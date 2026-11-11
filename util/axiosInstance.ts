@@ -224,10 +224,24 @@ export const useHttp = (): AxiosInstance => {
                         detail: '페이지를 찾을수 없습니다.'
                     });
                 } else {
+                    const errorData = error.response.data;
+                    let errorMessage = '오류가 발생했습니다.';
+                    if (typeof errorData?.error === 'string') {
+                        errorMessage = errorData.error;
+                    } else if (typeof errorData?.message === 'string') {
+                        errorMessage = errorData.message;
+                    } else if (typeof errorData?.error === 'object' && errorData?.error !== null) {
+                        errorMessage = errorData.error.message || errorData.error.code || JSON.stringify(errorData.error);
+                    } else if (typeof errorData === 'object' && errorData !== null) {
+                        errorMessage = errorData.message || errorData.code || error.response?.statusText || '오류가 발생했습니다.';
+                    } else if (error.response?.statusText) {
+                        errorMessage = error.response.statusText;
+                    }
+
                     showToast({
                         severity: 'error',
                         summary: 'Error',
-                        detail: error.response.data?.error || error.response?.statusText || error.response.data?.message
+                        detail: errorMessage
                     });
                 }
             }

@@ -112,6 +112,24 @@ export interface PraiseClass {
     classId: string;
     className: string;
     attendance?: PraiseDetail[];
+    totalPraiseCnt?: number;
+    isClosed?: boolean;
+    status?: string;
+}
+
+export interface PraiseBonusItem {
+    studentId?: string;
+    studentName?: string;
+    targetMonth?: string;
+    settledPeriodKey?: string;
+    periodType?: string;
+    weekNumber?: number;
+    praiseCount: number;
+    rank?: number;
+    totalSeconds?: number;
+    reason?: string;
+    grantedBy?: string;
+    createdAt?: string | Date;
 }
 
 export interface PraiseStatistics {
@@ -120,7 +138,11 @@ export interface PraiseStatistics {
     grade?: string;
     school?: string;
     totalPraiseCnt: number;
+    attendancePraiseCnt?: number;
+    bonusPraiseCnt?: number;
+    bonusList?: PraiseBonusItem[];
     classes: PraiseClass[];
+    uniqueKey?: string;
 }
 
 export interface StudentClassStatistics {
