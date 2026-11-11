@@ -213,16 +213,46 @@ const NoticeModal = ({ visible, onClose, pData }: NoticeModalProps) => {
         const isRead = typeof window !== 'undefined' && localStorage.getItem(`notice_read_${rowData.noticeId}`);
         return (
             <div className="flex align-items-center gap-2">
-                {rowData.isNotice && <span className="p-tag p-tag-success text-xs">공지</span>}
-                {!isRead && <span className="p-tag p-tag-danger text-xs">NEW</span>}
-                <span className="font-semibold text-900">{rowData.title}</span>
+                {rowData.isNotice && (
+                    <span
+                        className="p-tag p-tag-success text-xs flex-shrink-0"
+                        style={{
+                            minWidth: '38px',
+                            width: '38px',
+                            display: 'inline-flex',
+                            justifyContent: 'center',
+                            whiteSpace: 'nowrap',
+                            textAlign: 'center'
+                        }}
+                    >
+                        공지
+                    </span>
+                )}
+                {!isRead && (
+                    <span
+                        className="p-tag p-tag-danger text-xs flex-shrink-0"
+                        style={{
+                            minWidth: '36px',
+                            width: '36px',
+                            display: 'inline-flex',
+                            justifyContent: 'center',
+                            whiteSpace: 'nowrap',
+                            textAlign: 'center'
+                        }}
+                    >
+                        NEW
+                    </span>
+                )}
+                <span className="font-semibold text-900 line-height-2" style={{ wordBreak: 'break-word' }}>
+                    {rowData.title}
+                </span>
             </div>
         );
     };
 
     const dateTemplate = (rowData: any) => {
         return (
-            <span className="text-500 text-xs md:text-sm">
+            <span className="text-500 text-xs md:text-sm white-space-nowrap flex-shrink-0">
                 {dayjs(rowData.createdDate).format('YYYY-MM-DD')}
             </span>
         );
@@ -238,7 +268,7 @@ const NoticeModal = ({ visible, onClose, pData }: NoticeModalProps) => {
         }
 
         return (
-            <div className="flex flex-column gap-2">
+            <div className="flex flex-column gap-2 overflow-x-auto w-full">
                 <DataTable
                     value={noticeList}
                     rows={10}
@@ -246,58 +276,98 @@ const NoticeModal = ({ visible, onClose, pData }: NoticeModalProps) => {
                     onRowClick={(e) => handleNoticeClick(e.data)}
                     rowClassName={() => 'cursor-pointer hover:surface-100 transition-colors transition-duration-150'}
                     emptyMessage="등록된 공지사항이 없습니다."
-                    responsiveLayout="scroll"
+                    scrollable
+                    tableStyle={{ minWidth: '600px' }}
                 >
-                    <Column field="title" header="제목" body={titleTemplate} style={{ minWidth: '60%' }} />
-                    <Column field="createdDate" header="등록일" body={dateTemplate} style={{ width: '110px', textAlign: 'right' }} />
+                    <Column
+                        field="title"
+                        header="제목"
+                        body={titleTemplate}
+                        style={{ width: '480px', minWidth: '480px' }}
+                    />
+                    <Column
+                        field="createdDate"
+                        header="등록일"
+                        body={dateTemplate}
+                        style={{ width: '120px', minWidth: '120px', textAlign: 'right' }}
+                    />
                 </DataTable>
             </div>
         );
     };
 
     const renderDetail = () => (
-        <div className="flex flex-column gap-3">
-            <div className="flex justify-content-between align-items-center border-bottom-1 surface-border pb-2 flex-wrap gap-2">
-                <div className="flex align-items-center gap-2">
-                    {selectedNotice?.isNotice && <span className="p-tag p-tag-success text-xs">공지</span>}
-                    <h4 className="m-0 text-900 font-bold">{selectedNotice?.title}</h4>
-                </div>
+        <div className="flex flex-column gap-2 h-full flex-1">
+            <div className="flex justify-content-end align-items-center border-bottom-1 surface-border pb-2">
                 <span className="text-500 text-xs md:text-sm">
                     {dayjs(selectedNotice?.createdDate).format('YYYY-MM-DD HH:mm')}
                 </span>
             </div>
 
-            {/* 공지사항 본문 내용 뷰어 */}
-            <NoticeBodyViewer delta={selectedNotice?.delta} content={selectedNotice?.content} />
-
-            <div className="flex justify-content-between align-items-center mt-2 pt-2 border-top-1 surface-border">
-                {!pData?.initialNoticeId ? (
-                    <Button
-                        label="목록으로"
-                        icon="pi pi-arrow-left"
-                        className="p-button-text p-button-sm"
-                        onClick={handleBackToList}
-                    />
-                ) : (
-                    <div />
-                )}
-                <Button
-                    label="닫기"
-                    icon="pi pi-times"
-                    className="p-button-outlined p-button-secondary p-button-sm"
-                    onClick={handleClose}
-                />
+            {/* 공지사항 본문 내용 뷰어: 전체 높이를 최대한 활용 */}
+            <div className="flex-1 overflow-y-auto pt-2 line-height-3">
+                <NoticeBodyViewer delta={selectedNotice?.delta} content={selectedNotice?.content} />
             </div>
         </div>
     );
 
+    const renderHeader = () => {
+        if (viewMode === 'list') {
+            return <span className="font-bold text-lg md:text-xl">공지사항 목록</span>;
+        }
+
+        return (
+            <div className="flex align-items-center gap-2 pr-4 w-full">
+                {!pData?.initialNoticeId && (
+                    <Button
+                        icon="pi pi-arrow-left"
+                        text
+                        rounded
+                        severity="secondary"
+                        size="small"
+                        className="p-0 flex-shrink-0"
+                        style={{ width: '28px', height: '28px' }}
+                        onClick={handleBackToList}
+                        tooltip="목록으로"
+                        tooltipOptions={{ position: 'bottom' }}
+                    />
+                )}
+                {selectedNotice?.isNotice && (
+                    <span
+                        className="p-tag p-tag-success text-xs flex-shrink-0"
+                        style={{
+                            minWidth: '38px',
+                            width: '38px',
+                            display: 'inline-flex',
+                            justifyContent: 'center',
+                            whiteSpace: 'nowrap',
+                            textAlign: 'center'
+                        }}
+                    >
+                        공지
+                    </span>
+                )}
+                <span className="font-bold text-900 text-base md:text-xl line-clamp-1" title={selectedNotice?.title}>
+                    {selectedNotice?.title || '공지사항'}
+                </span>
+            </div>
+        );
+    };
+
     return (
         <Dialog
-            header={viewMode === 'list' ? '공지사항 목록' : '공지사항 상세'}
+            header={renderHeader()}
             visible={visible}
             style={{
                 width: viewMode === 'list' ? '92vw' : '92vw',
-                maxWidth: viewMode === 'list' ? '650px' : '850px'
+                maxWidth: viewMode === 'list' ? '650px' : '850px',
+                maxHeight: '92vh'
+            }}
+            contentStyle={{
+                height: viewMode === 'detail' ? '75vh' : 'auto',
+                maxHeight: '82vh',
+                display: 'flex',
+                flexDirection: 'column'
             }}
             onHide={handleClose}
             dismissableMask

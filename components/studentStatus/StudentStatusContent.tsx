@@ -736,8 +736,8 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                 </div>
 
                 <Card className="mb-5 shadow-1 border-round-2xl">
-                    <div className="flex flex-column md:flex-row align-items-center justify-content-between gap-3">
-                        <div className="flex align-items-center gap-3 w-full md:w-auto">
+                    <div className="flex flex-column gap-3">
+                        <div className="flex align-items-center gap-3 w-full">
                             <div className="relative">
                                 <div
                                     className="w-4rem h-4rem flex-shrink-0 border-circle bg-blue-100 flex align-items-center justify-content-center cursor-pointer hover:shadow-2 transition-duration-200 overflow-hidden"
@@ -858,12 +858,24 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                                             />
                                         )}
                                     </div>
+                                    <Button
+                                        icon="pi pi-sign-out"
+                                        severity="secondary"
+                                        text
+                                        rounded
+                                        aria-label="로그아웃"
+                                        tooltip="로그아웃"
+                                        tooltipOptions={{ position: 'bottom' }}
+                                        onClick={handleLogout}
+                                        className="hover:bg-gray-200"
+                                    />
                                 </div>
                                 <p className="text-500 m-0 mt-1 text-sm md:text-base">칭찬 현황을 확인해보세요!</p>
                             </div>
                         </div>
 
-                        <div className="flex align-items-center gap-2 ml-auto md:ml-0">
+                        {/* 공지사항 버튼: 크게 & 왼쪽 정렬 (로그아웃 버튼과 완전히 분리) */}
+                        <div className="flex align-items-center justify-content-start pt-1">
                             <style>{`
                                 @keyframes bell-swing {
                                     0%, 100% { transform: rotate(0deg); }
@@ -898,11 +910,10 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                                     label="공지사항"
                                     icon={`pi pi-bell${unreadCount > 0 ? ' bell-animated text-red-500 font-bold' : ''}`}
                                     severity={unreadCount > 0 ? 'danger' : 'info'}
-                                    size="small"
-                                    className={`border-round-xl p-1 px-2 text-xs font-semibold ${
+                                    className={`border-round-xl px-4 py-2 text-sm md:text-base font-bold shadow-1 ${
                                         unreadCount > 0 ? 'notice-btn-highlight p-button-outlined' : 'p-button-outlined'
                                     }`}
-                                    style={{ height: '32px' }}
+                                    style={{ height: '42px', minWidth: '130px' }}
                                     onClick={handleShowNotices}
                                 />
                                 {unreadCount > 0 && (
@@ -910,35 +921,24 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                                         className="notice-badge-glow flex align-items-center justify-content-center text-white font-extrabold"
                                         style={{
                                             position: 'absolute',
-                                            top: '-7px',
-                                            right: '-7px',
-                                            minWidth: '22px',
-                                            height: '18px',
-                                            fontSize: '10px',
+                                            top: '-8px',
+                                            right: '-8px',
+                                            minWidth: '24px',
+                                            height: '20px',
+                                            fontSize: '11px',
                                             background: 'linear-gradient(135deg, #ef4444, #dc2626)',
-                                            borderRadius: '9px',
-                                            padding: '0 4px',
+                                            borderRadius: '10px',
+                                            padding: '0 5px',
                                             pointerEvents: 'none',
                                             zIndex: 5,
                                             letterSpacing: '-0.5px',
-                                            border: '1.5px solid #ffffff'
+                                            border: '2px solid #ffffff'
                                         }}
                                     >
                                         NEW
                                     </span>
                                 )}
                             </div>
-                            <Button
-                                icon="pi pi-sign-out"
-                                severity="secondary"
-                                text
-                                rounded
-                                aria-label="로그아웃"
-                                tooltip="로그아웃"
-                                tooltipOptions={{ position: 'bottom' }}
-                                onClick={handleLogout}
-                                className="hover:bg-gray-200"
-                            />
                         </div>
                     </div>
                 </Card>

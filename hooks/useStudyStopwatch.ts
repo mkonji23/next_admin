@@ -25,6 +25,7 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
     const { isActive: isWakeLockActive, isSupported: isWakeLockSupported } = useScreenWakeLock(isRunning);
 
     const activeSessionIdRef = useRef<string | null>(null);
+    const sessionDateRef = useRef<string | null>(null);
     const ticketRef = useRef<string | null>(null);
     const sessionStartTimeRef = useRef<number | null>(null);
     const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -117,6 +118,7 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
                 // 이전 접속 시 비정상 종료 등으로 활성 세션이 남아있다면 복원
                 if (data.activeSession && !data.activeSession.endedAt) {
                     activeSessionIdRef.current = data.activeSession.sessionId;
+                    sessionDateRef.current = data.date || dayjs().format('YYYY-MM-DD');
                     ticketRef.current = data.activeSession.currentTicket || null;
                     const elapsedSinceStart = Math.floor(
                         (Date.now() - new Date(data.activeSession.startedAt).getTime()) / 1000
@@ -204,6 +206,7 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
 
         try {
             const todayStr = dayjs().format('YYYY-MM-DD');
+            sessionDateRef.current = todayStr;
             const startPromise = http.post(
                 '/choiMath/studyTime/start',
                 { studentId, date: todayStr },
@@ -217,6 +220,7 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
                 activeSessionIdRef.current = res.data.sessionId;
                 ticketRef.current = res.data.ticket || null;
             } else {
+                sessionDateRef.current = null;
                 // 서버 오류 시 롤백 (이미 사용자가 일시정지하지 않은 경우에만)
                 if (isRunningRef.current) {
                     stopTick();
@@ -226,6 +230,7 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
                 }
             }
         } catch (err) {
+            sessionDateRef.current = null;
             console.error('Error starting study session:', err);
             if (isRunningRef.current) {
                 stopTick();
@@ -298,10 +303,11 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
 
             const sessionId = activeSessionIdRef.current;
             const currentTicket = ticketRef.current;
-            const todayStr = dayjs().format('YYYY-MM-DD');
+            const sessionDate = sessionDateRef.current || dayjs().format('YYYY-MM-DD');
 
             activeSessionIdRef.current = null;
             ticketRef.current = null;
+            sessionDateRef.current = null;
 
             // 4) 서버에 세션 정산 요청 및 권위(Authoritative) 동기화
             if (studentId && sessionId) {
@@ -310,7 +316,7 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
                         '/choiMath/studyTime/pause',
                         {
                             studentId,
-                            date: todayStr,
+                            date: sessionDate,
                             sessionId,
                             ticket: currentTicket,
                             sessionSeconds: elapsedSec,
@@ -518,13 +524,13 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
             if (now - lastHeartbeatTimeRef.current < 5000) return;
             lastHeartbeatTimeRef.current = now;
 
-            const todayStr = dayjs().format('YYYY-MM-DD');
+            const sessionDate = sessionDateRef.current || dayjs().format('YYYY-MM-DD');
             try {
                 const res = await http.post(
                     '/choiMath/studyTime/sync',
                     {
                         studentId,
-                        date: todayStr,
+                        date: sessionDate,
                         sessionId,
                         ticket: currentTicket,
                         currentSessionSeconds: sessionSec,
@@ -539,6 +545,7 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
                     isRunningRef.current = false;
                     sessionStartTimeRef.current = null;
                     activeSessionIdRef.current = null;
+                    sessionDateRef.current = null;
                     ticketRef.current = null;
                     stopSilentAudio();
 
@@ -567,6 +574,7 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
                     isRunningRef.current = false;
                     sessionStartTimeRef.current = null;
                     activeSessionIdRef.current = null;
+                    sessionDateRef.current = null;
                     ticketRef.current = null;
                     stopSilentAudio();
 

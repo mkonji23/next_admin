@@ -10,16 +10,26 @@ import { ATTENDANCE_STATUS_OPTIONS } from '@/constants/attendance';
 
 interface DetailsTableProps {
     classes: any[];
-    expandedRows: any;
-    onRowToggle: (data: any) => void;
+    expandedRows?: any;
+    onRowToggle?: (data: any) => void;
     classRanks: Record<string, number>;
 }
 
-const DetailsTable: React.FC<DetailsTableProps> = ({ classes, expandedRows, onRowToggle, classRanks }) => {
+const DetailsTable: React.FC<DetailsTableProps> = ({ classes, classRanks }) => {
     // 종강된 클래스 제외
     const activeClasses = (classes || []).filter(
         (c: any) => c.status !== '종강' && !c.isClosed
     );
+
+    // 클래스별 칭찬 및 출석 내역 datatable을 항상 expand 된 상태로 유지
+    const allExpandedRows = React.useMemo(() => {
+        const map: Record<string, boolean> = {};
+        activeClasses.forEach((c: any) => {
+            const key = c.classId ?? c._id;
+            if (key) map[key] = true;
+        });
+        return map;
+    }, [activeClasses]);
 
     const getAttendanceSeverity = (status: string) => {
         switch (status) {
@@ -140,8 +150,8 @@ const DetailsTable: React.FC<DetailsTableProps> = ({ classes, expandedRows, onRo
                 <Card title="클래스별 칭찬 및 출석 내역" className="border-none shadow-1 border-round-2xl overflow-hidden">
                     <DataTable
                         value={activeClasses}
-                        expandedRows={expandedRows}
-                        onRowToggle={(e) => onRowToggle(e.data)}
+                        expandedRows={allExpandedRows}
+                        onRowToggle={() => {}}
                         rowExpansionTemplate={rowExpansionTemplate}
                         dataKey="classId"
                         emptyMessage="수강 중인 클래스가 없습니다."
