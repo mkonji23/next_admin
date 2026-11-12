@@ -4,6 +4,7 @@ import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
 import { InputText } from 'primereact/inputtext';
 import { Tag } from 'primereact/tag';
+import { Checkbox } from 'primereact/checkbox';
 import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
 import dayjs from 'dayjs';
@@ -13,6 +14,7 @@ interface Notice {
     title: string;
     createdUser: string;
     isNotice: boolean;
+    isImportant?: boolean;
     createdDate: string;
     content?: string;
     delta?: any;
@@ -60,16 +62,58 @@ const NoticeListView: React.FC<NoticeListViewProps> = ({
         fetchClasses();
     }, []);
 
+    const handleToggleImportant = async (rowData: Notice, newChecked: boolean) => {
+        try {
+            await http.post(`/choiMath/notice/toggleImportant/${rowData.noticeId}`, {
+                isImportant: newChecked
+            });
+            showToast({
+                severity: newChecked ? 'success' : 'info',
+                summary: newChecked ? '중요 공지 설정' : '중요 공지 해제',
+                detail: newChecked ? '중요 공지로 설정되었습니다.' : '중요 공지 설정이 해제되었습니다.'
+            });
+            onNoticeSuccess && onNoticeSuccess();
+        } catch (error) {
+            console.error('Toggle important error:', error);
+            showToast({
+                severity: 'error',
+                summary: '설정 실패',
+                detail: '중요 공지 설정 변경 중 오류가 발생했습니다.'
+            });
+        }
+    };
+
+    const importantTemplate = (rowData: Notice) => {
+        return (
+            <div
+                className="flex justify-content-center align-items-center"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <Checkbox
+                    checked={!!rowData.isImportant}
+                    onChange={(e) => handleToggleImportant(rowData, !!e.checked)}
+                    tooltip={rowData.isImportant ? '중요 공지 해제' : '중요 공지로 설정'}
+                    tooltipOptions={{ position: 'top' }}
+                />
+            </div>
+        );
+    };
+
     const titleTemplate = (rowData: Notice) => {
         return (
             <div className="flex align-items-center gap-2" style={{ minWidth: '240px' }}>
-                {rowData.isNotice ? (
+                {rowData.isImportant ? (
+                    <span className="p-tag p-tag-danger">
+                        <i className="pi pi-exclamation-circle mr-1" />
+                        중요
+                    </span>
+                ) : rowData.isNotice ? (
                     <span className="p-tag p-tag-success">
                         <i className="pi pi-bell mr-1" />
                         공지
                     </span>
                 ) : (
-                    <span className="p-tag p-tag-danger">
+                    <span className="p-tag p-tag-danger" style={{ opacity: 0.6 }}>
                         <i className="pi pi-clock mr-1" />
                         미공지
                     </span>
@@ -216,6 +260,12 @@ const NoticeListView: React.FC<NoticeListViewProps> = ({
                 rowClassName={() => 'cursor-pointer'}
             >
                 <Column selectionMode="multiple" headerStyle={{ width: '3rem' }}></Column>
+                <Column
+                    header="중요"
+                    body={importantTemplate}
+                    style={{ width: '70px' }}
+                    align="center"
+                ></Column>
                 <Column
                     field="title"
                     header="제목"

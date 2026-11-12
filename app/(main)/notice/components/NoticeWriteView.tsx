@@ -27,6 +27,7 @@ const NoticeWriteView: React.FC<NoticeWriteViewProps> = ({ onBack, onSuccess }) 
 
     const [title, setTitle] = useState('');
     const [isNotice, setIsNotice] = useState(false);
+    const [isImportant, setIsImportant] = useState(false);
     const [delta, setDelta] = useState<any>(null);
     const [content, setContent] = useState('');
     const [loading, setLoading] = useState(false);
@@ -87,6 +88,7 @@ const NoticeWriteView: React.FC<NoticeWriteViewProps> = ({ onBack, onSuccess }) 
             formData.append('delta', JSON.stringify(finalDelta));
             formData.append('imageUrls', JSON.stringify(allImageUrls));
             formData.append('createdUser', userInfo?.userName || '관리자');
+            formData.append('isImportant', String(isImportant));
             if (selectedClasses.length > 0) {
                 formData.append('classIds', JSON.stringify(selectedClasses));
             }
@@ -139,6 +141,17 @@ const NoticeWriteView: React.FC<NoticeWriteViewProps> = ({ onBack, onSuccess }) 
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder="제목을 입력하세요"
                     />
+                </div>
+
+                <div className="flex align-items-center gap-2">
+                    <Checkbox
+                        inputId="isImportant"
+                        checked={isImportant}
+                        onChange={(e) => setIsImportant(!!e.checked)}
+                    />
+                    <label htmlFor="isImportant" className="font-bold cursor-pointer select-none text-red-600">
+                        중요 공지 (최상단 고정)
+                    </label>
                 </div>
 
                 <div className="flex flex-column gap-2">

@@ -357,6 +357,14 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                 return n.classIds.some((cid: string) => actualClassIds.includes(cid));
             });
 
+            // 중요 공지(isImportant: true) 우선, 그 다음 작성일(createdDate) 최신순 정렬
+            targetNotices.sort((a: any, b: any) => {
+                const aImp = a.isImportant === true || a.isImportant === 'true' ? 1 : 0;
+                const bImp = b.isImportant === true || b.isImportant === 'true' ? 1 : 0;
+                if (aImp !== bImp) return bImp - aImp;
+                return new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime();
+            });
+
             setNotices(targetNotices);
             return targetNotices;
         } catch (error) {
@@ -409,15 +417,20 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
         return notices.filter((n: any) => !localStorage.getItem(`notice_read_${n.noticeId}`)).length;
     }, [notices, noticeReadVersion]);
 
-    const handleShowNotices = async () => {
+    const handleOpenNotice = async (noticeId?: string) => {
         await openModal({
             id: 'noticeModal',
             pData: {
                 notices,
+                initialNoticeId: noticeId,
                 studentClassIds: allStudentClassIds
             }
         });
         setNoticeReadVersion((v) => v + 1);
+    };
+
+    const handleShowNotices = async () => {
+        await handleOpenNotice();
     };
 
     const prepareChartData = (data: any, closedIds?: Set<string>) => {
@@ -870,76 +883,166 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                                         className="hover:bg-gray-200"
                                     />
                                 </div>
-                                <p className="text-500 m-0 mt-1 text-sm md:text-base">칭찬 현황을 확인해보세요!</p>
+                                <div className="flex align-items-center gap-2 flex-wrap mt-1">
+                                    <p className="text-500 m-0 text-sm md:text-base">칭찬 현황을 확인해보세요!</p>
+                                    <style>{`
+                                        @keyframes bell-swing {
+                                            0%, 100% { transform: rotate(0deg); }
+                                            10% { transform: rotate(14deg); }
+                                            20% { transform: rotate(-14deg); }
+                                            30% { transform: rotate(10deg); }
+                                            40% { transform: rotate(-10deg); }
+                                            50% { transform: rotate(6deg); }
+                                            60% { transform: rotate(0deg); }
+                                        }
+                                        @keyframes glow-pulse {
+                                            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
+                                            70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+                                            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+                                        }
+                                        .bell-animated {
+                                            display: inline-block;
+                                            transform-origin: top center;
+                                            animation: bell-swing 2s infinite ease-in-out;
+                                        }
+                                        .notice-btn-highlight {
+                                            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(249, 115, 22, 0.15)) !important;
+                                            border: 1.5px solid #ef4444 !important;
+                                            color: #ef4444 !important;
+                                        }
+                                        .notice-badge-glow {
+                                            animation: glow-pulse 1.8s infinite;
+                                        }
+                                    `}</style>
+                                    <div className="relative" style={{ display: 'inline-flex' }}>
+                                        <Button
+                                            label="공지사항"
+                                            icon={`pi pi-bell${unreadCount > 0 ? ' bell-animated text-red-500 font-bold' : ''}`}
+                                            severity={unreadCount > 0 ? 'danger' : 'info'}
+                                            className={`border-round-xl px-3 py-1 text-xs md:text-sm font-bold shadow-1 ${
+                                                unreadCount > 0 ? 'notice-btn-highlight p-button-outlined' : 'p-button-outlined'
+                                            }`}
+                                            style={{ height: '34px', minWidth: '95px' }}
+                                            onClick={handleShowNotices}
+                                        />
+                                        {unreadCount > 0 && (
+                                            <span
+                                                className="notice-badge-glow flex align-items-center justify-content-center text-white font-extrabold"
+                                                style={{
+                                                    position: 'absolute',
+                                                    top: '-6px',
+                                                    right: '-6px',
+                                                    minWidth: '20px',
+                                                    height: '18px',
+                                                    fontSize: '10px',
+                                                    background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                                                    borderRadius: '9px',
+                                                    padding: '0 4px',
+                                                    pointerEvents: 'none',
+                                                    zIndex: 5,
+                                                    letterSpacing: '-0.5px',
+                                                    border: '2px solid #ffffff'
+                                                }}
+                                            >
+                                                NEW
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        {/* 공지사항 버튼: 크게 & 왼쪽 정렬 (로그아웃 버튼과 완전히 분리) */}
-                        <div className="flex align-items-center justify-content-start pt-1">
-                            <style>{`
-                                @keyframes bell-swing {
-                                    0%, 100% { transform: rotate(0deg); }
-                                    10% { transform: rotate(14deg); }
-                                    20% { transform: rotate(-14deg); }
-                                    30% { transform: rotate(10deg); }
-                                    40% { transform: rotate(-10deg); }
-                                    50% { transform: rotate(6deg); }
-                                    60% { transform: rotate(0deg); }
-                                }
-                                @keyframes glow-pulse {
-                                    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
-                                    70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
-                                    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-                                }
-                                .bell-animated {
-                                    display: inline-block;
-                                    transform-origin: top center;
-                                    animation: bell-swing 2s infinite ease-in-out;
-                                }
-                                .notice-btn-highlight {
-                                    background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(249, 115, 22, 0.15)) !important;
-                                    border: 1.5px solid #ef4444 !important;
-                                    color: #ef4444 !important;
-                                }
-                                .notice-badge-glow {
-                                    animation: glow-pulse 1.8s infinite;
-                                }
-                            `}</style>
-                            <div className="relative" style={{ display: 'inline-flex' }}>
-                                <Button
-                                    label="공지사항"
-                                    icon={`pi pi-bell${unreadCount > 0 ? ' bell-animated text-red-500 font-bold' : ''}`}
-                                    severity={unreadCount > 0 ? 'danger' : 'info'}
-                                    className={`border-round-xl px-4 py-2 text-sm md:text-base font-bold shadow-1 ${
-                                        unreadCount > 0 ? 'notice-btn-highlight p-button-outlined' : 'p-button-outlined'
-                                    }`}
-                                    style={{ height: '42px', minWidth: '130px' }}
-                                    onClick={handleShowNotices}
-                                />
-                                {unreadCount > 0 && (
-                                    <span
-                                        className="notice-badge-glow flex align-items-center justify-content-center text-white font-extrabold"
-                                        style={{
-                                            position: 'absolute',
-                                            top: '-8px',
-                                            right: '-8px',
-                                            minWidth: '24px',
-                                            height: '20px',
-                                            fontSize: '11px',
-                                            background: 'linear-gradient(135deg, #ef4444, #dc2626)',
-                                            borderRadius: '10px',
-                                            padding: '0 5px',
-                                            pointerEvents: 'none',
-                                            zIndex: 5,
-                                            letterSpacing: '-0.5px',
-                                            border: '2px solid #ffffff'
-                                        }}
-                                    >
-                                        NEW
+                        {/* 📢 최근 공지사항 리스트 (최대 3개, 중요 공지 최우선) */}
+                        {notices && notices.length > 0 && (
+                            <div className="border-top-1 surface-border pt-3 mt-1">
+                                <div className="flex align-items-center justify-content-between mb-2 px-1">
+                                    <span className="font-bold text-xs md:text-sm text-800 flex align-items-center gap-2">
+                                        <i className="pi pi-megaphone text-primary text-sm" />
+                                        최근 공지사항
                                     </span>
-                                )}
+                                    <Button
+                                        label="전체보기"
+                                        icon="pi pi-chevron-right"
+                                        iconPos="right"
+                                        text
+                                        size="small"
+                                        className="p-0 text-xs text-500 hover:text-primary font-semibold"
+                                        onClick={handleShowNotices}
+                                    />
+                                </div>
+                                <div className="flex flex-column gap-1 surface-50 border-round-xl p-2 md:p-3 border-1 surface-border">
+                                    {notices.slice(0, 3).map((item: any) => {
+                                        const isRead =
+                                            typeof window !== 'undefined' &&
+                                            localStorage.getItem(`notice_read_${item.noticeId}`);
+                                        return (
+                                            <div
+                                                key={item.noticeId}
+                                                onClick={() => handleOpenNotice(item.noticeId)}
+                                                className="flex align-items-center justify-content-between py-2 px-2 border-round hover:surface-100 transition-colors cursor-pointer gap-2"
+                                            >
+                                                <div className="flex align-items-center gap-2 min-w-0 flex-1">
+                                                    {item.isImportant === true || item.isImportant === 'true' ? (
+                                                        <span
+                                                            className="p-tag p-tag-danger text-xs flex-shrink-0 font-bold"
+                                                            style={{
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                whiteSpace: 'nowrap',
+                                                                padding: '0.25rem 0.5rem'
+                                                            }}
+                                                        >
+                                                            <i className="pi pi-exclamation-circle mr-1" />
+                                                            중요
+                                                        </span>
+                                                    ) : (
+                                                        <span
+                                                            className="p-tag p-tag-success text-xs flex-shrink-0 font-bold"
+                                                            style={{
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                whiteSpace: 'nowrap',
+                                                                padding: '0.25rem 0.5rem'
+                                                            }}
+                                                        >
+                                                            <i className="pi pi-bell mr-1" />
+                                                            공지
+                                                        </span>
+                                                    )}
+                                                    {!isRead && (
+                                                        <span
+                                                            className="p-tag p-tag-danger text-xs flex-shrink-0 font-bold"
+                                                            style={{
+                                                                minWidth: '34px',
+                                                                width: '34px',
+                                                                display: 'inline-flex',
+                                                                justifyContent: 'center',
+                                                                whiteSpace: 'nowrap',
+                                                                textAlign: 'center',
+                                                                fontSize: '10px'
+                                                            }}
+                                                        >
+                                                            NEW
+                                                        </span>
+                                                    )}
+                                                    <span
+                                                        className="font-medium text-xs md:text-sm text-900 line-clamp-1 hover:text-primary transition-colors"
+                                                        title={item.title}
+                                                    >
+                                                        {item.title}
+                                                    </span>
+                                                </div>
+                                                <span className="text-500 text-xs white-space-nowrap flex-shrink-0">
+                                                    {dayjs(item.createdDate).format('MM.DD')}
+                                                </span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                 </Card>
 

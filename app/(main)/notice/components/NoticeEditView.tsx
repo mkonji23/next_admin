@@ -28,6 +28,7 @@ const NoticeEditView: React.FC<NoticeEditViewProps> = ({ initialData, onBack, on
 
     const [title, setTitle] = useState(initialData?.title || '');
     const [isNotice, setIsNotice] = useState(initialData?.isNotice || false);
+    const [isImportant, setIsImportant] = useState(!!initialData?.isImportant);
     const [delta, setDelta] = useState<any>(initialData?.delta || null);
     const [content, setContent] = useState(initialData?.content || '');
     const [imageUrls, setImageUrls] = useState<any[]>(initialData?.imageUrls || []);
@@ -107,6 +108,7 @@ const NoticeEditView: React.FC<NoticeEditViewProps> = ({ initialData, onBack, on
             formData.append('delta', JSON.stringify(finalDelta));
             formData.append('updatedUser', userInfo?.userName || '관리자');
             formData.append('isNotice', String(isNotice));
+            formData.append('isImportant', String(isImportant));
             formData.append('imageUrls', JSON.stringify(combinedImageUrls));
             if (selectedClasses.length > 0) {
                 formData.append('classIds', JSON.stringify(selectedClasses));
@@ -160,6 +162,17 @@ const NoticeEditView: React.FC<NoticeEditViewProps> = ({ initialData, onBack, on
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder="제목을 입력하세요"
                     />
+                </div>
+
+                <div className="flex align-items-center gap-2">
+                    <Checkbox
+                        inputId="editImportant"
+                        checked={isImportant}
+                        onChange={(e) => setIsImportant(!!e.checked)}
+                    />
+                    <label htmlFor="editImportant" className="font-bold cursor-pointer select-none text-red-600">
+                        중요 공지 (최상단 고정)
+                    </label>
                 </div>
 
                 <div className="flex flex-column gap-2">

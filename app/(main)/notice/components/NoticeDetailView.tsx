@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from 'primereact/button';
+import { Checkbox } from 'primereact/checkbox';
 import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
 import { CustomEditor } from '@/components/editor/CustomEditor';
@@ -13,6 +14,7 @@ interface NoticeDetail {
     delta: any;
     createdUser: string;
     isNotice: boolean;
+    isImportant?: boolean;
     createdDate: string;
     classIds?: string[];
 }
@@ -35,7 +37,29 @@ const NoticeDetailView: React.FC<NoticeDetailViewProps> = ({
     const http = useHttp();
     const { showToast } = useToast();
     const [isNotice, setIsNotice] = useState(initialData.isNotice);
+    const [isImportant, setIsImportant] = useState(!!initialData.isImportant);
     const [classes, setClasses] = useState<any[]>([]);
+
+    const handleToggleImportant = async (newChecked: boolean) => {
+        try {
+            await http.post(`/choiMath/notice/toggleImportant/${initialData.noticeId}`, {
+                isImportant: newChecked
+            });
+            setIsImportant(newChecked);
+            if (newChecked && !isNotice) {
+                setIsNotice(true);
+            }
+            showToast({
+                severity: newChecked ? 'success' : 'info',
+                summary: newChecked ? '중요 공지 설정' : '중요 공지 해제',
+                detail: newChecked ? '중요 공지로 설정되었습니다.' : '중요 공지 설정이 해제되었습니다.'
+            });
+            onNoticeSuccess && onNoticeSuccess();
+        } catch (error) {
+            console.error('Toggle important error:', error);
+            showToast({ severity: 'error', summary: '설정 실패', detail: '중요 공지 설정 중 오류가 발생했습니다.' });
+        }
+    };
 
     const handleDelete = () => {
         confirmDialog({
@@ -109,14 +133,18 @@ const NoticeDetailView: React.FC<NoticeDetailViewProps> = ({
                             className="p-button-text mr-2"
                             onClick={() => window.history.back()}
                         />
-                        {initialData?.isNotice && (
+                        {isImportant ? (
+                            <span className="p-tag p-tag-danger" style={{ minWidth: '60px', textAlign: 'center' }}>
+                                <i className="pi pi-exclamation-circle mr-1" />
+                                중요
+                            </span>
+                        ) : isNotice ? (
                             <span className="p-tag p-tag-success" style={{ minWidth: '60px', textAlign: 'center' }}>
                                 <i className="pi pi-bell mr-1" />
                                 공지
                             </span>
-                        )}
-                        {!initialData?.isNotice && (
-                            <span className="p-tag p-tag-danger" style={{ minWidth: '60px', textAlign: 'center' }}>
+                        ) : (
+                            <span className="p-tag p-tag-danger" style={{ minWidth: '60px', textAlign: 'center', opacity: 0.7 }}>
                                 <i className="pi pi-clock mr-1" />
                                 미공지
                             </span>
@@ -142,7 +170,21 @@ const NoticeDetailView: React.FC<NoticeDetailViewProps> = ({
                         </div>
                     )}
                 </div>
-                <div className="flex gap-2 mt-3 md:mt-0">
+                <div className="flex align-items-center gap-2 mt-3 md:mt-0 flex-wrap">
+                    <label
+                        htmlFor="detail-important-cb"
+                        className="flex align-items-center gap-2 border-1 surface-border border-round px-3 py-2 bg-surface-50 cursor-pointer select-none hover:surface-100 transition-colors"
+                        style={{ minHeight: '38px' }}
+                    >
+                        <Checkbox
+                            inputId="detail-important-cb"
+                            checked={!!isImportant}
+                            onChange={(e) => handleToggleImportant(!!e.checked)}
+                        />
+                        <span className={`text-sm font-bold ${isImportant ? 'text-red-500' : 'text-700'}`}>
+                            중요 공지
+                        </span>
+                    </label>
                     <Button
                         label="목록"
                         icon="pi pi-list"

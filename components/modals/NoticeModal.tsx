@@ -282,6 +282,15 @@ const NoticeModal = ({ visible, onClose, pData }: NoticeModalProps) => {
     useEffect(() => {
         if (!visible) return;
 
+        const sortNotices = (list: any[]) => {
+            return [...list].sort((a: any, b: any) => {
+                const aImp = a.isImportant === true || a.isImportant === 'true' ? 1 : 0;
+                const bImp = b.isImportant === true || b.isImportant === 'true' ? 1 : 0;
+                if (aImp !== bImp) return bImp - aImp;
+                return new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime();
+            });
+        };
+
         const initNotices = async () => {
             let notices = pData?.notices;
 
@@ -301,15 +310,18 @@ const NoticeModal = ({ visible, onClose, pData }: NoticeModalProps) => {
                         if (!n.classIds || n.classIds.length === 0) return true;
                         return n.classIds.some((cid: string) => studentClassIds.includes(cid));
                     });
-                    notices = filtered;
-                    setNoticeList(filtered);
+                    const sorted = sortNotices(filtered);
+                    notices = sorted;
+                    setNoticeList(sorted);
                 } catch (err) {
                     console.error('Failed to fetch notice list:', err);
                 } finally {
                     setLoading(false);
                 }
             } else {
-                setNoticeList(notices);
+                const sorted = sortNotices(notices);
+                notices = sorted;
+                setNoticeList(sorted);
             }
 
             // initialNoticeId가 전달된 경우 바로 상세 뷰로 진입
@@ -363,21 +375,35 @@ const NoticeModal = ({ visible, onClose, pData }: NoticeModalProps) => {
         const isRead = typeof window !== 'undefined' && localStorage.getItem(`notice_read_${rowData.noticeId}`);
         return (
             <div className="flex align-items-center gap-2">
-                {rowData.isNotice && (
+                {rowData.isImportant === true || rowData.isImportant === 'true' ? (
                     <span
-                        className="p-tag p-tag-success text-xs flex-shrink-0"
+                        className="p-tag p-tag-danger text-xs flex-shrink-0 font-bold"
                         style={{
-                            minWidth: '38px',
-                            width: '38px',
                             display: 'inline-flex',
+                            alignItems: 'center',
                             justifyContent: 'center',
                             whiteSpace: 'nowrap',
-                            textAlign: 'center'
+                            padding: '0.25rem 0.5rem'
                         }}
                     >
+                        <i className="pi pi-exclamation-circle mr-1" />
+                        중요
+                    </span>
+                ) : rowData.isNotice ? (
+                    <span
+                        className="p-tag p-tag-success text-xs flex-shrink-0 font-bold"
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            whiteSpace: 'nowrap',
+                            padding: '0.25rem 0.5rem'
+                        }}
+                    >
+                        <i className="pi pi-bell mr-1" />
                         공지
                     </span>
-                )}
+                ) : null}
                 {!isRead && (
                     <span
                         className="p-tag p-tag-danger text-xs flex-shrink-0"
@@ -482,21 +508,37 @@ const NoticeModal = ({ visible, onClose, pData }: NoticeModalProps) => {
                         tooltipOptions={{ position: 'bottom' }}
                     />
                 )}
-                {selectedNotice?.isNotice && (
+                {selectedNotice?.isImportant === true || selectedNotice?.isImportant === 'true' ? (
                     <span
-                        className="p-tag p-tag-success text-xs flex-shrink-0"
+                        className="p-tag p-tag-danger text-xs flex-shrink-0 font-bold"
                         style={{
-                            minWidth: '38px',
-                            width: '38px',
+                            minWidth: '60px',
                             display: 'inline-flex',
+                            alignItems: 'center',
                             justifyContent: 'center',
                             whiteSpace: 'nowrap',
-                            textAlign: 'center'
+                            padding: '0.25rem 0.5rem'
                         }}
                     >
+                        <i className="pi pi-exclamation-circle mr-1" />
+                        중요
+                    </span>
+                ) : selectedNotice?.isNotice ? (
+                    <span
+                        className="p-tag p-tag-success text-xs flex-shrink-0 font-bold"
+                        style={{
+                            minWidth: '60px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            whiteSpace: 'nowrap',
+                            padding: '0.25rem 0.5rem'
+                        }}
+                    >
+                        <i className="pi pi-bell mr-1" />
                         공지
                     </span>
-                )}
+                ) : null}
                 <span className="font-bold text-900 text-base md:text-xl line-clamp-1" title={selectedNotice?.title}>
                     {selectedNotice?.title || '공지사항'}
                 </span>

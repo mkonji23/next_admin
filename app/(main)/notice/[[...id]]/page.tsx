@@ -15,6 +15,7 @@ interface Notice {
     title: string;
     createdUser: string;
     isNotice: boolean;
+    isImportant?: boolean;
     createdDate: string;
     content?: string;
     delta?: any;
