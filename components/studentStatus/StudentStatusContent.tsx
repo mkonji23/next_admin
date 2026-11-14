@@ -26,6 +26,8 @@ import { useCustomModal } from '@/hooks/useCustomModal';
 import { LayoutContext } from '@/layout/context/layoutcontext';
 import { useContext } from 'react';
 import { PrimeReactContext } from 'primereact/api';
+import { getRandomLoadingGif } from '@/constants/loadingGifs';
+import { getFullProfileIcons } from '@/constants/profileIcons';
 interface StudentStatusContentProps {
     studentAuthData?: StudentAuthData;
 }
@@ -48,6 +50,26 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
     const [totalHomeworkAvg, setTotalHomeworkAvg] = useState<number>(0);
     const [profileImage, setProfileImage] = useState<string>(studentAuthData?.profile || '');
     const [showProfileDialog, setShowProfileDialog] = useState(false);
+    const [hasSeenProfileNew, setHasSeenProfileNew] = useState<boolean>(() => {
+        if (typeof window === 'undefined') return true;
+        try {
+            return localStorage.getItem('has_seen_profile_new_badge_v1') === 'true';
+        } catch {
+            return false;
+        }
+    });
+
+    const handleOpenProfileDialog = () => {
+        setShowProfileDialog(true);
+        if (!hasSeenProfileNew) {
+            setHasSeenProfileNew(true);
+            try {
+                localStorage.setItem('has_seen_profile_new_badge_v1', 'true');
+            } catch (e) {
+                console.error(e);
+            }
+        }
+    };
     const [winImage, setWinImage] = useState<string>('');
     const [showBadgePreview, setShowBadgePreview] = useState(false);
     const { openModal } = useCustomModal();
@@ -57,6 +79,11 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
     const [closedClassIds, setClosedClassIds] = useState<Set<string>>(new Set());
     const [hasCheckedNotice, setHasCheckedNotice] = useState(false);
     const [noticeReadVersion, setNoticeReadVersion] = useState(0);
+    const [randomLoadingGif, setRandomLoadingGif] = useState<string>('/layout/images/6e45w3q4_-1-.gif');
+
+    useEffect(() => {
+        setRandomLoadingGif(getRandomLoadingGif());
+    }, []);
 
     // 최고 순위 계산 (1~3위)
     const highestRank = useMemo(() => {
@@ -70,40 +97,9 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
         return best === 999 ? 0 : best;
     }, [globalRank, classRanks]);
 
-    // 사용 가능한 프로필 아이콘 목록
+    // 사용 가능한 프로필 아이콘 목록 (신규 74종 + 기본 17종 + 랭커 스페셜)
     const profileIcons = useMemo(() => {
-        const baseIcons = [
-            { name: '아이콘 1', value: '/icons/profiles/profile1.JPG' },
-            { name: '아이콘 2', value: '/icons/profiles/profile2.JPG' },
-            { name: '아이콘 3', value: '/icons/profiles/profile3.JPG' },
-            { name: '아이콘 4', value: '/icons/profiles/profile4.JPG' },
-            { name: '아이콘 5', value: '/icons/profiles/profile5.JPG' },
-            { name: '아이콘 6', value: '/icons/profiles/profile6.JPG' },
-            { name: '아이콘 7', value: '/icons/profiles/profile7.JPG' },
-            { name: '아이콘 8', value: '/icons/profiles/profile8.JPG' },
-            { name: '아이콘 9', value: '/icons/profiles/profile9.JPG' },
-            { name: '아이콘 10', value: '/icons/profiles/profile10.JPG' },
-            { name: '아이콘 11', value: '/icons/profiles/profile11.JPG' },
-            { name: '아이콘 12', value: '/icons/profiles/profile12.JPG' },
-            { name: '아이콘 13', value: '/icons/profiles/profile13.JPG' },
-            { name: '아이콘 14', value: '/icons/profiles/profile14.JPG' },
-            { name: '아이콘 15', value: '/icons/profiles/profile15.JPG' },
-            { name: '아이콘 16', value: '/icons/profiles/profile16.JPG' },
-            { name: '아이콘 17', value: '/icons/profiles/profile17.JPG' }
-        ];
-
-        if (highestRank > 0) {
-            if (highestRank <= 3) {
-                baseIcons.push({ name: '스페셜(3위)', value: '/icons/profiles/profile_win.png' });
-            }
-            if (highestRank <= 2) {
-                baseIcons.push({ name: '스페셜(2위)', value: '/icons/profiles/profile_win3.png' });
-            }
-            if (highestRank === 1) {
-                baseIcons.push({ name: '스페셜(1위)', value: '/icons/profiles/profile_win2.png' });
-            }
-        }
-        return baseIcons;
+        return getFullProfileIcons(highestRank);
     }, [highestRank]);
     const finalStudentId = studentAuthData?.studentId;
 
@@ -685,8 +681,18 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
     // 데이터가 있는 상태에서 갱신할 때는 globalLoadingBar가 처리하도록 합니다.
     if (loading && !stats) {
         return (
-            <div className="flex justify-content-center align-items-center min-h-screen">
-                <img src="/layout/images/loading.gif" alt="Loading..." style={{ width: '200px' }} />
+            <div className="flex flex-column justify-content-center align-items-center min-h-screen gap-3">
+                <img
+                    src={randomLoadingGif}
+                    alt="Loading..."
+                    style={{
+                        width: '140px',
+                        height: '140px',
+                        imageRendering: 'pixelated',
+                        objectFit: 'contain'
+                    }}
+                />
+                <span className="text-500 font-bold text-sm">데이터를 불러오는 중...</span>
             </div>
         );
     }
@@ -754,19 +760,49 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                             <div className="relative">
                                 <div
                                     className="w-4rem h-4rem flex-shrink-0 border-circle bg-blue-100 flex align-items-center justify-content-center cursor-pointer hover:shadow-2 transition-duration-200 overflow-hidden"
-                                    onClick={() => setShowProfileDialog(true)}
+                                    onClick={handleOpenProfileDialog}
                                     title="프로필 변경"
                                 >
                                     {profileImage ? (
                                         <img
                                             src={profileImage}
                                             alt="프로필"
-                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                            style={{
+                                                width: '100%',
+                                                height: '100%',
+                                                objectFit: profileImage?.toLowerCase().endsWith('.gif') ? 'contain' : 'cover',
+                                                imageRendering: profileImage?.toLowerCase().endsWith('.gif') ? 'pixelated' : 'auto'
+                                            }}
                                         />
                                     ) : (
                                         <i className="pi pi-user text-blue-500 text-3xl"></i>
                                     )}
                                 </div>
+                                {/* 신규 프로필 알림 NEW 뱃지 (한 번 클릭하면 사라짐) */}
+                                {!hasSeenProfileNew && (
+                                    <span
+                                        className="notice-badge-glow flex align-items-center justify-content-center text-white font-extrabold cursor-pointer hover:scale-110 transition-transform select-none"
+                                        style={{
+                                            position: 'absolute',
+                                            top: '-4px',
+                                            right: '-6px',
+                                            minWidth: '22px',
+                                            height: '18px',
+                                            fontSize: '10px',
+                                            background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                                            borderRadius: '9px',
+                                            padding: '0 5px',
+                                            zIndex: 3,
+                                            letterSpacing: '-0.5px',
+                                            border: isDark ? '2px solid #1f2937' : '2px solid #ffffff',
+                                            boxShadow: '0 2px 6px rgba(239, 68, 68, 0.45)'
+                                        }}
+                                        onClick={handleOpenProfileDialog}
+                                        title="신규 프로필 추가! 클릭하여 변경"
+                                    >
+                                        NEW
+                                    </span>
+                                )}
                                 {isTopRanker && winImage && (
                                     <>
                                         <div

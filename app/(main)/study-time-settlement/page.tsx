@@ -390,7 +390,7 @@ export default function StudyTimeSettlementPage() {
 
                     {/* 셀렉트박스 및 결산 버튼 영역 */}
                     <div className="flex flex-wrap align-items-end justify-content-between gap-3">
-                        <div className="flex flex-wrap align-items-center gap-3">
+                        <div className="flex flex-wrap align-items-end gap-3">
                             {/* 기준 월 선택 */}
                             <div className="flex flex-column gap-1">
                                 <label className="font-bold text-xs text-700">기준 월</label>
@@ -419,14 +419,12 @@ export default function StudyTimeSettlementPage() {
                             </div>
 
                             <Button
-                                icon="pi pi-refresh"
-                                outlined
-                                severity="secondary"
-                                tooltip="새로고침"
-                                tooltipOptions={{ position: 'top' }}
+                                label="조회"
+                                icon="pi pi-search"
                                 onClick={fetchCandidates}
                                 loading={loading}
-                                className="mt-3"
+                                disabled={submitting}
+                                className="p-button-primary font-bold px-4 shadow-1"
                             />
                         </div>
 
