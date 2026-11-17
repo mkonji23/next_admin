@@ -26,6 +26,26 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
     const [alertReason, setAlertReason] = useState<StudyEndReason | null>(null);
     const [timelineVisible, setTimelineVisible] = useState<boolean>(false);
     const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+    const [isPowerSaveMode, setIsPowerSaveMode] = useState<boolean>(false);
+    const isPowerSaveRef = useRef<boolean>(false);
+
+    // 🌙 OLED True Black 배터리 절전 모드 제어
+    const enterPowerSaveMode = useCallback(() => {
+        setIsPowerSaveMode(true);
+        isPowerSaveRef.current = true;
+        if (typeof window !== 'undefined') {
+            window.history.pushState({ popup: 'stopwatchPowerSave' }, '');
+        }
+    }, []);
+
+    const exitPowerSaveMode = useCallback(() => {
+        if (!isPowerSaveRef.current) return;
+        isPowerSaveRef.current = false;
+        setIsPowerSaveMode(false);
+        if (typeof window !== 'undefined' && window.history.state?.popup === 'stopwatchPowerSave') {
+            window.history.back();
+        }
+    }, []);
 
     // 전체화면 가로형/세로형 모드 관리 ('landscape' | 'portrait')
     type OrientationMode = 'landscape' | 'portrait';
@@ -243,12 +263,19 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
     const closeFullscreen = useCallback(() => {
         // 축소 모드 전환 중(가로/세로 회전, UI 복원, 히스토리 이동 등) 일시정지 오작동 방지
         suppressPauseTemporarily(3000);
+        if (isPowerSaveRef.current) {
+            isPowerSaveRef.current = false;
+            setIsPowerSaveMode(false);
+        }
         setIsFullscreen(false);
         if (typeof window !== 'undefined') {
             if (typeof screen !== 'undefined' && screen.orientation?.unlock) {
                 try {
                     screen.orientation.unlock();
                 } catch (_) {}
+            }
+            if (window.history.state?.popup === 'stopwatchPowerSave') {
+                window.history.back();
             }
             if (window.history.state?.popup === 'stopwatchFullscreen') {
                 window.history.back();
@@ -265,6 +292,14 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
     // 모바일 뒤로가기 버튼(popstate) 처리
     useEffect(() => {
         const handlePopState = () => {
+            if (isPowerSaveRef.current) {
+                isPowerSaveRef.current = false;
+                setIsPowerSaveMode(false);
+                return;
+            }
+            if (window.history.state?.popup === 'stopwatchFullscreen') {
+                return;
+            }
             if (isFullscreen) {
                 suppressPauseTemporarily(3000);
                 setIsFullscreen(false);
@@ -279,6 +314,25 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
         window.addEventListener('popstate', handlePopState);
         return () => window.removeEventListener('popstate', handlePopState);
     }, [isFullscreen, suppressPauseTemporarily, scrollToStopwatch]);
+
+    // 🌙 스톱워치 중지 시 절전 모드 자동 해제
+    useEffect(() => {
+        if (!isRunning && isPowerSaveRef.current) {
+            exitPowerSaveMode();
+        }
+    }, [isRunning, exitPowerSaveMode]);
+
+    // 🌙 절전 모드 중 ESC 키 누르면 해제
+    useEffect(() => {
+        if (!isPowerSaveMode) return;
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                exitPowerSaveMode();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isPowerSaveMode, exitPowerSaveMode]);
 
     // 브라우저 자체 전체화면 변경(fullscreenchange - 제스처, ESC 등) 처리
     useEffect(() => {
@@ -392,6 +446,19 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                                         />
                                     )}
                                 </div>
+                                {isRunning && (
+                                    <Button
+                                        icon="pi pi-moon"
+                                        size="small"
+                                        text
+                                        rounded
+                                        className={styles.cardSubtitle}
+                                        tooltip="배터리 절전 모드 (검은 화면)"
+                                        tooltipOptions={{ position: 'top' }}
+                                        onClick={enterPowerSaveMode}
+                                        aria-label="배터리 절전 모드"
+                                    />
+                                )}
                                 <Button
                                     icon="pi pi-expand"
                                     size="small"
@@ -592,8 +659,29 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                                     <strong className={styles.cardTitle}>{formatKoreanTime(currentTime, true)}</strong>
                                 </div>
 
-                                {/* 우측: 가로형/세로형 선택 토글 (세로형일 땐 아이콘만, 가로형일 땐 텍스트 포함) & 축소 버튼 */}
+                                {/* 우측: 절전 모드 버튼 & 가로형/세로형 선택 토글 (세로형일 땐 아이콘만, 가로형일 땐 텍스트 포함) & 축소 버튼 */}
                                 <div className="flex align-items-center gap-1 md:gap-2 flex-shrink-0">
+                                    {isRunning && (
+                                        <Button
+                                            icon="pi pi-moon"
+                                            label={orientationMode === 'portrait' ? undefined : '절전'}
+                                            size="small"
+                                            className="border-round-3xl text-xs font-bold"
+                                            style={{
+                                                padding: orientationMode === 'portrait' ? '4px 8px' : '4px 10px',
+                                                height: '28px',
+                                                fontSize: '11px',
+                                                border: 'none',
+                                                background: 'rgba(255,255,255,0.12)',
+                                                color: '#38bdf8'
+                                            }}
+                                            onClick={enterPowerSaveMode}
+                                            tooltip="OLED 배터리 절전 모드 (검은 화면)"
+                                            tooltipOptions={{ position: 'bottom' }}
+                                            aria-label="절전 모드"
+                                        />
+                                    )}
+
                                     <div
                                         className="flex align-items-center p-1 border-round-3xl"
                                         style={{
@@ -1004,6 +1092,51 @@ const StudyStopwatchCard: React.FC<StudyStopwatchCardProps> = ({ studentId, stud
                     )}
                 </div>
             </Dialog>
+
+            {/* 🌙 [OLED True Black 배터리 절전 모드] */}
+            {isPowerSaveMode && (
+                <div
+                    className={styles.powerSaveOverlay}
+                    onClick={exitPowerSaveMode}
+                    role="button"
+                    tabIndex={0}
+                    aria-label="화면을 터치하면 절전 모드가 해제됩니다"
+                >
+                    <div className={styles.powerSaveContent}>
+                        {/* 상단 뱃지 */}
+                        <div className={styles.powerSaveBadge}>
+                            <i className="pi pi-moon text-yellow-300 text-xs" />
+                            <span>OLED 배터리 절전 모드</span>
+                            <span className={styles.powerSaveDot} />
+                        </div>
+
+                        {/* 대형 스톱워치 시계 */}
+                        <div className={styles.powerSaveClock}>
+                            {totalTimeDisplay.formatted}
+                        </div>
+
+                        {/* 상태 및 현재 시각 */}
+                        <div className="flex flex-column gap-1 text-xs" style={{ color: '#64748b' }}>
+                            <span>
+                                {studentName ? `${studentName} 학생 · ` : ''}집중 측정 중 (
+                                {formatDurationText(activeTotalSeconds)})
+                            </span>
+                            <span>현재 시각: {formatKoreanTime(currentTime, false)}</span>
+                        </div>
+
+                        {/* 복귀 안내 가이드 */}
+                        <div className={styles.powerSaveGuide}>
+                            <div className="flex align-items-center gap-2 font-semibold" style={{ color: '#cbd5e1' }}>
+                                <i className="pi pi-hand-point-up text-xs text-green-400" />
+                                <span>화면 아무 곳이나 탭하면 원래 화면으로 복귀합니다</span>
+                            </div>
+                            <span style={{ fontSize: '11px', color: '#64748b' }}>
+                                OLED 디스플레이 검은색 픽셀 전원이 차단되어 배터리가 대폭 절약됩니다
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 };

@@ -334,7 +334,7 @@ const AutoImageUploadModal = ({ visible, onClose }: AutoImageUploadModalProps) =
                 {images.map((img, idx) => {
                     const url = typeof img === 'string' ? img : img.url;
                     return (
-                        <div key={idx} className="relative flex-shrink-0" style={{ width: '50px', height: '50px' }}>
+                        <div key={idx} className="relative flex-shrink-0" style={{ width: '56px', height: '56px' }}>
                             <img
                                 src={url}
                                 alt="thumb"
@@ -344,13 +344,13 @@ const AutoImageUploadModal = ({ visible, onClose }: AutoImageUploadModalProps) =
                             />
                             <Button
                                 icon="pi pi-times"
-                                className="p-button-rounded p-button-danger p-button-sm absolute"
+                                className="p-button-rounded p-button-danger shadow-2 absolute"
                                 style={{
-                                    width: '18px',
-                                    height: '18px',
+                                    width: '24px',
+                                    height: '24px',
                                     top: '-6px',
                                     right: '-6px',
-                                    fontSize: '10px',
+                                    fontSize: '11px',
                                     padding: 0
                                 }}
                                 onClick={(e) => {
@@ -383,6 +383,7 @@ const AutoImageUploadModal = ({ visible, onClose }: AutoImageUploadModalProps) =
                     icon="pi pi-plus"
                     size="small"
                     className="p-button-outlined p-button-success"
+                    style={{ minHeight: '36px' }}
                     onClick={() => handleFileSelect(rowData)}
                 />
             </div>
@@ -390,21 +391,28 @@ const AutoImageUploadModal = ({ visible, onClose }: AutoImageUploadModalProps) =
     };
 
     const footer = (
-        <div className="flex justify-content-between">
-            <div className="flex align-items-center">
+        <div className="flex flex-column sm:flex-row justify-content-between align-items-center gap-2 w-full">
+            <div className="flex align-items-center w-full sm:w-auto">
                 {hasChanges && (
-                    <span className="text-orange-500 font-bold ml-2">⚠️ 저장되지 않은 변경사항이 있습니다.</span>
+                    <span className="text-orange-500 font-bold text-sm">⚠️ 저장되지 않은 변경사항이 있습니다.</span>
                 )}
             </div>
-            <div>
-                <Button label="닫기" icon="pi pi-times" onClick={handleClose} className="p-button-text" />
+            <div className="flex gap-2 w-full sm:w-auto justify-content-end">
+                <Button
+                    label="닫기"
+                    icon="pi pi-times"
+                    onClick={handleClose}
+                    className="p-button-outlined p-button-secondary flex-1 sm:flex-none"
+                    style={{ minHeight: '44px' }}
+                />
                 <Button
                     label="업로드 저장"
                     icon="pi pi-save"
                     onClick={handleBatchSave}
                     loading={isSaving}
                     disabled={!hasChanges}
-                    className="p-button-primary"
+                    className="p-button-primary flex-1 sm:flex-none"
+                    style={{ minHeight: '44px' }}
                 />
             </div>
         </div>
@@ -415,69 +423,166 @@ const AutoImageUploadModal = ({ visible, onClose }: AutoImageUploadModalProps) =
             <Dialog
                 header="자동 템플릿 이미지 관리"
                 visible={visible}
-                style={{ width: isMobile ? '95vw' : '900px' }}
-                contentStyle={{ overflow: 'hidden' }}
+                style={{ width: isMobile ? '98vw' : '900px', maxWidth: '98vw' }}
+                contentStyle={{
+                    overflowY: 'auto',
+                    maxHeight: isMobile ? 'calc(90vh - 120px)' : '75vh',
+                    padding: isMobile ? '0.75rem' : '1.5rem'
+                }}
                 footer={footer}
                 onHide={handleClose}
                 className="p-fluid"
             >
-                <div className="grid mb-4">
-                    <div className="field col-3">
-                        <label className="font-bold">년도</label>
+                <div className="grid mb-3">
+                    <div className="field col-4 md:col-3">
+                        <label className="font-bold text-sm">년도</label>
                         <Dropdown value={year} options={years} onChange={(e) => setYear(e.value)} />
                     </div>
-                    <div className="field col-3">
-                        <label className="font-bold">월</label>
+                    <div className="field col-4 md:col-3">
+                        <label className="font-bold text-sm">월</label>
                         <Dropdown value={month} options={months} onChange={(e) => setMonth(e.value)} />
                     </div>
-                    <div className="field col-3">
-                        <label className="font-bold">주차</label>
+                    <div className="field col-4 md:col-3">
+                        <label className="font-bold text-sm">주차</label>
                         <Dropdown value={week} options={weeks} onChange={(e) => setWeek(e.value)} />
                     </div>
-                    <div className="field col-3 flex align-items-end">
+                    <div className="field col-12 md:col-3 flex align-items-end">
                         <Button
                             label="조회"
                             icon="pi pi-search"
                             onClick={handleSearch}
                             loading={loading}
-                            className="p-button-info"
+                            className="p-button-info w-full"
+                            style={{ minHeight: '42px' }}
                         />
                     </div>
                 </div>
 
-                <div className="flex align-items-center mb-2 px-1">
+                <div className="flex align-items-center mb-3 px-1 py-1 surface-100 border-round">
                     <Checkbox
                         inputId="noImageOnly"
                         checked={noImageOnly}
                         onChange={(e) => setNoImageOnly(e.checked || false)}
                     />
-
                     <label htmlFor="noImageOnly" className="ml-2 font-bold cursor-pointer text-sm">
-                        이미지 없음 {noImageOnly && `(${filteredStudents.length}명)`}
+                        이미지 없는 학생만 보기 {noImageOnly && `(${filteredStudents.length}명)`}
                     </label>
                 </div>
-                <DataTable
-                    value={filteredStudents}
-                    scrollable
-                    tableStyle={{ minWidth: isMobile ? '700px' : 'auto' }}
-                    scrollHeight={isMobile ? '400px' : '450px'}
-                    paginator
-                    rows={10}
-                    rowsPerPageOptions={[5, 10, 20, 50]}
-                    emptyMessage="데이터가 없습니다. 조회 버튼을 눌러주세요."
-                    className="mt-3"
-                >
-                    <Column field="studentName" header="학생명" style={{ minWidth: '100px' }} sortable />
-                    <Column field="className" header="클래스" style={{ minWidth: '150px' }} sortable />
-                    <Column
-                        sortable
-                        field="shareImageUrls"
-                        header="현재 이미지 (클릭 시 확대)"
-                        body={imageBodyTemplate}
-                        style={{ minWidth: '160px' }}
-                    />
-                    <Column header="작업" body={actionBodyTemplate} style={{ minWidth: '120px' }} />
-                </DataTable>
+
+                {isMobile ? (
+                    <div className="flex flex-column gap-3">
+                        {filteredStudents.length === 0 ? (
+                            <div className="text-center p-4 surface-50 border-round text-500">
+                                데이터가 없습니다. 조회 버튼을 눌러주세요.
+                            </div>
+                        ) : (
+                            filteredStudents.map((student, sIdx) => {
+                                const images = (student.shareImageUrls || []).filter((img: any) => !img.isDelete);
+                                return (
+                                    <div
+                                        key={student._id || sIdx}
+                                        className="p-3 border-1 surface-border border-round surface-card shadow-1"
+                                    >
+                                        <div className="flex justify-content-between align-items-center mb-2 pb-2 border-bottom-1 surface-border">
+                                            <div>
+                                                <span className="font-bold text-base mr-2">{student.studentName}</span>
+                                                <span className="text-xs text-500 bg-gray-100 px-2 py-1 border-round">
+                                                    {student.className}
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <input
+                                                    type="file"
+                                                    hidden
+                                                    accept="image/*"
+                                                    multiple
+                                                    ref={(el) => {
+                                                        if (student._id) fileInputRefs.current[student._id] = el;
+                                                    }}
+                                                    onChange={(e) => handleFileChange(student, e.target.files)}
+                                                />
+                                                <Button
+                                                    label="사진 추가"
+                                                    icon="pi pi-plus"
+                                                    className="p-button-success p-button-sm"
+                                                    style={{ minHeight: '38px', padding: '0.4rem 0.8rem' }}
+                                                    onClick={() => handleFileSelect(student)}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* 이미지 썸네일 가로 목록 */}
+                                        <div className="flex gap-3 overflow-x-auto py-2 align-items-center">
+                                            {images.length === 0 ? (
+                                                <div className="text-xs text-400 py-2">
+                                                    등록된 이미지가 없습니다. 상단의 '사진 추가'를 눌러주세요.
+                                                </div>
+                                            ) : (
+                                                images.map((img, idx) => {
+                                                    const url = typeof img === 'string' ? img : img.url;
+                                                    return (
+                                                        <div
+                                                            key={idx}
+                                                            className="relative flex-shrink-0"
+                                                            style={{ width: '70px', height: '70px' }}
+                                                        >
+                                                            <img
+                                                                src={url}
+                                                                alt="thumb"
+                                                                className="border-round shadow-2 cursor-pointer w-full h-full"
+                                                                style={{ objectFit: 'cover' }}
+                                                                onClick={() => handleImageClick(student, idx)}
+                                                            />
+                                                            <Button
+                                                                icon="pi pi-times"
+                                                                className="p-button-rounded p-button-danger shadow-3 absolute"
+                                                                style={{
+                                                                    width: '28px',
+                                                                    height: '28px',
+                                                                    top: '-7px',
+                                                                    right: '-7px',
+                                                                    fontSize: '13px',
+                                                                    padding: 0
+                                                                }}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleDeleteImage(student, url);
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    );
+                                                })
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
+                ) : (
+                    <DataTable
+                        value={filteredStudents}
+                        scrollable
+                        tableStyle={{ minWidth: '700px' }}
+                        scrollHeight="450px"
+                        paginator
+                        rows={10}
+                        rowsPerPageOptions={[5, 10, 20, 50]}
+                        emptyMessage="데이터가 없습니다. 조회 버튼을 눌러주세요."
+                        className="mt-3"
+                    >
+                        <Column field="studentName" header="학생명" style={{ minWidth: '100px' }} sortable />
+                        <Column field="className" header="클래스" style={{ minWidth: '150px' }} sortable />
+                        <Column
+                            sortable
+                            field="shareImageUrls"
+                            header="현재 이미지 (클릭 시 확대)"
+                            body={imageBodyTemplate}
+                            style={{ minWidth: '160px' }}
+                        />
+                        <Column header="작업" body={actionBodyTemplate} style={{ minWidth: '120px' }} />
+                    </DataTable>
+                )}
             </Dialog>
 
             <Lightbox

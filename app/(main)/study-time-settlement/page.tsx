@@ -383,8 +383,8 @@ export default function StudyTimeSettlementPage() {
                         <div className="flex align-items-center gap-2 bg-surface-50 dark:bg-surface-900 p-2 border-round-lg border-1 surface-border">
                             <span className="text-xs font-semibold text-700 mr-1">칭찬 지급 기준:</span>
                             <Tag severity="warning" value="🥇 1등: 5개" className="font-semibold text-xs" />
-                            <Tag severity="success" value="🥈 2등: 3개" className="font-semibold text-xs" />
-                            <Tag severity="info" value="🥉 3등: 1개" className="font-semibold text-xs" />
+                            <Tag severity="success" value="🥈 2등: 5개" className="font-semibold text-xs" />
+                            <Tag severity="info" value="🥉 3등: 5개" className="font-semibold text-xs" />
                         </div>
                     </div>
 

@@ -10,6 +10,7 @@ import dayjs from 'dayjs';
 import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
 import { useConfirm } from '@/hooks/useConfirm';
+import { useMobile } from '@/hooks/useMobile';
 import { CustomEditor, CustomEditorRef, extractImageUrlsFromDelta } from '../editor/CustomEditor';
 
 /**
@@ -25,6 +26,7 @@ interface ShareAutoTemplateModalProps {
 }
 
 const ShareAutoTemplateModal = ({ visible, onClose }: ShareAutoTemplateModalProps) => {
+    const isMobile = useMobile();
     const http = useHttp();
     const { showToast } = useToast();
     const { showConfirm } = useConfirm();
@@ -219,9 +221,23 @@ const ShareAutoTemplateModal = ({ visible, onClose }: ShareAutoTemplateModalProp
     };
 
     const footer = (
-        <div>
-            <Button label="취소" icon="pi pi-times" onClick={() => onClose(null)} className="p-button-text" disabled={saving} />
-            <Button label="생성" icon="pi pi-check" onClick={handleSave} loading={saving} autoFocus />
+        <div className="flex justify-content-end gap-2">
+            <Button
+                label="취소"
+                icon="pi pi-times"
+                onClick={() => onClose(null)}
+                className="p-button-outlined p-button-secondary"
+                style={{ minHeight: '44px' }}
+                disabled={saving}
+            />
+            <Button
+                label="생성"
+                icon="pi pi-check"
+                onClick={handleSave}
+                loading={saving}
+                style={{ minHeight: '44px' }}
+                autoFocus
+            />
         </div>
     );
 
@@ -229,14 +245,19 @@ const ShareAutoTemplateModal = ({ visible, onClose }: ShareAutoTemplateModalProp
         <Dialog
             header="주간 리포트 자동 생성"
             visible={visible}
-            style={{ width: '900px' }}
+            style={{ width: isMobile ? '98vw' : '900px', maxWidth: '98vw' }}
+            contentStyle={{
+                overflowY: 'auto',
+                maxHeight: isMobile ? 'calc(90vh - 120px)' : '75vh',
+                padding: isMobile ? '0.75rem' : '1.5rem'
+            }}
             footer={footer}
             onHide={() => onClose(null)}
             className="p-fluid"
         >
             <div className="grid">
-                <div className="field col-3">
-                    <label htmlFor="classId">
+                <div className="field col-12 sm:col-3">
+                    <label htmlFor="classId" className="font-bold text-sm">
                         클래스 선택<span className="text-red-500 font-bold">*</span>
                     </label>
                     <Dropdown
@@ -250,20 +271,20 @@ const ShareAutoTemplateModal = ({ visible, onClose }: ShareAutoTemplateModalProp
                         placeholder="클래스 선택"
                     />
                 </div>
-                <div className="field col-3">
-                    <label htmlFor="year">
+                <div className="field col-4 sm:col-3">
+                    <label htmlFor="year" className="font-bold text-sm">
                         년도<span className="text-red-500 font-bold">*</span>
                     </label>
                     <Dropdown id="year" value={year} options={years} onChange={handleYearChange} placeholder="년도" />
                 </div>
-                <div className="field col-3">
-                    <label htmlFor="month">
+                <div className="field col-4 sm:col-3">
+                    <label htmlFor="month" className="font-bold text-sm">
                         월<span className="text-red-500 font-bold">*</span>
                     </label>
                     <Dropdown id="month" value={month} options={months} onChange={handleMonthChange} placeholder="월" />
                 </div>
-                <div className="field col-3">
-                    <label htmlFor="week">
+                <div className="field col-4 sm:col-3">
+                    <label htmlFor="week" className="font-bold text-sm">
                         주차<span className="text-red-500 font-bold">*</span>
                     </label>
                     <Dropdown id="week" value={week} options={weeks} onChange={handleWeekChange} placeholder="주차" />

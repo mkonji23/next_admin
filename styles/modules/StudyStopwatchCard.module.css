@@ -372,3 +372,105 @@
     display: inline-block;
     will-change: transform, filter, color;
 }
+
+/* ==========================================================================
+   4. OLED 배터리 절전 모드 (True Black #000000)
+   ========================================================================== */
+
+.powerSaveOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #000000 !important;
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    padding: 2rem 1.5rem;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+/* 번인 방지 미세 드리프트 애니메이션 (120초 주기로 부드럽게 3px 이내로 미세 이동) */
+@keyframes burnin-drift {
+    0% {
+        transform: translate(0, 0);
+    }
+    25% {
+        transform: translate(2px, 2px);
+    }
+    50% {
+        transform: translate(-2px, 1px);
+    }
+    75% {
+        transform: translate(1px, -2px);
+    }
+    100% {
+        transform: translate(0, 0);
+    }
+}
+
+.powerSaveContent {
+    animation: burnin-drift 120s infinite ease-in-out;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.powerSaveClock {
+    font-size: clamp(3rem, 14vw, 6.5rem);
+    font-weight: 800;
+    font-family: monospace, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    color: #4ade80;
+    letter-spacing: clamp(2px, 1vw, 6px);
+    line-height: 1.1;
+    margin: 1rem 0;
+    text-shadow: 0 0 15px rgba(74, 222, 128, 0.4);
+}
+
+.powerSaveBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.9rem;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.07);
+    color: #94a3b8;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.powerSaveGuide {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 2rem;
+    padding: 0.85rem 1.5rem;
+    border-radius: 1rem;
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.03);
+    color: #94a3b8;
+    font-size: 0.75rem;
+    max-width: 90vw;
+}
+
+.powerSaveDot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: #22c55e;
+    animation: pulse-ring 2s infinite;
+}
+

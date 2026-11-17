@@ -106,18 +106,31 @@ const withStudentAuth = <P extends object>(
         }, [isAuthorized]);
 
         // 🔒 [토큰 헬스체크] 기존에 브라우저를 띄워두었다가 다시 들어왔을 때(탭 복귀, 화면 켬 등)
-        // 기존의 가벼운 학생 API(myClasses)를 호출하여 토큰 만료 여부를 확인하고 만료 시 로그인 화면으로 자동 전환
+        // 불필요한 빈번한 API 호출을 차단하기 위해 JWT 만료 시간을 1차 로컬 검사하고, 쿨타임을 5분으로 적용
         const isCheckingAuthRef = useRef<boolean>(false);
         const lastAuthCheckTimeRef = useRef<number>(0);
 
         const checkTokenHealth = useCallback(async () => {
             if (!studentToken || !storedStudentAuthData?.studentId) return;
 
-            // 5초 이내 중복 호출 방지 및 현재 요청 진행 중인 경우 스킵
             const now = Date.now();
-            if (isCheckingAuthRef.current || now - lastAuthCheckTimeRef.current < 5000) {
+            // 5분 이내 중복 호출 방지 및 현재 요청 진행 중인 경우 스킵
+            if (isCheckingAuthRef.current || now - lastAuthCheckTimeRef.current < 300000) {
                 return;
             }
+
+            // 1. JWT 클라이언트 파싱 검사: 만료 시간이 5분 이상 남아있다면 서버 호출 스킵
+            try {
+                const tokenParts = studentToken.split('.');
+                if (tokenParts.length === 3) {
+                    const payloadStr = atob(tokenParts[1].replace(/-/g, '+').replace(/_/g, '/'));
+                    const payload = JSON.parse(payloadStr);
+                    if (payload.exp && payload.exp * 1000 > now + 300000) {
+                        lastAuthCheckTimeRef.current = now;
+                        return;
+                    }
+                }
+            } catch (_) {}
 
             isCheckingAuthRef.current = true;
             lastAuthCheckTimeRef.current = now;

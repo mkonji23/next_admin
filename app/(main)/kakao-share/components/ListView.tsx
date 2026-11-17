@@ -291,7 +291,7 @@ const ListView = ({
                     className="p-button-rounded p-button-primary p-button-text"
                     tooltip="카카오톡 공유"
                     tooltipOptions={{ position: 'bottom' }}
-                    style={{ width: '2rem', height: '2rem' }}
+                    style={{ width: '2.5rem', height: '2.5rem' }}
                     onClick={(e) => {
                         e.stopPropagation();
                         onShare(rowData);
@@ -348,14 +348,49 @@ const ListView = ({
         );
     };
 
+    const shareHeaderTemplate = () => {
+        return (
+            <div className="flex align-items-center gap-1">
+                <span>공유</span>
+                <i
+                    id="share-column-info"
+                    className="pi pi-info-circle text-primary cursor-pointer hover:text-primary-600 transition-colors"
+                    style={{ fontSize: '0.95rem' }}
+                />
+                <Tooltip target="#share-column-info" position="top" style={{ maxWidth: '320px' }}>
+                    <div className="text-left p-1 line-height-3">
+                        <div className="font-bold border-bottom-1 surface-border pb-1 mb-2 text-white">
+                            🔗 링크 공유 안내
+                        </div>
+                        <div className="mb-1 text-sm">
+                            <b className="text-blue-300">• 일반공유:</b> 전체열람 가능한 공개 링크 생성
+                        </div>
+                        <div className="mb-1 text-sm">
+                            <b className="text-orange-300">• 링크복사(학생용):</b> 학생 전용 비공개 링크
+                        </div>
+                        <div className="mb-2 text-sm">
+                            <b className="text-green-300">• 링크복사(학부모용):</b> 학부모 전용 비공개 링크
+                        </div>
+                        <div className="text-xs text-yellow-300 border-top-1 surface-border pt-2 mt-1">
+                            ⚠️ 단순 링크 복사로 전달 시 <b>방문/열람 횟수 체크가 불가</b>합니다.
+                            <br />
+                            <b>카카오공유하기 버튼으로 발송된 링크만</b> 횟수 확인이 가능합니다.
+                        </div>
+                    </div>
+                </Tooltip>
+            </div>
+        );
+    };
+
     const shareBodyTemplate = (rowData: ShareItem) => {
         return (
             <div className="flex gap-2">
                 <Button
                     icon="pi pi-link"
                     className="p-button-rounded p-button-info p-button-text"
-                    tooltip="일반 링크 복사"
+                    tooltip="일반공유 (전체열람 가능 공개 링크)"
                     tooltipOptions={{ position: 'bottom' }}
+                    style={{ width: '2.5rem', height: '2.5rem' }}
                     onClick={(e) => {
                         e.stopPropagation();
                         copyLink(rowData, 'public');
@@ -364,8 +399,9 @@ const ListView = ({
                 <Button
                     icon="pi pi-copy"
                     className="p-button-rounded p-button-warning p-button-text"
-                    tooltip="링크 복사(학생용)"
+                    tooltip="링크복사(학생용) - 비공개 링크"
                     tooltipOptions={{ position: 'bottom' }}
+                    style={{ width: '2.5rem', height: '2.5rem' }}
                     onClick={(e) => {
                         e.stopPropagation();
                         copyLink(rowData, 'student');
@@ -374,8 +410,9 @@ const ListView = ({
                 <Button
                     icon="pi pi-copy"
                     className="p-button-rounded p-button-success p-button-text"
-                    tooltip="링크 복사(학부모용)"
+                    tooltip="링크복사(학부모용) - 비공개 링크"
                     tooltipOptions={{ position: 'bottom' }}
+                    style={{ width: '2.5rem', height: '2.5rem' }}
                     onClick={(e) => {
                         e.stopPropagation();
                         copyLink(rowData, 'parent');
@@ -393,6 +430,7 @@ const ListView = ({
                     className="p-button-rounded p-button-secondary p-button-text"
                     tooltip="복사하여 새로 만들기"
                     tooltipOptions={{ position: 'bottom' }}
+                    style={{ width: '2.5rem', height: '2.5rem' }}
                     onClick={(e) => {
                         e.stopPropagation();
                         onCopyToNew(rowData);
@@ -403,6 +441,7 @@ const ListView = ({
                     className="p-button-rounded p-button-danger p-button-text"
                     tooltip="삭제"
                     tooltipOptions={{ position: 'bottom' }}
+                    style={{ width: '2.5rem', height: '2.5rem' }}
                     onClick={(e) => {
                         e.stopPropagation();
                         if (rowData._id) {
@@ -420,11 +459,10 @@ const ListView = ({
                 <div className="flex gap-2 overflow-x-auto pb-1">
                     <Button
                         severity="success"
-                        label={isMobile ? '' : '글쓰기'}
-                        tooltip={isMobile ? '글쓰기' : ''}
-                        tooltipOptions={{ position: 'bottom' }}
+                        label="글쓰기"
                         icon="pi pi-pencil"
-                        className="white-space-nowrap flex-1 sm:flex-none"
+                        className="white-space-nowrap flex-1 sm:flex-none font-bold"
+                        style={{ minHeight: '42px' }}
                         onClick={onNewPost}
                     />
                     <Button
@@ -433,6 +471,7 @@ const ListView = ({
                         tooltipOptions={{ position: 'bottom' }}
                         icon="pi pi-copy"
                         className="p-button-info p-button-outlined white-space-nowrap flex-1 sm:flex-none"
+                        style={{ minHeight: '42px' }}
                         onClick={() => {
                             if (selectedItems.length !== 1) return;
                             onCopyToNew(selectedItems[0]);
@@ -445,6 +484,7 @@ const ListView = ({
                         tooltipOptions={{ position: 'bottom' }}
                         icon="pi pi-trash"
                         className="p-button-danger p-button-outlined white-space-nowrap flex-1 sm:flex-none"
+                        style={{ minHeight: '42px' }}
                         onClick={async () => {
                             if (selectedItems.length === 0) return;
                             await onDeleteMultiple(selectedItems);
@@ -458,6 +498,7 @@ const ListView = ({
                         tooltipOptions={{ position: 'bottom' }}
                         icon="pi pi-search"
                         className="white-space-nowrap flex-1 sm:flex-none"
+                        style={{ minHeight: '42px' }}
                         onClick={() => {
                             clearFilter();
                             if (dt.current) {
@@ -469,49 +510,37 @@ const ListView = ({
                 </div>
                 <div className="flex gap-2 overflow-x-auto pb-1">
                     <Button
+                        severity="help"
+                        label={isMobile ? '템플릿 이미지' : '자동 템플릿 이미지'}
+                        tooltipOptions={{ position: 'bottom' }}
+                        tooltip={isMobile ? '자동 템플릿 이미지' : '학생별 자동 생성 게시글의 이미지를 업로드합니다.'}
+                        icon="pi pi-image"
+                        className="white-space-nowrap flex-1 sm:flex-none font-bold"
+                        style={{ minHeight: '42px' }}
+                        onClick={handleAutoImageUploadClick}
+                    />
+                    <Button
                         severity="info"
                         tooltipOptions={{ position: 'bottom' }}
                         tooltip={
                             isMobile ? '자동 템플릿 생성' : userInfo.auth === 'admin' ? '최하죵화이팅💘' : (null as any)
                         }
-                        label={isMobile ? '' : '자동 템플릿 생성'}
+                        label={isMobile ? '템플릿 생성' : '자동 템플릿 생성'}
                         icon="pi pi-clone"
                         className="white-space-nowrap flex-1 sm:flex-none"
+                        style={{ minHeight: '42px' }}
                         onClick={handleTemplateClick}
                     />
                     <Button
                         severity="warning"
-                        label={isMobile ? '' : '자동 템플릿 수정'}
+                        label={isMobile ? '템플릿 수정' : '자동 템플릿 수정'}
                         tooltipOptions={{ position: 'bottom' }}
                         tooltip={isMobile ? '자동 템플릿 수정' : '자동 생성 시 적용될 기본 내용을 수정합니다.'}
                         icon="pi pi-cog"
                         className="white-space-nowrap flex-1 sm:flex-none"
+                        style={{ minHeight: '42px' }}
                         onClick={handleEditAutoTemplateClick}
                     />
-                    <Button
-                        severity="help"
-                        label={isMobile ? '' : '자동 템플릿 이미지'}
-                        tooltipOptions={{ position: 'bottom' }}
-                        tooltip={isMobile ? '자동 템플릿 이미지' : '학생별 자동 생성 게시글의 이미지를 업로드합니다.'}
-                        icon="pi pi-image"
-                        className="white-space-nowrap flex-1 sm:flex-none"
-                        onClick={handleAutoImageUploadClick}
-                    />
-                    {/* <Button
-                        severity="danger"
-                        label={isMobile ? '' : '자동 템플릿 삭제'}
-                        tooltipOptions={{ position: 'bottom' }}
-                        tooltip={
-                            isMobile
-                                ? '자동 템플릿 삭제'
-                                : userInfo.auth === 'admin'
-                                ? '최하죵화이팅💘💘'
-                                : (null as any)
-                        }
-                        icon="pi pi-trash"
-                        className="white-space-nowrap flex-1 sm:flex-none"
-                        onClick={handleDeleteTemplateClick}
-                    /> */}
                 </div>
             </div>
             <style>{`
@@ -602,7 +631,7 @@ const ListView = ({
                     headerStyle={{ minWidth: '120px' }}
                 />
 
-                <Column header="공유" body={shareBodyTemplate} />
+                <Column header={shareHeaderTemplate} body={shareBodyTemplate} headerStyle={{ minWidth: '160px' }} />
                 <Column header="작업" body={actionBodyTemplate} />
                 <Column
                     field="createdDate"

@@ -19,6 +19,7 @@ import 'yet-another-react-lightbox/styles.css';
 import Zoom from 'yet-another-react-lightbox/plugins/zoom';
 import { CustomEditor, CustomEditorRef, extractImageUrlsFromDelta } from '@/components/editor/CustomEditor';
 import { useLightboxHistory } from '@/hooks/useLightboxHistory';
+import { useMobile } from '@/hooks/useMobile';
 
 interface WriteViewProps {
     onBack: () => void;
@@ -27,6 +28,7 @@ interface WriteViewProps {
     isCopy?: Boolean;
 }
 const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewProps) => {
+    const isMobile = useMobile();
     const [editData, setEditData] = useState<ShareItem>();
     const [existingEditorImageUrls, setExistingEditorImageUrls] = useState<string[]>([]);
     const fileUploadRef = useRef<FileUpload>(null);
@@ -261,6 +263,37 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
         editData && setEditData((prev) => (prev ? { ...prev, shareImageUrls: delShareImageUrls } : prev));
     };
 
+    const fileItemTemplate = (file: any, props: any) => {
+        return (
+            <div className="flex align-items-center justify-content-between p-2 border-round surface-100 mb-2">
+                <div className="flex align-items-center gap-3">
+                    <img
+                        alt={file.name}
+                        role="presentation"
+                        src={file.objectURL}
+                        style={{ width: '56px', height: '56px', objectFit: 'cover' }}
+                        className="border-round shadow-1"
+                    />
+                    <div className="flex flex-column" style={{ maxWidth: isMobile ? '160px' : '300px' }}>
+                        <span className="font-bold text-sm text-overflow-ellipsis overflow-hidden white-space-nowrap">
+                            {file.name}
+                        </span>
+                        <span className="text-xs text-500">{props.formatSize}</span>
+                    </div>
+                </div>
+                <Button
+                    type="button"
+                    icon="pi pi-times"
+                    className="p-button-rounded p-button-danger p-button-outlined"
+                    style={{ width: '36px', height: '36px', minWidth: '36px' }}
+                    onClick={() => {
+                        props.onRemove();
+                    }}
+                />
+            </div>
+        );
+    };
+
     return (
         <div className="card">
             <div className="flex align-items-center mb-4">
@@ -268,9 +301,10 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
                     type="button"
                     icon="pi pi-arrow-left"
                     className="p-button-text mr-2"
+                    style={{ minWidth: '44px', minHeight: '44px' }}
                     onClick={handleBackClick}
                 />
-                <h5 className="m-0">{editData && !isCopy ? '게시글 수정' : '새 게시글 작성'}</h5>
+                <h5 className="m-0 text-xl font-bold">{editData && !isCopy ? '게시글 수정' : '새 게시글 작성'}</h5>
             </div>
             <Form
                 onSubmit={onSubmit}
@@ -301,8 +335,8 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
                 validate={validate}
                 render={({ handleSubmit, submitting, form, errors, values }) => (
                     <form onSubmit={(e) => handleFinalSubmit(e, handleSubmit, errors)} className="p-fluid grid">
-                        <div className="field col-12 md:col-4">
-                            <label className="font-bold text-primary">
+                        <div className="field col-4 md:col-4">
+                            <label className="font-bold text-primary text-sm">
                                 년도 <span className="text-red-500">*</span>
                             </label>
                             <Field name="autoYear">
@@ -322,8 +356,8 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
                                 )}
                             </Field>
                         </div>
-                        <div className="field col-12 md:col-4">
-                            <label className="font-bold text-primary">
+                        <div className="field col-4 md:col-4">
+                            <label className="font-bold text-primary text-sm">
                                 월 <span className="text-red-500">*</span>
                             </label>
                             <Field name="autoMonth">
@@ -344,8 +378,8 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
                                 )}
                             </Field>
                         </div>
-                        <div className="field col-12 md:col-4">
-                            <label className="font-bold text-primary">
+                        <div className="field col-4 md:col-4">
+                            <label className="font-bold text-primary text-sm">
                                 주차 <span className="text-red-500">*</span>
                             </label>
                             <Field name="autoWeek">
@@ -438,24 +472,23 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
                             </Field>
                         </div>
 
-                        <div className="field col-12 md:col-3">
-                            <label htmlFor="telNo" className="font-bold">
+                        <div className="field col-6 md:col-3">
+                            <label htmlFor="telNo" className="font-bold text-sm">
                                 학생 연락처
                             </label>
-                            <Field name="telNo">{({ input }) => <InputText {...input} id="telNo" />}</Field>
+                            <Field name="telNo">{({ input }) => <InputText {...input} id="telNo" style={{ minHeight: '40px' }} />}</Field>
                         </div>
-                        <div className="field col-12 md:col-3">
-                            <label htmlFor="pTelNo" className="font-bold">
+                        <div className="field col-6 md:col-3">
+                            <label htmlFor="pTelNo" className="font-bold text-sm">
                                 학부모 연락처
                             </label>
-                            <Field name="pTelNo">{({ input }) => <InputText {...input} id="pTelNo" />}</Field>
+                            <Field name="pTelNo">{({ input }) => <InputText {...input} id="pTelNo" style={{ minHeight: '40px' }} />}</Field>
                         </div>
 
-                        <div className="field col-12 ">
+                        <div className="field col-12">
                             <label htmlFor="shareTitle" className="font-bold">
-                                카카오 공유 제목
+                                카카오 공유 제목 <span className="text-red-500">*</span>
                             </label>
-                            <span className="text-red-500">*</span>
                             <Field name="shareTitle">
                                 {({ input, meta }) => (
                                     <>
@@ -464,6 +497,7 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
                                             id="shareTitle"
                                             placeholder="카카오톡 링크 제목"
                                             className={meta.touched && meta.error ? 'p-invalid' : ''}
+                                            style={{ minHeight: '40px' }}
                                         />
                                         {meta.touched && meta.error && <small className="p-error">{meta.error}</small>}
                                     </>
@@ -482,6 +516,7 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
                                             id="shareContent"
                                             placeholder="카카오톡 링크 설명"
                                             className={meta.touched && meta.error ? 'p-invalid' : ''}
+                                            style={{ minHeight: '40px' }}
                                         />
                                         {meta.touched && meta.error && <small className="p-error">{meta.error}</small>}
                                     </>
@@ -501,6 +536,7 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
                                             id="actualTitle"
                                             placeholder="앱 내에서 보여질 제목"
                                             className={meta.touched && meta.error ? 'p-invalid' : ''}
+                                            style={{ minHeight: '40px' }}
                                         />
                                         {meta.touched && meta.error && <small className="p-error">{meta.error}</small>}
                                     </>
@@ -536,19 +572,24 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
                                     <p className="text-sm font-medium text-700 mb-2">
                                         기존 이미지 ({existingImages?.length}개)
                                     </p>
-                                    <div className="flex gap-2 overflow-x-auto pb-2">
+                                    <div className="flex gap-3 overflow-x-auto pb-2 pt-1">
                                         {existingImages?.map((item, idx) => {
                                             const url = typeof item === 'string' ? item : item.url;
                                             const fileName = url.split('/').pop()?.split('?')[0] || `image-${idx}.jpg`;
                                             return (
-                                                <div key={idx} className="relative group">
+                                                <div
+                                                    key={idx}
+                                                    className="relative flex-shrink-0"
+                                                    style={{
+                                                        width: isMobile ? '88px' : '96px',
+                                                        height: isMobile ? '88px' : '96px'
+                                                    }}
+                                                >
                                                     <img
                                                         src={url}
                                                         alt="prev"
-                                                        className="border-round shadow-1 cursor-pointer"
+                                                        className="border-round shadow-2 cursor-pointer w-full h-full"
                                                         style={{
-                                                            width: '80px',
-                                                            height: '80px',
                                                             objectFit: 'cover'
                                                         }}
                                                         onClick={() => {
@@ -556,43 +597,47 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
                                                             setLightboxOpen(true);
                                                         }}
                                                     />
-                                                    <div
-                                                        className="absolute flex gap-1"
-                                                        style={{ top: '2px', right: '2px', zIndex: 10 }}
-                                                    >
-                                                        <Button
-                                                            type="button"
-                                                            icon="pi pi-download"
-                                                            className="p-button-rounded p-button-secondary p-button-sm shadow-2"
-                                                            style={{
-                                                                width: '24px',
-                                                                height: '24px',
-                                                                opacity: 0.8
-                                                            }}
-                                                            onClick={(e) => {
-                                                                e.preventDefault();
-                                                                handleDownload(url, fileName);
-                                                            }}
-                                                            tooltip="다운로드"
-                                                            tooltipOptions={{ position: 'bottom' }}
-                                                        />
-                                                        <Button
-                                                            type="button"
-                                                            icon="pi pi-times"
-                                                            className="p-button-rounded p-button-danger p-button-sm shadow-2"
-                                                            style={{
-                                                                width: '24px',
-                                                                height: '24px',
-                                                                opacity: 0.8
-                                                            }}
-                                                            onClick={(e) => {
-                                                                e.preventDefault();
-                                                                deleteImages(url);
-                                                            }}
-                                                            tooltip="삭제"
-                                                            tooltipOptions={{ position: 'bottom' }}
-                                                        />
-                                                    </div>
+                                                    <Button
+                                                        type="button"
+                                                        icon="pi pi-download"
+                                                        className="p-button-rounded p-button-secondary shadow-2 absolute"
+                                                        style={{
+                                                            width: '28px',
+                                                            height: '28px',
+                                                            top: '-6px',
+                                                            left: '-6px',
+                                                            opacity: 0.9,
+                                                            fontSize: '11px',
+                                                            padding: 0
+                                                        }}
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            handleDownload(url, fileName);
+                                                        }}
+                                                        tooltip="다운로드"
+                                                        tooltipOptions={{ position: 'bottom' }}
+                                                    />
+                                                    <Button
+                                                        type="button"
+                                                        icon="pi pi-times"
+                                                        className="p-button-rounded p-button-danger shadow-3 absolute"
+                                                        style={{
+                                                            width: '28px',
+                                                            height: '28px',
+                                                            top: '-6px',
+                                                            right: '-6px',
+                                                            fontSize: '12px',
+                                                            padding: 0
+                                                        }}
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            deleteImages(url);
+                                                        }}
+                                                        tooltip="삭제"
+                                                        tooltipOptions={{ position: 'bottom' }}
+                                                    />
                                                 </div>
                                             );
                                         })}
@@ -611,7 +656,21 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
                                 onSelect={onFileSelect}
                                 onClear={onClear}
                                 onRemove={onFileRemove}
-                                emptyTemplate={<p className="m-0 text-500">파일을 드래그하거나 선택하세요.</p>}
+                                chooseOptions={{
+                                    icon: 'pi pi-plus',
+                                    label: '사진 선택 (추가)',
+                                    className: 'p-button-outlined p-button-primary w-full sm:w-auto',
+                                    style: { minHeight: '44px' }
+                                }}
+                                emptyTemplate={
+                                    <div className="flex flex-column align-items-center justify-content-center p-3 surface-50 border-round border-1 border-dashed surface-border">
+                                        <i className="pi pi-images text-3xl text-400 mb-2" />
+                                        <p className="m-0 text-600 font-medium text-sm">
+                                            터치하여 사진을 선택하세요 (여러 장 가능)
+                                        </p>
+                                    </div>
+                                }
+                                itemTemplate={fileItemTemplate}
                                 customUpload
                                 auto={false}
                                 uploadOptions={{ style: { display: 'none' } }}
@@ -625,7 +684,8 @@ const WriteView = ({ onBack, onSave, initialData, isCopy = false }: WriteViewPro
                                 icon={editData && !isCopy ? 'pi pi-save' : 'pi pi-check'}
                                 className={`${
                                     editData && !isCopy ? 'p-button-info' : 'p-button-primary'
-                                } white-space-nowrap`}
+                                } w-full`}
+                                style={{ minHeight: '48px', fontSize: '1.05rem', fontWeight: 'bold' }}
                                 disabled={submitting || isOptimizing}
                                 loading={isOptimizing}
                             />

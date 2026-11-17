@@ -17,6 +17,7 @@ import 'yet-another-react-lightbox/plugins/thumbnails.css';
 import { CustomEditor } from '@/components/editor/CustomEditor';
 import { useLightboxHistory } from '@/hooks/useLightboxHistory';
 import { Tooltip } from 'primereact/tooltip';
+import { useMobile } from '@/hooks/useMobile';
 
 interface DetailViewProps {
     selectedShare: ShareItem | null;
@@ -28,6 +29,7 @@ interface DetailViewProps {
 }
 
 const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete, onCopyToNew }: DetailViewProps) => {
+    const isMobile = useMobile();
     const { showToast } = useToast();
     const [open, setOpen] = useState(false);
     const [index, setIndex] = useState(0);
@@ -125,38 +127,49 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete, onCopyTo
             <Card>
                 <div className="flex flex-column md:flex-row justify-content-between align-items-start md:align-items-center mb-4 gap-3">
                     <div className="flex align-items-center">
-                        <Button icon="pi pi-arrow-left" className="p-button-text mr-2" onClick={handleBackClick} />
-                        <h5 className="m-0">상세 정보</h5>
+                        <Button
+                            icon="pi pi-arrow-left"
+                            className="p-button-text mr-2"
+                            style={{ minWidth: '44px', minHeight: '44px' }}
+                            onClick={handleBackClick}
+                        />
+                        <h5 className="m-0 text-xl font-bold">상세 정보</h5>
                     </div>
-                    <div className="flex flex-column sm:flex-row gap-2 w-full md:w-auto">
+                    <div className="flex flex-column gap-2 w-full md:w-auto">
                         <Button
                             label="카카오톡 공유"
                             icon="pi pi-share-alt"
-                            className="p-button-primary flex-1 min-w-150  white-space-nowrap"
+                            className="p-button-primary w-full md:w-auto white-space-nowrap"
+                            style={{ minHeight: '44px', fontWeight: 'bold' }}
                             onClick={() => onShare(selectedShare)}
                         />
-                        <Button
-                            label="복사"
-                            icon="pi pi-clone"
-                            className="p-button-outlined p-button-secondary flex-1 white-space-nowrap"
-                            onClick={() => onCopyToNew(selectedShare)}
-                        />
-                        <Button
-                            label="수정"
-                            icon="pi pi-pencil"
-                            className="p-button-outlined p-button-info flex-1 white-space-nowrap"
-                            onClick={() => onEdit(selectedShare)}
-                        />
-                        <Button
-                            label="삭제"
-                            icon="pi pi-trash"
-                            className="p-button-outlined p-button-danger flex-1 white-space-nowrap"
-                            onClick={() => {
-                                if (selectedShare._id) {
-                                    onDelete(selectedShare._id);
-                                }
-                            }}
-                        />
+                        <div className="flex gap-2 w-full md:w-auto">
+                            <Button
+                                label="복사"
+                                icon="pi pi-clone"
+                                className="p-button-outlined p-button-secondary flex-1 white-space-nowrap"
+                                style={{ minHeight: '40px' }}
+                                onClick={() => onCopyToNew(selectedShare)}
+                            />
+                            <Button
+                                label="수정"
+                                icon="pi pi-pencil"
+                                className="p-button-outlined p-button-info flex-1 white-space-nowrap"
+                                style={{ minHeight: '40px' }}
+                                onClick={() => onEdit(selectedShare)}
+                            />
+                            <Button
+                                label="삭제"
+                                icon="pi pi-trash"
+                                className="p-button-outlined p-button-danger flex-1 white-space-nowrap"
+                                style={{ minHeight: '40px' }}
+                                onClick={() => {
+                                    if (selectedShare._id) {
+                                        onDelete(selectedShare._id);
+                                    }
+                                }}
+                            />
+                        </div>
                     </div>
                 </div>
 
@@ -320,11 +333,12 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete, onCopyTo
                                         <div className="text-700">{selectedShare.shareContent}</div>
                                     </div>
                                 </div>
-                                <div className="flex flex-column sm:flex-row gap-2">
+                                <div className="flex flex-column sm:flex-row gap-2 mb-2">
                                     <Button
                                         icon="pi pi-copy"
-                                        label="링크 복사(학생용)"
+                                        label="링크 복사(학생용 - 비공개)"
                                         className="p-button-warning flex-1 min-w-180 white-space-normal"
+                                        style={{ minHeight: '44px' }}
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             copyLink('student');
@@ -332,8 +346,9 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete, onCopyTo
                                     />
                                     <Button
                                         icon="pi pi-copy"
-                                        label="링크 복사(학부모용)"
+                                        label="링크 복사(학부모용 - 비공개)"
                                         className="p-button-success flex-1 min-w-180 white-space-normal"
+                                        style={{ minHeight: '44px' }}
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             copyLink('parent');
@@ -343,8 +358,14 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete, onCopyTo
                                         label="카카오톡 공유"
                                         icon="pi pi-share-alt"
                                         className="p-button-primary flex-1 min-w-150 white-space-nowrap"
+                                        style={{ minHeight: '44px' }}
                                         onClick={() => onShare(selectedShare)}
                                     />
+                                </div>
+                                <div className="text-xs text-500 mt-2 p-2 surface-100 border-round line-height-3">
+                                    <div className="font-semibold text-700 mb-1">💡 링크 및 카카오톡 공유 안내</div>
+                                    <div>• <b>링크 복사(학생/학부모용):</b> 비공개 전용 링크로 복사됩니다. (단순 링크 전달 시 방문/열람 횟수 체크 불가)</div>
+                                    <div>• <b>카카오톡 공유:</b> 카카오톡 버튼을 통해 공유된 경우에만 <b>열람 횟수 및 확인 여부</b>가 기록됩니다.</div>
                                 </div>
                             </div>
                         </Card>
@@ -381,12 +402,14 @@ const DetailView = ({ selectedShare, onBack, onShare, onEdit, onDelete, onCopyTo
                                                     </div>
                                                     <Button
                                                         icon="pi pi-download"
-                                                        className="p-button-rounded p-button-secondary p-button-text p-button-sm absolute top-0 left-0 m-1"
+                                                        className="p-button-rounded p-button-secondary shadow-2 absolute top-0 left-0 m-2"
                                                         style={{
-                                                            background: 'rgba(255,255,255,0.7)',
-                                                            color: '#333',
-                                                            width: '1.5rem',
-                                                            height: '1.5rem',
+                                                            background: 'rgba(255,255,255,0.9)',
+                                                            color: '#222',
+                                                            width: '32px',
+                                                            height: '32px',
+                                                            fontSize: '13px',
+                                                            padding: 0,
                                                             zIndex: 1
                                                         }}
                                                         onClick={(e) => {

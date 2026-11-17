@@ -249,12 +249,8 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
 
             setPraiseTopRankers(topRankers);
 
-            const resDetail = await http.get('/choiMath/attendance/getPraiseStatistics', {
-                params: { ...params, studentId: finalStudentId, excludeClosed: 'true' },
-                disableLoading: true
-            });
-
-            const rawMyData = resDetail.data[0] || {};
+            // 전체 통계(allData)에서 본인 데이터 직접 추출 (불필요한 중복 API 호출 1회 제거)
+            const rawMyData = allData.find((item: any) => item.studentId === finalStudentId) || {};
             // 종강된 수업 제외한 myData
             const myActiveClasses = (rawMyData.classes || []).filter(isClassActive);
             const myActivePraiseCnt = myActiveClasses.reduce((sum: number, c: any) => sum + (c.totalPraiseCnt || 0), 0);
@@ -306,8 +302,8 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
 
                 prepareChartData(myData, closedIds);
 
-                // Fetch notices for student's classes
-                fetchNotices(myData?.classes || []);
+                // 이미 조회한 myClassesData를 전달하여 중복 API 호출 방지
+                fetchNotices(myData?.classes || [], myClassesData);
             } else {
                 setStats(null);
                 setGlobalRank(0);
@@ -320,19 +316,22 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
         }
     };
 
-    const fetchNotices = async (studentClasses: any[] = []) => {
+    const fetchNotices = async (studentClasses: any[] = [], prefetchedMyClasses?: any[]) => {
         try {
             const classIdsFromStats = (studentClasses || []).map((c) => c.classId).filter(Boolean);
 
             // 출석부 통계 외에 학생의 실제 전체 소속 클래스 조회 (출석부가 아직 없는 반도 포함)
             let actualClassIds = [...classIdsFromStats];
             try {
-                // 학생 전용 안전 API: 본인이 속한 클래스 정보만 조회 (민감 정보 및 타학생 목록 노출 차단)
-                const classRes = await http.get('/choiMath/student/myClasses', {
-                    params: { studentId: finalStudentId },
-                    disableLoading: true
-                });
-                const myClasses = classRes.data || [];
+                // 이미 조회된 반 목록이 있다면 API 호출 생략
+                let myClasses = prefetchedMyClasses;
+                if (!myClasses || myClasses.length === 0) {
+                    const classRes = await http.get('/choiMath/student/myClasses', {
+                        params: { studentId: finalStudentId },
+                        disableLoading: true
+                    });
+                    myClasses = classRes.data || [];
+                }
                 const matchedClassIds = (Array.isArray(myClasses) ? myClasses : []).map((c: any) => c.classId).filter(Boolean);
                 actualClassIds = Array.from(new Set([...actualClassIds, ...matchedClassIds]));
             } catch (err) {

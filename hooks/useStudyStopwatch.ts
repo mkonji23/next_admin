@@ -616,7 +616,7 @@ export const useStudyStopwatch = ({ studentId, onBackgroundPaused }: UseStudySto
         };
 
         syncHeartbeatRef.current = performHeartbeatSync;
-        const heartbeatInterval = setInterval(performHeartbeatSync, 60000); // 60초(1분) 주기 동기화
+        const heartbeatInterval = setInterval(performHeartbeatSync, 180000); // 3분(180초) 주기 동기화
 
         return () => {
             clearInterval(heartbeatInterval);

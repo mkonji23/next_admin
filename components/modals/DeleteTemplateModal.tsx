@@ -86,8 +86,21 @@ const DeleteTemplateModal = ({ visible, onClose }: DeleteTemplateModalProps) => 
 
     const footer = (
         <div className="flex justify-content-end gap-2">
-            <Button label="취소" icon="pi pi-times" onClick={() => onClose(null)} className="p-button-text" />
-            <Button label="삭제" icon="pi pi-trash" severity="danger" onClick={handleDelete} autoFocus />
+            <Button
+                label="취소"
+                icon="pi pi-times"
+                onClick={() => onClose(null)}
+                className="p-button-outlined p-button-secondary"
+                style={{ minHeight: '44px' }}
+            />
+            <Button
+                label="삭제"
+                icon="pi pi-trash"
+                severity="danger"
+                onClick={handleDelete}
+                style={{ minHeight: '44px' }}
+                autoFocus
+            />
         </div>
     );
 
@@ -95,7 +108,7 @@ const DeleteTemplateModal = ({ visible, onClose }: DeleteTemplateModalProps) => 
         <Dialog
             header="자동 생성 템플릿/데이터 삭제"
             visible={visible}
-            style={{ width: '500px' }}
+            style={{ width: '95vw', maxWidth: '500px' }}
             footer={footer}
             onHide={() => onClose(null)}
             className="p-fluid"

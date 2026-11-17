@@ -9,6 +9,7 @@ import { InputTextarea } from 'primereact/inputtextarea';
 import { CustomEditor, CustomEditorRef, extractImageUrlsFromDelta } from '../editor/CustomEditor';
 import { useHttp } from '@/util/axiosInstance';
 import { useToast } from '@/hooks/useToast';
+import { useMobile } from '@/hooks/useMobile';
 import dayjs from 'dayjs';
 
 /**
@@ -35,6 +36,7 @@ const initialTemplateState = {
 };
 
 const EditAutoTemplateModal = ({ visible, onClose }: EditAutoTemplateModalProps) => {
+    const isMobile = useMobile();
     const http = useHttp();
     const { showToast } = useToast();
     const editorRef = useRef<CustomEditorRef>(null);
@@ -220,9 +222,24 @@ const EditAutoTemplateModal = ({ visible, onClose }: EditAutoTemplateModalProps)
     };
 
     const footer = (
-        <div>
-            <Button label="취소" icon="pi pi-times" onClick={() => onClose(null)} className="p-button-text" disabled={saving} />
-            <Button label="저장" icon="pi pi-check" disabled={!template?.shareTitle || saving} loading={saving} onClick={handleSave} autoFocus />
+        <div className="flex justify-content-end gap-2">
+            <Button
+                label="취소"
+                icon="pi pi-times"
+                onClick={() => onClose(null)}
+                className="p-button-outlined p-button-secondary"
+                style={{ minHeight: '44px' }}
+                disabled={saving}
+            />
+            <Button
+                label="저장"
+                icon="pi pi-check"
+                disabled={!template?.shareTitle || saving}
+                loading={saving}
+                onClick={handleSave}
+                style={{ minHeight: '44px' }}
+                autoFocus
+            />
         </div>
     );
 
@@ -230,14 +247,19 @@ const EditAutoTemplateModal = ({ visible, onClose }: EditAutoTemplateModalProps)
         <Dialog
             header="자동 템플릿 설정 수정"
             visible={visible}
-            style={{ width: '820px', minHeight: '600px' }}
+            style={{ width: isMobile ? '98vw' : '820px', maxWidth: '98vw' }}
+            contentStyle={{
+                overflowY: 'auto',
+                maxHeight: isMobile ? 'calc(90vh - 120px)' : '75vh',
+                padding: isMobile ? '0.75rem' : '1.5rem'
+            }}
             footer={footer}
             onHide={() => onClose(null)}
             className="p-fluid"
         >
-            <div className="grid mb-4">
-                <div className="field col-3">
-                    <label className="font-bold">클래스 선택</label>
+            <div className="grid mb-3">
+                <div className="field col-12 sm:col-4 md:col-3">
+                    <label className="font-bold text-sm">클래스 선택</label>
                     <Dropdown
                         value={selectedClassId}
                         options={[
@@ -251,8 +273,8 @@ const EditAutoTemplateModal = ({ visible, onClose }: EditAutoTemplateModalProps)
                         appendTo="self"
                     />
                 </div>
-                <div className="field col-3">
-                    <label className="font-bold">년도</label>
+                <div className="field col-4 sm:col-2 md:col-2">
+                    <label className="font-bold text-sm">년도</label>
                     <Dropdown
                         value={year}
                         options={years}
@@ -263,8 +285,8 @@ const EditAutoTemplateModal = ({ visible, onClose }: EditAutoTemplateModalProps)
                         appendTo="self"
                     />
                 </div>
-                <div className="field col-2">
-                    <label className="font-bold">월</label>
+                <div className="field col-4 sm:col-2 md:col-2">
+                    <label className="font-bold text-sm">월</label>
                     <Dropdown
                         value={month}
                         options={months}
@@ -275,8 +297,8 @@ const EditAutoTemplateModal = ({ visible, onClose }: EditAutoTemplateModalProps)
                         appendTo="self"
                     />
                 </div>
-                <div className="field col-2">
-                    <label className="font-bold">주차</label>
+                <div className="field col-4 sm:col-2 md:col-2">
+                    <label className="font-bold text-sm">주차</label>
                     <Dropdown
                         value={week}
                         options={weeks}
@@ -287,8 +309,14 @@ const EditAutoTemplateModal = ({ visible, onClose }: EditAutoTemplateModalProps)
                         appendTo="self"
                     />
                 </div>
-                <div className="field col-2 flex align-items-end">
-                    <Button label="조회" icon="pi pi-search" onClick={handleSearch} className="p-button-info w-full" />
+                <div className="field col-12 sm:col-2 md:col-3 flex align-items-end">
+                    <Button
+                        label="조회"
+                        icon="pi pi-search"
+                        onClick={handleSearch}
+                        className="p-button-info w-full"
+                        style={{ minHeight: '42px' }}
+                    />
                 </div>
             </div>
 

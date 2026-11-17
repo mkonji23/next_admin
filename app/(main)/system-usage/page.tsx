@@ -771,7 +771,7 @@ const SystemUsagePage = () => {
                 badge={
                     <>
                         {mongoData && <Tag value={mongoData.dbName} severity="success" className="ml-1" />}
-                        <Tag value="실시간 스토리지" severity="secondary" className="ml-1" />
+                        <Tag value="실시간 스토리지" severity="info" className="ml-1" />
                     </>
                 }
                 subTitle="Atlas Free Tier 스토리지 512 MB 기준 — 80% 이상 경고 (실시간 DB 인스턴스 현황)"
