@@ -604,7 +604,7 @@ const ListView = ({
                     header="공유상태"
                     body={statusBodyTemplate}
                     sortable
-                    headerStyle={{ minWidth: '180px' }}
+                    headerStyle={{ minWidth: '220px' }}
                 />
                 <Column
                     field="kakaoOpenCount"
