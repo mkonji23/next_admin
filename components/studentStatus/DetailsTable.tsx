@@ -45,7 +45,16 @@ const DetailsTable: React.FC<DetailsTableProps> = ({ classes, classRanks }) => {
     };
 
     const rowExpansionTemplate = (data: any) => {
-        const filterAttendance = data?.attendance?.filter((item: any) => item.status !== 'none' || item.praise);
+        // 출석 상태가 'none'이어도 칭찬여부/점수/클래스보강/비고 값이 있으면 표시
+        const hasValue = (v: any) => v !== undefined && v !== null && String(v).trim() !== '';
+        const filterAttendance = (data?.attendance || []).filter(
+            (item: any) =>
+                item.status !== 'none' ||
+                item.praise ||
+                hasValue(item.testScore) ||
+                hasValue(item.reinforce ?? item.classReinforce) ||
+                hasValue(item.note)
+        );
 
         return (
             <div className="p-3">
