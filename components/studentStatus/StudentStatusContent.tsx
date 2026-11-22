@@ -332,7 +332,9 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                     });
                     myClasses = classRes.data || [];
                 }
-                const matchedClassIds = (Array.isArray(myClasses) ? myClasses : []).map((c: any) => c.classId).filter(Boolean);
+                const matchedClassIds = (Array.isArray(myClasses) ? myClasses : [])
+                    .map((c: any) => c.classId)
+                    .filter(Boolean);
                 actualClassIds = Array.from(new Set([...actualClassIds, ...matchedClassIds]));
             } catch (err) {
                 console.error('Failed to fetch actual student classes:', err);
@@ -769,8 +771,12 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                                             style={{
                                                 width: '100%',
                                                 height: '100%',
-                                                objectFit: profileImage?.toLowerCase().endsWith('.gif') ? 'contain' : 'cover',
-                                                imageRendering: profileImage?.toLowerCase().endsWith('.gif') ? 'pixelated' : 'auto'
+                                                objectFit: profileImage?.toLowerCase().endsWith('.gif')
+                                                    ? 'contain'
+                                                    : 'cover',
+                                                imageRendering: profileImage?.toLowerCase().endsWith('.gif')
+                                                    ? 'pixelated'
+                                                    : 'auto'
                                             }}
                                         />
                                     ) : (
@@ -952,10 +958,14 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                                     <div className="relative" style={{ display: 'inline-flex' }}>
                                         <Button
                                             label="공지사항"
-                                            icon={`pi pi-bell${unreadCount > 0 ? ' bell-animated text-red-500 font-bold' : ''}`}
+                                            icon={`pi pi-bell${
+                                                unreadCount > 0 ? ' bell-animated text-red-500 font-bold' : ''
+                                            }`}
                                             severity={unreadCount > 0 ? 'danger' : 'info'}
                                             className={`border-round-xl px-3 py-1 text-xs md:text-sm font-bold shadow-1 ${
-                                                unreadCount > 0 ? 'notice-btn-highlight p-button-outlined' : 'p-button-outlined'
+                                                unreadCount > 0
+                                                    ? 'notice-btn-highlight p-button-outlined'
+                                                    : 'p-button-outlined'
                                             }`}
                                             style={{ height: '34px', minWidth: '95px' }}
                                             onClick={handleShowNotices}
@@ -1134,9 +1144,6 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                             globalRank={globalRank}
                         />
 
-                        {/* 차트 영역*/}
-                        <ChartsRow chartData={chartData} />
-
                         {/* 클래스별 칭찬 및 출석 내역*/}
                         <DetailsTable
                             classes={stats.classes}
@@ -1144,6 +1151,9 @@ const StudentStatusContent = ({ studentAuthData }: StudentStatusContentProps) =>
                             onRowToggle={setExpandedRows}
                             classRanks={classRanks}
                         />
+
+                        {/* 차트 영역*/}
+                        <ChartsRow chartData={chartData} />
 
                         {/*주간 리포트 (REPORT) */}
                         <WeeklyReportList studentId={finalStudentId} />
