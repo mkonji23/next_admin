@@ -29,7 +29,12 @@ const withStudentAuth = <P extends object>(
     const StudentAuthProtectedComponent = (props: P) => {
         const http = useHttp();
         const { showToast } = useToast();
-        const { setStudentAuth, studentAuthData: storedStudentAuthData, studentToken, clearStudentAuth } = useStudentAuthStore();
+        const {
+            setStudentAuth,
+            studentAuthData: storedStudentAuthData,
+            studentToken,
+            clearStudentAuth
+        } = useStudentAuthStore();
         const { layoutConfig } = useContext(LayoutContext);
         const isDark = layoutConfig.colorScheme === 'dark';
 
@@ -88,11 +93,11 @@ const withStudentAuth = <P extends object>(
         // 토큰 및 필수 학생 정보가 모두 존재해야 인증된 것으로 판단
         const isAuthorized = Boolean(
             mounted &&
-            studentToken &&
-            studentToken !== 'undefined' &&
-            studentToken !== 'null' &&
-            storedStudentAuthData &&
-            storedStudentAuthData.studentId
+                studentToken &&
+                studentToken !== 'undefined' &&
+                studentToken !== 'null' &&
+                storedStudentAuthData &&
+                storedStudentAuthData.studentId
         );
 
         // 인증이 해제되거나 토큰이 없으면 로그인 폼 상태를 초기화
@@ -543,9 +548,9 @@ const withStudentAuth = <P extends object>(
                         {/* 로고 */}
                         {authState === 'INITIAL' && (
                             <img
-                                src={`/layout/images/logo-${isDark ? 'white' : 'dark'}.svg`}
+                                src={isDark ? '/icons/logo_white.png' : '/icons/logo.png'}
                                 alt="chocho"
-                                height="50"
+                                height="90"
                                 className="mr-0 lg:mr-2"
                             />
                         )}
