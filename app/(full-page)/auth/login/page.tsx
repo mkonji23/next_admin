@@ -159,7 +159,7 @@ const LoginPage = () => {
                     console.error('Failed to update FCM token on server:', error);
                 }
             }
-            router.push('/');
+            router.push('/admin');
         }
     };
 

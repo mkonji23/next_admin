@@ -8,6 +8,7 @@ const DynamicManifest = () => {
 
   useEffect(() => {
     const isStudentStatus =
+      pathname === '/' ||
       pathname === '/student-status' ||
       pathname?.startsWith('/student-status') ||
       pathname === '/install/student-status';

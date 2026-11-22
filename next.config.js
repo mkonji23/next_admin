@@ -22,12 +22,22 @@ const nextConfig = {
             (process.env.NEXT_PUBLIC_TYPE === 'dev' ? 'http://localhost:3000' : 'https://serve-less.vercel.app');
         const cleanBackendUrl = rawBackendUrl.replace(/\/api\/?$/, '').replace(/\/$/, '');
 
-        return [
-            {
-                source: '/v1/api/:path*', // 클라이언트에서 호출하는 경로
-                destination: `${cleanBackendUrl}/api/:path*` // 실제 API 서버 주소 (동적 백엔드 프록시)
-            }
-        ];
+        return {
+            // 기본 도메인('/') 접속 시 URL은 그대로 두고 학생 칭찬 현황 화면을 보여줌
+            // (기존 관리자 화면은 /admin 으로 접속)
+            beforeFiles: [
+                {
+                    source: '/',
+                    destination: '/student-status'
+                }
+            ],
+            afterFiles: [
+                {
+                    source: '/v1/api/:path*', // 클라이언트에서 호출하는 경로
+                    destination: `${cleanBackendUrl}/api/:path*` // 실제 API 서버 주소 (동적 백엔드 프록시)
+                }
+            ]
+        };
     }
 };
 

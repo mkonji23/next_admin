@@ -4,7 +4,6 @@ import React, { ReactNode } from 'react';
 // 각 페이지 컴포넌트를 lazy-load 하여 초기 로딩 성능을 최적화할 수 있습니다.
 
 const routeMap: { [key: string]: React.LazyExoticComponent<React.ComponentType<any>> } = {
-    '/': React.lazy(() => import('@/app/(main)/page')),
     '/attendanceList': React.lazy(() => import('@/app/(main)/attendanceList/page')),
     '/studentAttendanceStatistics': React.lazy(() => import('@/app/(main)/studentAttendanceStatistics/page')),
     '/praise': React.lazy(() => import('@/app/(main)/praise/page')),

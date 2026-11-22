@@ -109,7 +109,8 @@ export const useHttp = (): AxiosInstance => {
 
             const originalRequest = error.config;
             const isStudentPath =
-                typeof window !== 'undefined' && window.location.pathname.startsWith('/student-status');
+                typeof window !== 'undefined' &&
+                (window.location.pathname === '/' || window.location.pathname.startsWith('/student-status'));
             const isStudentRequest =
                 !!originalRequest?.headers?.['x-student-log'] ||
                 !!Cookies.get('x-student-log') ||

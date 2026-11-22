@@ -177,7 +177,7 @@ const KakaoCallbackContent = () => {
                     <Divider className="mt-5" />
 
                     <div className="flex justify-content-center">
-                        <Link href="/">
+                        <Link href="/admin">
                             <Button label="뒤로" icon="pi pi-arrow-left" className="p-button-text" />
                         </Link>
                     </div>

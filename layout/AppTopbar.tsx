@@ -213,7 +213,7 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
                 <i className="pi pi-bars" />
             </button>
 
-            <Link href="/" className="layout-topbar-logo">
+            <Link href="/admin" className="layout-topbar-logo">
                 <img
                     src={`/layout/images/logo-${layoutConfig.colorScheme !== 'light' ? 'white' : 'dark'}.svg`}
                     width="47.22px"
